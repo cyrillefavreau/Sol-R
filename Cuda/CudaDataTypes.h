@@ -12,10 +12,14 @@
 
 typedef float4        Vertex;
 typedef int4          PrimitiveXYIdBuffer;
-typedef float4        PostProcessingBuffer;
 typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
+struct PostProcessingBuffer
+{
+   float4 colorInfo;
+   float4 sceneInfo;
+};
 
 // 3D vision type
 enum VisionType

@@ -6,10 +6,14 @@
 // Typedefs
 typedef float4        Vertex;
 typedef int4          PrimitiveXYIdBuffer;
-typedef float4        PostProcessingBuffer;
 typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
+typedef struct
+{
+   float4 colorInfo;
+   float4 sceneInfo;
+} PostProcessingBuffer;
 
 // Constants
 #define NB_MAX_ITERATIONS 10
@@ -561,7 +565,7 @@ void transparencyMap(
    g = textures[i+1];
    b = textures[i+2];
    (*attributes).y *= (r+g+b)/768.f;
-//   (*attributes).z = 10.f*b/256.f;
+   //   (*attributes).z = 10.f*b/256.f;
 }
 
 // ----------
@@ -1918,6 +1922,114 @@ inline bool intersectionWithPrimitives(
 /*
 ________________________________________________________________________________
 
+Intersections with primitives
+________________________________________________________________________________
+*/
+inline int intersectionsWithPrimitives(
+   const SceneInfo* sceneInfo,
+   CONST BoundingBox* boundingBoxes, 
+   const int nbActiveBoxes,
+   CONST Primitive* primitives, 
+   const int nbActivePrimitives,
+   CONST Material* materials, 
+   CONST BitmapBuffer* textures,
+   const Ray* ray)
+{
+   int intersections = 0;
+
+   Ray r;
+   r.origin    = (*ray).origin;
+   r.direction = (*ray).direction-(*ray).origin;
+   computeRayAttributes( &r );
+
+   Vertex intersection = {0.f,0.f,0.f,0.f};
+   Vertex normal       = {0.f,0.f,0.f,0.f};
+   bool i = false;
+
+   int cptBoxes=0;
+   while( cptBoxes<nbActiveBoxes )
+   {
+      CONST BoundingBox* box = &boundingBoxes[cptBoxes];
+      if( boxIntersection(box, &r, 0.f, (*sceneInfo).viewDistance) )
+      {
+            // Intersection with primitive within boxes
+            for( int cptPrimitives = 0; cptPrimitives<(*box).nbPrimitives; ++cptPrimitives )
+            { 
+               CONST Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
+               {
+                  Vertex areas = {0.f,0.f,0.f,0.f};
+                  i = false;
+                  float shadowIntensity;
+                  if((*sceneInfo).parameters.y==1)
+                  {
+                     switch( (*primitive).type )
+                     {
+                     case ptEnvironment :
+                     case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
+                     case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
+                     case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+                     case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
+                     default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
+                     }
+                  }
+                  else
+                  {
+                     i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false );
+                  }
+                  if(i) ++intersections;
+               }
+            }
+         ++cptBoxes;
+      }
+      else
+      {
+         cptBoxes += (*box).indexForNextBox.x;
+      }
+   }
+   return intersections;
+}
+
+inline float4 launchRay(
+   const int index,
+   CONST BoundingBox* boundingBoxes, 
+   const int nbActiveBoxes,
+   CONST Primitive* primitives, 
+   const int nbActivePrimitives,
+   CONST LightInformation* lightInformation, 
+   const int lightInformationSize, 
+   const int nbActiveLamps,
+   CONST Material*  materials, 
+   CONST BitmapBuffer* textures,
+   CONST RandomBuffer* randoms,
+   const Ray*       ray, 
+   const SceneInfo* sceneInfo,
+   const PostProcessingInfo* postProcessingInfo,
+   float*           depthOfField,
+   CONST PrimitiveXYIdBuffer* primitiveXYId)
+{
+   float4 intersectionColor   = {0.f,0.f,0.f,0.f};
+   (*primitiveXYId).x = -1;
+   (*primitiveXYId).y = 1;
+   (*primitiveXYId).z = 0;
+         int interserctions = intersectionsWithPrimitives(
+            sceneInfo,
+            boundingBoxes, nbActiveBoxes,
+            primitives, nbActivePrimitives,
+            materials, textures,
+            ray);
+   if(interserctions!=0) 
+   {
+       intersectionColor.x=interserctions*0.1f;
+       intersectionColor.y=interserctions*0.1f;
+       intersectionColor.z=interserctions*0.1f;
+   }
+   return intersectionColor;
+}
+
+#if 0
+/*
+________________________________________________________________________________
+
 Calculate the reflected vector                   
 We now have to know the colour of this (*intersection)                                        
 Color_from_object will compute the amount of light received by the
@@ -1928,7 +2040,7 @@ the ray). It can  be considered as a light source if its inner light rate
 is > 0.                            
 ________________________________________________________________________________
 */
-inline float4 launchRay( 
+inline float4 launchRayTracing( 
    const int index,
    CONST BoundingBox* boundingBoxes, 
    const int nbActiveBoxes,
@@ -2251,7 +2363,7 @@ inline float4 launchRay(
                   pathTracingRay.origin, &normal, closestPrimitive, 
                   &closestIntersection, areas, &closestColor,
                   iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
-                  pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
+               pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
             }
          }
          else
@@ -2278,12 +2390,12 @@ inline float4 launchRay(
 
    if(test)
    {
-       for( int i=iteration-2; i>=0; --i)
-       {
-          colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
-       }
-       intersectionColor = colors[0];
-       intersectionColor += recursiveBlinn;
+      for( int i=iteration-2; i>=0; --i)
+      {
+         colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
+      }
+      intersectionColor = colors[0];
+      intersectionColor += recursiveBlinn;
    }
    else
    {
@@ -2322,6 +2434,7 @@ inline float4 launchRay(
    saturateVector( &intersectionColor );
    return intersectionColor;
 }
+#endif // 0
 
 /*
 ________________________________________________________________________________
@@ -2389,8 +2502,8 @@ __kernel void k_standardRenderer(
       // Randomize view for natural depth of field
       float a=postProcessingInfo.param1/20000.f;
       int rindex=(index+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-2);
-      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
-      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*a;
+      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*a;
    }
 
    float dof=0.f;
@@ -2468,20 +2581,20 @@ __kernel void k_standardRenderer(
 
    if(sceneInfo.pathTracingIteration==0)
    {
-      postProcessingBuffer[index].w = dof;
+      postProcessingBuffer[index].colorInfo.w = dof;
    }
 
    if(sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS)
    {
-      postProcessingBuffer[index].x = color.x;
-      postProcessingBuffer[index].y = color.y;
-      postProcessingBuffer[index].z = color.z;
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
    }
    else
    {
-      postProcessingBuffer[index].x += color.x;
-      postProcessingBuffer[index].y += color.y;
-      postProcessingBuffer[index].z += color.z;
+      postProcessingBuffer[index].colorInfo.x += color.x;
+      postProcessingBuffer[index].colorInfo.y += color.y;
+      postProcessingBuffer[index].colorInfo.z += color.z;
    }
 }
 
@@ -2527,10 +2640,10 @@ __kernel void k_anaglyphRenderer(
 
    if( sceneInfo.pathTracingIteration == 0 )
    {
-      postProcessingBuffer[index].x = 0.f;
-      postProcessingBuffer[index].y = 0.f;
-      postProcessingBuffer[index].z = 0.f;
-      postProcessingBuffer[index].w = 0.f;
+      postProcessingBuffer[index].colorInfo.x = 0.f;
+      postProcessingBuffer[index].colorInfo.y = 0.f;
+      postProcessingBuffer[index].colorInfo.z = 0.f;
+      postProcessingBuffer[index].colorInfo.w = 0.f;
    }
 
    float dof = postProcessingInfo.param1;
@@ -2597,18 +2710,18 @@ __kernel void k_anaglyphRenderer(
    float g2 = colorRight.y;
    float b2 = colorRight.z;
 
-   if( sceneInfo.pathTracingIteration == 0 ) postProcessingBuffer[index].w = dof;
+   if( sceneInfo.pathTracingIteration == 0 ) postProcessingBuffer[index].colorInfo.w = dof;
    if( sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS )
    {
-      postProcessingBuffer[index].x = r1+r2;
-      postProcessingBuffer[index].y = g1+g2;
-      postProcessingBuffer[index].z = b1+b2;
+      postProcessingBuffer[index].colorInfo.x = r1+r2;
+      postProcessingBuffer[index].colorInfo.y = g1+g2;
+      postProcessingBuffer[index].colorInfo.z = b1+b2;
    }
    else
    {
-      postProcessingBuffer[index].x += r1+r2;
-      postProcessingBuffer[index].y += g1+g2;
-      postProcessingBuffer[index].z += b1+b2;
+      postProcessingBuffer[index].colorInfo.x += r1+r2;
+      postProcessingBuffer[index].colorInfo.y += g1+g2;
+      postProcessingBuffer[index].colorInfo.z += b1+b2;
    }
 }
 
@@ -2654,10 +2767,10 @@ __kernel void k_3DVisionRenderer(
 
    if( sceneInfo.pathTracingIteration == 0 )
    {
-      postProcessingBuffer[index].x = 0.f;
-      postProcessingBuffer[index].y = 0.f;
-      postProcessingBuffer[index].z = 0.f;
-      postProcessingBuffer[index].w = 0.f;
+      postProcessingBuffer[index].colorInfo.x = 0.f;
+      postProcessingBuffer[index].colorInfo.y = 0.f;
+      postProcessingBuffer[index].colorInfo.z = 0.f;
+      postProcessingBuffer[index].colorInfo.w = 0.f;
    }
 
    float dof = postProcessingInfo.param1;
@@ -2714,18 +2827,18 @@ __kernel void k_3DVisionRenderer(
    color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
 
    // Contribute to final image
-   if( sceneInfo.pathTracingIteration == 0 ) postProcessingBuffer[index].w = dof;
+   if( sceneInfo.pathTracingIteration == 0 ) postProcessingBuffer[index].colorInfo.w = dof;
    if( sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS )
    {
-      postProcessingBuffer[index].x = color.x;
-      postProcessingBuffer[index].y = color.y;
-      postProcessingBuffer[index].z = color.z;
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
    }
    else
    {
-      postProcessingBuffer[index].x += color.x;
-      postProcessingBuffer[index].y += color.y;
-      postProcessingBuffer[index].z += color.z;
+      postProcessingBuffer[index].colorInfo.x += color.x;
+      postProcessingBuffer[index].colorInfo.y += color.y;
+      postProcessingBuffer[index].colorInfo.z += color.z;
    }
 }
 
@@ -2775,7 +2888,7 @@ __kernel void k_default(
    // Beware out of bounds error!
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
-   float4 localColor = postProcessingBuffer[index];
+   float4 localColor = postProcessingBuffer[index].colorInfo;
    if(sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS)
    {
       localColor /= (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1);
@@ -2805,7 +2918,7 @@ __kernel void k_depthOfField(
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
    float4 localColor = {0.f,0.f,0.f,0.f};
-   float  depth=fabs(postProcessingBuffer[index].w-postProcessingInfo.param1)/sceneInfo.viewDistance;
+   float  depth=fabs(postProcessingBuffer[index].colorInfo.w-postProcessingInfo.param1)/sceneInfo.viewDistance;
    int    wh = sceneInfo.size.x*sceneInfo.size.y;
 
    for( int i=0; i<postProcessingInfo.param3; ++i )
@@ -2819,12 +2932,12 @@ __kernel void k_depthOfField(
          int localIndex = yy*sceneInfo.size.x+xx;
          if( localIndex>=0 && localIndex<wh )
          {
-            localColor += postProcessingBuffer[localIndex];
+            localColor += postProcessingBuffer[localIndex].colorInfo;
          }
       }
       else
       {
-         localColor += postProcessingBuffer[index];
+         localColor += postProcessingBuffer[index].colorInfo;
       }
    }
    localColor /= postProcessingInfo.param3;
@@ -2859,7 +2972,7 @@ __kernel void k_ambientOcclusion(
 
    int    wh = sceneInfo.size.x*sceneInfo.size.y;
    float occ = 0.f;
-   float4 localColor = postProcessingBuffer[index];
+   float4 localColor = postProcessingBuffer[index].colorInfo;
    float  depth = localColor.w;
    const int step = 16;
    float c=0.f;
@@ -2877,9 +2990,9 @@ __kernel void k_ambientOcclusion(
          if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
          {
             int localIndex = yy*sceneInfo.size.x+xx;
-            if( postProcessingBuffer[localIndex].w<depth)
+            if( postProcessingBuffer[localIndex].colorInfo.w<depth)
             {
-               occ += 1.f-(postProcessingBuffer[localIndex].w-depth)/sceneInfo.viewDistance;
+               occ += 1.f-(postProcessingBuffer[localIndex].colorInfo.w-depth)/sceneInfo.viewDistance;
             }
          }
          else
@@ -2962,7 +3075,7 @@ __kernel void k_radiosity(
       int iy = (i+sceneInfo.misc.y+sceneInfo.size.x)%wh;
       int xx = x+randoms[ix]*postProcessingInfo.param2;
       int yy = y+randoms[iy]*postProcessingInfo.param2;
-      localColor += postProcessingBuffer[index];
+      localColor += postProcessingBuffer[index].colorInfo;
       if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
       {
          int localIndex = yy*sceneInfo.size.x+xx;
@@ -2999,22 +3112,22 @@ __kernel void k_filter(
 #define NB_FILTERS 6
    const int2 filterSize[NB_FILTERS] = 
    {
-       { 3, 3 }, 
-       { 5, 5 }, 
-       { 3, 3 }, 
-       { 3, 3 }, 
-       { 5, 5 }, 
-       { 5, 5 }
+      { 3, 3 }, 
+      { 5, 5 }, 
+      { 3, 3 }, 
+      { 3, 3 }, 
+      { 5, 5 }, 
+      { 5, 5 }
    };
 
    const float2 filterFactors[NB_FILTERS] = 
    {
-       { 1.f, 128.f }, 
-       { 1.f, 0.f }, 
-       { 1.f, 0.f }, 
-       { 1.f, 0.f }, 
-       { 0.2f, 0.f }, 
-       { 0.125f, 0.f }
+      { 1.f, 128.f }, 
+      { 1.f, 0.f }, 
+      { 1.f, 0.f }, 
+      { 1.f, 0.f }, 
+      { 0.2f, 0.f }, 
+      { 0.125f, 0.f }
    }; // Factor and Bias
 
 
@@ -3076,13 +3189,13 @@ __kernel void k_filter(
             int imageX=(x-filterSize[postProcessingInfo.param3].x/2+filterX+sceneInfo.size.x)%sceneInfo.size.x; 
             int imageY=(y-filterSize[postProcessingInfo.param3].y/2+filterY+sceneInfo.size.y)%sceneInfo.size.y; 
             int localIndex=imageY*sceneInfo.size.x+imageX;
-           
-            float4 c=postProcessingBuffer[localIndex];
-           if(sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS)
-           {
-              c /= (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1);
-           }
-            
+
+            float4 c=postProcessingBuffer[localIndex].colorInfo;
+            if(sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS)
+            {
+               c /= (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1);
+            }
+
             localColor.x += c.x*filterInfo[postProcessingInfo.param3][filterX][filterY]; 
             localColor.y += c.y*filterInfo[postProcessingInfo.param3][filterX][filterY]; 
             localColor.z += c.z*filterInfo[postProcessingInfo.param3][filterX][filterY]; 

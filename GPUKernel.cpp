@@ -273,7 +273,7 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%2000-1000)/80000.f;
+		m_hRandoms[i] = (rand()%2000-1000)/100000.f;
 	}
    // Primitive IDs
    if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
@@ -2852,7 +2852,7 @@ void GPUKernel::render_begin( const float timer )
    LOG_INFO(3,"Scene size: " << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y);
 
    // Random
-   m_sceneInfo.misc.y=rand()%10000;
+   m_sceneInfo.misc.y=rand()%100000;
 
  #ifdef USE_OCULUS
    if( m_oculus && m_sensorFusion && m_sensorFusion->IsAttachedToSensor() )

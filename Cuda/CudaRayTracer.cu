@@ -47,6 +47,36 @@ cudaStream_t          d_streams[MAX_GPU_COUNT][MAX_STREAM_COUNT];
 /*
 ________________________________________________________________________________
 
+Surface rendering
+________________________________________________________________________________
+*/
+__device__ __INLINE__ float4 launchRay(
+   const int& index,
+   BoundingBox* boundingBoxes, const int& nbActiveBoxes,
+   Primitive* primitives, const int& nbActivePrimitives,
+   LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
+   Material*  materials, BitmapBuffer* textures,
+   RandomBuffer*    randoms,
+   const Ray&       ray, 
+   const SceneInfo& sceneInfo,
+   const PostProcessingInfo& postProcessingInfo,
+   float&           depthOfField,
+   PrimitiveXYIdBuffer& primitiveXYId)
+{
+   primitiveXYId.x = -1;
+   primitiveXYId.y = 1;
+   primitiveXYId.z = 0;
+   float4 intersectionColor = intersectionsWithPrimitives(
+      sceneInfo,
+      boundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      materials, textures,
+      ray);
+   return intersectionColor;
+}
+/*
+________________________________________________________________________________
+
 Calculate the reflected vector                   
 
 ^ Normal to object surface (N)  
@@ -68,7 +98,7 @@ the ray). It can  be considered as a light source if its inner light rate
 is > 0.                            
 ________________________________________________________________________________
 */
-__device__ __INLINE__ float4 launchRay(
+__device__ __INLINE__ float4 launchRayTracing(
    const int& index,
    BoundingBox* boundingBoxes, const int& nbActiveBoxes,
    Primitive* primitives, const int& nbActivePrimitives,
@@ -100,9 +130,9 @@ __device__ __INLINE__ float4 launchRay(
    float4 colors[NB_MAX_ITERATIONS+1];
    memset(&colorContributions[0],0,sizeof(float)*(NB_MAX_ITERATIONS+1));
    memset(&colors[0],0,sizeof(float4)*(NB_MAX_ITERATIONS+1));
-
+   
    float4 recursiveBlinn = { 0.f, 0.f, 0.f, 0.f };
-
+   
    // Variable declarations
    float  shadowIntensity = 0.f;
    float4 refractionFromColor;
@@ -111,7 +141,7 @@ __device__ __INLINE__ float4 launchRay(
    float4 colorBox = {0.f,0.f,0.f,0.f};
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
-
+   
    // Reflected rays
    int reflectedRays=-1;
    Ray reflectedRay;
@@ -163,9 +193,9 @@ __device__ __INLINE__ float4 launchRay(
                // Global illumination
                int t=(index+sceneInfo.pathTracingIteration.x+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
                pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
-               pathTracingRay.direction.x = normal.x+80.f*randoms[t  ];
-               pathTracingRay.direction.y = normal.y+80.f*randoms[t+1];
-               pathTracingRay.direction.z = normal.z+80.f*randoms[t+2];
+               pathTracingRay.direction.x = normal.x+100.f*randoms[t  ];
+               pathTracingRay.direction.y = normal.y+100.f*randoms[t+1];
+               pathTracingRay.direction.z = normal.z+100.f*randoms[t+2];
 
                float cos_theta = dot(normalize(pathTracingRay.direction),normal);
                if(cos_theta<0.f) pathTracingRay.direction=-pathTracingRay.direction;
@@ -183,6 +213,9 @@ __device__ __INLINE__ float4 launchRay(
          attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
          attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
 
+         // Primitive illumination
+         primitiveXYId.z = (materials[primitives[closestPrimitive].materialId.x].innerIllumination.x!=0.f) ? 1 : 0;
+
          // Get object color
          rBlinn.w = attributes.y;
          colors[iteration] =
@@ -197,9 +230,6 @@ __device__ __INLINE__ float4 launchRay(
             closestPrimitive, closestIntersection, areas, closestColor,
             iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
 
-         // Primitive illumination
-         float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
-         primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
 
          float segmentLength=length(closestIntersection-latestIntersection);
          latestIntersection=closestIntersection;
@@ -230,12 +260,12 @@ __device__ __INLINE__ float4 launchRay(
             // Actual refraction
             Vertex O_E = normalize(closestIntersection-rayOrigin.origin);
             vectorRefraction( reflectedTarget, O_E, refraction, normal, initialRefraction );
-
+            
             colorContributions[iteration]=transparency-a;
-
+            
             // Prepare next ray
             initialRefraction = refraction;
-
+            
             if( reflectedRays==-1 && attributes.x!=0.f )
             {
                vectorReflection( reflectedRay.direction, O_E, normal );
@@ -256,10 +286,10 @@ __device__ __INLINE__ float4 launchRay(
             else 
             {
                carryon = false;
-               colorContributions[iteration] = 1.f;                   
+               colorContributions[iteration] = 1.f;                  
             }         
          }
-
+         
          // Contribute to final color
          rBlinn /= (iteration+1);
          recursiveBlinn.x=(rBlinn.x>recursiveBlinn.x) ? rBlinn.x:recursiveBlinn.x;
@@ -536,8 +566,8 @@ __global__ void k_standardRenderer(
       // Randomize view for natural depth of field
       float a=(postProcessingInfo.param1.x/20000.f);
       int rindex=index+sceneInfo.misc.y%(MAX_BITMAP_SIZE-2);
-      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
-      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*a;
+      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*a;
    }
 
    float dof = 0.f;
@@ -614,20 +644,28 @@ __global__ void k_standardRenderer(
 
    if(sceneInfo.pathTracingIteration.x==0)
    {
-      postProcessingBuffer[index].w = dof;
+      postProcessingBuffer[index].colorInfo.w = dof;
    }
 
    if(sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)
    {
-      postProcessingBuffer[index].x = color.x;
-      postProcessingBuffer[index].y = color.y;
-      postProcessingBuffer[index].z = color.z;
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
+
+      postProcessingBuffer[index].sceneInfo.x = color.x;
+      postProcessingBuffer[index].sceneInfo.y = color.y;
+      postProcessingBuffer[index].sceneInfo.z = color.z;
    }
    else
    {
-      postProcessingBuffer[index].x += color.x;
-      postProcessingBuffer[index].y += color.y;
-      postProcessingBuffer[index].z += color.z;
+      postProcessingBuffer[index].sceneInfo.x = (primitiveXYIds[index].z>0) ? max(postProcessingBuffer[index].sceneInfo.x,color.x) : color.x;
+      postProcessingBuffer[index].sceneInfo.y = (primitiveXYIds[index].z>0) ? max(postProcessingBuffer[index].sceneInfo.y,color.y) : color.y;
+      postProcessingBuffer[index].sceneInfo.z = (primitiveXYIds[index].z>0) ? max(postProcessingBuffer[index].sceneInfo.z,color.z) : color.z;
+
+      postProcessingBuffer[index].colorInfo.x += postProcessingBuffer[index].sceneInfo.x;
+      postProcessingBuffer[index].colorInfo.y += postProcessingBuffer[index].sceneInfo.y;
+      postProcessingBuffer[index].colorInfo.z += postProcessingBuffer[index].sceneInfo.z;
    }
 }
 
@@ -695,9 +733,9 @@ __global__ void k_fishEyeRenderer(
    {
       int rindex=(index+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
       float a=float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-      ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*a;
-      ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*a;
-      ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*a;
+      ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*postProcessingInfo.param2.x*a;
+      ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*postProcessingInfo.param2.x*a;
+      ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].colorInfo.w*postProcessingInfo.param2.x*a;
    }
 
    float dof = 0.f;
@@ -735,20 +773,20 @@ __global__ void k_fishEyeRenderer(
 
    if( sceneInfo.pathTracingIteration.x == 0 )
    {
-      postProcessingBuffer[index].w = dof;
+      postProcessingBuffer[index].colorInfo.w = dof;
    }
 
    if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
    {
-      postProcessingBuffer[index].x = color.x;
-      postProcessingBuffer[index].y = color.y;
-      postProcessingBuffer[index].z = color.z;
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
    }
    else
    {
-      postProcessingBuffer[index].x += color.x;
-      postProcessingBuffer[index].y += color.y;
-      postProcessingBuffer[index].z += color.z;
+      postProcessingBuffer[index].colorInfo.x += color.x;
+      postProcessingBuffer[index].colorInfo.y += color.y;
+      postProcessingBuffer[index].colorInfo.z += color.z;
    }
 }
 
@@ -875,18 +913,18 @@ __global__ void k_anaglyphRenderer(
    float g2 = colorRight.y;
    float b2 = colorRight.z;
 
-   if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
+   if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].colorInfo.w = dof;
    if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
    {
-      postProcessingBuffer[index].x = r1+r2;
-      postProcessingBuffer[index].y = g1+g2;
-      postProcessingBuffer[index].z = b1+b2;
+      postProcessingBuffer[index].colorInfo.x = r1+r2;
+      postProcessingBuffer[index].colorInfo.y = g1+g2;
+      postProcessingBuffer[index].colorInfo.z = b1+b2;
    }
    else
    {
-      postProcessingBuffer[index].x += r1+r2;
-      postProcessingBuffer[index].y += g1+g2;
-      postProcessingBuffer[index].z += b1+b2;
+      postProcessingBuffer[index].colorInfo.x += r1+r2;
+      postProcessingBuffer[index].colorInfo.y += g1+g2;
+      postProcessingBuffer[index].colorInfo.z += b1+b2;
    }
 }
 
@@ -943,7 +981,7 @@ __global__ void k_3DVisionRenderer(
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
-   float focus = fabs(postProcessingBuffer[sceneInfo.size.x/2*sceneInfo.size.y/2].w - origin.z);
+   float focus = fabs(postProcessingBuffer[sceneInfo.size.x/2*sceneInfo.size.y/2].colorInfo.w - origin.z);
    float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
    Vertex rotationCenter = {0.f,0.f,0.f};
@@ -1009,18 +1047,18 @@ __global__ void k_3DVisionRenderer(
    }
 
    // Contribute to final image
-   if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
+   if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].colorInfo.w = dof;
    if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
    {
-      postProcessingBuffer[index].x = color.x;
-      postProcessingBuffer[index].y = color.y;
-      postProcessingBuffer[index].z = color.z;
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
    }
    else
    {
-      postProcessingBuffer[index].x += color.x;
-      postProcessingBuffer[index].y += color.y;
-      postProcessingBuffer[index].z += color.z;
+      postProcessingBuffer[index].colorInfo.x += color.x;
+      postProcessingBuffer[index].colorInfo.y += color.y;
+      postProcessingBuffer[index].colorInfo.z += color.z;
    }
 }
 
@@ -1050,7 +1088,7 @@ __global__ void k_default(
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
 #if 1
-   float4 localColor = postProcessingBuffer[index];
+   float4 localColor = postProcessingBuffer[index].colorInfo;
    if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
    {
       localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
@@ -1088,7 +1126,7 @@ __global__ void k_depthOfField(
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
    float4 localColor = {0.f,0.f,0.f};
-   float  depth=fabs(postProcessingBuffer[index].w-postProcessingInfo.param1.x)/sceneInfo.viewDistance.x;
+   float  depth=fabs(postProcessingBuffer[index].colorInfo.w-postProcessingInfo.param1.x)/sceneInfo.viewDistance.x;
    int    wh = sceneInfo.size.x*sceneInfo.size.y;
 
    for( int i=0; i<postProcessingInfo.param3.x; ++i )
@@ -1102,12 +1140,12 @@ __global__ void k_depthOfField(
          int localIndex = yy*sceneInfo.size.x+xx;
          if( localIndex>=0 && localIndex<wh )
          {
-            localColor += postProcessingBuffer[localIndex];
+            localColor += postProcessingBuffer[localIndex].colorInfo;
          }
       }
       else
       {
-         localColor += postProcessingBuffer[index];
+         localColor += postProcessingBuffer[index].colorInfo;
       }
    }
    localColor /= postProcessingInfo.param3.x;
@@ -1143,7 +1181,7 @@ __global__ void k_ambiantOcclusion(
 
    int    wh = sceneInfo.size.x*sceneInfo.size.y;
    float  occ = 0.f;
-   float4 localColor = postProcessingBuffer[index];
+   float4 localColor = postProcessingBuffer[index].colorInfo;
    float  depth = localColor.w;
    const int step = 16;
    int i=0;
@@ -1161,7 +1199,7 @@ __global__ void k_ambiantOcclusion(
          if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
          {
             int localIndex = yy*sceneInfo.size.x+xx;
-            if( postProcessingBuffer[localIndex].w>=depth)
+            if( postProcessingBuffer[localIndex].colorInfo.w>=depth)
             {
                occ += 1.f;
             }
@@ -1222,7 +1260,7 @@ __global__ void k_radiosity(
       int iy = (i+sceneInfo.misc.y+sceneInfo.size.x)%wh;
       int xx = x+randoms[ix]*postProcessingInfo.param2.x;
       int yy = y+randoms[iy]*postProcessingInfo.param2.x;
-      localColor += postProcessingBuffer[index];
+      localColor += postProcessingBuffer[index].colorInfo;
       if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
       {
          int localIndex = yy*sceneInfo.size.x+xx;
@@ -1338,7 +1376,7 @@ __global__ void k_filter(
             int imageX=(x-filterSize[postProcessingInfo.param3.x].x/2+filterX+sceneInfo.size.x)%sceneInfo.size.x; 
             int imageY=(y-filterSize[postProcessingInfo.param3.x].y/2+filterY+sceneInfo.size.y)%sceneInfo.size.y; 
             int localIndex=imageY*sceneInfo.size.x+imageX;
-            float4 c=postProcessingBuffer[localIndex];
+            float4 c=postProcessingBuffer[localIndex].colorInfo;
             if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
             {
                c /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
@@ -1918,7 +1956,7 @@ extern "C" void cudaRender(
             d_bitmap[device] );
          break;
       }
-
+      
       cudaError_t status = cudaGetLastError();
       if(status != cudaSuccess) 
       {
