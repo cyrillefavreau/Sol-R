@@ -1149,13 +1149,12 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
    const PostProcessingInfo& postProcessingInfo,
 	const Ray& ray)
 {
-   float4 intersections = {0.f,0.f,0.f,0.f}; 
-
 	Ray r;
 	r.origin    = ray.origin;
 	r.direction = ray.direction-ray.origin;
 	computeRayAttributes( r );
 
+   float4 intersections = {sceneInfo.backgroundColor.x,sceneInfo.backgroundColor.y,sceneInfo.backgroundColor.z,0.f}; 
    Vertex intersection = ray.origin;
 	Vertex normal       = {0.f,0.f,0.f};
 	bool i = false;
@@ -1213,39 +1212,27 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
             if(i)
             {
    		      float  dist = length(intersection-r.origin);
-               if( dist>postProcessingInfo.param1.x /* && dist<postProcessingInfo.param1.x+postProcessingInfo.param2.x*/ )
-               {
-                  Vertex attributes;
-                  attributes.x=material.reflection.x;
-                  attributes.y=material.transparency.x;
-                  attributes.z=material.refraction.x;
-                  attributes.w=material.opacity.x;
-   #if 1
-                  float4 rBlinn = {0.f,0.f,0.f,0.f};
-                  float4 refractionFromColor;
-                  float4 closestColor = material.color;
-                  shadowIntensity=0.f;
-                  float4 color=primitiveShader( 
-                     index,
-                     sceneInfo, postProcessingInfo,
-                     boundingBoxes, nbActiveBoxes, 
-                     primitives, nbActivePrimitives, 
-                     lightInformation, lightInformationSize, nbActiveLamps,
-                     materials, textures, 
-                     randoms, r.origin, normal, 
-                     box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
-                     0, refractionFromColor, shadowIntensity, rBlinn, attributes );
-   #else
-                  Vertex specular;
-                  specular.x=material.specular.x;
-                  specular.y=material.specular.y;
-                  specular.z=material.specular.z;
-                  Vertex advancedAttributes={0.f,0.f,0.f,0.f};
-                  float4 color=intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
-   #endif // 0
-
-                  intersections+=color*sceneInfo.backgroundColor.w*(sceneInfo.viewDistance.x/dist);
-               }
+               float alpha= dist>postProcessingInfo.param1.x ? 1.f : 0.1f;
+               Vertex attributes;
+               attributes.x=material.reflection.x;
+               attributes.y=material.transparency.x;
+               attributes.z=material.refraction.x;
+               attributes.w=material.opacity.x;
+               float4 rBlinn = {0.f,0.f,0.f,0.f};
+               float4 refractionFromColor;
+               float4 closestColor = material.color;
+               shadowIntensity=0.f;
+               float4 color=primitiveShader( 
+                  index,
+                  sceneInfo, postProcessingInfo,
+                  boundingBoxes, nbActiveBoxes, 
+                  primitives, nbActivePrimitives, 
+                  lightInformation, lightInformationSize, nbActiveLamps,
+                  materials, textures, 
+                  randoms, r.origin, normal, 
+                  box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
+                  0, refractionFromColor, shadowIntensity, rBlinn, attributes );
+               intersections+=(1.f-material.transparency.x)*alpha*color*sceneInfo.backgroundColor.w*(sceneInfo.viewDistance.x/(dist*2.f));
             }
 			}
          ++cptBoxes;
@@ -1255,7 +1242,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
          cptBoxes += box.indexForNextBox.x;
       }
 	}
-
+   
    return intersections;
 }
 

@@ -49,7 +49,7 @@ ________________________________________________________________________________
 Surface rendering
 ________________________________________________________________________________
 */
-__device__ __INLINE__ float4 launchRay(
+__device__ __INLINE__ float4 launchVolumeRendering(
    const int& index,
    BoundingBox* boundingBoxes, const int& nbActiveBoxes,
    Primitive* primitives, const int& nbActivePrimitives,
@@ -602,17 +602,35 @@ __global__ void k_standardRenderer(
       {
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
-         float4 c = launchRay(
-            index,
-            BoundingBoxes, nbActiveBoxes,
-            primitives, nbActivePrimitives,
-            lightInformation, lightInformationSize, nbActiveLamps,
-            materials, textures, 
-            randoms,
-            r, 
-            sceneInfo, postProcessingInfo,
-            dof,
-            primitiveXYIds[index]);
+         float4 c;
+         if( sceneInfo.misc.w==cmVolumeRendering )
+         {
+            c=launchVolumeRendering(
+               index,
+               BoundingBoxes, nbActiveBoxes,
+               primitives, nbActivePrimitives,
+               lightInformation, lightInformationSize, nbActiveLamps,
+               materials, textures, 
+               randoms,
+               r, 
+               sceneInfo, postProcessingInfo,
+               dof,
+               primitiveXYIds[index]);
+         }
+         else
+         {
+            c=launchRayTracing(
+               index,
+               BoundingBoxes, nbActiveBoxes,
+               primitives, nbActivePrimitives,
+               lightInformation, lightInformationSize, nbActiveLamps,
+               materials, textures, 
+               randoms,
+               r, 
+               sceneInfo, postProcessingInfo,
+               dof,
+               primitiveXYIds[index]);
+         }
          color += c;
       }
    }
@@ -621,17 +639,34 @@ __global__ void k_standardRenderer(
       r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
       r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
    }
-   color += launchRay(
-      index,
-      BoundingBoxes, nbActiveBoxes,
-      primitives, nbActivePrimitives,
-      lightInformation, lightInformationSize, nbActiveLamps,
-      materials, textures,
-      randoms,
-      r, 
-      sceneInfo, postProcessingInfo,
-      dof,
-      primitiveXYIds[index]);
+   if( sceneInfo.misc.w==cmVolumeRendering )
+   {
+      color += launchVolumeRendering(
+         index,
+         BoundingBoxes, nbActiveBoxes,
+         primitives, nbActivePrimitives,
+         lightInformation, lightInformationSize, nbActiveLamps,
+         materials, textures,
+         randoms,
+         r, 
+         sceneInfo, postProcessingInfo,
+         dof,
+         primitiveXYIds[index]);
+   }
+   else
+   {
+      color += launchRayTracing(
+         index,
+         BoundingBoxes, nbActiveBoxes,
+         primitives, nbActivePrimitives,
+         lightInformation, lightInformationSize, nbActiveLamps,
+         materials, textures,
+         randoms,
+         r, 
+         sceneInfo, postProcessingInfo,
+         dof,
+         primitiveXYIds[index]);
+   }
 
    if(sceneInfo.parameters.z==aiRandomIllumination)
    {
@@ -762,7 +797,7 @@ __global__ void k_fishEyeRenderer(
    //vectorRotation( ray.direction, rotationCenter, angles );
 
    float4 color = {0.f,0.f,0.f,0.f};
-   color += launchRay(
+   color += launchRayTracing(
       index,
       BoundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
@@ -872,7 +907,7 @@ __global__ void k_anaglyphRenderer(
    vectorRotation( eyeRay.origin, rotationCenter, angles );
    vectorRotation( eyeRay.direction, rotationCenter, angles );
 
-   float4 colorLeft = launchRay(
+   float4 colorLeft = launchRayTracing(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
@@ -896,7 +931,7 @@ __global__ void k_anaglyphRenderer(
    vectorRotation( eyeRay.origin, rotationCenter, angles );
    vectorRotation( eyeRay.direction, rotationCenter, angles );
 
-   float4 colorRight = launchRay(
+   float4 colorRight = launchRayTracing(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
@@ -1030,7 +1065,7 @@ __global__ void k_3DVisionRenderer(
    vectorRotation( eyeRay.origin,    rotationCenter, angles );
    vectorRotation( eyeRay.direction, rotationCenter, angles );
 
-   float4 color = launchRay(
+   float4 color = launchRayTracing(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
