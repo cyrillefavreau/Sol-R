@@ -20,7 +20,6 @@
 #include "../Logging.h"
 #include "VectorUtils.cuh"
 #include "GeometryIntersections.cuh"
-#include "GeometryShaders.cuh"
 
 // Device resources
 #ifndef USE_MANAGED_MEMORY
@@ -67,10 +66,14 @@ __device__ __INLINE__ float4 launchRay(
    primitiveXYId.y = 1;
    primitiveXYId.z = 0;
    float4 intersectionColor = intersectionsWithPrimitives(
+      index,
       sceneInfo,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
       materials, textures,
+      lightInformation,lightInformationSize,nbActiveLamps,
+      randoms,
+      postProcessingInfo,
       ray);
    return intersectionColor;
 }
@@ -212,10 +215,10 @@ __device__ __INLINE__ float4 launchRayTracing(
          attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
          attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
          attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
-
+         
          // Primitive illumination
          primitiveXYId.z = (materials[primitives[closestPrimitive].materialId.x].innerIllumination.x!=0.f) ? 1 : 0;
-
+         
          // Get object color
          rBlinn.w = attributes.y;
          colors[iteration] =
