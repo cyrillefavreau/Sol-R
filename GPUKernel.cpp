@@ -1015,7 +1015,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       }
 
       // Dispatch primitives into level 0 boxes
-      int nbMaxPrimitivesPerBox=processBoxes(12000,false);
+      int nbMaxPrimitivesPerBox=processBoxes(6400,false);
 
       // Construct sub-boxes (level 1 and +)
       m_treeDepth=0;
@@ -2919,7 +2919,7 @@ void GPUKernel::switchOculusVR()
 
 void GPUKernel::generateScreenshot(const std::string& filename,const int width,const int height,const int quality)
 {
-   LOG_INFO(1,"Generating screenshot " << filename << " (Quality=" << quality << ", Size=" << MAX_BITMAP_WIDTH << "x" << MAX_BITMAP_HEIGHT << ")");
+   LOG_INFO(1,"Generating screenshot " << filename << " (Quality=" << quality << ", Size=" << width << "x" << height << ")");
    SceneInfo sceneInfo=m_sceneInfo;
    SceneInfo bakSceneInfo=m_sceneInfo;
    sceneInfo.size.x=std::min(width,MAX_BITMAP_WIDTH);
@@ -2932,7 +2932,9 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int width,c
       m_sceneInfo=sceneInfo;
       render_begin(0);
       render_end();
-      LOG_INFO(1,"Frame " << i << " generated in " << GetTickCount()-t << "ms");
+      int avg=GetTickCount()-t;
+      int left=static_cast<int>(static_cast<float>(quality-i)*static_cast<float>(avg)/1000.f);
+      LOG_INFO(1,"Frame " << i << " generated in " << avg << "ms (" << left << " seconds left...)");
    }
    LOG_INFO(1,"Saving bitmap to disk");
    size_t size=sceneInfo.size.x*sceneInfo.size.y*gColorDepth;

@@ -472,21 +472,21 @@ Vertex OBJReader::loadModelFromFile(
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
-                  //if( vertex.x<0.f )
+                  if( vertex.x<0.f )
                   {
                      int Xa = static_cast<int>(fabs(vertex.x));
                      float Xb = fabs(vertex.x)-Xa;
                      vertex.x = Xb;
                   }
 
-                  //if( vertex.y<0.f )
+                  if( vertex.y<0.f )
                   {
                      int Ya = static_cast<int>(fabs(vertex.y));
                      float Yb = fabs(vertex.y)-Ya;
                      vertex.y = Yb;
                   }
 
-                  //if( vertex.z<0.f )
+                  if( vertex.z<0.f )
                   {
                      int Za = static_cast<int>(fabs(vertex.z));
                      float Zb = fabs(vertex.z)-Za;
