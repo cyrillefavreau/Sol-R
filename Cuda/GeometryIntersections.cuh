@@ -1160,6 +1160,18 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 	bool i = false;
 	float shadowIntensity = 0.f;
 
+   const int MAXDEPTH=20;
+   float4 colors[MAXDEPTH];
+   for( int i(0); i<MAXDEPTH; ++i)
+   {
+      colors[i].x=0.f;
+      colors[i].y=0.f;
+      colors[i].z=0.f;
+      colors[i].w=sceneInfo.viewDistance.x;
+   }
+   bool normals[MAXDEPTH];
+   memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
+
    int cptBoxes = 0;
    while(cptBoxes<nbActiveBoxes)
 	{
@@ -1212,27 +1224,44 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
             if(i)
             {
    		      float  dist = length(intersection-r.origin);
-               float alpha= dist>postProcessingInfo.param1.x ? 1.f : 0.1f;
-               Vertex attributes;
-               attributes.x=material.reflection.x;
-               attributes.y=material.transparency.x;
-               attributes.z=material.refraction.x;
-               attributes.w=material.opacity.x;
-               float4 rBlinn = {0.f,0.f,0.f,0.f};
-               float4 refractionFromColor;
-               float4 closestColor = material.color;
-               shadowIntensity=0.f;
-               float4 color=primitiveShader( 
-                  index,
-                  sceneInfo, postProcessingInfo,
-                  boundingBoxes, nbActiveBoxes, 
-                  primitives, nbActivePrimitives, 
-                  lightInformation, lightInformationSize, nbActiveLamps,
-                  materials, textures, 
-                  randoms, r.origin, normal, 
-                  box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
-                  0, refractionFromColor, shadowIntensity, rBlinn, attributes );
-               intersections+=(1.f-material.transparency.x)*alpha*color*sceneInfo.backgroundColor.w*(sceneInfo.viewDistance.x/(dist*2.f));
+               float4 color=material.color*(1.f-material.transparency.x);
+               if(sceneInfo.graphicsLevel.x!=0)
+               {
+                  Vertex attributes;
+                  attributes.x=material.reflection.x;
+                  attributes.y=material.transparency.x;
+                  attributes.z=material.refraction.x;
+                  attributes.w=material.opacity.x;
+                  float4 rBlinn = {0.f,0.f,0.f,0.f};
+                  float4 refractionFromColor;
+                  float4 closestColor = material.color;
+                  shadowIntensity=0.f;
+                  color=primitiveShader( 
+                     index,
+                     sceneInfo, postProcessingInfo,
+                     boundingBoxes, nbActiveBoxes, 
+                     primitives, nbActivePrimitives, 
+                     lightInformation, lightInformationSize, nbActiveLamps,
+                     materials, textures, 
+                     randoms, r.origin, normal, 
+                     box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
+                     0, refractionFromColor, shadowIntensity, rBlinn, attributes );
+               }
+               for( int i(0); i<MAXDEPTH; ++i)
+               {
+                  if( dist<colors[i].w )
+                  {
+                     for( int j(MAXDEPTH-1); j>=i; --j)
+                     {
+                        colors[j+1]=colors[j];
+                        normals[j+1]=normals[j];
+                        colors[j] = color;
+                        colors[j].w = dist;
+                        normals[j] = (dot(r.direction,normal)>=0.f);
+                     }
+                     break;
+                  }
+               }
             }
 			}
          ++cptBoxes;
@@ -1243,7 +1272,16 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       }
 	}
    
-   return intersections;
+   for( int i(MAXDEPTH-2); i>=0; --i)
+   {
+      float alpha=1.f-((colors[i+1].w-colors[0].w)/postProcessingInfo.param2.x);
+
+      colors[i].x=colors[i+1].x*(1.f-alpha) + colors[i].x*alpha;
+      colors[i].y=colors[i+1].y*(1.f-alpha) + colors[i].y*alpha;
+      colors[i].z=colors[i+1].z*(1.f-alpha) + colors[i].z*alpha;
+   }
+   normalize(colors[0]);
+   return colors[0];
 }
 
    /*
