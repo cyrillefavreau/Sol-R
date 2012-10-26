@@ -229,6 +229,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <GPUDebugInfo>true</GPUDebugInfo>
       <HostDebugInfo>true</HostDebugInfo>
       <Defines>_DEBUG</Defines>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">
@@ -252,6 +253,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <Defines>USE_KINECT</Defines>
       <GPUDebugInfo>true</GPUDebugInfo>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
@@ -276,6 +278,7 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </CudaCompile>
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
@@ -298,6 +301,7 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <CudaCompile>
       <Defines>_DEBUG;USE_KINECT</Defines>
       <HostDebugInfo>true</HostDebugInfo>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
@@ -323,6 +327,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">
@@ -346,6 +351,9 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <Command>copy "$(OutDir)$(TargetName).lib" $(PROJECT_OUTDIR)
 copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">
     <ClCompile>
@@ -371,6 +379,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
       <FastMath>true</FastMath>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
@@ -396,6 +405,7 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
@@ -419,6 +429,9 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
 copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
     <ClCompile>
@@ -444,6 +457,7 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
       <FastMath>true</FastMath>
+      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

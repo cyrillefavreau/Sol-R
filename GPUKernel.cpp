@@ -187,9 +187,9 @@ void GPUKernel::setPrimitive(
 
 
       // Update light
-      if( m_nbActiveLamps < NB_MAX_LAMPS )
+      if( m_nbActiveLamps < 5 /* NB_MAX_LAMPS */ )
       {
-         if( m_hMaterials[materialId].specular.z != 0.f )
+         if( m_hMaterials[materialId].innerIllumination.x != 0.f )
          {
             bool found(false);
             int i(0);
@@ -320,6 +320,11 @@ int GPUKernel::compactBoxes()
 
 void GPUKernel::rotatePrimitives( float4 angles, int from, int to )
 {
+   float4 trigoAngles;
+   trigoAngles.x = cos(angles.x); // cos(x)
+   trigoAngles.y = sin(angles.x); // sin(x)
+   trigoAngles.z = cos(angles.y); // cos(y)
+   trigoAngles.w = sin(angles.y); // sin(y)
 
    int i=0;
    if( to > m_nbActivePrimitives ) to = m_nbActivePrimitives;
@@ -329,11 +334,6 @@ void GPUKernel::rotatePrimitives( float4 angles, int from, int to )
       resetBox(i, false);
       for( int j=0; j<m_hBoundingBoxes[i].nbPrimitives.x; ++j )
       {
-         float4 trigoAngles;
-         trigoAngles.x = cos(angles.x); // cos(x)
-         trigoAngles.y = sin(angles.x); // sin(x)
-         trigoAngles.z = cos(angles.y); // cos(y)
-         trigoAngles.w = sin(angles.y); // sin(y)
          rotatePrimitive( i, m_hBoxPrimitivesIndex[m_hBoundingBoxes[i].startIndex.x+j], trigoAngles );
       }
    }
@@ -517,8 +517,9 @@ void GPUKernel::setMaterial(
       m_hMaterials[index].color.w     = noise;
       m_hMaterials[index].specular.x  = specValue;
       m_hMaterials[index].specular.y  = specPower;
-      m_hMaterials[index].specular.z  = innerIllumination;
+      m_hMaterials[index].specular.z  = 0.f; // Not used
       m_hMaterials[index].specular.w  = specCoef;
+      m_hMaterials[index].innerIllumination.x = innerIllumination;
 		m_hMaterials[index].reflection.x  = reflection;
 		m_hMaterials[index].refraction.x  = refraction;
       m_hMaterials[index].transparency.x= transparency;

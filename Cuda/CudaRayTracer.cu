@@ -29,8 +29,8 @@
 #include <cutil_math.h>
 
 // Project
-#include "../Consts.h"
 #include "CudaDataTypes.h"
+#include "../Consts.h"
 
 // Globals
 #define gNbIterations 20
@@ -1118,7 +1118,7 @@ __device__ float processShadows(
                   //TODO: hit = planeIntersection( primitive, materials, textures, ray, true, shadowIntensity, intersection, normal, sceneInfo.transparentColor.x, timer ); 
                   break;
                }
-               result += hit ? (shadowIntensity-materials[primitive.materialId.x].specular.z) : 0.f;
+               result += hit ? (shadowIntensity-materials[primitive.materialId.x].innerIllumination.x) : 0.f;
             }
             cptPrimitives++;
          }
@@ -1163,7 +1163,7 @@ __device__ float4 primitiveShader(
    float totalLambert = sceneInfo.backgroundColor.w; // Ambient light
    shadowIntensity    = 0.f;
 
-   //TODO? Lamps have constant color?? if( materials[primitive.materialId.x].specular.z != 0.f ) return color;
+   //TODO? Lamps have constant color?? if( materials[primitive.materialId.x].innerIllumination.x != 0.f ) return color;
 
    if( primitive.type.x == ptEnvironment )
    {
@@ -1177,7 +1177,7 @@ __device__ float4 primitiveShader(
    }
    else 
    {
-      color *= materials[primitive.materialId.x].specular.z;
+      color *= materials[primitive.materialId.x].innerIllumination.x;
       for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
       {
          if(lamps[cptLamps] != objectId)
@@ -1207,14 +1207,14 @@ __device__ float4 primitiveShader(
          
             // Lighted object, not in the shades
             Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
-            lampsColor += material.color*material.specular.z;
+            lampsColor += material.color*material.innerIllumination.x;
 
             // --------------------------------------------------------------------------------
             // Lambert
             // --------------------------------------------------------------------------------
             lambert = dotProduct(lightRay, normal);
             lambert = (lambert<0.f) ? 0.f : lambert;
-            lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.specular.z : 1.f;
+            lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
             lambert *= (1.f-shadowIntensity);
             totalLambert += lambert;
 
@@ -1237,7 +1237,7 @@ __device__ float4 primitiveShader(
                   blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
                   blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y);
-                  totalBlinn += material.color * material.specular.z * blinnTerm;
+                  totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
                }
             }
          }
@@ -2065,6 +2065,21 @@ extern "C" void initialize_scene(
    cutilSafeCall(cudaMalloc( (void**)&d_kinectVideo,   gKinectVideo*gKinectVideoWidth*gKinectVideoHeight*sizeof(char)));
    cutilSafeCall(cudaMalloc( (void**)&d_kinectDepth,   gKinectDepth*gKinectDepthWidth*gKinectDepthHeight*sizeof(char)));
 #endif // USE_KINECT
+
+   std::cout << "GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
+   std::cout << "GPU: Ray               : " << sizeof(Ray) << std::endl;
+   std::cout << "GPU: PrimitiveType     : " << sizeof(PrimitiveType) << std::endl;
+   std::cout << "GPU: Material          : " << sizeof(Material) << std::endl;
+   std::cout << "GPU: BoundingBox       : " << sizeof(BoundingBox) << std::endl;
+   std::cout << "GPU: Primitive         : " << sizeof(Primitive) << std::endl;
+   std::cout << "GPU: PostProcessingType: " << sizeof(PostProcessingType) << std::endl;
+   std::cout << "GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) << std::endl;
+
+   std::cout << NB_MAX_BOXES << " boxes" << std::endl;
+   std::cout << nbPrimitives << " primitives" << std::endl;
+   std::cout << nbLamps << " lamps" << std::endl;
+   std::cout << nbMaterials << " materials" << std::endl;
+   std::cout << nbTextures << " textures" << std::endl;
 }
 
 /*

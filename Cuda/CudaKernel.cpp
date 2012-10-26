@@ -228,7 +228,7 @@ void CudaKernel::render_begin( const float timer )
 	if( !m_texturedTransfered )
 	{
 		h2d_materials( 
-         m_hMaterials, m_nbActiveMaterials, 
+         m_hMaterials, m_nbActiveMaterials+1, 
          m_hTextures,  m_nbActiveTextures, 
          m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
 		m_texturedTransfered = true;
@@ -302,15 +302,6 @@ void CudaKernel::deviceQuery()
       std::cout << "  Total amount of global memory: " << 
          (float)deviceProp.totalGlobalMem/1048576.0f << "MBytes (" << 
          (unsigned long long) deviceProp.totalGlobalMem << " bytes)" << std::endl;
-
-/*
-#if CUDART_VERSION >= 2000
-      std::cout << "  (" << deviceProp.multiProcessorCount << ") Multiprocessors x (" << 
-         _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) << ") CUDA Cores/MP:    " << 
-         _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) * deviceProp.multiProcessorCount << " CUDA Cores" << std::endl;
-#endif
-*/
-      std::cout << "  GPU Clock rate:                                " <<  deviceProp.clockRate * 1e-3f << "MHz (" << deviceProp.clockRate * 1e-6f << " GHz)" << std::endl;
 
 #if CUDART_VERSION >= 4000
 

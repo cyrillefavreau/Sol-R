@@ -77,12 +77,12 @@ enum PrimitiveType
 // TODO! Data structure is too big!!!
 struct Material
 {
+   float4 innerIllumination;
 	float4 color;
    float4 specular;       // x: value, y: power, w: coef, z: inner illumination
    float4 reflection;     
 	float4 refraction;
    float4 transparency;
-   float4 bidon;
 	int4   textured;
    int4   textureId;
 };
@@ -124,4 +124,3 @@ struct PostProcessingInfo
    float1 param2; // strength;
    int1   param3; // iterations;
 };
-
