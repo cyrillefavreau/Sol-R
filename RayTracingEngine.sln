@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RayTracingEngine", "RayTracingEngine.vcxproj", "{5118E4A5-6728-415B-BA62-589A394745AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Cuda Kinect|Win32 = Debug Cuda Kinect|Win32
+		Debug Cuda Kinect|x64 = Debug Cuda Kinect|x64
+		Debug Cuda|Win32 = Debug Cuda|Win32
+		Debug Cuda|x64 = Debug Cuda|x64
+		Release Cuda Kinect|Win32 = Release Cuda Kinect|Win32
+		Release Cuda Kinect|x64 = Release Cuda Kinect|x64
+		Release Cuda|Win32 = Release Cuda|Win32
+		Release Cuda|x64 = Release Cuda|x64
+		Release OpenCL|Win32 = Release OpenCL|Win32
+		Release OpenCL|x64 = Release OpenCL|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|Win32.ActiveCfg = Debug Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|Win32.Build.0 = Debug Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|x64.ActiveCfg = Debug Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|x64.Build.0 = Debug Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|Win32.ActiveCfg = Debug Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|Win32.Build.0 = Debug Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|x64.ActiveCfg = Debug Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|x64.Build.0 = Debug Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|Win32.ActiveCfg = Release Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|Win32.Build.0 = Release Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|x64.ActiveCfg = Release Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|x64.Build.0 = Release Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|Win32.ActiveCfg = Release Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|Win32.Build.0 = Release Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|x64.ActiveCfg = Release Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|x64.Build.0 = Release Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|Win32.ActiveCfg = Release OpenCL|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|Win32.Build.0 = Release OpenCL|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|x64.ActiveCfg = Release OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|x64.Build.0 = Release OpenCL|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
