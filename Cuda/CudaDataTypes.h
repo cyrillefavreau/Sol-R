@@ -98,13 +98,6 @@ struct BoundingBox
 struct Primitive
 {
 	float4 p0;
-   /*
-	float4 p1;
-	float4 p2;
-	float4 v0;
-	float4 v1;
-	float4 v2;
-   */
 	float4 normal;
 	float4 rotation;
 	float4 size;

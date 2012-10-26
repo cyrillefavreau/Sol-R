@@ -157,7 +157,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
-    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <TargetName>$(ProjectName)_Cuda_Kinect_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -167,7 +167,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
-    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <TargetName>$(ProjectName)_Cuda_Kinect_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -181,7 +181,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
-    <TargetName>$(ProjectName)_Cuda</TargetName>
+    <TargetName>$(ProjectName)_Cuda_Kinect</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -194,7 +194,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
-    <TargetName>$(ProjectName)_Cuda</TargetName>
+    <TargetName>$(ProjectName)_Cuda_Kinect</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
     <TargetName>$(ProjectName)_cuda_d</TargetName>
@@ -268,9 +268,15 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)\$(TargetName).lib $(PROJECT_OUTDIR)
-copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <Defines>_DEBUG</Defines>
+    </CudaCompile>
+    <CudaCompile>
+      <HostDebugInfo>true</HostDebugInfo>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
     <ClCompile>
@@ -286,11 +292,12 @@ copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)\$(TargetName).lib $(PROJECT_OUTDIR)
-copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
-      <Defines>USE_KINECT</Defines>
+      <Defines>_DEBUG;USE_KINECT</Defines>
+      <HostDebugInfo>true</HostDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
@@ -314,6 +321,9 @@ copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
       <Command>copy "$(OutDir)$(TargetName).lib" $(PROJECT_OUTDIR)
 copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <FastMath>true</FastMath>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">
     <ClCompile>
@@ -360,6 +370,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
+      <FastMath>true</FastMath>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
@@ -380,9 +391,12 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)\$(TargetName).lib $(PROJECT_OUTDIR)
-copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
+    <CudaCompile>
+      <FastMath>true</FastMath>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
     <ClCompile>
@@ -402,8 +416,8 @@ copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>Kinect10.lib;opencl.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)\$(TargetName).lib $(PROJECT_OUTDIR)
-copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
@@ -424,11 +438,12 @@ copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)\$(TargetName).lib $(PROJECT_OUTDIR)
-copy $(OutDir)\$(TargetName).dll $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
+      <FastMath>true</FastMath>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
