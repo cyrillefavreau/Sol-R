@@ -274,7 +274,9 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>_DEBUG</Defines>
@@ -299,7 +301,9 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>_DEBUG;USE_KINECT</Defines>
@@ -405,7 +409,9 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
@@ -431,7 +437,9 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
@@ -457,7 +465,9 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>

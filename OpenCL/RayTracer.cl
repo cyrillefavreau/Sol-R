@@ -21,6 +21,8 @@
 *
 */
 
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+
 // Globals
 #define gNbIterations 20
 

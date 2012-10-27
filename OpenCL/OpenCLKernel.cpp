@@ -180,11 +180,13 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
 	status = NuiCameraElevationSetAngle( 0 );
 #endif // USE_KINECT
 
+	std::stringstream s;
+   s << "--------------------------------------------------------------------------------\n";
 	LOG_INFO("clGetPlatformIDs\n");
 	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, platforms, &ret_num_platforms));
+   s << ret_num_platforms << " platorm(s) detected" << "\n";
 
-	std::stringstream s;
-	int p = 0;
+	for( int p=0;p<ret_num_platforms;++p)
 	{
 		// Platform details
 		s << "Platform " << p << ":\n";
@@ -196,13 +198,13 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
 		buffer[len] = 0; s << "  Name       : " << buffer << "\n";
 		CHECKSTATUS(clGetPlatformInfo( platforms[p], CL_PLATFORM_VENDOR, MAX_SOURCE_SIZE, buffer, &len ));
 		buffer[len] = 0; s << "  Vendor     : " << buffer << "\n";
-		CHECKSTATUS(clGetPlatformInfo( platforms[p], CL_PLATFORM_VENDOR, MAX_SOURCE_SIZE, buffer, &len ));
+		CHECKSTATUS(clGetPlatformInfo( platforms[p], CL_PLATFORM_EXTENSIONS, MAX_SOURCE_SIZE, buffer, &len ));
 		buffer[len] = 0; s << "  Extensions : " << buffer << "\n";
 
 		CHECKSTATUS(clGetDeviceIDs(platforms[p], CL_DEVICE_TYPE_ALL, 1, m_hDevices, &ret_num_devices));
 
 		// Devices
-		int d = 0;
+		for( int d=0; d<ret_num_devices; ++d)
 		{
 			s << "  Device " << d << ":\n";
 
@@ -221,8 +223,8 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
 			s << "    DEVICE_MAX_COMPUTE_UNITS           : " << value << "\n";
 			CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(value), &value, NULL));
 			s << "    CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS : " << value << "\n";
-			CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(value), &value, NULL));
-			s << "    CL_DEVICE_MAX_WORK_GROUP_SIZE      : " << value << "\n";
+			//CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(value), &value, NULL));
+			//s << "    CL_DEVICE_MAX_WORK_GROUP_SIZE      : " << value << "\n";
 			CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(values), &values, NULL));
 			s << "    CL_DEVICE_MAX_WORK_ITEM_SIZES      : " << values[0] << ", " << values[1] << ", " << values[2] << "\n";
 			CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(value), &value, NULL));
@@ -255,7 +257,7 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
 		}
 		s << "\n";
 	}
-	std::cout << s.str() << std::endl;
+   s << "--------------------------------------------------------------------------------\n";
 	LOG_INFO( s.str() );
 
 	m_hContext = clCreateContext(NULL, ret_num_devices, &m_hDevices[0], NULL, NULL, &status );
