@@ -134,7 +134,7 @@ void pfn_notify(cl_program, void *user_data)
 /*
 * OpenCLKernel constructor
 */
-OpenCLKernel::OpenCLKernel( int platform, int device ) : GPUKernel(),
+OpenCLKernel::OpenCLKernel( int platform, int device ) : GPUKernel( platform, device ),
    m_hContext(0),
    m_hQueue(0),
    m_dRandoms(0),

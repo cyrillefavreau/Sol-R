@@ -69,7 +69,7 @@ ________________________________________________________________________________
 CudaKernel::CudaKernel
 ________________________________________________________________________________
 */
-CudaKernel::CudaKernel() : GPUKernel(),
+CudaKernel::CudaKernel( int platform, int device ) : GPUKernel( platform, device ),
    m_blockSize(1024,1024,1),
    m_sharedMemSize(256)
 {
