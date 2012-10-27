@@ -186,7 +186,8 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
 	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, platforms, &ret_num_platforms));
    s << ret_num_platforms << " platorm(s) detected" << "\n";
 
-	for( int p=0;p<ret_num_platforms;++p)
+	//for( int p=0;p<ret_num_platforms;++p)
+   int p=0;
 	{
 		// Platform details
 		s << "Platform " << p << ":\n";
