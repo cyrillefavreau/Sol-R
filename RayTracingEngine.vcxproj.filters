@@ -45,6 +45,9 @@
     <ClInclude Include="RayTracingEngineStub.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -69,5 +72,10 @@
     <None Include="OpenCL\RayTracer.cl">
       <Filter>Source Files\OpenCL</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RayTracingEngine.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

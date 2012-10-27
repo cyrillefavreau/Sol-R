@@ -25,15 +25,15 @@
 
 #include <fstream>
 
-#if USE_OPENCL
-#include "OpenCLKernel.h"
-
-OpenCLKernel* gpuKernel = 0;
-#endif // USE_OPENCL
-
 #if USE_CUDA
 #include "Cuda/CudaKernel.h"
 typedef CudaKernel GPUKERNEL;
+GPUKERNEL* gpuKernel = nullptr;
+#endif // USE_OPENCL
+
+#if USE_OPENCL
+#include "OpenCL/OpenCLKernel.h"
+typedef OpenCLKernel GPUKERNEL;
 GPUKERNEL* gpuKernel = nullptr;
 #endif // USE_OPENCL
 

@@ -243,7 +243,7 @@ void CudaKernel::render_begin( const float timer )
    int4 objects;
    objects.x = m_nbActiveBoxes+1;
    objects.y = m_nbActivePrimitives+1;
-   objects.z = m_nbActiveLamps+1;
+   objects.z = m_nbActiveLamps;
    objects.w = 0;
 	cudaRender(
       m_blockSize, m_sharedMemSize,

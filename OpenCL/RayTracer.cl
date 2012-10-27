@@ -76,12 +76,12 @@ enum PrimitiveType
 // TODO! Data structure is too big!!!
 typedef struct 
 {
+   float4 innerIllumination;
 	float4 color;
    float4 specular;       // x: value, y: power, w: coef, z: inner illumination
    float4 reflection;     
 	float4 refraction;
    float4 transparency;
-   float4 bidon;
 	int4   textured;
    int4   textureId;
 } Material;
@@ -963,7 +963,7 @@ ________________________________________________________________________________
                   //TODO: hit = planeIntersection( primitive, materials, textures, ray, true, shadowIntensity, intersection, normal, sceneInfo.transparentColor, timer ); 
                   break;
                }
-               result += hit ? (shadowIntensity-materials[primitive.materialId].specular.z) : 0.f;
+               result += hit ? (shadowIntensity-materials[primitive.materialId].innerIllumination.x) : 0.f;
             }
             cptPrimitives++;
          }
@@ -1006,7 +1006,7 @@ ________________________________________________________________________________
    float totalLambert = sceneInfo.backgroundColor.w; // Ambient light
    (*shadowIntensity) = 0.f;
 
-   //TODO? Lamps have constant color?? if( materials[primitive.materialId].specular.z != 0.f ) return color;
+   //TODO? Lamps have constant color?? if( materials[primitive.materialId].innerIllumination.x != 0.f ) return color;
 
    if( primitives[objectId].type == ptEnvironment )
    {
@@ -1018,7 +1018,7 @@ ________________________________________________________________________________
    }
    else 
    {
-      //color *= materials[primitive.materialId].specular.z;
+      //color *= materials[primitive.materialId].innerIllumination.x;
       for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
       {
          if(lamps[cptLamps] != objectId)
@@ -1047,14 +1047,14 @@ ________________________________________________________________________________
          
             // Lighted object, not in the shades
             Material material = materials[primitives[lamps[cptLamps]].materialId];
-            lampsColor += material.color*material.specular.z;
+            lampsColor += material.color*material.innerIllumination.x;
 
             // --------------------------------------------------------------------------------
             // Lambert
             // --------------------------------------------------------------------------------
             lambert = dotProduct(lightRay, normal);
             lambert = (lambert<0.f) ? 0.f : lambert;
-            lambert *= (materials[primitive.materialId].refraction.x == 0.f) ? material.specular.z : 1.f;
+            lambert *= (materials[primitive.materialId].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
             lambert *= (1.f-(*shadowIntensity));
             totalLambert += lambert;
 
@@ -1077,7 +1077,7 @@ ________________________________________________________________________________
                   blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
                   blinnTerm = materials[primitive.materialId].specular.x * pow(blinnTerm,materials[primitive.materialId].specular.y);
-                  (*totalBlinn) += material.color * material.specular.z * blinnTerm;
+                  (*totalBlinn) += material.color * material.innerIllumination.x * blinnTerm;
                }
             }
          }
