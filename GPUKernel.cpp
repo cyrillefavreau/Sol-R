@@ -80,7 +80,7 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%1000-500)/500.f;
+		m_hRandoms[i] = (rand()%1000-500)/50.f;
 	}
 }
 
@@ -611,7 +611,46 @@ char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 		length = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
 		fclose( fp );
 	}
+
+   /*
+   for( int i(0); i<MAX_SOURCE_SIZE; ++i)
+   {
+      char a = source_str[i];
+      source_str[i] = a >> 2;
+   }
+   */
 	return source_str;
+}
+
+void GPUKernel::saveToFile( const std::string& filename, const std::string& content )
+{
+	// Load the kernel source code into the array source_str
+	FILE *fp = 0;
+   std::string tmp(content);
+
+#ifdef WIN32
+	fopen_s( &fp, filename.c_str(), "w");
+#else
+	fp = fopen( filename.c_str(), "w");
+#endif
+
+   /*
+   for( int i(0); i<content.length(); ++i)
+   {
+      char a = tmp[i];
+      tmp[i] = a << 2;
+   }
+   */
+
+	if( fp == 0 ) 
+	{
+		std::cout << "Failed to save kernel " << filename.c_str() << std::endl;
+	}
+	else 
+	{
+      fwrite( tmp.c_str(), 1, tmp.length(), fp);
+		fclose( fp );
+	}
 }
 
 // ---------- Kinect ----------

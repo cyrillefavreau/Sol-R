@@ -1608,9 +1608,9 @@ __global__ void k_standardRenderer(
       // Randomize view
       int rindex = index + 3.f*timer + sceneInfo.pathTracingIteration.x;
       rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
-      ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-      ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-      ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+      ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+      ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+      ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
    }
 
    float dof = postProcessingInfo.param1.x;

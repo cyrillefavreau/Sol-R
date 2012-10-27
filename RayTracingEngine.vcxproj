@@ -469,12 +469,15 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <ClInclude Include="Consts.h" />
     <ClInclude Include="Cuda\CudaDataTypes.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Cuda\CudaKernel.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Cuda\CudaRayTracer.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="DLL_API.h" />
     <ClInclude Include="GPUKernel.h" />
@@ -482,7 +485,6 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">true</ExcludedFromBuild>
@@ -495,13 +497,13 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="GPUKernel.cpp" />
     <ClCompile Include="OpenCL\OpenCLKernel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">true</ExcludedFromBuild>
@@ -514,6 +516,7 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <CudaCompile Include="Cuda\CudaRayTracer.cu">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -521,7 +524,6 @@ copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">true</ExcludedFromBuild>

@@ -1018,7 +1018,7 @@ ________________________________________________________________________________
    }
    else 
    {
-      //color *= materials[primitive.materialId].innerIllumination.x;
+      color *= materials[primitive.materialId].innerIllumination.x;
       for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
       {
          if(lamps[cptLamps] != objectId)

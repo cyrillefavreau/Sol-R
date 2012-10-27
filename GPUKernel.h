@@ -179,7 +179,8 @@ public:
 
 public:
 
-	char*  loadFromFile( const std::string& filename, size_t& length );
+	char* loadFromFile( const std::string& filename, size_t& length );
+   void  saveToFile( const std::string& filename, const std::string& content );
 
 protected:
  

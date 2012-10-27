@@ -281,10 +281,10 @@ void OpenCLKernel::compileKernels(
 	const std::string& ptxFileName,
 	const std::string& options)
 {
+	int status(0);
+	cl_program hProgram(0);
 	try 
 	{
-		int status(0);
-		cl_program hProgram(0);
 		clUnloadCompiler();
 
 		const char* source_str; 
@@ -304,6 +304,8 @@ void OpenCLKernel::compileKernels(
 			}
 			break;
 		}
+
+      //saveToFile("encoded.cl", source_str );
 
 		LOG_INFO("clCreateProgramWithSource\n");
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
@@ -351,7 +353,8 @@ void OpenCLKernel::compileKernels(
 			LOG_INFO( s.str() );
 			std::cout << s.str() << std::endl;
 		}
-#if 1
+
+#if 0
 		// Generate Binaries!!!
 		// Obtain the length of the binary data that will be queried, for each device
 		size_t ret_num_devices = 1;
@@ -422,6 +425,18 @@ void OpenCLKernel::compileKernels(
 			CHECKSTATUS(errcode);
 
 			CHECKSTATUS( clBuildProgram( hProgram, 0, NULL, "", NULL, NULL) );
+
+		   LOG_INFO("clGetProgramBuildInfo\n");
+		   CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &lSize ) );
+
+		   if( buffer[0] != 0 ) 
+		   {
+			   buffer[lSize] = 0;
+			   std::stringstream s;
+			   s << buffer;
+			   LOG_INFO( s.str() );
+			   std::cout << s.str() << std::endl;
+		   }
 
 			m_kStandardRenderer = clCreateKernel(
 				hProgram, "render_kernel", &status );
@@ -602,7 +617,7 @@ void OpenCLKernel::initBuffers()
 {
    GPUKernel::initBuffers();
 	initializeDevice();
-   compileKernels( kst_file, "RayTracer.cl", "", "-cl-fast-relaxed-math" );
+   compileKernels( kst_file, "resource.dll", "", "-cl-fast-relaxed-math" );
 }
 
 OpenCLKernel::~OpenCLKernel()
