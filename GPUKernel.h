@@ -36,8 +36,8 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel(void);
-   virtual ~GPUKernel(void);
+   GPUKernel( int platform = 0, int device = 0 );
+   virtual ~GPUKernel();
 
    virtual void initBuffers();
 

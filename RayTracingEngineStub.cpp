@@ -80,9 +80,9 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetPostProcessingInfo(
    return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel()
+extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel( int platform, int device )
 {
-	gpuKernel = new GPUKERNEL();
+	gpuKernel = new GPUKERNEL( platform, device );
    if( gpuKernel == nullptr ) return -1;
 	gpuKernel->setSceneInfo( gSceneInfo );
    gpuKernel->initBuffers();

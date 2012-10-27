@@ -26,7 +26,7 @@ typedef struct BITMAPINFOHEADER {
 };
 #endif
 
-GPUKernel::GPUKernel(void)
+GPUKernel::GPUKernel(int platform, int device)
  : m_hPrimitives(0), 
    m_hBoxPrimitivesIndex(0), 
    m_hMaterials(0), 
@@ -48,7 +48,7 @@ GPUKernel::GPUKernel(void)
 }
 
 
-GPUKernel::~GPUKernel(void)
+GPUKernel::~GPUKernel()
 {
    delete m_hPrimitives;
    delete m_hMaterials;

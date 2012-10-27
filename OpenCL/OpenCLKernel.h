@@ -48,7 +48,7 @@ public:
    };
 
 public:
-	OpenCLKernel();
+	OpenCLKernel( int platform = 0, int device = 0 );
 	~OpenCLKernel();
 
    virtual void initBuffers();

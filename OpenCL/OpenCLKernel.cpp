@@ -134,7 +134,7 @@ void pfn_notify(cl_program, void *user_data)
 /*
 * OpenCLKernel constructor
 */
-OpenCLKernel::OpenCLKernel() : GPUKernel(),
+OpenCLKernel::OpenCLKernel( int platform, int device ) : GPUKernel(),
    m_hContext(0),
    m_hQueue(0),
    m_dRandoms(0),
@@ -187,7 +187,7 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
    s << ret_num_platforms << " platorm(s) detected" << "\n";
 
 	//for( int p=0;p<ret_num_platforms;++p)
-   int p=0;
+   int p=platform;
 	{
 		// Platform details
 		s << "Platform " << p << ":\n";
@@ -205,7 +205,8 @@ OpenCLKernel::OpenCLKernel() : GPUKernel(),
 		CHECKSTATUS(clGetDeviceIDs(platforms[p], CL_DEVICE_TYPE_ALL, 1, m_hDevices, &ret_num_devices));
 
 		// Devices
-		for( int d=0; d<ret_num_devices; ++d)
+		//for( int d=0; d<ret_num_devices; ++d)
+      int d = device;
 		{
 			s << "  Device " << d << ":\n";
 

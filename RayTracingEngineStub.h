@@ -42,7 +42,7 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetSceneInfo(
 extern "C" RAYTRACINGENGINE_API long RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 );
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel();
+extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel( int platform, int device );
 extern "C" RAYTRACINGENGINE_API long RayTracer_FinalizeKernel();
 
 // ---------- Camera ----------
