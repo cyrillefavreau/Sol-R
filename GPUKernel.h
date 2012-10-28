@@ -36,7 +36,7 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel( int platform = 0, int device = 0 );
+   GPUKernel( bool activeLogging, int platform = 0, int device = 0 );
    virtual ~GPUKernel();
 
    virtual void initBuffers();
@@ -214,6 +214,11 @@ protected:
 
    // Post Processing
    PostProcessingInfo m_postProcessingInfo;
+
+protected:
+
+   bool m_activeLogging; // activate or deactivate logging
+
 
 	// Kinect declarations
 #ifdef USE_KINECT

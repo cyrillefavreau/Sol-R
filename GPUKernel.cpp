@@ -27,7 +27,7 @@ typedef struct BITMAPINFOHEADER {
 };
 #endif
 
-GPUKernel::GPUKernel(int platform, int device)
+GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
  : m_hPrimitives(0), 
    m_hBoxPrimitivesIndex(0), 
    m_hMaterials(0), 
@@ -39,6 +39,7 @@ GPUKernel::GPUKernel(int platform, int device)
    m_nbActiveLamps(-1),
    m_nbActiveMaterials(-1),
    m_nbActiveTextures(0),
+   m_activeLogging(activeLogging),
 #if USE_KINECT
    m_hVideo(0), m_hDepth(0), 
 	m_skeletons(0), m_hNextDepthFrameEvent(0), m_hNextVideoFrameEvent(0), m_hNextSkeletonEvent(0),
@@ -47,7 +48,7 @@ GPUKernel::GPUKernel(int platform, int device)
 #endif // USE_KINECT
 	m_texturedTransfered(false)
 {
-   LOG_INFO(3,"GPUKernel::GPUKernel");
+   LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
 }
 
 
@@ -205,13 +206,13 @@ void GPUKernel::setPrimitive(
 
 
       // Update light
-      if( m_nbActiveLamps < 5 /* NB_MAX_LAMPS */ )
+      if( m_nbActiveLamps < NB_MAX_LAMPS )
       {
          if( m_hMaterials[materialId].innerIllumination.x != 0.f )
          {
             bool found(false);
             int i(0);
-            while( i<m_nbActiveLamps && !found )
+            while( i<=m_nbActiveLamps && !found )
             {
                if(m_hLamps[i] == index)
                   found = true;

@@ -7,18 +7,11 @@
 #include <sstream>
 #include <windows.h>
 
-static int gLogLevel = 3;
-
-#define SET_LOG_LEVEL( __level) \
-   { \
-      gLogLevel = __level; \
-   }  
-
 // std::cout << __s.str() << std::endl; \
 
 #define LOG_INFO( __level, __msg ) \
    { \
-      if( __level <= gLogLevel ) \
+      if( m_activeLogging ) \
       { \
          std::stringstream __s; \
          __s << "[INFO]  " << __msg; \

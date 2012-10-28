@@ -80,9 +80,9 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetPostProcessingInfo(
    return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel( int platform, int device )
+extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel( bool activeLogging, int platform, int device )
 {
-	gpuKernel = new GPUKERNEL( platform, device );
+	gpuKernel = new GPUKERNEL( activeLogging, platform, device );
    if( gpuKernel == nullptr ) return -1;
 	gpuKernel->setSceneInfo( gSceneInfo );
    gpuKernel->initBuffers();
@@ -231,9 +231,9 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetMaterial(
       static_cast<float>(noise),
       static_cast<float>(reflection), 
       static_cast<float>(refraction),
-      static_cast<int>(textured), 
+      (textured==0), 
       static_cast<float>(transparency), 
-      textureId,
+      static_cast<int>(textureId),
       static_cast<float>(specValue),
       static_cast<float>(specPower), 
       static_cast<float>(innerIllumination),

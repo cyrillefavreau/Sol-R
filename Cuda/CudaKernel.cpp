@@ -62,7 +62,7 @@ ________________________________________________________________________________
 CudaKernel::CudaKernel
 ________________________________________________________________________________
 */
-CudaKernel::CudaKernel( int platform, int device ) : GPUKernel( platform, device ),
+CudaKernel::CudaKernel( bool activeLogging, int platform, int device ) : GPUKernel( activeLogging, platform, device ),
    m_blockSize(1024,1024,1),
    m_sharedMemSize(256)
 {

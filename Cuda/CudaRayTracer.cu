@@ -31,7 +31,6 @@
 // Project
 #include "CudaDataTypes.h"
 #include "../Consts.h"
-#include "../Logging.h"
 
 // Globals
 #define gNbIterations 20
@@ -2067,20 +2066,14 @@ extern "C" void initialize_scene(
    cutilSafeCall(cudaMalloc( (void**)&d_kinectDepth,   gKinectDepth*gKinectDepthWidth*gKinectDepthHeight*sizeof(char)));
 #endif // USE_KINECT
 
-   LOG_INFO(3,"GPU: SceneInfo         : " << sizeof(SceneInfo));
-   LOG_INFO(3,"GPU: Ray               : " << sizeof(Ray));
-   LOG_INFO(3,"GPU: PrimitiveType     : " << sizeof(PrimitiveType));
-   LOG_INFO(3,"GPU: Material          : " << sizeof(Material));
-   LOG_INFO(3,"GPU: BoundingBox       : " << sizeof(BoundingBox));
-   LOG_INFO(3,"GPU: Primitive         : " << sizeof(Primitive));
-   LOG_INFO(3,"GPU: PostProcessingType: " << sizeof(PostProcessingType));
-   LOG_INFO(3,"GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo));
-
-   LOG_INFO(3,NB_MAX_BOXES << " boxes");
-   LOG_INFO(3,nbPrimitives << " primitives");
-   LOG_INFO(3,nbLamps << " lamps");
-   LOG_INFO(3,nbMaterials << " materials");
-   LOG_INFO(3,nbTextures << " textures");
+   std::cout <<"GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
+   std::cout <<"GPU: Ray               : " << sizeof(Ray) << std::endl;
+   std::cout <<"GPU: PrimitiveType     : " << sizeof(PrimitiveType) << std::endl;
+   std::cout <<"GPU: Material          : " << sizeof(Material) << std::endl;
+   std::cout <<"GPU: BoundingBox       : " << sizeof(BoundingBox) << std::endl;
+   std::cout <<"GPU: Primitive         : " << sizeof(Primitive) << std::endl;
+   std::cout <<"GPU: PostProcessingType: " << sizeof(PostProcessingType) << std::endl;
+   std::cout <<"GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) << std::endl;
 }
 
 /*
@@ -2213,9 +2206,9 @@ extern "C" void cudaRender(
    cudaError_t status = cudaGetLastError();
    if(status != cudaSuccess) 
    {
-      LOG_INFO(3,"ERROR: (" << status << ") " << cudaGetErrorString(status));
-      LOG_INFO(3,"INFO: Size(" << size.x << ", " << size.y << ") ");
-      LOG_INFO(3,"INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") ");
+      std::cout << "ERROR: (" << status << ") " << cudaGetErrorString(status) << std::endl;
+      std::cout << "INFO: Size(" << size.x << ", " << size.y << ") " << std::endl;
+      std::cout << "INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") " << std::endl;
    }
 
    switch( postProcessingInfo.type.x )
