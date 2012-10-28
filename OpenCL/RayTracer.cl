@@ -1708,7 +1708,7 @@ __kernel void k_depthOfField(
    }
    localColor /= postProcessingInfo.param3;
    localColor /= (sceneInfo.pathTracingIteration+1);
-   localColor.w = 0.f;
+   localColor.w = 1.f;
 
    makeOpenGLColor( localColor, bitmap, index ); 
 }
@@ -1757,7 +1757,7 @@ __kernel void k_ambiantOcclusion(
    localColor.z *= occ;
    localColor /= (sceneInfo.pathTracingIteration+1);
    saturateVector( &localColor );
-   localColor.w = 0.f;
+   localColor.w = 1.f;
 
    makeOpenGLColor( localColor, bitmap, index ); 
 }
@@ -1789,7 +1789,7 @@ __kernel void k_cartoon(
    localColor.z = (float)(b*postProcessingInfo.param3/255.f);
    localColor /= (sceneInfo.pathTracingIteration+1);
 
-   localColor.w = 0.f;
+   localColor.w = 1.f;
    makeOpenGLColor( localColor, bitmap, index ); 
 }
 
@@ -1828,7 +1828,7 @@ __kernel void k_antiAliasing(
    localColor += postProcessingBuffer[index];
    localColor /= (sceneInfo.pathTracingIteration+1);
    saturateVector( &localColor );
-   localColor.w = 0.f;
+   localColor.w = 1.f;
    makeOpenGLColor( localColor, bitmap, index ); 
 }
 

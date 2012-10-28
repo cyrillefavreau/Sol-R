@@ -25,20 +25,12 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include <sstream>
 #ifdef USE_DIRECTX
 #include <CL/cl_d3d10_ext.h>
 #endif // USE_DIRECTX
 
-#ifdef LOGGING
-#include <ETWLoggingModule.h>
-#include <ETWResources.h>
-#else
-#define LOG_INFO( msg ) std::cout << msg << std::endl;
-#define LOG_ERROR( msg ) std::cerr << msg << std::endl;
-#endif
-
 #include "OpenCLKernel.h"
+#include "../Logging.h"
 
 const long MAX_SOURCE_SIZE = 65535;
 const long MAX_DEVICES = 10;
@@ -110,9 +102,7 @@ std::string getErrorDesc(int err)
 */
 void pfn_notify(cl_program, void *user_data)
 {
-	std::stringstream s;
-	s << "OpenCL Error (via pfn_notify): " << user_data;
-	std::cerr << s.str() << std::endl;
+   LOG_ERROR( "OpenCL Error (via pfn_notify): " << user_data );
 }
 
 /*
@@ -127,7 +117,7 @@ void pfn_notify(cl_program, void *user_data)
 	__s << "==> " #stmt "\n"; \
 	__s << "ERROR : " << getErrorDesc(__status) << "\n" ; \
 	__s << "<== " #stmt "\n"; \
-	LOG_ERROR( __s.str() ); \
+	LOG_ERROR( __s.str().c_str() ); \
 	} \
 }
 
@@ -182,7 +172,7 @@ OpenCLKernel::OpenCLKernel( int platform, int device ) : GPUKernel( platform, de
 
 	std::stringstream s;
    s << "--------------------------------------------------------------------------------\n";
-	LOG_INFO("clGetPlatformIDs\n");
+	LOG_INFO(3,"clGetPlatformIDs\n");
 	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, platforms, &ret_num_platforms));
    s << ret_num_platforms << " platorm(s) detected" << "\n";
 
@@ -260,7 +250,7 @@ OpenCLKernel::OpenCLKernel( int platform, int device ) : GPUKernel( platform, de
 		s << "\n";
 	}
    s << "--------------------------------------------------------------------------------\n";
-	LOG_INFO( s.str() );
+	LOG_INFO(3, s.str().c_str() );
 
 	m_hContext = clCreateContext(NULL, ret_num_devices, &m_hDevices[0], NULL, NULL, &status );
 	m_hQueue = clCreateCommandQueue(m_hContext, m_hDevices[0], CL_QUEUE_PROFILING_ENABLE, &status);
@@ -311,15 +301,15 @@ void OpenCLKernel::compileKernels(
 
       //saveToFile("encoded.cl", source_str );
 
-		LOG_INFO("clCreateProgramWithSource\n");
+		LOG_INFO(3,"clCreateProgramWithSource\n");
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO("clCreateProgramWithSource\n");
+		LOG_INFO(3,"clCreateProgramWithSource\n");
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO("clBuildProgram\n");
+		LOG_INFO(3,"clBuildProgram\n");
 		CHECKSTATUS( clBuildProgram( hProgram, 0, NULL, options.c_str(), NULL, NULL) );
 
 		if( sourceType == kst_file)
@@ -330,23 +320,23 @@ void OpenCLKernel::compileKernels(
 
 		clUnloadCompiler();
 
-		LOG_INFO("clCreateKernel(render_kernel)\n");
+		LOG_INFO(3,"clCreateKernel(render_kernel)\n");
 		m_kStandardRenderer = clCreateKernel( hProgram, "k_standardRenderer", &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO("clCreateKernel(postProcessing_kernel)\n");
+		LOG_INFO(3,"clCreateKernel(postProcessing_kernel)\n");
       m_kDefault = clCreateKernel( hProgram, "k_default", &status );
 		CHECKSTATUS(status);
 
       cl_int computeUnits;
 		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDevices[0], CL_KERNEL_WORK_GROUP_SIZE, sizeof(cl_int), &computeUnits , NULL);
-		std::cout << "CL_KERNEL_WORK_GROUP_SIZE=" << computeUnits << std::endl;
+		LOG_INFO(3,"CL_KERNEL_WORK_GROUP_SIZE=" << computeUnits );
 
 		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDevices[0], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(m_preferredWorkGroupSize), &m_preferredWorkGroupSize , NULL);
-		std::cout << "CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE=" << m_preferredWorkGroupSize << std::endl;
+		LOG_INFO(3,"CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE=" << m_preferredWorkGroupSize );
 
 		char buffer[MAX_SOURCE_SIZE];
-		LOG_INFO("clGetProgramBuildInfo\n");
+		LOG_INFO(3,"clGetProgramBuildInfo\n");
 		CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &len ) );
 
 		if( buffer[0] != 0 ) 
@@ -354,8 +344,8 @@ void OpenCLKernel::compileKernels(
 			buffer[len] = 0;
 			std::stringstream s;
 			s << buffer;
-			LOG_INFO( s.str() );
-			std::cout << s.str() << std::endl;
+			LOG_INFO(3, s.str().c_str() );
+			LOG_INFO(3,s.str() );
 		}
 
 #if 0
@@ -430,7 +420,7 @@ void OpenCLKernel::compileKernels(
 
 			CHECKSTATUS( clBuildProgram( hProgram, 0, NULL, "", NULL, NULL) );
 
-		   LOG_INFO("clGetProgramBuildInfo\n");
+		   LOG_INFO(3,"clGetProgramBuildInfo\n");
 		   CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &lSize ) );
 
 		   if( buffer[0] != 0 ) 
@@ -438,8 +428,8 @@ void OpenCLKernel::compileKernels(
 			   buffer[lSize] = 0;
 			   std::stringstream s;
 			   s << buffer;
-			   LOG_INFO( s.str() );
-			   std::cout << s.str() << std::endl;
+			   LOG_INFO(3, s.str().c_str() );
+			   LOG_INFO(3,s.str() );
 		   }
 
 			m_kStandardRenderer = clCreateKernel(
@@ -449,7 +439,7 @@ void OpenCLKernel::compileKernels(
 			delete [] buffer;
 		}
 
-		LOG_INFO("clReleaseProgram\n");
+		LOG_INFO(3,"clReleaseProgram\n");
 		CHECKSTATUS(clReleaseProgram(hProgram));
 		hProgram = 0;
 	}
@@ -463,7 +453,7 @@ void OpenCLKernel::initializeDevice()
 {
 	int status(0);
 	// Setup device memory
-	LOG_INFO("Setup device memory\n");
+	LOG_INFO(3,"Setup device memory\n");
    int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
    m_dBitmap       = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(char)*gColorDepth,      0, NULL);
 	m_dDepthOfField = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(float4),             0, NULL);
@@ -488,7 +478,7 @@ void OpenCLKernel::initializeDevice()
 
 void OpenCLKernel::releaseDevice()
 {
-	LOG_INFO("Release device memory\n");
+	LOG_INFO(3,"Release device memory\n");
 	if( m_dPrimitives ) CHECKSTATUS(clReleaseMemObject(m_dPrimitives));
 	if( m_dBoundingBoxes ) CHECKSTATUS(clReleaseMemObject(m_dBoundingBoxes));
 	if( m_dBoxPrimitivesIndex ) CHECKSTATUS(clReleaseMemObject(m_dBoxPrimitivesIndex));

@@ -32,17 +32,10 @@
 #include <vector>
 
 #include <cuda_runtime.h>
-#ifdef LOGGING
-#include <ETWLoggingModule.h>
-#include <ETWResources.h>
-#else
-#define LOG_INFO( msg ) std::cout << msg << std::endl;
-#define LOG_ERROR( msg ) std::cerr << msg << std::endl;
-#endif
-
 #include "CudaRayTracer.h"
 #include "CudaKernel.h"
 #include "../Consts.h"
+#include "../Logging.h"
 
 const long MAX_SOURCE_SIZE = 65535;
 const long MAX_DEVICES = 10;
@@ -73,6 +66,7 @@ CudaKernel::CudaKernel( int platform, int device ) : GPUKernel( platform, device
    m_blockSize(1024,1024,1),
    m_sharedMemSize(256)
 {
+   LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
 #ifdef LOGGING
 	// Initialize Log
 	LOG_INITIALIZE_ETW(
@@ -125,6 +119,7 @@ ________________________________________________________________________________
 */
 CudaKernel::~CudaKernel()
 {
+   LOG_INFO(3,"CudaKernel::~CudaKernel");
    // Clean up
    releaseDevice();
 
@@ -152,11 +147,13 @@ ________________________________________________________________________________
 */
 void CudaKernel::initializeDevice()
 {
+   LOG_INFO(3,"CudaKernel::initializeDevice");
 	initialize_scene( m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS, NB_MAX_TEXTURES );
 }
 
 void CudaKernel::resetBoxesAndPrimitives()
 {
+   LOG_INFO(3,"CudaKernel::resetBoxesAndPrimitives");
    m_nbActiveBoxes = -1;
    m_nbActivePrimitives = -1;
 }
@@ -169,7 +166,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::releaseDevice()
 {
-	LOG_INFO("Release device memory\n");
+	LOG_INFO(3,"Release device memory\n");
 	finalize_scene();
 }
 
@@ -224,6 +221,7 @@ void CudaKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
+
 	h2d_scene( m_hBoundingBoxes, m_nbActiveBoxes+1, m_hBoxPrimitivesIndex, m_hPrimitives, m_nbActivePrimitives+1, m_hLamps, m_nbActiveLamps+1 );
 	if( !m_texturedTransfered )
 	{
@@ -262,21 +260,25 @@ void CudaKernel::render_end( char* bitmap)
 
 void CudaKernel::deviceQuery()
 {
-   std::cout << " CUDA Device Query (Runtime API) version (CUDART static linking)" << std::endl;
+   LOG_INFO(3,"CUDA Device Query (Runtime API) version (CUDART static linking)");
 
    int deviceCount = 0;
    cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
 
    if (error_id != cudaSuccess)
    {
-      std::cout << "cudaGetDeviceCount returned " << (int)error_id << " -> " << cudaGetErrorString(error_id) << std::endl;
+      LOG_INFO(3,"cudaGetDeviceCount returned " << (int)error_id << " -> " << cudaGetErrorString(error_id));
    }
 
    // This function call returns 0 if there are no CUDA capable devices.
    if (deviceCount == 0)
-      std::cout << "There is no device supporting CUDA" << std::endl;
+   {
+      LOG_INFO(3,"There is no device supporting CUDA");
+   }
    else
-      std::cout << "Found " << deviceCount << " CUDA Capable device(s)" << std::endl;
+   {
+      LOG_INFO(3,"Found " << deviceCount << " CUDA Capable device(s)");
+   }
 
    int dev, driverVersion = 0, runtimeVersion = 0;
 
@@ -286,79 +288,78 @@ void CudaKernel::deviceQuery()
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, dev);
 
-      std::cout << "Device :" << dev <<", " << deviceProp.name << std::endl;
+      LOG_INFO(3,"Device :" << dev <<", " << deviceProp.name );
 
 #if CUDART_VERSION >= 2020
       // Console log
       cudaDriverGetVersion(&driverVersion);
       cudaRuntimeGetVersion(&runtimeVersion);
-      std::cout << "  CUDA Driver Version / Runtime Version          " << driverVersion/1000 << 
+      LOG_INFO(3,"  CUDA Driver Version / Runtime Version          " << driverVersion/1000 << 
          "." << (driverVersion%100)/10 << 
          " / " << runtimeVersion/1000 << "." 
-         << (runtimeVersion%100)/10 << std::endl;
+         << (runtimeVersion%100)/10);
 #endif
-      std::cout << "  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor << std::endl;
-
-      std::cout << "  Total amount of global memory: " << 
+      LOG_INFO(3,"  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor);
+      LOG_INFO(3,"  Total amount of global memory: " << 
          (float)deviceProp.totalGlobalMem/1048576.0f << "MBytes (" << 
-         (unsigned long long) deviceProp.totalGlobalMem << " bytes)" << std::endl;
+         (unsigned long long) deviceProp.totalGlobalMem << " bytes)");
 
 #if CUDART_VERSION >= 4000
 
-      std::cout << "  Max Texture Dimension Size (x,y,z)             1D=(" << deviceProp.maxTexture1D << 
+      LOG_INFO(3,"  Max Texture Dimension Size (x,y,z)             1D=(" << deviceProp.maxTexture1D << 
          "), 2D=(" << deviceProp.maxTexture2D[0] << "," << deviceProp.maxTexture2D[1] << 
-         "), 3D=(" << deviceProp.maxTexture3D[0] << "," << deviceProp.maxTexture3D[1] << "," << deviceProp.maxTexture3D[2] << ")" << std::endl;
-      std::cout << "  Max Layered Texture Size (dim) x layers        1D=(" << deviceProp.maxTexture1DLayered[0] <<
+         "), 3D=(" << deviceProp.maxTexture3D[0] << "," << deviceProp.maxTexture3D[1] << "," << deviceProp.maxTexture3D[2] << ")");
+      LOG_INFO(3,"  Max Layered Texture Size (dim) x layers        1D=(" << deviceProp.maxTexture1DLayered[0] <<
          ") x " << deviceProp.maxTexture1DLayered[1] 
          << ", 2D=(" << deviceProp.maxTexture2DLayered[0] << "," << deviceProp.maxTexture2DLayered[1] << 
-         ") x " << deviceProp.maxTexture2DLayered[2] << std::endl;
+         ") x " << deviceProp.maxTexture2DLayered[2]);
 #endif
-      std::cout << "  Total amount of constant memory:               " << deviceProp.totalConstMem << "bytes" << std::endl;
-      std::cout << "  Total amount of shared memory per block:       " << deviceProp.sharedMemPerBlock << "bytes" << std::endl;
-      std::cout << "  Total number of registers available per block: " << deviceProp.regsPerBlock << std::endl;
-      std::cout << "  Warp size:                                     " << deviceProp.warpSize << std::endl;
-      std::cout << "  Maximum number of threads per multiprocessor:  " << deviceProp.maxThreadsPerMultiProcessor << std::endl;
-      std::cout << "  Maximum number of threads per block:           " << deviceProp.maxThreadsPerBlock << std::endl;
-      std::cout << "  Maximum sizes of each dimension of a block:    " <<
+      LOG_INFO(3,"  Total amount of constant memory:               " << deviceProp.totalConstMem << "bytes");
+      LOG_INFO(3,"  Total amount of shared memory per block:       " << deviceProp.sharedMemPerBlock << "bytes");
+      LOG_INFO(3,"  Total number of registers available per block: " << deviceProp.regsPerBlock);
+      LOG_INFO(3,"  Warp size:                                     " << deviceProp.warpSize);
+      LOG_INFO(3,"  Maximum number of threads per multiprocessor:  " << deviceProp.maxThreadsPerMultiProcessor);
+      LOG_INFO(3,"  Maximum number of threads per block:           " << deviceProp.maxThreadsPerBlock);
+      LOG_INFO(3,"  Maximum sizes of each dimension of a block:    " <<
          deviceProp.maxThreadsDim[0] << " x " <<
          deviceProp.maxThreadsDim[1] << " x " <<
-         deviceProp.maxThreadsDim[2] << std::endl;
+         deviceProp.maxThreadsDim[2]);
 
       m_blockSize.x = 16;
       m_blockSize.y = 16;
       m_blockSize.z = 1;
 
-      std::cout << "  Maximum sizes of each dimension of a grid:     " <<
+      LOG_INFO(3,"  Maximum sizes of each dimension of a grid:     " <<
          deviceProp.maxGridSize[0] << " x " <<
          deviceProp.maxGridSize[1] << " x " <<
-         deviceProp.maxGridSize[2] << std::endl;
-      std::cout << "  Maximum memory pitch:                          " << deviceProp.memPitch << "bytes" << std::endl;
-      std::cout << "  Texture alignment:                             " << deviceProp.textureAlignment  << "bytes" << std::endl;
+         deviceProp.maxGridSize[2]);
+      LOG_INFO(3,"  Maximum memory pitch:                          " << deviceProp.memPitch << "bytes");
+      LOG_INFO(3,"  Texture alignment:                             " << deviceProp.textureAlignment  << "bytes");
 
 #if CUDART_VERSION >= 4000
-      std::cout << "  Concurrent copy and execution:                 " << (deviceProp.deviceOverlap ? "Yes" : "No") << " with " << deviceProp.asyncEngineCount << "copy engine(s)" << std::endl;
+      LOG_INFO(3,"  Concurrent copy and execution:                 " << (deviceProp.deviceOverlap ? "Yes" : "No") << " with " << deviceProp.asyncEngineCount << "copy engine(s)");
 #else
-      std::cout << "  Concurrent copy and execution:                 " << (deviceProp.deviceOverlap ? "Yes" : "No") << std::endl;
+      LOG_INFO(3,"  Concurrent copy and execution:                 " << (deviceProp.deviceOverlap ? "Yes" : "No"));
 #endif
 
 #if CUDART_VERSION >= 2020
-      std::cout << "  Run time limit on kernels:                     " << (deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No") << std::endl;
-      std::cout << "  Integrated GPU sharing Host Memory:            " << (deviceProp.integrated ? "Yes" : "No") << std::endl;
-      std::cout << "  Support host page-locked memory mapping:       " << (deviceProp.canMapHostMemory ? "Yes" : "No") << std::endl;
+      LOG_INFO(3,"  Run time limit on kernels:                     " << (deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
+      LOG_INFO(3,"  Integrated GPU sharing Host Memory:            " << (deviceProp.integrated ? "Yes" : "No"));
+      LOG_INFO(3,"  Support host page-locked memory mapping:       " << (deviceProp.canMapHostMemory ? "Yes" : "No"));
 #endif
 #if CUDART_VERSION >= 3000
-      std::cout << "  Concurrent kernel execution:                   " << (deviceProp.concurrentKernels ? "Yes" : "No") << std::endl;
-      std::cout << "  Alignment requirement for Surfaces:            " << (deviceProp.surfaceAlignment ? "Yes" : "No") << std::endl;
+      LOG_INFO(3,"  Concurrent kernel execution:                   " << (deviceProp.concurrentKernels ? "Yes" : "No"));
+      LOG_INFO(3,"  Alignment requirement for Surfaces:            " << (deviceProp.surfaceAlignment ? "Yes" : "No"));
 #endif
 #if CUDART_VERSION >= 3010
-      std::cout << "  Device has ECC support enabled:                " << (deviceProp.ECCEnabled ? "Yes" : "No") << std::endl;
+      LOG_INFO(3,"  Device has ECC support enabled:                " << (deviceProp.ECCEnabled ? "Yes" : "No"));
 #endif
 #if CUDART_VERSION >= 3020
-      std::cout << "  Device is using TCC driver mode:               " << (deviceProp.tccDriver ? "Yes" : "No") << std::endl;
+      LOG_INFO(3,"  Device is using TCC driver mode:               " << (deviceProp.tccDriver ? "Yes" : "No"));
 #endif
 #if CUDART_VERSION >= 4000
-      std::cout << "  Device supports Unified Addressing (UVA):      " << (deviceProp.unifiedAddressing ? "Yes" : "No") << std::endl;
-      std::cout << "  Device PCI Bus ID / PCI location ID:           " << deviceProp.pciBusID << "/" << deviceProp.pciDeviceID << std::endl;
+      LOG_INFO(3,"  Device supports Unified Addressing (UVA):      " << (deviceProp.unifiedAddressing ? "Yes" : "No"));
+      LOG_INFO(3,"  Device PCI Bus ID / PCI location ID:           " << deviceProp.pciBusID << "/" << deviceProp.pciDeviceID);
 #endif
 
 #if CUDART_VERSION >= 2020
@@ -371,15 +372,14 @@ void CudaKernel::deviceQuery()
          "Unknown",
          NULL
       };
-      std::cout << "  Compute Mode:" << std::endl;
-      std::cout << "     < " << sComputeMode[deviceProp.computeMode] << " >" << std::endl;
+      LOG_INFO(3,"  Compute Mode:");
+      LOG_INFO(3,"     < " << sComputeMode[deviceProp.computeMode] << " >");
 #endif
    }
 
    // csv masterlog info
    // *****************************
    // exe and CUDA driver name
-   std::cout << std::endl;
    std::string sProfileString = "deviceQuery, CUDA Driver = CUDART";
    char cTemp[10];
 
@@ -420,5 +420,5 @@ void CudaKernel::deviceQuery()
    }
 
    sProfileString += "\n";
-   std::cout << sProfileString.c_str() << std::endl;
+   LOG_INFO(3, sProfileString.c_str());
 }

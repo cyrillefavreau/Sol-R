@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "GPUKernel.h"
+#include "Logging.h"
 #include "Consts.h"
 
 const int MAX_SOURCE_SIZE = 65535;
@@ -33,6 +34,7 @@ GPUKernel::GPUKernel(int platform, int device)
    m_hTextures(0), 
    m_hDepthOfField(0),
    m_hRandoms(0), 
+   m_nbActiveBoxes(-1),
 	m_nbActivePrimitives(-1), 
    m_nbActiveLamps(-1),
    m_nbActiveMaterials(-1),
@@ -45,11 +47,13 @@ GPUKernel::GPUKernel(int platform, int device)
 #endif // USE_KINECT
 	m_texturedTransfered(false)
 {
+   LOG_INFO(3,"GPUKernel::GPUKernel");
 }
 
 
 GPUKernel::~GPUKernel()
 {
+   LOG_INFO(3,"GPUKernel::~GPUKernel");
    delete m_hPrimitives;
    delete m_hMaterials;
    delete m_hTextures;
@@ -60,6 +64,7 @@ GPUKernel::~GPUKernel()
 
 void GPUKernel::initBuffers()
 {
+   LOG_INFO(3,"GPUKernel::initBuffers");
 	// Setup World
    m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];
 	memset(m_hPrimitives,0,NB_MAX_PRIMITIVES*sizeof(Primitive) ); 
@@ -93,6 +98,11 @@ ________________________________________________________________________________
 void GPUKernel::setCamera( 
 	float4 eye, float4 dir, float4 angles )
 {
+   LOG_INFO(3,"GPUKernel::setCamera(" << 
+      eye.x << "," << eye.y << "," << eye.z << " -> " <<
+      dir.x << "," << dir.y << "," << dir.z << " : "  <<
+      angles.x << "," << angles.y << "," << angles.z << ")" 
+      );
 	m_viewPos   = eye;
 	m_viewDir   = dir;
 	m_angles.x  += angles.x;
@@ -103,9 +113,11 @@ void GPUKernel::setCamera(
 
 long GPUKernel::addPrimitive( PrimitiveType type )
 {
+   LOG_INFO(3,"GPUKernel::addPrimitive");
    m_nbActivePrimitives++;
 	m_hPrimitives[m_nbActivePrimitives].type.x = type;
 	m_hPrimitives[m_nbActivePrimitives].materialId.x = NO_MATERIAL;
+   LOG_INFO(3,"m_nbActivePrimitives = " << m_nbActivePrimitives);
 	return m_nbActivePrimitives;
 }
 
@@ -128,6 +140,12 @@ void GPUKernel::setPrimitive(
    int   materialId, 
 	int   materialPaddingX, int materialPaddingY )
 {
+   LOG_INFO(3,"GPUKernel::setPrimitive( " << 
+      index << "," << boxId << ",(" << 
+      "center (" << x0 << "," << y0 << "," << z0 << ")," <<
+      "size (" << w << "," << h << "," << d << ")," <<
+      "material (" << materialId << "," << materialPaddingX << "," << materialPaddingY << ")"
+      );
 	if( index>=0 && index<=m_nbActivePrimitives) 
 	{
 		m_hPrimitives[index].p0.x   = x0;
@@ -202,7 +220,7 @@ void GPUKernel::setPrimitive(
             }
             if( !found ) 
             {
-               std::cout << "Adding lamp" << std::endl;
+               LOG_INFO(3,"Adding lamp" );
                m_nbActiveLamps++;
                m_hLamps[m_nbActiveLamps] = index;
             }
@@ -211,10 +229,15 @@ void GPUKernel::setPrimitive(
 
       updateBoundingBox( boxId, index );
 	}
+   else
+   {
+      LOG_ERROR("GPUKernel::setPrimitive: Out of bounds (" << index << "/" << NB_MAX_PRIMITIVES << ")" );
+   }
 }
 
 void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
 {
+   LOG_INFO(3,"GPUKernel::updateBoundingBox(" << boxId << "," << primitiveIndex << ")" );
    if( boxId < NB_MAX_BOXES ) 
    {
       // Bounding Box
@@ -253,7 +276,7 @@ void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
          /*
          else
          {
-            std::cout << "*** ERROR ***: Invalid PrimitiveId: " << m_hBoundingBoxes[boxId].nbPrimitives.x << "/" << NB_MAX_PRIMITIVES_PER_BOX << std::endl;
+            LOG_INFO(3,"*** ERROR ***: Invalid PrimitiveId: " << m_hBoundingBoxes[boxId].nbPrimitives.x << "/" << NB_MAX_PRIMITIVES_PER_BOX );
          }
          */
       }
@@ -274,12 +297,13 @@ void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
    }
    else
    {
-      std::cout << "*** ERROR ***: Invalid BoxId: " << boxId << "/" << NB_MAX_BOXES << std::endl;
+      LOG_ERROR("*** ERROR ***: Invalid BoxId: " << boxId << "/" << NB_MAX_BOXES );
    }
 }
 
 void GPUKernel::resetBox( int boxId, bool resetPrimitives )
 {
+   LOG_INFO(3,"GPUKernel::resetBox(" << boxId << "," << resetPrimitives << ")" );
    if( resetPrimitives ) 
    {
       m_hBoundingBoxes[boxId].nbPrimitives.x = 0;
@@ -295,6 +319,7 @@ void GPUKernel::resetBox( int boxId, bool resetPrimitives )
 
 int GPUKernel::compactBoxes()
 {
+   LOG_INFO(3,"GPUKernel::compactBoxes" );
    std::vector<BoundingBox> boxes;
    for( int i(0); i<NB_MAX_BOXES; ++i )
    {
@@ -320,6 +345,7 @@ int GPUKernel::compactBoxes()
 
 void GPUKernel::rotatePrimitives( float4 angles, int from, int to )
 {
+   LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
    float4 trigoAngles;
    trigoAngles.x = cos(angles.x); // cos(x)
    trigoAngles.y = sin(angles.x); // sin(x)
@@ -341,13 +367,14 @@ void GPUKernel::rotatePrimitives( float4 angles, int from, int to )
 }
 
 void GPUKernel::rotatePrimitive( 
-	int boxId, int primtitiveIndex, float4 angles )
+	int boxId, int index, float4 angles )
 {
-	if( primtitiveIndex>=0 && primtitiveIndex<=m_nbActivePrimitives ) 
+   LOG_INFO(3,"GPUKernel::rotatePrimitive(" << boxId << "," << index << ")" );
+	if( index>=0 && index<=m_nbActivePrimitives ) 
 	{
-      if( m_hPrimitives[primtitiveIndex].type.x == ptSphere )
+      if( m_hPrimitives[index].type.x == ptSphere )
       {
-         float4 vector = m_hPrimitives[primtitiveIndex].p0;
+         float4 vector = m_hPrimitives[index].p0;
          float4 result = vector; 
          /* X axis */ 
          result.y = vector.y*angles.x - vector.z*angles.y; 
@@ -357,14 +384,19 @@ void GPUKernel::rotatePrimitive(
          /* Y axis */ 
          result.z = vector.z*angles.z - vector.x*angles.w; 
          result.x = vector.z*angles.w + vector.x*angles.z; 
-         m_hPrimitives[primtitiveIndex].p0 = result; 
+         m_hPrimitives[index].p0 = result; 
       }
-      updateBoundingBox( boxId, primtitiveIndex );
+      updateBoundingBox( boxId, index );
 	}
+   else
+   {
+      LOG_ERROR( "GPUKernel::rotatePrimitive: Out of bounds(" << index << "/" << m_nbActivePrimitives << ")" );
+   }
 }
 
 void GPUKernel::translatePrimitives( float x, float y, float z )
 {
+   LOG_INFO(3,"GPUKernel::translatePrimitives" );
    int i=0;
 #pragma omp parallel for
    for( i=0; i<=m_nbActiveBoxes; ++i )
@@ -388,6 +420,7 @@ void GPUKernel::translatePrimitive(
 	float y, 
 	float z )
 {
+   LOG_INFO(3,"GPUKernel::translatePrimitive(" << boxId << "," << index << ")" );
 	if( index>=0 && index<=m_nbActivePrimitives) 
 	{
 		setPrimitive(
@@ -446,6 +479,7 @@ long GPUKernel::addCube(
 	int   martialId, 
 	int   materialPaddingX, int materialPaddingY )
 {
+   LOG_INFO(3,"GPUKernel::addCube(" << boxId << ")" );
 	return addRectangle(boxId, x,y,z,radius,radius,radius,martialId,materialPaddingX,materialPaddingY);
 }
 
@@ -456,6 +490,7 @@ long GPUKernel::addRectangle(
 	int   martialId, 
 	int   materialPaddingX, int materialPaddingY )
 {
+   LOG_INFO(3,"GPUKernel::addRectangle(" << boxId << ")" );
 	long returnValue;
 	// Back
 	returnValue = addPrimitive( ptXYPlane );
@@ -487,6 +522,7 @@ void GPUKernel::setPrimitiveMaterial(
 	int   index, 
 	int   materialId)
 {
+   LOG_INFO(3,"GPUKernel::setPrimitiveMaterial(" << index << "," << materialId << ")" );
 	if( index>=0 && index<=m_nbActivePrimitives) {
 		m_hPrimitives[index].materialId.x = materialId;
 	}
@@ -495,7 +531,9 @@ void GPUKernel::setPrimitiveMaterial(
 // ---------- Materials ----------
 long GPUKernel::addMaterial()
 {
+   LOG_INFO(3,"GPUKernel::addMaterial" );
    m_nbActiveMaterials++;
+   LOG_INFO(3,"m_nbActiveMaterials = " << m_nbActiveMaterials );
 	return m_nbActiveMaterials;
 }
 
@@ -509,6 +547,18 @@ void GPUKernel::setMaterial(
 	int   textureId,
 	float specValue, float specPower, float innerIllumination, float specCoef )
 {
+   LOG_INFO(3,"GPUKernel::setMaterial( " << 
+      index << "," <<
+      "color=(" << r << "," << g << "," << b << ")," <<
+      "reflection=" << reflection << "," <<
+      "refraction=" << refraction << "," <<
+      "transparency=" << transparency << "," <<
+      "procedural=" << (textured ? "true" : "false") << "," <<
+      "textureId=" << textureId << "," <<
+      "specular=(" << specValue << "," << specPower << "," << specCoef << ")," << 
+      "innerIllumination=" << innerIllumination 
+      );
+
 	if( index>=0 && index<=m_nbActiveMaterials ) 
    {
 		m_hMaterials[index].color.x     = r;
@@ -527,6 +577,10 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureId.x   = textureId;
       m_texturedTransfered = false;
 	}
+   else
+   {
+      LOG_ERROR("GPUKernel::setMaterial: Out of bounds(" << index << "/" << NB_MAX_MATERIALS << ")" );
+   }
 }
 
 // ---------- Textures ----------
@@ -534,6 +588,7 @@ void GPUKernel::setTexture(
 	int   index,
 	char* texture )
 {
+   LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
 	char* idx = m_hTextures+index*gTextureWidth*gTextureHeight*gTextureDepth;
 	int j(0);
 	for( int i(0); i<gTextureWidth*gTextureHeight*gColorDepth; i += gColorDepth ) {
@@ -559,6 +614,7 @@ void GPUKernel::setSceneInfo(
    int    pathTracingIteration,
    int    maxPathTracingIterations)
 {
+   LOG_INFO(3,"GPUKernel::setSceneInfo" );
    memset(&m_sceneInfo,0,sizeof(SceneInfo));
    m_sceneInfo.width.x                = width;
    m_sceneInfo.height.x               = height;
@@ -581,6 +637,7 @@ void GPUKernel::setPostProcessingInfo(
    float              param2,
    int                param3 )
 {
+   LOG_INFO(3,"GPUKernel::setPostProcessingInfo" );
    m_postProcessingInfo.type.x   = type;
    m_postProcessingInfo.param1.x = param1;
    m_postProcessingInfo.param2.x = param2;
@@ -603,7 +660,7 @@ char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 #endif
 	if( fp == 0 ) 
 	{
-		std::cout << "Failed to load kernel " << filename.c_str() << std::endl;
+		LOG_INFO(3,"Failed to load kernel " << filename.c_str() );
 	}
 	else 
 	{
@@ -644,7 +701,7 @@ void GPUKernel::saveToFile( const std::string& filename, const std::string& cont
 
 	if( fp == 0 ) 
 	{
-		std::cout << "Failed to save kernel " << filename.c_str() << std::endl;
+		LOG_INFO(3,"Failed to save kernel " << filename.c_str() );
 	}
 	else 
 	{
@@ -805,4 +862,3 @@ bool GPUKernel::getSkeletonPosition( int index, float4& position )
 }
 
 #endif // USE_KINECT
-

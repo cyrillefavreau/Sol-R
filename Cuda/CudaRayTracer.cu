@@ -31,6 +31,7 @@
 // Project
 #include "CudaDataTypes.h"
 #include "../Consts.h"
+#include "../Logging.h"
 
 // Globals
 #define gNbIterations 20
@@ -1894,7 +1895,7 @@ __global__ void k_depthOfField(
    }
    localColor /= PostProcessingInfo.param3.x;
    localColor /= (sceneInfo.pathTracingIteration.x+1);
-   localColor.w = 0.f;
+   localColor.w = 1.f;
 
    makeOpenGLColor( localColor, bitmap, index ); 
 }
@@ -1943,7 +1944,7 @@ __global__ void k_ambiantOcclusion(
    localColor.z *= occ;
    localColor /= (sceneInfo.pathTracingIteration.x+1);
    saturateVector( localColor );
-   localColor.w = 0.f;
+   localColor.w = 1.f;
 
    makeOpenGLColor( localColor, bitmap, index ); 
 }
@@ -1975,7 +1976,7 @@ __global__ void k_cartoon(
    localColor.z = float(b*PostProcessingInfo.param3.x/255.f);
    localColor /= (sceneInfo.pathTracingIteration.x+1);
 
-   localColor.w = 0.f;
+   localColor.w = 1.f;
    makeOpenGLColor( localColor, bitmap, index ); 
 }
 
@@ -2014,7 +2015,7 @@ __global__ void k_antiAliasing(
    localColor += postProcessingBuffer[index];
    localColor /= (sceneInfo.pathTracingIteration.x+1);
    saturateVector( localColor );
-   localColor.w = 0.f;
+   localColor.w = 1.f;
    makeOpenGLColor( localColor, bitmap, index ); 
 }
 
@@ -2066,20 +2067,20 @@ extern "C" void initialize_scene(
    cutilSafeCall(cudaMalloc( (void**)&d_kinectDepth,   gKinectDepth*gKinectDepthWidth*gKinectDepthHeight*sizeof(char)));
 #endif // USE_KINECT
 
-   std::cout << "GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
-   std::cout << "GPU: Ray               : " << sizeof(Ray) << std::endl;
-   std::cout << "GPU: PrimitiveType     : " << sizeof(PrimitiveType) << std::endl;
-   std::cout << "GPU: Material          : " << sizeof(Material) << std::endl;
-   std::cout << "GPU: BoundingBox       : " << sizeof(BoundingBox) << std::endl;
-   std::cout << "GPU: Primitive         : " << sizeof(Primitive) << std::endl;
-   std::cout << "GPU: PostProcessingType: " << sizeof(PostProcessingType) << std::endl;
-   std::cout << "GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) << std::endl;
+   LOG_INFO(3,"GPU: SceneInfo         : " << sizeof(SceneInfo));
+   LOG_INFO(3,"GPU: Ray               : " << sizeof(Ray));
+   LOG_INFO(3,"GPU: PrimitiveType     : " << sizeof(PrimitiveType));
+   LOG_INFO(3,"GPU: Material          : " << sizeof(Material));
+   LOG_INFO(3,"GPU: BoundingBox       : " << sizeof(BoundingBox));
+   LOG_INFO(3,"GPU: Primitive         : " << sizeof(Primitive));
+   LOG_INFO(3,"GPU: PostProcessingType: " << sizeof(PostProcessingType));
+   LOG_INFO(3,"GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo));
 
-   std::cout << NB_MAX_BOXES << " boxes" << std::endl;
-   std::cout << nbPrimitives << " primitives" << std::endl;
-   std::cout << nbLamps << " lamps" << std::endl;
-   std::cout << nbMaterials << " materials" << std::endl;
-   std::cout << nbTextures << " textures" << std::endl;
+   LOG_INFO(3,NB_MAX_BOXES << " boxes");
+   LOG_INFO(3,nbPrimitives << " primitives");
+   LOG_INFO(3,nbLamps << " lamps");
+   LOG_INFO(3,nbMaterials << " materials");
+   LOG_INFO(3,nbTextures << " textures");
 }
 
 /*
@@ -2212,9 +2213,9 @@ extern "C" void cudaRender(
    cudaError_t status = cudaGetLastError();
    if(status != cudaSuccess) 
    {
-      std::cout << "ERROR: (" << status << ") " << cudaGetErrorString(status) << std::endl;
-      std::cout << "INFO: Size(" << size.x << ", " << size.y << ") " << std::endl;
-      std::cout << "INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") " << std::endl;
+      LOG_INFO(3,"ERROR: (" << status << ") " << cudaGetErrorString(status));
+      LOG_INFO(3,"INFO: Size(" << size.x << ", " << size.y << ") ");
+      LOG_INFO(3,"INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") ");
    }
 
    switch( postProcessingInfo.type.x )
