@@ -81,7 +81,7 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetMaterial(
    double reflection,
    double refraction,
    int    textured,
-   float  transparency,
+   double transparency,
    int    textureId,
    double specValue, 
    double specPower, 

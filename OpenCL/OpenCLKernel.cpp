@@ -541,16 +541,25 @@ void OpenCLKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// Initialise Input arrays
-   CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dBoundingBoxes, CL_TRUE, 0, (m_nbActivePrimitives+1)*sizeof(BoundingBox), m_hBoundingBoxes, 0, NULL, NULL));
+   CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dBoundingBoxes, CL_TRUE, 0, (m_nbActiveBoxes+1)*sizeof(BoundingBox), m_hBoundingBoxes, 0, NULL, NULL));
    CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dBoxPrimitivesIndex, CL_TRUE, 0, (m_nbActivePrimitives+1)*sizeof(int), m_hBoxPrimitivesIndex, 0, NULL, NULL));
 	CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dPrimitives, CL_TRUE, 0, (m_nbActivePrimitives+1)*sizeof(Primitive), m_hPrimitives, 0, NULL, NULL));
 	CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dMaterials,  CL_TRUE, 0, (m_nbActiveMaterials+1)*sizeof(Material), m_hMaterials,  0, NULL, NULL));
 	CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dLamps, CL_TRUE, 0, (m_nbActiveLamps+1)*sizeof(int), m_hLamps,  0, NULL, NULL));
 
+   int nbBoxes = m_nbActiveBoxes+1;
+   int nbPrimitives = m_nbActivePrimitives+1;
+   int nbMaterials = m_nbActiveMaterials+1;
+   int nbLamps = m_nbActiveLamps+1;
 	if( !m_texturedTransfered )
 	{
 		CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dTextures,   CL_TRUE, 0, gTextureDepth*gTextureWidth*gTextureHeight*m_nbActiveTextures, m_hTextures,   0, NULL, NULL));
 		CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,    CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(float), m_hRandoms,    0, NULL, NULL));
+
+      LOG_INFO(3,"Boxes     : " << nbBoxes );
+      LOG_INFO(3,"Primitives: " << nbPrimitives );
+      LOG_INFO(3,"Materials : " << nbMaterials );
+      LOG_INFO(3,"Lamps     : " << nbLamps );
 		m_texturedTransfered = true;
 	}
 
@@ -567,12 +576,12 @@ void OpenCLKernel::render_begin( const float timer )
 
 	// Run the raytracing kernel!!
 	CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 0, sizeof(cl_mem), (void*)&m_dBoundingBoxes ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 1, sizeof(cl_int), (void*)&m_nbActiveBoxes ));
+   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 1, sizeof(cl_int), (void*)&nbBoxes ));
 	CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 2, sizeof(cl_mem), (void*)&m_dBoxPrimitivesIndex ));
 	CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 3, sizeof(cl_mem), (void*)&m_dPrimitives ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 4, sizeof(cl_int), (void*)&m_nbActivePrimitives ));
+   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 4, sizeof(cl_int), (void*)&nbPrimitives ));
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 5, sizeof(cl_mem), (void*)&m_dLamps ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 6, sizeof(cl_int), (void*)&m_nbActiveLamps ));
+   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 6, sizeof(cl_int), (void*)&nbLamps ));
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 7, sizeof(cl_mem), (void*)&m_dMaterials ));
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 8, sizeof(cl_mem), (void*)&m_dTextures ));
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 9, sizeof(cl_mem), (void*)&m_dRandoms ));

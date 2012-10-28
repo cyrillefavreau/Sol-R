@@ -85,7 +85,7 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%1000-500)/50.f;
+		m_hRandoms[i] = (rand()%1000-500)/500.f;
 	}
 }
 
@@ -220,9 +220,9 @@ void GPUKernel::setPrimitive(
             }
             if( !found ) 
             {
-               LOG_INFO(3,"Adding lamp" );
                m_nbActiveLamps++;
                m_hLamps[m_nbActiveLamps] = index;
+               LOG_INFO(3,"Lamp added (" << m_nbActiveLamps+1 << "/" << NB_MAX_LAMPS << ")" );
             }
          }
       }

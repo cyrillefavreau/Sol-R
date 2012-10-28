@@ -14,13 +14,14 @@ static int gLogLevel = 3;
       gLogLevel = __level; \
    }  
 
+// std::cout << __s.str() << std::endl; \
+
 #define LOG_INFO( __level, __msg ) \
    { \
       if( __level <= gLogLevel ) \
       { \
          std::stringstream __s; \
          __s << "[INFO]  " << __msg; \
-         std::cout << __s.str() << std::endl; \
          OutputDebugString(__s.str().c_str()); \
       } \
    }
@@ -29,7 +30,6 @@ static int gLogLevel = 3;
    { \
       std::stringstream __s; \
       __s << "[ERROR] " << __msg; \
-      std::cerr << __s.str() << std::endl; \
       OutputDebugString(__s.str().c_str()); \
    }
 #endif

@@ -221,15 +221,27 @@ void CudaKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
+   int nbBoxes = m_nbActiveBoxes+1;
+   int nbPrimitives = m_nbActivePrimitives+1;
+   int nbMaterials = m_nbActiveMaterials+1;
+   int nbLamps = m_nbActiveLamps+1;
 
-	h2d_scene( m_hBoundingBoxes, m_nbActiveBoxes+1, m_hBoxPrimitivesIndex, m_hPrimitives, m_nbActivePrimitives+1, m_hLamps, m_nbActiveLamps+1 );
+	h2d_scene( 
+      m_hBoundingBoxes, nbBoxes, 
+      m_hBoxPrimitivesIndex, m_hPrimitives, nbPrimitives, 
+      m_hLamps, nbLamps );
 	if( !m_texturedTransfered )
 	{
 		h2d_materials( 
-         m_hMaterials, m_nbActiveMaterials+1, 
+         m_hMaterials, nbMaterials, 
          m_hTextures,  m_nbActiveTextures, 
          m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
 		m_texturedTransfered = true;
+
+      LOG_INFO(3,"Boxes     : " << nbBoxes );
+      LOG_INFO(3,"Primitives: " << nbPrimitives );
+      LOG_INFO(3,"Materials : " << nbMaterials );
+      LOG_INFO(3,"Lamps     : " << nbLamps );
 	}
 
    // Kernel execution
@@ -239,9 +251,9 @@ void CudaKernel::render_begin( const float timer )
    ray.direction = m_viewDir;
 
    int4 objects;
-   objects.x = m_nbActiveBoxes+1;
-   objects.y = m_nbActivePrimitives+1;
-   objects.z = m_nbActiveLamps;
+   objects.x = nbBoxes;
+   objects.y = nbPrimitives;
+   objects.z = nbLamps;
    objects.w = 0;
 	cudaRender(
       m_blockSize, m_sharedMemSize,
