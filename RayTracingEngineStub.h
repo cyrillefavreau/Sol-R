@@ -92,11 +92,14 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetMaterial(
 extern "C" RAYTRACINGENGINE_API long RayTracer_AddTexture( char* filename );
 extern "C" RAYTRACINGENGINE_API long RayTracer_SetTexture( int index, HANDLE texture );
 
+#ifdef USE_KINECT
 // ---------- Kinect ----------
 extern "C" RAYTRACINGENGINE_API long RayTracer_UpdateSkeletons(
+   int index, int boxId,
    double center_x, double  center_y, double  center_z, 
    double size,
    double radius,       int materialId,
    double head_radius,  int head_materialId,
    double hands_radius, int hands_materialId,
    double feet_radius,  int feet_materialId);
+#endif // USE_KINECT

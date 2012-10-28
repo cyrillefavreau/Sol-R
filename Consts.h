@@ -47,7 +47,6 @@ const int NB_MAX_TEXTURES   = 0;
 #define gTextureHeight 256
 #define gTextureDepth  3
 
-#ifdef USE_KINECT
 // Kinect
 #define gKinectVideoWidth  640
 #define gKinectVideoHeight 480
@@ -56,4 +55,3 @@ const int NB_MAX_TEXTURES   = 0;
 #define gKinectDepthWidth  320
 #define gKinectDepthHeight 240
 #define gKinectDepth       2
-#endif // USE_KINECT

@@ -47,10 +47,8 @@ float*       d_randoms;
 float4*      d_postProcessingBuffer;
 char*        d_bitmap;
 
-#ifdef USE_KINECT
-__device__ __constant__ char*        d_kinectVideo;
-__device__ __constant__ char*        d_kinectDepth;
-#endif // USE_KINECT
+char*        d_kinectVideo;
+char*        d_kinectDepth;
 
 // ________________________________________________________________________________
 __device__ inline float vectorLength( float4 vector )
@@ -932,9 +930,7 @@ __device__ float4 intersectionShader(
    Primitive& primitive, 
    Material*  materials,
    char*      textures,
-#ifdef USE_KINECT
-   char*      kinectVideo,
-#endif // USE_KINECT
+   //char*      kinectVideo,
    float4     intersection,
    float      timer, 
    bool       back )
@@ -1009,8 +1005,6 @@ __device__ float4 intersectionShader(
          }
          break;
       }
-#endif // 0
-#ifdef USE_KINECT
    case ptCamera:
       {
          int x = (intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x;
@@ -1031,7 +1025,7 @@ __device__ float4 intersectionShader(
          }
          break;
       }
-#endif // USE_KINECT
+#endif // 0
    }
    return colorAtIntersection;
 }
@@ -1140,9 +1134,7 @@ __device__ float4 primitiveShader(
    int* boxPrimitivesIndex, Primitive* primitives, int nbActivePrimitives,
    int* lamps, int nbActiveLamps,
    Material* materials, char* textures,
-#ifdef USE_KINECT
-   char*      kinectVideo,
-#endif // USE_KINECT
+   //char*      kinectVideo,
    float* randoms,
    const float4 origin,
    const float4 normal, 
@@ -1170,9 +1162,7 @@ __device__ float4 primitiveShader(
       // Final color
       color = intersectionShader( 
          sceneInfo, primitive, materials, textures, 
-#ifdef USE_KINECT
-         kinectVideo, 
-#endif // USE_KINECT
+         //kinectVideo, 
          intersection, timer, false );
    }
    else 
@@ -1245,9 +1235,7 @@ __device__ float4 primitiveShader(
       // Final color
       float4 intersectionColor = 
          intersectionShader( sceneInfo, primitive, materials, textures,
-#ifdef USE_KINECT
-         kinectVideo, 
-#endif // USE_KINECT
+         //kinectVideo, 
          intersection, timer, false );
 
       color += totalLambert*intersectionColor*lampsColor;
@@ -1378,9 +1366,7 @@ __device__ float4 launchRay(
    int* boxPrimitivesIndex, Primitive* primitives, int nbActivePrimitives,
    int* lamps, int nbActiveLamps,
    Material*  materials, char* textures,
-#ifdef USE_KINECT
-   char*      kinectVideo, 
-#endif // USE_KINECT
+   //char*      kinectVideo, 
    float*     randoms,
    Ray        ray, 
    float      timer, 
@@ -1452,9 +1438,7 @@ __device__ float4 launchRay(
                sceneInfo,
                boundingBoxes, nbActiveBoxes,
                boxPrimitivesIndex, primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
-   #ifdef USE_KINECT
-               kinectVideo, 
-   #endif // USE_KINECT
+               //kinectVideo, 
                randoms,
                rayOrigin.origin, normal, closestPrimitive, closestIntersection, 
                iteration, timer, refractionFromColor, shadowIntensity, recursiveBlinn[iteration] );
@@ -1579,9 +1563,7 @@ __global__ void k_standardRenderer(
    int* lamps, int nbActiveLamps,
    Material*    materials,
    char*        textures,
-#ifdef USE_KINECT
-   char*        kinectVideo,
-#endif // USE_KINECT
+   //char*        kinectVideo,
    float*       randoms,
    Ray          ray,
    float4       angles,
@@ -1635,9 +1617,7 @@ __global__ void k_standardRenderer(
       boxPrimitivesIndex, primitives, nbActivePrimitives,
       lamps, nbActiveLamps,
       materials, textures, 
-#ifdef USE_KINECT
-      kinectVideo, 
-#endif // USE_KINECT
+      //kinectVideo, 
       randoms,
       ray, timer, 
       sceneInfo,
@@ -1663,9 +1643,7 @@ __global__ void k_anaglyphRenderer(
    int* lamps, int nbActiveLamps,
    Material*    materials,
    char*        textures,
-#ifdef USE_KINECT
-   char*        kinectVideo,
-#endif // USE_KINECT
+   //char*        kinectVideo,
    float*       randoms,
    Ray          ray,
    float4       angles,
@@ -1709,9 +1687,7 @@ __global__ void k_anaglyphRenderer(
       boxPrimitivesIndex, primitives, nbActivePrimitives,
       lamps, nbActiveLamps,
       materials, textures, 
-#ifdef USE_KINECT
-      kinectVideo, 
-#endif // USE_KINECT
+      //kinectVideo, 
       randoms,
       eyeRay, timer, 
       sceneInfo,
@@ -1735,9 +1711,7 @@ __global__ void k_anaglyphRenderer(
       boxPrimitivesIndex, primitives, nbActivePrimitives,
       lamps, nbActiveLamps,
       materials, textures, 
-#ifdef USE_KINECT
-      kinectVideo, 
-#endif // USE_KINECT
+      //kinectVideo, 
       randoms,
       eyeRay, timer, 
       sceneInfo,
@@ -1771,9 +1745,7 @@ __global__ void k_3DVisionRenderer(
    int* lamps, int nbActiveLamps,
    Material*    materials,
    char*        textures,
-#ifdef USE_KINECT
-   char*        kinectVideo,
-#endif // USE_KINECT
+   //char*        kinectVideo,
    float*       randoms,
    Ray          ray,
    float4       angles,
@@ -1832,9 +1804,7 @@ __global__ void k_3DVisionRenderer(
       boxPrimitivesIndex, primitives, nbActivePrimitives,
       lamps, nbActiveLamps,
       materials, textures, 
-#ifdef USE_KINECT
-      kinectVideo, 
-#endif // USE_KINECT
+      //kinectVideo, 
       randoms,
       eyeRay, timer, 
       sceneInfo,
@@ -2060,11 +2030,9 @@ extern "C" void initialize_scene(
    cutilSafeCall(cudaMalloc( (void**)&d_postProcessingBuffer,  width*height*sizeof(float4)));
    cutilSafeCall(cudaMalloc( (void**)&d_bitmap,                width*height*gColorDepth*sizeof(char)));
 
-#ifdef USE_KINECT
    // Kinect video and depth buffers
    cutilSafeCall(cudaMalloc( (void**)&d_kinectVideo,   gKinectVideo*gKinectVideoWidth*gKinectVideoHeight*sizeof(char)));
    cutilSafeCall(cudaMalloc( (void**)&d_kinectDepth,   gKinectDepth*gKinectDepthWidth*gKinectDepthHeight*sizeof(char)));
-#endif // USE_KINECT
 
    std::cout <<"GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
    std::cout <<"GPU: Ray               : " << sizeof(Ray) << std::endl;
@@ -2093,10 +2061,8 @@ extern "C" void finalize_scene()
    cutilSafeCall(cudaFree( d_randoms ));
    cutilSafeCall(cudaFree( d_postProcessingBuffer ));
    cutilSafeCall(cudaFree( d_bitmap ));
-#ifdef USE_KINECT
    cutilSafeCall(cudaFree( d_kinectVideo ));
    cutilSafeCall(cudaFree( d_kinectDepth ));
-#endif // USE_KINECT
 }
 
 /*
@@ -2126,7 +2092,6 @@ extern "C" void h2d_materials(
    cutilSafeCall(cudaMemcpy( d_randoms,   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice ));
 }
 
-#ifdef USE_KINECT
 extern "C" void h2d_kinect( 
    char* kinectVideo, int videoSize,
    char* kinectDepth, int depthSize )
@@ -2134,7 +2099,6 @@ extern "C" void h2d_kinect(
    cutilSafeCall(cudaMemcpy( d_kinectVideo, kinectVideo, videoSize*sizeof(char), cudaMemcpyHostToDevice ));
    cutilSafeCall(cudaMemcpy( d_kinectDepth, kinectDepth, depthSize*sizeof(char), cudaMemcpyHostToDevice ));
 }
-#endif // USE_KINECT
 
 /*
 ________________________________________________________________________________
@@ -2174,9 +2138,7 @@ extern "C" void cudaRender(
       {
          k_anaglyphRenderer<<<grid,blockSize,sharedMemSize>>>(
             d_boundingBoxes, objects.x, d_boxPrimitivesIndex, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
-#ifdef USE_KINECT
-            d_kinectVideo, 
-#endif // USE_KINECT
+            //d_kinectVideo, 
             d_randoms,ray, angles, sceneInfo, timer, postProcessingInfo, d_postProcessingBuffer);
          break;
       }
@@ -2184,9 +2146,7 @@ extern "C" void cudaRender(
       {
          k_3DVisionRenderer<<<grid,blockSize,sharedMemSize>>>(
             d_boundingBoxes, objects.x, d_boxPrimitivesIndex, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
-#ifdef USE_KINECT
-            d_kinectVideo, 
-#endif // USE_KINECT
+            //d_kinectVideo, 
             d_randoms,ray, angles, sceneInfo, timer, postProcessingInfo, d_postProcessingBuffer);
          break;
       }
@@ -2194,9 +2154,7 @@ extern "C" void cudaRender(
       {
          k_standardRenderer<<<grid,blockSize,sharedMemSize>>>(
             d_boundingBoxes, objects.x, d_boxPrimitivesIndex, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
-#ifdef USE_KINECT
-            d_kinectVideo, 
-#endif // USE_KINECT
+            //d_kinectVideo, 
             d_randoms,ray, angles, sceneInfo, timer, postProcessingInfo, d_postProcessingBuffer);
          break;
       }

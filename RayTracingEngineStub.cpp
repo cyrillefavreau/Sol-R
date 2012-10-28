@@ -166,6 +166,7 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_SetPrimitiveMaterial(
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API long RayTracer_UpdateSkeletons( 
+   int index, int boxId,
    double center_x, double  center_y, double center_z, 
    double size,
    double radius,       int materialId,
@@ -174,13 +175,16 @@ extern "C" RAYTRACINGENGINE_API long RayTracer_UpdateSkeletons(
    double feet_radius,  int feet_materialId)
 {
 #if USE_KINECT
+   float4 position = { static_cast<float>(center_x), static_cast<float>(center_y), static_cast<float>(center_z), 0.f };
    return gpuKernel->updateSkeletons(
-      center_x, center_y, center_z, 
-      size,
-      radius,       materialId,
-      head_radius,  head_materialId,
-      hands_radius, hands_materialId,
-      feet_radius,  feet_materialId);
+      index, boxId,
+      position,
+      static_cast<float>(size),
+      static_cast<float>(radius),
+      materialId,
+      static_cast<float>(head_radius),  head_materialId,
+      static_cast<float>(hands_radius), hands_materialId,
+      static_cast<float>(feet_radius),  feet_materialId);
 #else
    return 0;
 #endif // USE_KINECT
