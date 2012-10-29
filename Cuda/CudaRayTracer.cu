@@ -226,11 +226,11 @@ __device__ float4 cubeMapping(
    float4 result = materials[primitive.materialId.x].color;
    int x = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane) || (primitive.type.x == ptXYPlane))  ? 
       gTextureOffset+(intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x :
-   gTextureOffset+(intersection.z-primitive.p0.z+primitive.size.x)*primitive.materialInfo.x;
+      gTextureOffset+(intersection.z-primitive.p0.z+primitive.size.z)*primitive.materialInfo.x;
 
    int y = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane)) ? 
       gTextureOffset+(intersection.z+primitive.p0.z+primitive.size.z)*primitive.materialInfo.y :
-   gTextureOffset+(intersection.y-primitive.p0.y+primitive.size.z)*primitive.materialInfo.y;
+      gTextureOffset+(intersection.y-primitive.p0.y+primitive.size.y)*primitive.materialInfo.y;
 
    x = x%gTextureWidth;
    y = y%gTextureHeight;

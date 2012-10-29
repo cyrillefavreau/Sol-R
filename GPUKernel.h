@@ -22,15 +22,18 @@
 
 #pragma once
 
+#ifdef WIN32
+   #include <Windows.h>
+   #ifdef USE_KINECT
+      #include <NuiApi.h>
+   #endif // USE_KINECT
+#endif // WIN32
+
 #include <stdio.h>
 #include <string>
 
 #include "Cuda/CudaDataTypes.h"
 #include "DLL_API.h"
-
-#ifdef USE_KINECT
-#include <NuiApi.h>
-#endif // USE_KINECT
 
 class RAYTRACINGENGINE_API GPUKernel
 {

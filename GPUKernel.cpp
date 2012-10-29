@@ -153,8 +153,6 @@ void GPUKernel::setPrimitive(
 		m_hPrimitives[index].p0.y   = y0;
 		m_hPrimitives[index].p0.z   = z0;
 		m_hPrimitives[index].p0.w   = w;
-      m_hPrimitives[index].materialInfo.x = (gTextureWidth /w/2)*materialPaddingX;
-      m_hPrimitives[index].materialInfo.y = (gTextureHeight/h/2)*materialPaddingY;
 		m_hPrimitives[index].size.x = w;
 		m_hPrimitives[index].size.y = h;
 		m_hPrimitives[index].size.z = d;
@@ -167,6 +165,8 @@ void GPUKernel::setPrimitive(
 		   m_hPrimitives[index].size.x = w;
 		   m_hPrimitives[index].size.y = w;
 		   m_hPrimitives[index].size.z = w;
+         m_hPrimitives[index].materialInfo.x = (gTextureWidth /w/2)*materialPaddingX;
+         m_hPrimitives[index].materialInfo.y = (gTextureHeight/h/2)*materialPaddingY;
          break;
 #ifdef USE_KINECT
       case ptCamera:
@@ -184,6 +184,8 @@ void GPUKernel::setPrimitive(
 				m_hPrimitives[index].normal.x = 0.f;
 				m_hPrimitives[index].normal.y = 0.f;
 				m_hPrimitives[index].normal.z = 1.f;
+            m_hPrimitives[index].materialInfo.x = (gTextureWidth /w/2)*materialPaddingX;
+            m_hPrimitives[index].materialInfo.y = (gTextureHeight/h/2)*materialPaddingY;
 				break;
 			}
 		case ptYZPlane:
@@ -191,6 +193,8 @@ void GPUKernel::setPrimitive(
 				m_hPrimitives[index].normal.x = 1.f;
 				m_hPrimitives[index].normal.y = 0.f;
 				m_hPrimitives[index].normal.z = 0.f;
+            m_hPrimitives[index].materialInfo.x = (gTextureWidth /d/2)*materialPaddingX;
+            m_hPrimitives[index].materialInfo.y = (gTextureHeight/h/2)*materialPaddingY;
 				break;
 			}
 		case ptXZPlane:
@@ -199,6 +203,7 @@ void GPUKernel::setPrimitive(
 				m_hPrimitives[index].normal.x = 0.f;
 				m_hPrimitives[index].normal.y = 1.f;
 				m_hPrimitives[index].normal.z = 0.f;
+            m_hPrimitives[index].materialInfo.x = (gTextureWidth /w/2)*materialPaddingX;
             m_hPrimitives[index].materialInfo.y = (gTextureHeight/d/2)*materialPaddingY;
 				break;
 			}

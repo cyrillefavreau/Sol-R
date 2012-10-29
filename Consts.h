@@ -40,11 +40,11 @@ const int NB_MAX_TEXTURES   = 0;
 #define gColorDepth  4
 
 // Textures
-#define gTextureOffset 10000
+#define gTextureOffset 0
 //#define gTextureWidth  640
 //#define gTextureHeight 480
-#define gTextureWidth  256
-#define gTextureHeight 256
+#define gTextureWidth  1024
+#define gTextureHeight 1024
 #define gTextureDepth  3
 
 // Kinect

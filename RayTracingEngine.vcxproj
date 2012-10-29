@@ -313,7 +313,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
 copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
-      <Defines>USE_KINECT</Defines>
+      <Defines>_DEBUG;USE_KINECT</Defines>
       <GPUDebugInfo>true</GPUDebugInfo>
       <HostDebugInfo>true</HostDebugInfo>
       <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>

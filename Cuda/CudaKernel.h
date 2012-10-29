@@ -22,16 +22,8 @@
 
 #pragma once
 
-#ifdef WIN32
-	#include <windows.h>
-#endif
-
 #include "../DLL_API.h"
 #include "../GPUKernel.h"
-
-#if USE_KINECT
-#include <nuiapi.h>
-#endif // USE_KINECT
 
 class RAYTRACINGENGINE_API CudaKernel : public GPUKernel
 {
