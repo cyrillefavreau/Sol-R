@@ -301,7 +301,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -458,7 +458,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
