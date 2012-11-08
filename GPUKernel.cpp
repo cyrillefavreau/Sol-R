@@ -11,6 +11,19 @@
 
 const int MAX_SOURCE_SIZE = 65535;
 
+struct CPUInnerBox
+{
+   int    id;
+   float4 parameters[2];
+   std::vector<int> primitives;
+};
+
+struct CPUOutterBox
+{
+   float4 parameters[2];
+   std::vector<int> innerBoxes;
+};
+
 #ifndef WIN32
 typedef struct BITMAPFILEHEADER {
   short bfType;
@@ -34,7 +47,8 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
    m_hTextures(0), 
    m_hDepthOfField(0),
    m_hRandoms(0), 
-   m_nbActiveBoxes(-1),
+   m_nbActiveInnerBoxes(-1),
+   m_nbActiveOutterBoxes(0),
 	m_nbActivePrimitives(-1), 
    m_nbActiveLamps(-1),
    m_nbActiveMaterials(-1),
@@ -129,14 +143,13 @@ void GPUKernel::setPrimitive(
 	int   materialId, 
 	int   materialPaddingX, int materialPaddingY )
 {
-	setPrimitive( index, boxId, x0, y0, z0, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
+	setPrimitive( index, boxId, x0, y0, z0, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
 }
 
 void GPUKernel::setPrimitive( 
 	int index, int boxId, 
 	float x0, float y0, float z0, 
 	float x1, float y1, float z1, 
-	float x2, float y2, float z2, 
 	float w,  float h,  float d,
    int   materialId, 
 	int   materialPaddingX, int materialPaddingY )
@@ -162,6 +175,16 @@ void GPUKernel::setPrimitive(
 		switch( m_hPrimitives[index].type.x )
 		{
       case ptSphere:
+		   m_hPrimitives[index].size.x = w;
+		   m_hPrimitives[index].size.y = w;
+		   m_hPrimitives[index].size.z = w;
+         m_hPrimitives[index].materialInfo.x = (gTextureWidth /w/2)*materialPaddingX;
+         m_hPrimitives[index].materialInfo.y = (gTextureHeight/h/2)*materialPaddingY;
+         break;
+      case ptCylinder:
+		   m_hPrimitives[index].p1.x = 1.f;
+		   m_hPrimitives[index].p1.y = 0.5f;
+		   m_hPrimitives[index].p1.z = 0.f;
 		   m_hPrimitives[index].size.x = w;
 		   m_hPrimitives[index].size.y = w;
 		   m_hPrimitives[index].size.z = w;
@@ -243,20 +266,21 @@ void GPUKernel::setPrimitive(
 
 void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
 {
-   LOG_INFO(3,"GPUKernel::updateBoundingBox(" << boxId << "," << primitiveIndex << ")" );
-   if( boxId < NB_MAX_BOXES ) 
+   int bid = boxId;
+   LOG_INFO(3,"GPUKernel::updateBoundingBox(" << bid << "," << primitiveIndex << ")" );
+   if( bid < NB_MAX_BOXES ) 
    {
       // Bounding Box
-      if( boxId > m_nbActiveBoxes ) m_nbActiveBoxes = boxId;
+      //if( boxId> m_nbActiveInnerBoxes ) m_nbActiveInnerBoxes = boxId;
 
       // Is primitive already in box?
       bool found(false);
       int i(0);
-      if( m_hBoundingBoxes[boxId].nbPrimitives.x != 0 )
+      if( m_hBoundingBoxes[bid].nbPrimitives.x != 0 )
       {
-         while( !found && i<m_hBoundingBoxes[boxId].nbPrimitives.x )
+         while( !found && i<m_hBoundingBoxes[bid].nbPrimitives.x )
          {
-            found = (primitiveIndex == m_hBoxPrimitivesIndex[m_hBoundingBoxes[boxId].startIndex.x+i]);
+            found = (primitiveIndex == m_hBoxPrimitivesIndex[m_hBoundingBoxes[bid].startIndex.x+i]);
             i += found ? 0 : 1;
          }
       }
@@ -267,14 +291,14 @@ void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
          //if( i<NB_MAX_PRIMITIVES_PER_BOX )
          {
             // Shift primitive array to insert index element
-            int indexFrom = m_hBoundingBoxes[boxId].startIndex.x+m_hBoundingBoxes[boxId].nbPrimitives.x;
+            int indexFrom = m_hBoundingBoxes[bid].startIndex.x+m_hBoundingBoxes[bid].nbPrimitives.x;
             int indexTo   = indexFrom+1;
 
             memcpy( &m_hBoxPrimitivesIndex[indexTo], &m_hBoxPrimitivesIndex[indexFrom], NB_MAX_PRIMITIVES-indexTo);
 
             m_hBoxPrimitivesIndex[indexFrom] = primitiveIndex; // TODO
-            m_hBoundingBoxes[boxId].nbPrimitives.x++;
-            for( int b(boxId+1); b<NB_MAX_BOXES; ++b)
+            m_hBoundingBoxes[bid].nbPrimitives.x++;
+            for( int b(bid+1); b<NB_MAX_BOXES; ++b)
             {
                m_hBoundingBoxes[b].startIndex.x++;
             }
@@ -282,7 +306,7 @@ void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
          /*
          else
          {
-            LOG_INFO(3,"*** ERROR ***: Invalid PrimitiveId: " << m_hBoundingBoxes[boxId].nbPrimitives.x << "/" << NB_MAX_PRIMITIVES_PER_BOX );
+            LOG_INFO(3,"*** ERROR ***: Invalid PrimitiveId: " << m_hBoundingBoxes[bid].nbPrimitives.x << "/" << NB_MAX_PRIMITIVES_PER_BOX );
          }
          */
       }
@@ -294,59 +318,265 @@ void GPUKernel::updateBoundingBox( const int boxId, const int primitiveIndex )
       float y0 = m_hPrimitives[primitiveIndex].p0.y;
       float z0 = m_hPrimitives[primitiveIndex].p0.z;
 
-      if( (x0 - w) < m_hBoundingBoxes[boxId].parameters[0].x ) m_hBoundingBoxes[boxId].parameters[0].x = x0-w;
-      if( (y0 - h) < m_hBoundingBoxes[boxId].parameters[0].y ) m_hBoundingBoxes[boxId].parameters[0].y = y0-h;
-      if( (z0 - d) < m_hBoundingBoxes[boxId].parameters[0].z ) m_hBoundingBoxes[boxId].parameters[0].z = z0-d;
-      if( (x0 + w) > m_hBoundingBoxes[boxId].parameters[1].x ) m_hBoundingBoxes[boxId].parameters[1].x = x0+w;
-      if( (y0 + h) > m_hBoundingBoxes[boxId].parameters[1].y ) m_hBoundingBoxes[boxId].parameters[1].y = y0+h;
-      if( (z0 + d) > m_hBoundingBoxes[boxId].parameters[1].z ) m_hBoundingBoxes[boxId].parameters[1].z = z0+d;
+      m_hBoundingBoxes[bid].parameters[0].x = ((x0-w) < m_hBoundingBoxes[bid].parameters[0].x ) ? x0-w : m_hBoundingBoxes[bid].parameters[0].x;
+      m_hBoundingBoxes[bid].parameters[0].y = ((y0-h) < m_hBoundingBoxes[bid].parameters[0].y ) ? y0-h : m_hBoundingBoxes[bid].parameters[0].y;
+      m_hBoundingBoxes[bid].parameters[0].z = ((z0-d) < m_hBoundingBoxes[bid].parameters[0].z ) ? z0-d : m_hBoundingBoxes[bid].parameters[0].z;
+      m_hBoundingBoxes[bid].parameters[1].x = ((x0+w) > m_hBoundingBoxes[bid].parameters[1].x ) ? x0+w : m_hBoundingBoxes[bid].parameters[1].x;
+      m_hBoundingBoxes[bid].parameters[1].y = ((y0+h) > m_hBoundingBoxes[bid].parameters[1].y ) ? y0+h : m_hBoundingBoxes[bid].parameters[1].y;
+      m_hBoundingBoxes[bid].parameters[1].z = ((z0+d) > m_hBoundingBoxes[bid].parameters[1].z ) ? z0+d : m_hBoundingBoxes[bid].parameters[1].z;
    }
    else
    {
-      LOG_ERROR("*** ERROR ***: Invalid BoxId: " << boxId << "/" << NB_MAX_BOXES );
+      LOG_ERROR("*** ERROR ***: Invalid BoxId: " << bid << "/" << NB_MAX_BOXES );
    }
 }
 
 void GPUKernel::resetBox( int boxId, bool resetPrimitives )
 {
-   LOG_INFO(3,"GPUKernel::resetBox(" << boxId << "," << resetPrimitives << ")" );
+   int bid = boxId;
+   LOG_INFO(3,"GPUKernel::resetBox(" << bid << "," << resetPrimitives << ")" );
    if( resetPrimitives ) 
    {
-      m_hBoundingBoxes[boxId].nbPrimitives.x = 0;
+      m_hBoundingBoxes[bid].nbPrimitives.x = 0;
    }
 
-   m_hBoundingBoxes[boxId].parameters[0].x = m_sceneInfo.viewDistance.x;
-   m_hBoundingBoxes[boxId].parameters[0].y = m_sceneInfo.viewDistance.x;
-   m_hBoundingBoxes[boxId].parameters[0].z = m_sceneInfo.viewDistance.x;
-   m_hBoundingBoxes[boxId].parameters[1].x = -m_sceneInfo.viewDistance.x;
-   m_hBoundingBoxes[boxId].parameters[1].y = -m_sceneInfo.viewDistance.x;
-   m_hBoundingBoxes[boxId].parameters[1].z = -m_sceneInfo.viewDistance.x;
+   m_hBoundingBoxes[bid].parameters[0].x = m_sceneInfo.viewDistance.x;
+   m_hBoundingBoxes[bid].parameters[0].y = m_sceneInfo.viewDistance.x;
+   m_hBoundingBoxes[bid].parameters[0].z = m_sceneInfo.viewDistance.x;
+   m_hBoundingBoxes[bid].parameters[1].x = -m_sceneInfo.viewDistance.x;
+   m_hBoundingBoxes[bid].parameters[1].y = -m_sceneInfo.viewDistance.x;
+   m_hBoundingBoxes[bid].parameters[1].z = -m_sceneInfo.viewDistance.x;
 }
 
 int GPUKernel::compactBoxes()
 {
    LOG_INFO(3,"GPUKernel::compactBoxes" );
-   std::vector<BoundingBox> boxes;
-   for( int i(0); i<NB_MAX_BOXES; ++i )
+
+   float4 minPos = {  m_sceneInfo.viewDistance.x, m_sceneInfo.viewDistance.x, m_sceneInfo.viewDistance.x, 0.f };
+   float4 maxPos = { -m_sceneInfo.viewDistance.x,-m_sceneInfo.viewDistance.x,-m_sceneInfo.viewDistance.x, 0.f };
+   for( int i(0); i<m_nbActivePrimitives; ++i)
    {
-      BoundingBox box = m_hBoundingBoxes[i];
-      if( box.nbPrimitives.x != 0 )
+      minPos.x = (m_hPrimitives[i].p0.x<minPos.x) ? m_hPrimitives[i].p0.x : minPos.x;
+      minPos.y = (m_hPrimitives[i].p0.y<minPos.y) ? m_hPrimitives[i].p0.y : minPos.y;
+      minPos.z = (m_hPrimitives[i].p0.z<minPos.z) ? m_hPrimitives[i].p0.z : minPos.z;
+
+      maxPos.x = (m_hPrimitives[i].p0.x>maxPos.x) ? m_hPrimitives[i].p0.x : maxPos.x;
+      maxPos.y = (m_hPrimitives[i].p0.y>maxPos.y) ? m_hPrimitives[i].p0.y : maxPos.y;
+      maxPos.z = (m_hPrimitives[i].p0.z>maxPos.z) ? m_hPrimitives[i].p0.z : maxPos.z;
+   }
+   float4 size;
+   size.x = maxPos.x - minPos.x;
+   size.y = maxPos.y - minPos.y;
+   size.z = maxPos.z - minPos.z;
+
+   std::vector<CPUInnerBox> innerBoxes;
+   int boxSize = 8;
+   float4 boxSteps;
+   boxSteps.x = size.x*2.f / boxSize;
+   boxSteps.y = size.y*2.f / boxSize;
+   boxSteps.z = size.z*2.f / boxSize;
+   for( int i(0); i<m_nbActivePrimitives; ++i)
+   {
+      int X = static_cast<int>(( m_hPrimitives[i].p0.x - minPos.x ) / boxSteps.x);
+      int Y = static_cast<int>(( m_hPrimitives[i].p0.y - minPos.y ) / boxSteps.y);
+      int Z = static_cast<int>(( m_hPrimitives[i].p0.z - minPos.z ) / boxSteps.z);
+      int boxId = X*boxSize*boxSize + Y*boxSize + Z;
+      bool found(false);
+      std::vector<CPUInnerBox>::iterator it = innerBoxes.begin();
+      while( !found && it != innerBoxes.end() )
       {
-         boxes.push_back(box);
+         if( (*it).id == boxId )
+            found = true;
+         else
+            ++it;
+      }
+      if( !found) 
+      {
+         CPUInnerBox box;
+         //std::cout << "boxId (" << X << "," << Y << "," << Z << ") " << boxId << std::endl;
+         box.id = boxId;
+
+         float w = m_hPrimitives[i].size.x;
+         float h = m_hPrimitives[i].size.y;
+         float d = m_hPrimitives[i].size.z;
+         float x0 = m_hPrimitives[i].p0.x;
+         float y0 = m_hPrimitives[i].p0.y;
+         float z0 = m_hPrimitives[i].p0.z;
+
+         box.parameters[0].x = x0-w;
+         box.parameters[0].y = y0-h;
+         box.parameters[0].z = z0-d;
+         box.parameters[1].x = x0+w;
+         box.parameters[1].y = y0+h;
+         box.parameters[1].z = z0+d;
+
+         box.primitives.push_back(i);
+         innerBoxes.push_back(box);
+      }
+      else
+      {
+         CPUInnerBox& box(*it);
+
+         // Process box size
+         float w = m_hPrimitives[i].size.x;
+         float h = m_hPrimitives[i].size.y;
+         float d = m_hPrimitives[i].size.z;
+         float x0 = m_hPrimitives[i].p0.x;
+         float y0 = m_hPrimitives[i].p0.y;
+         float z0 = m_hPrimitives[i].p0.z;
+
+         box.parameters[0].x = ((x0-w) < box.parameters[0].x ) ? x0-w : box.parameters[0].x;
+         box.parameters[0].y = ((y0-h) < box.parameters[0].y ) ? y0-h : box.parameters[0].y;
+         box.parameters[0].z = ((z0-d) < box.parameters[0].z ) ? z0-d : box.parameters[0].z;
+         box.parameters[1].x = ((x0+w) > box.parameters[1].x ) ? x0+w : box.parameters[1].x;
+         box.parameters[1].y = ((y0+h) > box.parameters[1].y ) ? y0+h : box.parameters[1].y;
+         box.parameters[1].z = ((z0+d) > box.parameters[1].z ) ? z0+d : box.parameters[1].z;
+            
+         box.primitives.push_back(i);
       }
    }
-   memset(m_hBoundingBoxes,0,sizeof(BoundingBox)*NB_MAX_BOXES);
-   int index(0);
-   std::vector<BoundingBox>::const_iterator it = boxes.begin();
-   while( it != boxes.end() )
+
+   // initialize Outter boxes
+   std::vector<CPUOutterBox> outterBoxes;
+   for(int i(0);i<8;++i)
    {
-      m_hBoundingBoxes[index] = (*it);
+      CPUOutterBox outterBox;
+      outterBox.parameters[0].x =  m_sceneInfo.viewDistance.x;
+      outterBox.parameters[0].y =  m_sceneInfo.viewDistance.x;
+      outterBox.parameters[0].z =  m_sceneInfo.viewDistance.x;
+      outterBox.parameters[1].x = -m_sceneInfo.viewDistance.x;
+      outterBox.parameters[1].y = -m_sceneInfo.viewDistance.x;
+      outterBox.parameters[1].z = -m_sceneInfo.viewDistance.x;
+      outterBoxes.push_back(outterBox);
+   }
+
+   // Process innner Boxes
+   int ibId=0;
+   std::vector<CPUInnerBox>::iterator it = innerBoxes.begin();
+   while( it != innerBoxes.end() )
+   {
+      CPUInnerBox& box(*it);
+      if( box.primitives.size() != 0 )
+      {
+         int index=-1;
+         float4 center;
+         center.x = (box.parameters[0].x + box.parameters[1].x ) / 2.f;
+         center.y = (box.parameters[0].y + box.parameters[1].y ) / 2.f;
+         center.z = (box.parameters[0].z + box.parameters[1].z ) / 2.f;
+
+         if( center.x < 0.f )
+            if( center.y < 0.f )
+               if( center.z < 0.f )
+                  index = 0;
+               else
+                  index = 1;
+            else
+               if( center.z < 0.f )
+                  index = 2;
+               else
+                  index = 3;
+         else 
+            if( center.y < 0.f )
+               if( center.z < 0.f )
+                  index = 4;
+               else
+                  index = 5;
+            else
+               if( center.z < 0.f )
+                  index = 6;
+               else
+                  index = 7;
+         ///if(index != -1)
+         index = 0;
+         {
+            outterBoxes[index].innerBoxes.push_back(ibId);
+            outterBoxes[index].parameters[0].x = (box.parameters[0].x < outterBoxes[index].parameters[0].x) ? box.parameters[0].x : outterBoxes[index].parameters[0].x;
+            outterBoxes[index].parameters[0].y = (box.parameters[0].y < outterBoxes[index].parameters[0].y) ? box.parameters[0].y : outterBoxes[index].parameters[0].y;
+            outterBoxes[index].parameters[0].z = (box.parameters[0].z < outterBoxes[index].parameters[0].z) ? box.parameters[0].z : outterBoxes[index].parameters[0].z;
+
+            outterBoxes[index].parameters[1].x = (box.parameters[1].x > outterBoxes[index].parameters[1].x) ? box.parameters[1].x : outterBoxes[index].parameters[1].x;
+            outterBoxes[index].parameters[1].y = (box.parameters[1].y > outterBoxes[index].parameters[1].y) ? box.parameters[1].y : outterBoxes[index].parameters[1].y;
+            outterBoxes[index].parameters[1].z = (box.parameters[1].z > outterBoxes[index].parameters[1].z) ? box.parameters[1].z : outterBoxes[index].parameters[1].z;
+            //std::cout << "Inner box: " << ibId << " = " << (*it).primitives.size() << std::endl;
+         }
+      }
+      ibId++;
+      it++;
+   }
+
+   m_nbActiveOutterBoxes=0;
+   m_nbActiveInnerBoxes = innerBoxes.size();
+
+   // --------------------------------------------------------------------------------
+   // Reinitialize bounding boxes buffer
+   // --------------------------------------------------------------------------------
+   memset(m_hBoundingBoxes,0,sizeof(BoundingBox)*NB_MAX_BOXES);
+   memset(m_hBoxPrimitivesIndex,0,sizeof(int)*NB_MAX_PRIMITIVES);
+
+   int index(0);
+   int startInnerBoxIndex(0);
+   std::vector<CPUOutterBox>::iterator itob = outterBoxes.begin();
+   while( itob != outterBoxes.end() )
+   {
+      CPUOutterBox& outterBox(*itob);
+      //if( outterBox.innerBoxes.size() != 0 )
+      {
+         m_hBoundingBoxes[index].nbPrimitives.x = outterBox.innerBoxes.size();
+         m_hBoundingBoxes[index].parameters[0]  = outterBox.parameters[0];
+         m_hBoundingBoxes[index].parameters[1]  = outterBox.parameters[1];
+         m_hBoundingBoxes[index].startIndex.x   = startInnerBoxIndex;
+
+         int iitidx = 0;
+         std::vector<int>::const_iterator iit=outterBox.innerBoxes.begin();
+         while( iit != outterBox.innerBoxes.end() )
+         {
+            CPUInnerBox& innerBox = innerBoxes[*iit];
+            m_hBoxPrimitivesIndex[startInnerBoxIndex] = (*iit);
+            startInnerBoxIndex++;
+            ++iit;
+         }
+         /*
+         std::cout << "Outter Box " << index << std::endl;
+         std::cout << "  nbPrimitives =" << m_hBoundingBoxes[index].nbPrimitives.x << std::endl;
+         std::cout << "  parameters[0]=" << m_hBoundingBoxes[index].parameters[0].x << "," << m_hBoundingBoxes[index].parameters[0].y << "," << m_hBoundingBoxes[index].parameters[0].z << std::endl;
+         std::cout << "  parameters[1]=" << m_hBoundingBoxes[index].parameters[1].x << "," << m_hBoundingBoxes[index].parameters[1].y << "," << m_hBoundingBoxes[index].parameters[1].z << std::endl;
+         std::cout << "  startIndex   =" << m_hBoundingBoxes[index].startIndex.x << std::endl;
+         */
+         m_nbActiveOutterBoxes++;
+         index++;
+      }
+      ++itob;
+   }
+
+   int startPrimitiveIndex(startInnerBoxIndex);
+   it = innerBoxes.begin();
+   while( it != innerBoxes.end() )
+   {
+      CPUInnerBox& innerBox(*it);
+      m_hBoundingBoxes[index].nbPrimitives.x = innerBox.primitives.size();
+      m_hBoundingBoxes[index].parameters[0]  = innerBox.parameters[0];
+      m_hBoundingBoxes[index].parameters[1]  = innerBox.parameters[1];
+      m_hBoundingBoxes[index].startIndex.x   = startPrimitiveIndex;
+
+      int iitidx = 0;
+      std::vector<int>::const_iterator iit=innerBox.primitives.begin();
+      while( iit != innerBox.primitives.end() )
+      {
+         m_hBoxPrimitivesIndex[startPrimitiveIndex] = (*iit);
+         startPrimitiveIndex++;
+         ++iit;
+      }
       ++index;
       ++it;
    }
 
-   m_nbActiveBoxes = static_cast<int>(boxes.size());
-   return m_nbActiveBoxes;
+   /*
+   std::cout << "Outter boxes: " << m_nbActiveOutterBoxes << std::endl;
+   std::cout << "Inner boxes : " << m_nbActiveInnerBoxes << std::endl;
+   std::cout << "Primitives  : " << m_nbActivePrimitives << std::endl;
+   */
+   m_nbActiveOutterBoxes = 1; // TODO: Remove!!
+   return m_nbActiveInnerBoxes;
 }
 
 void GPUKernel::rotatePrimitives( float4 angles, int from, int to )
@@ -358,18 +588,27 @@ void GPUKernel::rotatePrimitives( float4 angles, int from, int to )
    trigoAngles.z = cos(angles.y); // cos(y)
    trigoAngles.w = sin(angles.y); // sin(y)
 
+#if 0
    int i=0;
    if( to > m_nbActivePrimitives ) to = m_nbActivePrimitives;
 #pragma omp parallel for
    for( i=from; i<to; ++i )
    {
       resetBox(i, false);
-      for( int j=0; j<m_hBoundingBoxes[i].nbPrimitives.x; ++j )
+      for( int j=0; j<m_hBoundingBoxes[m_nbActiveOutterBoxes+i].nbPrimitives.x; ++j )
       {
-         rotatePrimitive( i, m_hBoxPrimitivesIndex[m_hBoundingBoxes[i].startIndex.x+j], trigoAngles );
+         rotatePrimitive( i, m_hBoxPrimitivesIndex[m_hBoundingBoxes[m_nbActiveOutterBoxes+i].startIndex.x+j], trigoAngles );
       }
    }
-
+#else
+   int i=0;
+#pragma omp parallel for
+   for( i=0; i<m_nbActivePrimitives; ++i )
+   {
+      rotatePrimitive( 0, i, trigoAngles );
+   }
+#endif
+   compactBoxes();
 }
 
 void GPUKernel::rotatePrimitive( 
@@ -392,7 +631,9 @@ void GPUKernel::rotatePrimitive(
          result.x = vector.z*angles.w + vector.x*angles.z; 
          m_hPrimitives[index].p0 = result; 
       }
+#if 0
       updateBoundingBox( boxId, index );
+#endif // 0
 	}
    else
    {
@@ -405,10 +646,10 @@ void GPUKernel::translatePrimitives( float x, float y, float z )
    LOG_INFO(3,"GPUKernel::translatePrimitives" );
    int i=0;
 #pragma omp parallel for
-   for( i=0; i<=m_nbActiveBoxes; ++i )
+   for( i=0; i<=m_nbActiveInnerBoxes; ++i )
    {
       resetBox(i, false);
-      for( int j=0; j<m_hBoundingBoxes[i].nbPrimitives.x; ++j )
+      for( int j=0; j<m_hBoundingBoxes[m_nbActiveOutterBoxes+i].nbPrimitives.x; ++j )
       {
          float4 trigoAngles;
          trigoAngles.x = x;
@@ -432,11 +673,7 @@ void GPUKernel::translatePrimitive(
 		setPrimitive(
 			index, boxId,
 			m_hPrimitives[index].p0.x+x, m_hPrimitives[index].p0.y+y, m_hPrimitives[index].p0.z+z,
-         0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
-         /*
-			m_hPrimitives[index].p1.x  , m_hPrimitives[index].p1.y  , m_hPrimitives[index].p1.z,
-			m_hPrimitives[index].p2.x  , m_hPrimitives[index].p2.y  , m_hPrimitives[index].p2.z,
-         */
+			m_hPrimitives[index].p1.x+x, m_hPrimitives[index].p1.y+y, m_hPrimitives[index].p1.z+z,
 			m_hPrimitives[index].size.x, m_hPrimitives[index].size.y, m_hPrimitives[index].size.z,
 			m_hPrimitives[index].materialId.x, 1, 1 );
       updateBoundingBox( boxId, index );
@@ -500,27 +737,27 @@ long GPUKernel::addRectangle(
 	long returnValue;
 	// Back
 	returnValue = addPrimitive( ptXYPlane );
-	setPrimitive( returnValue, boxId, x, y, z+d, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, boxId, x, y, z+d, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
 
 	// Front
 	returnValue = addPrimitive( ptXYPlane );
-	setPrimitive( returnValue, boxId, x, y, z-d, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, boxId, x, y, z-d, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
 
 	// Left
 	returnValue = addPrimitive( ptYZPlane );
-	setPrimitive( returnValue, boxId, x-w, y, z, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, boxId, x-w, y, z, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
 
 	// Right
 	returnValue = addPrimitive( ptYZPlane );
-	setPrimitive( returnValue, boxId, x+w, y, z, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, boxId, x+w, y, z, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
 
 	// Top
 	returnValue = addPrimitive( ptXZPlane );
-	setPrimitive( returnValue, boxId, x, y+h, z, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, boxId, x, y+h, z, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
 
 	// Bottom
 	returnValue = addPrimitive( ptXZPlane );
-	setPrimitive( returnValue, boxId, x, y-h, z, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, boxId, x, y-h, z, 0.f, 0.f, 0.f, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
 	return returnValue;
 }
 

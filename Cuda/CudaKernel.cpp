@@ -154,7 +154,8 @@ void CudaKernel::initializeDevice()
 void CudaKernel::resetBoxesAndPrimitives()
 {
    LOG_INFO(3,"CudaKernel::resetBoxesAndPrimitives");
-   m_nbActiveBoxes = -1;
+   m_nbActiveOutterBoxes = -1;
+   m_nbActiveInnerBoxes = -1;
    m_nbActivePrimitives = -1;
 }
 
@@ -221,8 +222,8 @@ void CudaKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
-   int nbBoxes = m_nbActiveBoxes+1;
-   int nbPrimitives = m_nbActivePrimitives+1;
+   int nbBoxes = (m_nbActiveOutterBoxes+m_nbActiveInnerBoxes)+1;
+   int nbPrimitives = m_nbActivePrimitives+m_nbActiveInnerBoxes+1;
    int nbMaterials = m_nbActiveMaterials+1;
    int nbLamps = m_nbActiveLamps+1;
 
@@ -251,8 +252,8 @@ void CudaKernel::render_begin( const float timer )
    ray.direction = m_viewDir;
 
    int4 objects;
-   objects.x = nbBoxes;
-   objects.y = nbPrimitives;
+   objects.x = m_nbActiveOutterBoxes; // TODO!!! nbBoxes;
+   objects.y = nbPrimitives; // TODO?
    objects.z = nbLamps;
    objects.w = 0;
 	cudaRender(

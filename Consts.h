@@ -23,7 +23,7 @@
 
 #pragma once
 
-const int NB_MAX_BOXES      = 18*18*18;
+const int NB_MAX_BOXES      = 8 + 18*18*18;
 const int NB_MAX_PRIMITIVES = 100000;
 const int NB_MAX_LAMPS      = 10;
 const int NB_MAX_MATERIALS  = 100;

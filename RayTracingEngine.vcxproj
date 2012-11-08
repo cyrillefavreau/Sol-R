@@ -330,7 +330,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
+      <AdditionalDependencies>cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
@@ -492,7 +492,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
+      <AdditionalDependencies>cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)

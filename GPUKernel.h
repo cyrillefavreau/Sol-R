@@ -64,7 +64,6 @@ public:
 		int   index, int boxId,
 		float x0, float y0, float z0, 
 		float x1, float y1, float z1, 
-		float x2, float y2, float z2, 
       float w,  float h,  float d,
 		int   martialId, 
 		int   materialPaddingX, int materialPaddingY );
@@ -196,7 +195,8 @@ protected:
 	float4*      m_hDepthOfField;
 	float*	    m_hRandoms;
 
-   int         m_nbActiveBoxes;
+   int         m_nbActiveInnerBoxes;
+   int         m_nbActiveOutterBoxes;
 	int			m_nbActivePrimitives;
 	int			m_nbActiveLamps;
 	int			m_nbActiveMaterials;

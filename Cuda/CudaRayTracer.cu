@@ -82,6 +82,17 @@ __device__ inline float dotProduct( const float4 v1, const float4 v2 )
    return ( v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
 }
 
+// ________________________________________________________________________________
+__device__ inline float4 crossProduct( const float4& b, const float4& c )
+{
+   float4 a;
+   a.x = b.y*c.z - b.z*c.y;
+   a.y = b.z*c.x - b.x*c.z;
+   a.z = b.x*c.y - b.y*c.x;
+   return a;
+}
+
+
 /*
 ________________________________________________________________________________
 incident  : le vecteur normal inverse a la direction d'incidence de la source 
@@ -482,201 +493,72 @@ __device__ bool cylinderIntersection(
    float&    shadowIntensity,
    bool&     back) 
 {
-#if 0
-   // Top
-   bool test = (ray.direction.y<0.f && ray.origin.y>(cylinder.p0.y+cylinder.size.y));
-   test = invert ? !test : test;
-   if(test) 
+   float4 RC;
+   float d;
+   float t,s;
+   float ln;
+   float in,out;
+
+   RC  = ray.origin;
+   RC -= cylinder.p0;
+   float4 n = crossProduct(ray.direction, cylinder.p1);
+
+   ln = vectorLength(n);
+
+   float epsilon = 1.f;
+
+   // Parallel? (?)
+   if((ln<epsilon)&&(ln>-epsilon))
+      return false;
+
+   normalizeVector(n);
+
+   d=fabs( dotProduct(RC,n));
+
+   if (d<=cylinder.size.x)
    {
-      intersection.y = cylinder.p0.y+cylinder.size.y;
-      float y = ray.origin.y-cylinder.p0.y-cylinder.size.y;
-      intersection.x = ray.origin.x+y*ray.direction.x/-ray.direction.y;
-      intersection.z = ray.origin.z+y*ray.direction.z/-ray.direction.y;
-      intersection.w = 1.f; // 1 for top, -1 for bottom
+      float4 O = crossProduct(RC,cylinder.p1);
+      t = -dotProduct(O, n)/ln;
+      O = crossProduct(n,cylinder.p1);
+      normalize(O);
+      s=fabs( sqrtf(cylinder.size.x*cylinder.size.x-d*d) / dotProduct( ray.direction,O ) );
 
-      float4 v=intersection-cylinder.p0;
-      v.y = 0.f;
+      in=t-s;
+      out=t+s;
 
-      if( vectorLength(v)<cylinder.size.x ) 
-      {
-         // Shadow intensity
-         shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[cylinder.materialId.x].transparency.x);
-         normal.x = 0.f; normal.y = 1.f; normal.z = 0.f;
-         return true;
-      }
-   }
-#endif // 0
-
-   /*
-   // Bottom
-   if( !result && ray.y>0.f && origin.y<(cylinder.p0.y - cylinder.size.y) ) 
-   {
-      intersection.y = cylinder.p0.y - cylinder.size.y;
-      float y = origin.y - cylinder.p0.y + cylinder.size.y;
-      intersection.x = origin.x+y*ray.x/-ray.y;
-      intersection.z = origin.z+y*ray.z/-ray.y;
-      intersection.w = -1.f; // 1 for top, -1 for bottom
-
-      float4 v=intersection-cylinder.p0;
-      v.y = 0.f;
-      result = (vectorLength(v)<cylinder.size.x);
-
-      normal.x =  0.f;
-      normal.y = -1.f;
-      normal.z =  0.f;
-   }
-   */
-
-   float4 O_C = ray.origin - cylinder.p0;
-   O_C.y = 0.f;
-   float a = 2.f * ( ray.direction.x*ray.direction.x + ray.direction.z*ray.direction.z );
-   float b = 2.f*((ray.origin.x-cylinder.p0.x)*ray.direction.x + (ray.origin.z-cylinder.p0.z)*ray.direction.z);
-   float c = O_C.x*O_C.x + O_C.z*O_C.z - cylinder.size.x*cylinder.size.x;
-   float d = b*b-2.f*a*c;
-   if( d!=0.f )
-   {
-      float epsilon = 0.9f;
-
-      float r = sqrt(d);
-      float t1 = (-b-r)/a;
-      float t2 = (-b+r)/a;
-
-      if( t1<=epsilon && t2<=epsilon ) return false; // both intersections are behind the ray origin
-
-      back = (t1<=epsilon || t2<=epsilon); // If only one intersection (t>0) then we are inside the sphere and the intersection is at the back of the sphere
-
-      bool twoIntersections(false);
       float t=0.f;
-      float tb=0.f;
-      if( t1<=epsilon ) 
-         t = t2;
-      else 
-         if( t2<=epsilon )
-            t = t1;
-         else
-         {
-            t = (t1<t2) ? t1 : t2;
-            tb = (t1>=t2) ? t1 : t2;
-            twoIntersections = true;
-         }
-      
-      if( t<=epsilon ) return false; // Too close to intersection
-
-      intersection = ray.origin+t*ray.direction; 
-      if( fabs(intersection.y-cylinder.p0.y) > cylinder.size.y ) 
+      if (in<-epsilon)
       {
-         if( twoIntersections )
-         {
-            intersection = ray.origin+tb*ray.direction;
-            if( fabs(intersection.y-cylinder.p0.y) > cylinder.size.y ) return false;
-         }
-         else return false;
+         if(out<-epsilon)
+            return false;
+         else 
+            t=out;
+      } else if(out<-epsilon)
+      {
+         t=in;
+      } else if(in<out)
+      {
+         t=in;
+      } else
+      {
+         t=out;
       }
-      
-      // Compute normal vector
-      normal = intersection-cylinder.p0;
-      normal.y = 0.f;
-      normal.w = 0.f;
-      normal *= (back) ? -1.f : 1.f;
-      normalizeVector(normal);
 
-      // Shadow intensity
-      shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[cylinder.materialId.x].transparency.x);
+      // Calculate intersection point
+      intersection = ray.origin;
+      intersection.x+=ray.direction.x*t;
+      intersection.y+=ray.direction.y*t;
+      intersection.z+=ray.direction.z*t;
+      float4 HB=intersection;
+      HB -= cylinder.p0;
+
+      float scale = dotProduct(HB,cylinder.p1);
+      normal.x=HB.x-cylinder.p1.x*scale;
+      normal.y=HB.y-cylinder.p1.y*scale;
+      normal.z=HB.z-cylinder.p1.z*scale;
+      normalizeVector( normal );
       return true;
    }
-
-#if 0
-      // Cylinder
-      if ( /*d >= 0.f &&*/ a != 0.f) 
-      {
-         float r = sqrt(d);
-         float t1 = (-b-r)/a;
-         float t2 = (-b+r)/a;
-         float ta = (t1<t2) ? t1 : t2;
-         float tb = (t2<t1) ? t1 : t2;
-
-         float4 intersection1;
-         float4 intersection2;
-         bool i1(false);
-         bool i2(false);
-
-         if( ta > 0.f ) 
-         {
-            // First intersection
-            intersection1 = ray.origin+ta*ray.direction;
-            intersection1.w = 0.f;
-            i1 = ( fabs(intersection1.y - cylinder.p0.y) <= cylinder.size.x );
-            // Transparency
-            if(i1 && materials[cylinder.materialId.x].textureId.x != NO_TEXTURE ) 
-            {
-               float4 color = sphereUVMapping(cylinder, materials, textures, intersection1, timer );
-               i1 = ((color.x+color.y+color.z) >= sceneInfo.transparentColor.x ); 
-            }
-         }
-
-         if( tb > 0.f ) 
-         {
-            // Second intersection
-            intersection2 = ray.origin+tb*ray.direction;
-            intersection2.w = 0.f;
-            i2 = ( fabs(intersection2.y - cylinder.p0.y) <= cylinder.size.x );
-            if(i2 && materials[cylinder.materialId.x].textureId.x != NO_TEXTURE ) 
-            {
-               float4 color = sphereUVMapping(cylinder, materials, textures, intersection2, timer );
-               i2 = ((color.x+color.y+color.z) >= sceneInfo.transparentColor.x ); 
-            }
-         }
-
-         result = i1 || i2;
-         if( i1 && i2 )
-         {
-            float4 O_I1 = intersection1 - ray.origin;
-            float4 O_I2 = intersection2 - ray.origin;
-            float l1 = vectorLength(O_I1);
-            float l2 = vectorLength(O_I2);
-            if( l1 < 0.1f ) 
-            {
-               intersection = intersection2;
-            }
-            else
-            {
-               if( l2 < 0.1f )
-               {
-                  intersection = intersection1;
-               }
-               else
-               {
-                  intersection = ( l1<l2 ) ? intersection1 : intersection2;
-               }
-            }
-         }
-         else 
-         {
-            intersection = i1 ? intersection1 : intersection2;
-         }
-      }
-   }
-
-   // Normal to surface
-   if( result ) 
-   {
-      normal   = intersection-cylinder.p0;
-      normal.y = 0.f;
-      normal.w = 0.f;
-      shadowIntensity = 1.f-materials[cylinder.materialId.x].transparency.x;
-      if( materials[cylinder.materialId.x].textured.x == 1 ) 
-      {
-         float4 newCenter;
-         newCenter.x = cylinder.p0.x + 5.f*cos(timer*0.58f+intersection.x);
-         newCenter.y = cylinder.p0.y + 5.f*sin(timer*0.85f+intersection.y) + intersection.y;
-         newCenter.z = cylinder.p0.z + 5.f*sin(cos(timer*1.24f+intersection.z));
-         normal = intersection-newCenter;
-      }
-      normalizeVector( normal );
-      result = true;
-   }
-
-#endif // 0
 
    /*
    // Soft Shadows
@@ -1069,6 +951,7 @@ __device__ float processShadows(
    float      timer)
 {
    float result = 0.f;
+#ifdef TODO
    int cptBoxes = 0;
    while( result<=sceneInfo.shadowIntensity.x && cptBoxes < nbActiveBoxes )
    {
@@ -1119,6 +1002,7 @@ __device__ float processShadows(
       }
       cptBoxes++;
    }
+#endif // TODO
    return (result>1.f) ? 1.f : result;
 }
 
@@ -1276,61 +1160,79 @@ __device__ bool intersectionWithPrimitives(
    float4 intersection = {0.f,0.f,0.f,0.f};
    float4 normal       = {0.f,0.f,0.f,0.f};
 
+   // Outter boxes
    for( int cptBoxes = 0; cptBoxes < nbActiveBoxes; ++cptBoxes )
    {
-      BoundingBox& box = boundingBoxes[cptBoxes];
-      if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x/iteration) )
+      BoundingBox& outterBox = boundingBoxes[cptBoxes];
+      if( outterBox.nbPrimitives.x != 0 && boxIntersection(outterBox, r, 0.f, sceneInfo.viewDistance.x) )
       {
-         // Intersection with Box
-         if( sceneInfo.renderBoxes.x ) 
+         // Intersection with Outter Box
+         if( sceneInfo.renderBoxes.x == 1 ) 
          {
             closestPrimitive = cptBoxes;
             return true;
          }
-         int cptObjects = 0;
-         while( cptObjects<box.nbPrimitives.x)
-         { 
-            bool i = false;
-            float shadowIntensity = 0.f;
-            Primitive& primitive = primitives[boxPrimitivesIndex[box.startIndex.x+cptObjects]];
 
-            //float distance = vectorLength( ray.origin - primitive.p0 ) - primitive.size.x; // TODO! Not sure if i should keep it
-            //if( distance < minDistance )
+         // Process inner boxes
+         int cptInnerBox = 0;
+         while( cptInnerBox<outterBox.nbPrimitives.x )
+         {
+            BoundingBox& innerBox = boundingBoxes[boxPrimitivesIndex[outterBox.startIndex.x+cptInnerBox]];
+            if( boxIntersection(innerBox, r, 0.f, sceneInfo.viewDistance.x) )
             {
-               switch( primitive.type.x )
+               // Intersection with Box
+               if( sceneInfo.renderBoxes.x == 2 ) 
                {
-               case ptEnvironment :
-               case ptSphere      : 
-                  i = sphereIntersection  ( sceneInfo, primitive, materials, textures, r, timer, intersection, normal, shadowIntensity, back ); 
-                  break;
-               case ptCylinder: 
-                  i = cylinderIntersection( sceneInfo, primitive, materials, textures, r, false, timer, intersection, normal, shadowIntensity, back ); 
-                  break;
-#if 0
-               case ptTriangle: 
-                  i = triangleIntersection( primitive, r, timer, intersection, normal, false, shadowIntensity, transparentColor ); 
-                  break;
-#endif // 0
-               default        : 
-                  i = planeIntersection   ( primitive, materials, textures, r, false, shadowIntensity, intersection, normal, sceneInfo.transparentColor.x, timer); 
-                  break;
+                  closestPrimitive = boxPrimitivesIndex[innerBox.startIndex.x+cptInnerBox];
+                  return true;
                }
 
-               if( i ) 
-               {
-                  float distance = vectorLength( ray.origin - intersection );
-                  if(distance>1.f && distance<minDistance) 
+               int cptObjects = 0;
+               while( cptObjects<innerBox.nbPrimitives.x)
+               { 
+                  bool i = false;
+                  float shadowIntensity = 0.f;
+                  Primitive& primitive = primitives[boxPrimitivesIndex[innerBox.startIndex.x+cptObjects]];
+                  //float distance = vectorLength( ray.origin - primitive.p0 ) - primitive.size.x; // TODO! Not sure if i should keep it
+                  //if( distance < minDistance )
                   {
-                     // Only keep intersection with the closest object
-                     minDistance         = distance;
-                     closestPrimitive    = boxPrimitivesIndex[box.startIndex.x+cptObjects];
-                     closestIntersection = intersection;
-                     closestNormal       = normal;
-                     intersections       = true;
-                  } 
+                     switch( primitive.type.x )
+                     {
+                     case ptEnvironment :
+                     case ptSphere      : 
+                        i = sphereIntersection  ( sceneInfo, primitive, materials, textures, r, timer, intersection, normal, shadowIntensity, back ); 
+                        break;
+                     case ptCylinder: 
+                        i = cylinderIntersection( sceneInfo, primitive, materials, textures, r, false, timer, intersection, normal, shadowIntensity, back ); 
+                        break;
+      #if 0
+                     case ptTriangle: 
+                        i = triangleIntersection( primitive, r, timer, intersection, normal, false, shadowIntensity, transparentColor ); 
+                        break;
+      #endif // 0
+                     default        : 
+                        i = planeIntersection   ( primitive, materials, textures, r, false, shadowIntensity, intersection, normal, sceneInfo.transparentColor.x, timer); 
+                        break;
+                     }
+
+                     if( i ) 
+                     {
+                        float distance = vectorLength( ray.origin - intersection );
+                        if(distance>1.f && distance<minDistance) 
+                        {
+                           // Only keep intersection with the closest object
+                           minDistance         = distance;
+                           closestPrimitive    = boxPrimitivesIndex[innerBox.startIndex.x+cptObjects];
+                           closestIntersection = intersection;
+                           closestNormal       = normal;
+                           intersections       = true;
+                        } 
+                     }
+                  }
+                  cptObjects++;
                }
             }
-            cptObjects++;
+            cptInnerBox++;
          }
       }
    }

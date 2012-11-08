@@ -92,14 +92,14 @@ struct BoundingBox
    float4 parameters[2];
    int1   nbPrimitives;
    int1   startIndex;
-   int2   bidon; // Alignment issues
+   int2   type; // Alignment issues
 };
 
 struct Primitive
 {
-	float4 p0;
+	float4 center;
+	float4 axis;
 	float4 normal;
-	float4 rotation;
 	float4 size;
 	int1   type;
 	int1   materialId;
