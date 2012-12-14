@@ -77,19 +77,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'" Label="Configuration">
@@ -117,26 +114,23 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 4.2.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 5.0.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -254,6 +248,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -268,7 +264,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <GPUDebugInfo>true</GPUDebugInfo>
       <HostDebugInfo>true</HostDebugInfo>
       <Defines>_DEBUG</Defines>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'">
@@ -278,6 +274,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_OPENCL;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -285,14 +283,16 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>opencl.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <GPUDebugInfo>true</GPUDebugInfo>
       <HostDebugInfo>true</HostDebugInfo>
       <Defines>_DEBUG</Defines>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">
@@ -302,6 +302,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -316,7 +318,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <Defines>_DEBUG;USE_KINECT</Defines>
       <GPUDebugInfo>true</GPUDebugInfo>
       <HostDebugInfo>true</HostDebugInfo>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
@@ -326,6 +328,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -343,7 +347,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </CudaCompile>
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">
@@ -353,6 +357,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -370,7 +376,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </CudaCompile>
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
@@ -380,6 +386,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;_DEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -395,7 +403,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     <CudaCompile>
       <Defines>_DEBUG;USE_KINECT</Defines>
       <HostDebugInfo>true</HostDebugInfo>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
@@ -407,6 +415,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -421,7 +431,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">
@@ -433,6 +443,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_OPENCL;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -442,12 +454,14 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>opencl.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
+      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
+copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
+copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">
@@ -459,6 +473,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -474,7 +490,7 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
@@ -486,6 +502,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -502,7 +520,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <Defines>WIN32</Defines>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
@@ -514,6 +533,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_OPENCL;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -530,7 +551,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
@@ -542,6 +563,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -559,7 +582,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_10,sm_10;compute_13,sm_13;compute_20,sm_20;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -593,6 +616,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="PDBReader.h" />
     <ClInclude Include="RayTracingEngineStub.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
@@ -614,6 +638,7 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="PDBReader.cpp" />
     <ClCompile Include="RayTracingEngineStub.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -635,6 +660,10 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">true</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">ioc32.exe -input=$(InputFile)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">ioc32.exe -input=$(InputFile)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">opencl.log</Outputs>
+      <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -642,6 +671,6 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 4.2.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 5.0.targets" />
   </ImportGroup>
 </Project>

@@ -19,6 +19,9 @@
     <Filter Include="Source Files\OpenCL">
       <UniqueIdentifier>{4f9cd01d-485d-4063-b032-bd25aa6accc8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\PDB">
+      <UniqueIdentifier>{307bc309-c041-4b04-9d04-4c22ebb2bb36}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -51,6 +54,9 @@
     <ClInclude Include="Logging.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="PDBReader.h">
+      <Filter>Source Files\PDB</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -65,6 +71,9 @@
     <ClCompile Include="RayTracingEngineStub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PDBReader.cpp">
+      <Filter>Source Files\PDB</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Cuda\CudaRayTracer.cu">
@@ -72,13 +81,13 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="OpenCL\RayTracer.cl">
-      <Filter>Source Files\OpenCL</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="RayTracingEngine.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="OpenCL\RayTracer.cl">
+      <Filter>Source Files\OpenCL</Filter>
+    </None>
   </ItemGroup>
 </Project>

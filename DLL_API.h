@@ -22,8 +22,12 @@
 
 #pragma once
 
-#ifdef RAYTRACINGENGINE_EXPORTS
-#define RAYTRACINGENGINE_API __declspec(dllexport)
+#ifdef WIN32
+	#ifdef RAYTRACINGENGINE_EXPORTS
+	#define RAYTRACINGENGINE_API __declspec(dllexport)
+	#else
+	#define RAYTRACINGENGINE_API __declspec(dllimport)
+	#endif
 #else
-#define RAYTRACINGENGINE_API __declspec(dllimport)
+	#define RAYTRACINGENGINE_API
 #endif

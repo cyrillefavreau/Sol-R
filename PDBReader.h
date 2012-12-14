@@ -1,4 +1,5 @@
 /* 
+* OpenCL Raytracer
 * Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
@@ -22,46 +23,40 @@
 
 #pragma once
 
-#include "../DLL_API.h"
-#include "../GPUKernel.h"
+#include "GPUKernel.h"
 
-class RAYTRACINGENGINE_API CudaKernel : public GPUKernel
+enum GeometryType
+{
+   gtAtoms           = 0,
+   gtFixedSizeAtoms  = 1,
+   gtSticks          = 2,
+   gtAtomsAndSticks  = 3
+};
+
+class RAYTRACINGENGINE_API PDBReader
 {
 public:
 
-   CudaKernel(bool activeLogging, bool protein, int platform = 0, int device = 0);
-	~CudaKernel();
-
-   virtual void initBuffers();
-
-public:
-	// ---------- Devices ----------
-	void initializeDevice();
-	void releaseDevice();
-
-   void deviceQuery();
-
-   void resetBoxesAndPrimitives();
-
-public:
-	// ---------- Rendering ----------
-	void render_begin( const float timer );
-   void render_end( char* bitmap);
+   PDBReader(void);
+   virtual ~PDBReader(void);
 
 public:
 
-   void setBlockSize( int x, int y, int z)    { m_blockSize.x = x; m_blockSize.y = y; m_blockSize.z = z; };
-   void setSharedMemSize( int sharedMemSize ) { m_sharedMemSize = sharedMemSize; };
+   float4 loadAtomsFromFile( 
+      const std::string& filename,
+      GPUKernel& cudaKernel,
+      int boxId, int nbMaxBoxes,
+      GeometryType geometryType,
+      float defaultAtomSize,
+      float defaultStickSize,
+      int   materialType);
+
+   int getNbBoxes() { return m_nbBoxes; }
+   int getNbPrimitives() { return m_nbPrimitives; }
 
 private:
 
-   // Runtime kernel execution parameters
-   int4 m_blockSize;
-   int  m_sharedMemSize;
-
-private:
-
-   // Bitmap output
-   int m_imageCount;
+   int m_nbPrimitives;
+   int m_nbBoxes;
 
 };

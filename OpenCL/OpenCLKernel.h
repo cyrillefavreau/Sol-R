@@ -29,7 +29,11 @@
 
 #include <stdio.h>
 #include <string>
+
+#ifdef WIN32
 #include <windows.h>
+#endif // WIN32
+
 #if USE_KINECT
 #include <nuiapi.h>
 #endif // USE_KINECT
@@ -48,7 +52,7 @@ public:
    };
 
 public:
-	OpenCLKernel( bool activeLogging, int platform = 0, int device = 0 );
+	OpenCLKernel( bool activeLogging, bool protein, int platform = 0, int device = 0 );
 	~OpenCLKernel();
 
    virtual void initBuffers();
@@ -89,8 +93,13 @@ private:
 	cl_mem m_dTextures;
 	cl_mem m_dDepthOfField;
 	cl_mem m_dRandoms;
+   cl_mem m_dPrimitiveIDs;
 	cl_mem m_dBitmap;
    cl_mem m_dPostProcessingBuffer;
+
+private:
+
+   int* m_hPrimitiveIDs;
 
 #ifdef KINECT
 private:

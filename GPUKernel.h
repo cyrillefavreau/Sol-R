@@ -12,7 +12,7 @@
  * Library General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+ * aint with this program.  If not, see <http://www.gnu.org/licenses/>. 
  */
 
 /*
@@ -39,7 +39,7 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel( bool activeLogging, int platform = 0, int device = 0 );
+   GPUKernel( bool activeLogging, bool protein, int platform = 0, int device = 0 );
    virtual ~GPUKernel();
 
    virtual void initBuffers();
@@ -53,7 +53,7 @@ public:
 public:
 
 	// ---------- Primitives ----------
-	long addPrimitive( PrimitiveType type );
+	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
 		int   index, int boxId,
 		float x0, float y0, float z0, 
@@ -67,13 +67,14 @@ public:
       float w,  float h,  float d,
 		int   martialId, 
 		int   materialPaddingX, int materialPaddingY );
-   void rotatePrimitives( float4 angles, int from, int to );
-	void rotatePrimitive( int boxId, int primitiveIndex, float4 angles );
+   int getPrimitiveAt( int x, int y );
+
+   void rotatePrimitives( float4 rotationCenter, float4 angles, int from, int to );
+	void rotatePrimitive( int boxId, int primitiveIndex, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
 	void translatePrimitive( int   index, int boxId, float x, float y, float z );
    void translatePrimitives( float x, float y, float z );
-	void setPrimitiveMaterial( 
-		int   index, 
-		int   materialId); 
+	void setPrimitiveMaterial( int index, int materialId); 
+	int  getPrimitiveMaterial( int index); 
 	void getPrimitiveCenter( int index, float& x, float& y, float& z, float& w );
 	void setPrimitiveCenter( int index, int boxId, float  x, float  y, float  z, float  w );
 
@@ -83,19 +84,19 @@ public:
    void resetBox( int boxId, const bool resetPrimitives = true );
    BoundingBox& getBoundingBox( const int boxIndex ) { return m_hBoundingBoxes[boxIndex]; };
    int compactBoxes();
-   void DisplayBoxesInfo();
+   void displayBoxesInfo();
 
 public:
 
 	// ---------- Complex objects ----------
-	long addCube( 
+	int addCube( 
       int boxId,
 		float x, float y, float z, 
 		float radius, 
 		int   martialId, 
 		int   materialPaddingX, int materialPaddingY );
 
-	long addRectangle(
+	int addRectangle(
       int boxId,
 		float x, float y, float z, 
       float w, float h, float d,
@@ -105,17 +106,31 @@ public:
 public:
 
 	// ---------- Materials ----------
-	long addMaterial();
+	int addMaterial();
 	void setMaterial( 
 		int   index,
 		float r, float g, float b, float noise,
 		float reflection, 
 		float refraction,
-		bool  textured,
+		bool  procedural,
+      bool  wireframe, int wireframeWidth,
 		float transparency,
 		int   textureId,
 		float specValue, float specPower, 
       float innerIllumination, float specCoef );
+
+   int getMaterial( 
+		int    index,
+		float& r, float& g, float& b, float& noise,
+		float& reflection, 
+		float& refraction,
+		bool&  procedural,
+      bool&  wireframe,
+      int&   wireframeDepth,
+		float& transparency,
+		int&   textureId,
+		float& specValue, float& specPower, 
+      float& innerIllumination, float& specCoef );
 
 public:
 
@@ -130,7 +145,7 @@ public:
 		int   index,
 		char* texture );
 
-	long addTexture( 
+	int addTexture( 
 		const std::string& filename );
 
 public:
@@ -145,7 +160,9 @@ public:
       float4 backgroundColor,
       bool   supportFor3DVision, float  width3DVision,
       bool   renderBoxes,
-      int    pathTracingIteration, int    maxPathTracingIterations);
+      int    pathTracingIteration, 
+      int    maxPathTracingIterations,
+      OutputType outputType);
 
    void setSceneInfo( const SceneInfo& sceneInfo ) { m_sceneInfo = sceneInfo; };
 
@@ -156,11 +173,20 @@ public:
       int                param3 );
    void setPostProcessingInfo( const PostProcessingInfo& postProcessingInfo ) { m_postProcessingInfo = postProcessingInfo; }
 
+   // lamps
+   void resetLamps();
+
+public:
+   
+   // Bitmap export
+   void saveBitmapToFile( const std::string& filename, char* bitmap );
+
+
 #ifdef USE_KINECT
 public:
 	// ---------- Kinect ----------
 
-	long updateSkeletons( 
+	int updateSkeletons( 
       int    primitiveIndex,
       int    boxId,
 		float4 skeletonPosition, 
@@ -171,10 +197,13 @@ public:
 		float feet_radius,  int feet_materialId);
 
 	bool getSkeletonPosition( int index, float4& position );
+   char* getDepthBitmap() { return m_hDepth; }
+   char* getVideoBitmap() { return m_hVideo; }
 #endif // USE_KINECT
 
 public:
 
+	int getNbActiveBoxes()      { return m_nbActiveBoxes; };
 	int getNbActivePrimitives() { return m_nbActivePrimitives; };
 	int getNbActiveints()       { return m_nbActiveLamps; };
 	int getNbActiveMaterials()  { return m_nbActiveMaterials; };
@@ -194,9 +223,9 @@ protected:
 	char*        m_hTextures;
 	float4*      m_hDepthOfField;
 	float*	    m_hRandoms;
+   int*         m_hPrimitivesXYIds;
 
-   int         m_nbActiveInnerBoxes;
-   int         m_nbActiveOutterBoxes;
+   int         m_nbActiveBoxes;
 	int			m_nbActivePrimitives;
 	int			m_nbActiveLamps;
 	int			m_nbActiveMaterials;
@@ -208,7 +237,7 @@ protected:
 protected:
 
 	int			m_draft;
-	bool		   m_texturedTransfered;
+	bool		   m_textureTransfered;
 
 protected:
 
@@ -221,6 +250,7 @@ protected:
 protected:
 
    bool m_activeLogging; // activate or deactivate logging
+   bool m_protein; 
 
 
 	// Kinect declarations
@@ -234,9 +264,9 @@ protected:
 	HANDLE             m_pDepthStreamHandle;
 	NUI_SKELETON_FRAME m_skeletonFrame;
 
-	long               m_skeletonIndex;
-	long               m_skeletonsBody;
-	long               m_skeletonsLamp;
+	int               m_skeletonIndex;
+	int               m_skeletonsBody;
+	int               m_skeletonsLamp;
 
    char* m_hVideo;
    char* m_hDepth;

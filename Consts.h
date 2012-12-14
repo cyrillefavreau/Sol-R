@@ -23,35 +23,33 @@
 
 #pragma once
 
-const int NB_MAX_BOXES      = 8 + 18*18*18;
+const int NB_MAX_BOXES      = 18*18*18;
 const int NB_MAX_PRIMITIVES = 100000;
-const int NB_MAX_LAMPS      = 10;
+const int NB_MAX_LAMPS      = 100;
 const int NB_MAX_MATERIALS  = 100;
-#ifdef WIN32
-const int NB_MAX_TEXTURES   = 50;
-#else
-const int NB_MAX_TEXTURES   = 0;
-#endif
+const int NB_MAX_TEXTURES   = 10;
 
 
 // Constants
 #define NO_MATERIAL -1
 #define NO_TEXTURE  -1
-#define gColorDepth  4
+#define gColorDepth  3
 
 // Textures
-#define gTextureOffset 0
-//#define gTextureWidth  640
-//#define gTextureHeight 480
-#define gTextureWidth  1024
-#define gTextureHeight 1024
-#define gTextureDepth  3
+const int gTextureWidth  = 1024;
+const int gTextureHeight = 1024;
+const int gTextureDepth  = 3;
+const int gTextureSize   = gTextureWidth*gTextureHeight*gTextureDepth;
 
 // Kinect
-#define gKinectVideoWidth  640
-#define gKinectVideoHeight 480
-#define gKinectVideo       4
+const int gKinectVideoWidth  = 640;
+const int gKinectVideoHeight = 480;
+const int gKinectVideo       = 4;
+const int gKinectVideoSize   = gKinectVideoWidth*gKinectVideoHeight*gKinectVideo;
 
-#define gKinectDepthWidth  320
-#define gKinectDepthHeight 240
-#define gKinectDepth       2
+const int gKinectDepthWidth  = 320;
+const int gKinectDepthHeight = 240;
+const int gKinectDepth       = 2;
+const int gKinectDepthSize   = gKinectDepthWidth*gKinectDepthHeight*gKinectDepth;
+
+const int gTextureOffset = gKinectVideoSize+gKinectDepthSize;

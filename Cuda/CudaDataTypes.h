@@ -33,6 +33,12 @@ enum VisionType
    vt3DVision = 2
 };
 
+enum OutputType
+{
+   otOpenGL = 0,
+   otDelphi = 1
+};
+
 // Scene information
 struct SceneInfo
 {
@@ -49,6 +55,7 @@ struct SceneInfo
    int1    renderBoxes;
    int1    pathTracingIteration;
    int1    maxPathTracingIterations;
+   int4    misc; // x : OpenCL=0 or Delphi=1, y: timer
 };
 
 struct Ray
@@ -63,13 +70,13 @@ struct Ray
 enum PrimitiveType 
 {
 	ptSphere      = 0,
-	ptTriangle    = 1,
-	ptCheckboard  = 2,
-	ptCamera      = 3,
-	ptXYPlane     = 4,
-	ptYZPlane     = 5,
-	ptXZPlane     = 6,
-	ptCylinder    = 7,
+	ptCylinder    = 1,
+	ptTriangle    = 2,
+	ptCheckboard  = 3,
+	ptCamera      = 4,
+	ptXYPlane     = 5,
+	ptYZPlane     = 6,
+	ptXZPlane     = 7,
    ptMagicCarpet = 8,
    ptEnvironment = 9
 };
@@ -77,14 +84,14 @@ enum PrimitiveType
 // TODO! Data structure is too big!!!
 struct Material
 {
-   float4 innerIllumination;
+   float4 innerIllumination; // x: inner illumination
 	float4 color;
-   float4 specular;       // x: value, y: power, w: coef, z: inner illumination
-   float4 reflection;     
-	float4 refraction;
-   float4 transparency;
-	int4   textured;
-   int4   textureId;
+   float4 specular;          // x: value, y: power, w: coef
+   float1 reflection;     
+	float1 refraction;
+   float1 transparency;
+   float1 bidon;
+	int4   textureInfo;       // x: procedural, y: textureId, z: wireframe
 };
 
 struct BoundingBox
@@ -98,6 +105,7 @@ struct BoundingBox
 struct Primitive
 {
 	float4 center;
+	float4 otherCenter;
 	float4 axis;
 	float4 normal;
 	float4 size;

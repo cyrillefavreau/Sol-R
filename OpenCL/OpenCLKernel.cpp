@@ -24,10 +24,10 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <time.h>
-#ifdef USE_DIRECTX
-#include <CL/cl_d3d10_ext.h>
-#endif // USE_DIRECTX
+#include <stdlib.h>
+#include <string.h>
 
 #include "OpenCLKernel.h"
 #include "../Logging.h"
@@ -124,10 +124,11 @@ void pfn_notify(cl_program, void *user_data)
 /*
 * OpenCLKernel constructor
 */
-OpenCLKernel::OpenCLKernel( bool activeLogging, int platform, int device ) : GPUKernel( activeLogging, platform, device ),
+OpenCLKernel::OpenCLKernel( bool activeLogging, bool protein, int platform, int device ) : GPUKernel( activeLogging, protein, platform, device ),
    m_hContext(0),
    m_hQueue(0),
    m_dRandoms(0),
+   m_dPrimitiveIDs(0),
 	m_dBitmap(0), 
    m_dTextures(0),
 	m_dPrimitives(0), 
@@ -275,6 +276,7 @@ void OpenCLKernel::compileKernels(
 	const std::string& ptxFileName,
 	const std::string& options)
 {
+	LOG_INFO(3,"OpenCLKernel::compileKernels");
 	int status(0);
 	cl_program hProgram(0);
 	try 
@@ -335,17 +337,23 @@ void OpenCLKernel::compileKernels(
 		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDevices[0], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(m_preferredWorkGroupSize), &m_preferredWorkGroupSize , NULL);
 		LOG_INFO(3,"CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE=" << m_preferredWorkGroupSize );
 
+      len = 0;
 		char buffer[MAX_SOURCE_SIZE];
+      memset(buffer,0,MAX_SOURCE_SIZE);
 		LOG_INFO(3,"clGetProgramBuildInfo\n");
 		CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &len ) );
 
-		if( buffer[0] != 0 ) 
+		if( buffer[0]==0 ) 
+      {
+         std::cout << "OpenCL Kernels successfully compiled" << std::endl;
+      }
+      else
 		{
 			buffer[len] = 0;
 			std::stringstream s;
 			s << buffer;
 			LOG_INFO(3, s.str().c_str() );
-			LOG_INFO(3,s.str() );
+         std::cout << "ERROR [" << len << "] " << s.str().c_str() << std::endl;
 		}
 
 #if 0
@@ -404,7 +412,11 @@ void OpenCLKernel::compileKernels(
 
 			size_t lSize = str.length();
 			char* buffer = new char[lSize+1];
+#ifdef WIN32
 			strcpy_s( buffer, lSize, str.c_str() );
+#else
+			strcpy( buffer, str.c_str() );
+#endif // WIN32
 
 			// Build the rendering kernel
 			int errcode(0);
@@ -451,12 +463,14 @@ void OpenCLKernel::compileKernels(
 
 void OpenCLKernel::initializeDevice()
 {
+	LOG_INFO(3,"OpenCLKernel::initializeDevice");
 	int status(0);
 	// Setup device memory
 	LOG_INFO(3,"Setup device memory\n");
    int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
-   m_dBitmap       = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(char)*gColorDepth,      0, NULL);
+   m_dBitmap       = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(char)*gColorDepth,   0, NULL);
 	m_dDepthOfField = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(float4),             0, NULL);
+   m_dPrimitiveIDs = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(int),                0, NULL);
 
 	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(float),       0, NULL);
 	m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(float4),      0, NULL);
@@ -485,6 +499,7 @@ void OpenCLKernel::releaseDevice()
 	if( m_dMaterials ) CHECKSTATUS(clReleaseMemObject(m_dMaterials));
 	if( m_dTextures ) CHECKSTATUS(clReleaseMemObject(m_dTextures));
 	if( m_dRandoms ) CHECKSTATUS(clReleaseMemObject(m_dRandoms));
+   if( m_dPrimitiveIDs ) CHECKSTATUS(clReleaseMemObject(m_dPrimitiveIDs));
    if( m_dPostProcessingBuffer ) CHECKSTATUS(clReleaseMemObject(m_dPostProcessingBuffer));
 	if( m_dBitmap ) CHECKSTATUS(clReleaseMemObject(m_dBitmap));
 	if( m_dDepthOfField ) CHECKSTATUS(clReleaseMemObject(m_dDepthOfField));
@@ -551,7 +566,7 @@ void OpenCLKernel::render_begin( const float timer )
    int nbPrimitives = m_nbActivePrimitives+1;
    int nbMaterials = m_nbActiveMaterials+1;
    int nbLamps = m_nbActiveLamps+1;
-	if( !m_texturedTransfered )
+	if( !m_textureTransfered )
 	{
 		CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dTextures,   CL_TRUE, 0, gTextureDepth*gTextureWidth*gTextureHeight*m_nbActiveTextures, m_hTextures,   0, NULL, NULL));
 		CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,    CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(float), m_hRandoms,    0, NULL, NULL));
@@ -560,7 +575,7 @@ void OpenCLKernel::render_begin( const float timer )
       LOG_INFO(3,"Primitives: " << nbPrimitives );
       LOG_INFO(3,"Materials : " << nbMaterials );
       LOG_INFO(3,"Lamps     : " << nbLamps );
-		m_texturedTransfered = true;
+		m_textureTransfered = true;
 	}
 
 #ifdef USE_KINECT
@@ -591,6 +606,7 @@ void OpenCLKernel::render_begin( const float timer )
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,13, sizeof(cl_float),          (void*)&timer ));
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,14, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
    CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,15, sizeof(cl_mem),            (void*)&m_dPostProcessingBuffer ));
+   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,16, sizeof(cl_mem),            (void*)&m_dPrimitiveIDs ));
 
    CHECKSTATUS(clSetKernelArg( m_kDefault, 0, sizeof(SceneInfo),         (void*)&m_sceneInfo ));
    CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
@@ -610,14 +626,16 @@ void OpenCLKernel::render_end( char* bitmap)
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
-	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap, CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(char)*gColorDepth, bitmap, 0, NULL, NULL) );
-
+	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,       CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(char)*gColorDepth, bitmap, 0, NULL, NULL) );
+	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitiveIDs, CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(int), m_hPrimitivesXYIds, 0, NULL, NULL) );
+   
 	CHECKSTATUS(clFlush(m_hQueue));
 	CHECKSTATUS(clFinish(m_hQueue));
 }
 
 void OpenCLKernel::initBuffers()
 {
+	LOG_INFO(3,"OpenCLKernel::initBuffers");
    GPUKernel::initBuffers();
 	initializeDevice();
    compileKernels( kst_file, "resource.dll", "", "-cl-fast-relaxed-math" );
@@ -625,6 +643,7 @@ void OpenCLKernel::initBuffers()
 
 OpenCLKernel::~OpenCLKernel()
 {
+	LOG_INFO(3,"OpenCLKernel::~OpenCLKernel");
 	// Clean up
 	releaseDevice();
 

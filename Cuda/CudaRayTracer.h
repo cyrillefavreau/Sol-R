@@ -40,19 +40,17 @@ extern "C" void h2d_materials(
 	char*      textures,  int nbActiveTextures,
    float*     randoms,   int nbRandoms );
 
-extern "C" void d2h_bitmap( char* bitmap, const SceneInfo sceneInfo );
+extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo sceneInfo );
 
 extern "C" void cudaRender(
-   dim3 blockSize, int sharedMemSize,
+   int4 blockSize, int sharedMemSize,
    SceneInfo sceneInfo,
    int4 objects,
    PostProcessingInfo PostProcessingInfo,
-   float timer,
-   Ray ray,
+   float4 origin, 
+   float4 direction, 
    float4 angles);
 
 #ifdef USE_KINECT
-extern "C" void h2d_kinect( 
-   char* video, int videoSize,
-   char* depth, int depthSize );
+extern "C" void h2d_kinect( char* video, char* depth );
 #endif // USE_KINECT

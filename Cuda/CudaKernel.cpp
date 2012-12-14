@@ -41,19 +41,21 @@ const long MAX_SOURCE_SIZE = 65535;
 const long MAX_DEVICES = 10;
 
 #ifndef WIN32
-typedef struct BITMAPFILEHEADER {
+typedef struct stBITMAPFILEHEADER
+{
   short bfType;
   int bfSize;
   short Reserved1;
   short Reserved2;
   int bfOffBits;
-};
+} BITMAPFILEHEADER;
 
-typedef struct BITMAPINFOHEADER {
+typedef struct stBITMAPINFOHEADER
+{
   int biSizeImage;
   long biWidth;
   long biHeight;
-};
+} BITMAPINFOHEADER;
 #endif
 
 /*
@@ -62,11 +64,15 @@ ________________________________________________________________________________
 CudaKernel::CudaKernel
 ________________________________________________________________________________
 */
-CudaKernel::CudaKernel( bool activeLogging, int platform, int device ) : GPUKernel( activeLogging, platform, device ),
-   m_blockSize(1024,1024,1),
-   m_sharedMemSize(256)
+CudaKernel::CudaKernel( bool activeLogging, bool protein, int platform, int device ) : GPUKernel( activeLogging, protein, platform, device ),
+   m_sharedMemSize(256),
+   m_imageCount(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
+   m_blockSize.x = 1024;
+   m_blockSize.y = 1024;
+   m_blockSize.z = 1;
+   m_blockSize.w = 0;
 #ifdef LOGGING
 	// Initialize Log
 	LOG_INITIALIZE_ETW(
@@ -108,7 +114,7 @@ CudaKernel::CudaKernel( bool activeLogging, int platform, int device ) : GPUKern
 
    setPostProcessingInfo( ppe_none, 0.f, 40.f, 50 );
    float4 bkColor = {0.f, 0.f, 0.f, 0.f};
-   setSceneInfo( 512, 512, 0.f, true, 10000.f, 0.9f, 5, bkColor, false, 0.f, false, 0, 1000 );
+   setSceneInfo( 512, 512, 0.f, true, 10000.f, 0.9f, 5, bkColor, false, 0.f, false, 0, 1000, otOpenGL );
 }
 
 /*
@@ -154,8 +160,7 @@ void CudaKernel::initializeDevice()
 void CudaKernel::resetBoxesAndPrimitives()
 {
    LOG_INFO(3,"CudaKernel::resetBoxesAndPrimitives");
-   m_nbActiveOutterBoxes = -1;
-   m_nbActiveInnerBoxes = -1;
+   m_nbActiveBoxes = -1;
    m_nbActivePrimitives = -1;
 }
 
@@ -216,28 +221,29 @@ void CudaKernel::render_begin( const float timer )
 	NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
 
    // copy kinect data to GPU
-   h2d_kinect( 
-      m_hVideo, gKinectVideo*gKinectVideoHeight*gKinectVideoWidth,
-      m_hDepth, gKinectDepth*gKinectDepthHeight*gKinectDepthWidth );
+   h2d_kinect( m_hVideo, m_hDepth );
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
-   int nbBoxes = (m_nbActiveOutterBoxes+m_nbActiveInnerBoxes)+1;
-   int nbPrimitives = m_nbActivePrimitives+m_nbActiveInnerBoxes+1;
+   int nbBoxes = m_nbActiveBoxes+1;
+   int nbPrimitives = m_nbActivePrimitives+1;
    int nbMaterials = m_nbActiveMaterials+1;
-   int nbLamps = m_nbActiveLamps+1;
+   int nbLamps = m_nbActiveLamps;
+
+   LOG_INFO(3,"Data sizes: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps);
 
 	h2d_scene( 
       m_hBoundingBoxes, nbBoxes, 
       m_hBoxPrimitivesIndex, m_hPrimitives, nbPrimitives, 
       m_hLamps, nbLamps );
-	if( !m_texturedTransfered )
+	
+   if( !m_textureTransfered )
 	{
 		h2d_materials( 
          m_hMaterials, nbMaterials, 
          m_hTextures,  m_nbActiveTextures, 
          m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
-		m_texturedTransfered = true;
+		m_textureTransfered = true;
 
       LOG_INFO(3,"Boxes     : " << nbBoxes );
       LOG_INFO(3,"Primitives: " << nbPrimitives );
@@ -246,29 +252,31 @@ void CudaKernel::render_begin( const float timer )
 	}
 
    // Kernel execution
-   Ray ray;
-   memset(&ray, 0, sizeof(Ray));
-   ray.origin    = m_viewPos;
-   ray.direction = m_viewDir;
-
    int4 objects;
-   objects.x = m_nbActiveOutterBoxes; // TODO!!! nbBoxes;
-   objects.y = nbPrimitives; // TODO?
+   objects.x = nbBoxes;
+   objects.y = nbPrimitives;
    objects.z = nbLamps;
    objects.w = 0;
 	cudaRender(
       m_blockSize, m_sharedMemSize,
       m_sceneInfo, objects,
       m_postProcessingInfo,
-      timer,
-		ray, 
+      m_viewPos,
+		m_viewDir, 
       m_angles );
 }
 
 void CudaKernel::render_end( char* bitmap)
 {
    // GPU -> CPU Data transfers
-   d2h_bitmap( bitmap, m_sceneInfo);
+   d2h_bitmap( bitmap, m_hPrimitivesXYIds, m_sceneInfo);
+
+   /*
+   char tmp[25];
+   sprintf(tmp, "filename/protein%05d.bmp", m_imageCount%10000 );
+   saveBitmapToFile( tmp, bitmap );
+   m_imageCount++;
+   */
 }
 
 void CudaKernel::deviceQuery()

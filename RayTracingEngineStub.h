@@ -13,7 +13,7 @@
  * Library General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+ * aint with this program.  If not, see <http://www.gnu.org/licenses/>. 
  */
 
 /*
@@ -31,19 +31,20 @@
 #include "GPUKernel.h"
 
 // ---------- Scene ----------
-extern "C" RAYTRACINGENGINE_API long RayTracer_SetSceneInfo(
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int width, int height,
    bool shadowsEnabled, int nbRayIterations, double transparentColor,
    double viewDistance, double shadowIntensity,
-   bool supportFor3DVision, double width3DVision,
+   int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
-   bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations );
+   bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
+   int outputType);
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_SetPostProcessingInfo(
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 );
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_InitializeKernel( bool activeLogging, int platform, int device );
-extern "C" RAYTRACINGENGINE_API long RayTracer_FinalizeKernel();
+extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, bool protein, int platform, int device );
+extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel();
 
 // ---------- Camera ----------
 extern "C" RAYTRACINGENGINE_API void RayTracer_SetCamera( 
@@ -52,49 +53,79 @@ extern "C" RAYTRACINGENGINE_API void RayTracer_SetCamera(
    double angle_x, double angle_y, double angle_z);
 
 // ---------- Rendering ----------
-extern "C" RAYTRACINGENGINE_API long RayTracer_RunKernel( double timer, char* image );
+extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, char* image );
 
 // ---------- Primitives ----------
-extern "C" RAYTRACINGENGINE_API long RayTracer_AddPrimitive( int type );
-extern "C" RAYTRACINGENGINE_API long RayTracer_SetPrimitive( 
+extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive( int type );
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitive( 
    int index, int boxId,
    double x, double y, double z, 
    double width, double height, double depth,
    int materialId, int materialPaddingX, int materialPaddingY );
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y );
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z);
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_RotatePrimitive( 
-   int index, int boxId, 
-   double x, double y, double z);
+extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive( 
+   int index, int boxId,
+   double rx, double ry, double rz,
+   double ax, double ay, double az);
+extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives( 
+   int fromBoxId, int toBoxId,
+   double rx, double ry, double rz,
+   double ax, double ay, double az);
 
-extern "C" RAYTRACINGENGINE_API long RayTracer_SetPrimitiveMaterial( 
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveMaterial( 
    int    index,
    int    materialId);
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( 
+   int    index);
 
 // ---------- Materials ----------
-extern "C" RAYTRACINGENGINE_API long RayTracer_AddMaterial();
-extern "C" RAYTRACINGENGINE_API long RayTracer_SetMaterial(
+extern "C" RAYTRACINGENGINE_API int RayTracer_AddMaterial();
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    int    index,
-   double color_r, 
-   double color_g, 
-   double color_b,
+   double color_r, double color_g, double color_b,
    double noise,
    double reflection,
    double refraction,
-   int    textured,
+   bool   procedural,
+   bool   wireframe, int wireframeDepth,
    double transparency,
    int    textureId,
-   double specValue, 
-   double specPower, 
-   double specCoef,
+   double specValue, double specPower, double specCoef, 
    double innerIllumination);
 
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
+   int     index,
+   double& color_r, double& color_g, double& color_b,
+   double& noise,
+   double& reflection,
+   double& refraction,
+   int&    procedural,
+   int&    wireframe, int& wireframeDepth,
+   double& transparency,
+   int&    textureId,
+   double& specValue, double& specPower, double& specCoef,
+   double& innerIllumination);
+
 // ---------- Textures ----------
-extern "C" RAYTRACINGENGINE_API long RayTracer_AddTexture( char* filename );
-extern "C" RAYTRACINGENGINE_API long RayTracer_SetTexture( int index, HANDLE texture );
+extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename );
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, char* texture );
+
+// ---------- Proteins ----------
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadProtein(
+   char* filename,
+   int boxId,
+   int nbMaxBoxes,
+   int geometryType,
+   double defaultAtomSize,
+   double defaultStickSize,
+   int atomMaterialType );
 
 #ifdef USE_KINECT
 // ---------- Kinect ----------
-extern "C" RAYTRACINGENGINE_API long RayTracer_UpdateSkeletons(
+extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
    int index, int boxId,
    double center_x, double  center_y, double  center_z, 
    double size,
