@@ -196,7 +196,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
       size_x = primitive->size.x;
       size_y = primitive->size.y;
       size_z = primitive->size.z;
-      materialId = primitive->materialId.x;
+      materialId = primitive->materialId;
       materialPaddingX = static_cast<int>(primitive->materialInfo.x);
       materialPaddingY = static_cast<int>(primitive->materialInfo.y);
    }
@@ -387,7 +387,6 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 
    char*  filename,
-   int    boxId,
    int    geometryType,
    double defaultAtomSize,
    double defaultStickSize,
@@ -397,7 +396,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    // PDB
 	PDBReader prbReader;
 	float4 minPos = prbReader.loadAtomsFromFile(
-      filename, *gpuKernel, boxId, 
+      filename, *gpuKernel,
       static_cast<GeometryType>(geometryType),
       static_cast<float>(defaultAtomSize), 
       static_cast<float>(defaultStickSize),

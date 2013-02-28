@@ -132,7 +132,6 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE text
 // ---------- Molecules ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 
    char*  filename,
-   int    boxId,
    int    geometryType,
    double defaultAtomSize,
    double defaultStickSize,
@@ -142,7 +141,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
 #ifdef USE_KINECT
 // ---------- Kinect ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
-   int index, int boxId,
+   int index,
    double center_x, double  center_y, double  center_z, 
    double size,
    double radius,       int materialId,

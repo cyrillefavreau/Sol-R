@@ -109,7 +109,6 @@ struct Primitive
 	float4 p0;
 	float4 p1;
 	float4 p2;
-	float4 axis;
 	float4 n0;
 	float4 n1;
 	float4 n2;

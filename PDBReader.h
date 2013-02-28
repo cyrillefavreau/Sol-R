@@ -46,7 +46,6 @@ public:
    float4 loadAtomsFromFile( 
       const std::string& filename,
       GPUKernel& cudaKernel,
-      int boxId, 
       GeometryType geometryType,
       float defaultAtomSize,
       float defaultStickSize,

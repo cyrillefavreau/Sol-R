@@ -712,7 +712,7 @@ __device__ bool cylinderIntersection(
 	float4 dir = ray.direction;
 	/// normalizeVector(dir); // DO NOT NORMALIZE!!!
 	float4 RC = ray.origin-cylinder.p0;
-	float4 n = crossProduct(dir, cylinder.axis);
+	float4 n = crossProduct(dir, cylinder.n1);
 
 	float ln = vectorLength(n);
 
@@ -725,9 +725,9 @@ __device__ bool cylinderIntersection(
 	float d = fabs(dotProduct(RC,n));
 	if (d>cylinder.p0.w) return false;
 
-	float4 O = crossProduct(RC,cylinder.axis);
+	float4 O = crossProduct(RC,cylinder.n1);
 	float t = -dotProduct(O, n)/ln;
-	O = crossProduct(n,cylinder.axis);
+	O = crossProduct(n,cylinder.n1);
 	normalizeVector(O);
 	float s=fabs( sqrtf(cylinder.p0.w*cylinder.p0.w-d*d) / dotProduct( dir,O ) );
 
@@ -768,8 +768,8 @@ __device__ bool cylinderIntersection(
 			float4 HB1 = intersection-cylinder.p0;
 			float4 HB2 = intersection-cylinder.p1;
 
-			float scale1 = dotProduct(HB1,cylinder.axis);
-			float scale2 = dotProduct(HB2,cylinder.axis);
+			float scale1 = dotProduct(HB1,cylinder.n1);
+			float scale2 = dotProduct(HB2,cylinder.n1);
 
 			// Cylinder length
 			if( scale1 < EPSILON || scale2 > EPSILON ) return false;
@@ -784,7 +784,7 @@ __device__ bool cylinderIntersection(
 				HB1 = intersection - newCenter;
 			}
 
-			normal = HB1-cylinder.axis*scale1;
+			normal = HB1-cylinder.n1*scale1;
 			normal.w = 0.f;
 
 			normalizeVector( normal );

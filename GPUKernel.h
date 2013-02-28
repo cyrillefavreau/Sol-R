@@ -39,16 +39,16 @@
 
 struct CPUPrimitive
 {
+   bool   movable;
 	float4 p0;
 	float4 p1;
 	float4 p2;
-	float4 axis;
 	float4 n0;
 	float4 n1;
 	float4 n2;
 	float4 size;
-	int1   type;
-	int1   materialId;
+	int    type;
+	int    materialId;
 	float2 materialInfo;
 };
 
@@ -89,9 +89,11 @@ public:
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
       float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
    int getPrimitiveAt( int x, int y );
+   void setPrimitiveIsMovable( int index, bool movable );
 
    void rotatePrimitives( float4 rotationCenter, float4 angles, int from, int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
+   void rotateBox( CPUBoundingBox& box, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
 
 	void setPrimitiveMaterial( int index, int materialId); 
 	int  getPrimitiveMaterial( int index); 

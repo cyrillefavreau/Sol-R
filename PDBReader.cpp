@@ -149,7 +149,6 @@ PDBReader::~PDBReader(void)
 float4 PDBReader::loadAtomsFromFile(
    const std::string& filename,
    GPUKernel& cudaKernel,
-   int boxId,
    GeometryType geometryType,
    float defaultAtomSize,
    float defaultStickSize,
@@ -357,8 +356,6 @@ float4 PDBReader::loadAtomsFromFile(
       ++it;
    }
    
-   m_nbBoxes = cudaKernel.compactBoxes(true);
-   m_nbPrimitives = static_cast<int>(atoms.size()+connections.size());
    std::cout << "-==========================================================-" << std::endl;
    std::cout << "filename: " << filename << std::endl;
    std::cout << "------------------------------------------------------------" << std::endl;

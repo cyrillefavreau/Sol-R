@@ -303,7 +303,7 @@ void FileMarshaller::saveToFile( const std::string& filename)
             CPUPrimitive* primitive = m_gpuKernel->getPrimitive(*it);
             myfile << "PRIMITIVE;" <<  
                b << ";" <<
-               primitive->type.x << ";" <<
+               primitive->type << ";" <<
                primitive->p0.x << ";" <<
                primitive->p0.y << ";" <<
                primitive->p0.z << ";" <<
@@ -320,7 +320,7 @@ void FileMarshaller::saveToFile( const std::string& filename)
                primitive->n0.y << ";" <<
                primitive->n0.z << ";" <<
                primitive->n0.w << ";" <<
-               primitive->materialId.x << ";" <<
+               primitive->materialId << ";" <<
                primitive->materialInfo.x << ";" <<
                primitive->materialInfo.y << std::endl;
          }

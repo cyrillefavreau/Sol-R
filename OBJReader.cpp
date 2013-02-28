@@ -16,6 +16,30 @@ OBJReader::~OBJReader(void)
 }
 
 
+int4 readVertex( const std::string& face )
+{
+   int4 returnValue = {0,0,0,0};
+   int item(0);
+   std::string value;
+   for( int i(0); i<face.length(); ++i)
+   {
+      if( face[i] != ' ') value += face[i];
+
+      if( face[i] == ' ' || i==(face.length()-1) )
+      {
+         switch( item )
+         {
+            case 0: returnValue.x = atoi(value.c_str()); break;
+            case 1: returnValue.y = atoi(value.c_str()); break;
+            case 2: returnValue.z = atoi(value.c_str()); break;
+         }
+         ++item;
+         value = "";
+      }
+   }
+   return returnValue;
+}
+
 int4 readFace( const std::string& face )
 {
    int4 returnValue = {0,0,0,0};
@@ -44,7 +68,6 @@ float4 OBJReader::loadModelFromFile(
    const std::string& filename,
    GPUKernel& gpuKernel,
    const float4& center,
-   int boxId,
    float scale,
    int materialId)
 {
@@ -75,7 +98,7 @@ float4 OBJReader::loadModelFromFile(
                size_t i(1);
                int item(0);
                char previousChar = line[0];
-               while( i<line.length() )
+               while( i<line.length() /*&& item<4*/)
                {
                   if( line[i] == ' '  && previousChar != ' ') 
                   {
