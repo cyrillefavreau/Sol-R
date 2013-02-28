@@ -14,7 +14,7 @@
 #include "Consts.h"
 
 const int MAX_SOURCE_SIZE = 65535;
-const int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 80;
+const int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 25; //300;
 
 float4 min4( const float4 a, const float4 b, const float4 c )
 {
@@ -578,10 +578,10 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       while( itpb != primitivesPerBox.end() )
       {
          //std::cout << "Box " << (*itpb).first << " -> " << (*itpb).second << std::endl;
-         maxPrimitivePerBox += (*itpb).second;
+         maxPrimitivePerBox = ((*itpb).second>maxPrimitivePerBox) ? (*itpb).second : maxPrimitivePerBox;
          ++itpb;
       }
-      if( primitivesPerBox.size() != 0 ) maxPrimitivePerBox /= static_cast<int>(primitivesPerBox.size());
+      //if( primitivesPerBox.size() != 0 ) maxPrimitivePerBox /= static_cast<int>(primitivesPerBox.size());
 #else
       maxPrimitivePerBox = m_primitives.size()/nbActiveBoxes;
 #endif
@@ -610,7 +610,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       // Search for best trade-off
       std::map<int,int> primitivesPerBox;
       int maxPrimitivePerBox(0);
-      int boxSize = 4096;
+      int boxSize = 64;
       int bestSize = boxSize;
       int bestRatio = 100000;
       int activeBoxes(NB_MAX_BOXES);
@@ -622,9 +622,9 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             bestSize = boxSize;
             bestRatio = ratio;
          }
-         boxSize /= 2;
+         boxSize--;
       }
-      while( boxSize>=4 );
+      while( boxSize>0 );
       std::cout << "Best trade off: " << bestSize << "/" << activeBoxes << " boxes" << std::endl;
       processBoxes( bestSize, activeBoxes, false );
    }
