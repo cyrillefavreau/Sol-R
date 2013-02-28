@@ -32,7 +32,7 @@ extern "C" void finalize_scene();
 
 extern "C" void h2d_scene(
    BoundingBox* boundingBoxes, int nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive* primitives, int nbPrimitives,
+	Primitive* primitives, int nbPrimitives,
 	int* ints, int nbints );
 
 extern "C" void h2d_materials( 

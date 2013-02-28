@@ -46,11 +46,12 @@ public:
    float4 loadAtomsFromFile( 
       const std::string& filename,
       GPUKernel& cudaKernel,
-      int boxId, int nbMaxBoxes,
+      int boxId, 
       GeometryType geometryType,
       float defaultAtomSize,
       float defaultStickSize,
-      int   materialType);
+      int   materialType,
+      float scale);
 
    int getNbBoxes() { return m_nbBoxes; }
    int getNbPrimitives() { return m_nbPrimitives; }

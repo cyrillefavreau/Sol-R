@@ -46,7 +46,6 @@ struct Atom
    int    id;
    int    index;
    float4 position;
-   int    boxId;
    int    materialId;
    int    chainId;
    int    residue;
@@ -150,16 +149,14 @@ PDBReader::~PDBReader(void)
 float4 PDBReader::loadAtomsFromFile(
    const std::string& filename,
    GPUKernel& cudaKernel,
-   int boxId, int nbMaxBoxes,
+   int boxId,
    GeometryType geometryType,
    float defaultAtomSize,
    float defaultStickSize,
-   int   materialType)
+   int   materialType,
+   float scale)
 {
-   for( int i=boxId; i<NB_MAX_BOXES; ++i )
-   {
-      cudaKernel.resetBox(i,true);
-   }
+   cudaKernel.resetBoxes(true);
 
    float distanceRatio = 2.f; //(geometryType==gtSticks || geometryType==gtAtomsAndSticks) ? 2.f : 1.f;
 
@@ -271,29 +268,6 @@ float4 PDBReader::loadAtomsFromFile(
                }
             }
          }
-
-#ifdef CONNECTION
-         else if( line.find("CONECT") == 0 )
-         {
-            // CONNECT
-            Connection connection;
-            int i(0);
-            while( i<line.length() )
-            {
-               switch(i)
-               {
-               case  7: // Atom 1
-               case 11: connection.atom1 = static_cast<int>(atoi(value.c_str())); value = ""; break;
-               case 16: connection.atom2 = static_cast<int>(atoi(value.c_str())); break;
-               default:
-                  if( line.at(i) != ' ' ) value += line.at(i);
-                  break;
-               }
-               i++;
-            }
-            connections.push_back(connection);
-         }
-#endif
       }
       file.close();
    }
@@ -308,229 +282,83 @@ float4 PDBReader::loadAtomsFromFile(
    center.y = (minPos.y+maxPos.y)/2.f;
    center.z = (minPos.z+maxPos.z)/2.f;
 
-   m_nbPrimitives = 0;
+   scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
 
-   // Optimizing boxes
-
-   // First pass
-   bool success(false);
-   int nbMoleculeBoxes = atoms.size()/2;
-   //std::cout << atoms.size() << "/" << nbMoleculeBoxes << std::endl;
-   int boxSize = static_cast<int>(pow(static_cast<float>(nbMoleculeBoxes /*nbMaxBoxes*/), (1.f/3.f)) - 1);
-   float4 boxSteps;
-   boxSteps.x = ( maxPos.x - minPos.x ) / boxSize;
-   boxSteps.y = ( maxPos.y - minPos.y ) / boxSize;
-   boxSteps.z = ( maxPos.z - minPos.z ) / boxSize;
-
-   int boxesPerPrimitives[NB_MAX_BOXES];
-   memset(boxesPerPrimitives,0,sizeof(int)*NB_MAX_BOXES);
-
-   // Find position of atom in grid
    std::map<int,Atom>::iterator it = atoms.begin();
-   while( it != atoms.end() )
-   {
-      Atom atom((*it).second);
-
-      int X = static_cast<int>(( atom.position.x - minPos.x ) / boxSteps.x);
-      int Y = static_cast<int>(( atom.position.y - minPos.y ) / boxSteps.y);
-      int Z = static_cast<int>(( atom.position.z - minPos.z ) / boxSteps.z);
-      atom.boxId = X*boxSize*boxSize + Y*boxSize + Z;
-
-      boxesPerPrimitives[atom.boxId]++;
-
-      ++it;
-   }
-   int nbBoxes = nbMaxBoxes;
-#if 0
-   std::cout << "Number of boxes needed         : " << nbBoxes << "/" << NB_MAX_BOXES << std::endl;
-#endif // 0
-
-   it = atoms.begin();
    while( it != atoms.end() )
    {
       Atom& atom((*it).second);
       if( atom.processed<2 )
       {
-         int X = static_cast<int>(( atom.position.x - minPos.x ) / boxSteps.x);
-         int Y = static_cast<int>(( atom.position.y - minPos.y ) / boxSteps.y);
-         int Z = static_cast<int>(( atom.position.z - minPos.z ) / boxSteps.z);
-         atom.boxId = X*boxSize*boxSize + Y*boxSize + Z;
-         if( atom.boxId < 0 ) std::cout << ":-(" << std::endl;
-         boxesPerPrimitives[atom.boxId]++;
-
-         if( boxesPerPrimitives[atom.boxId]>NB_MAX_PRIMITIVES )
+         int nb;
+         float radius = atom.position.w;
+         float stickradius = defaultStickSize;
+            
+         if( geometryType==gtSticks || 
+            ( geometryType==gtBackbone /* && atom.isBackbone*/) || 
+            ( geometryType==gtAtomsAndSticks && atom.chainId%2 == 1) ) 
          {
-            std::cout << "pas cool: " << boxesPerPrimitives[atom.boxId] << std::endl;
+            int cptMeshes(0);
+            float4 meshes[3];
+            std::map<int,Atom>::iterator it2 = atoms.begin();
+            while( it2 != atoms.end() )
+            {
+               if( it2 != it && (*it2).second.processed<2 && ((*it).second.isBackbone==(*it2).second.isBackbone))
+               {
+                  Atom& atom2((*it2).second);
+                  float4 a;
+                  a.x = atom.position.x - atom2.position.x;
+                  a.y = atom.position.y - atom2.position.y;
+                  a.z = atom.position.z - atom2.position.z;
+                  float distance = sqrtf( a.x*a.x + a.y*a.y + a.z*a.z );
+                  float stickDistance = (geometryType==gtBackbone && atom2.isBackbone) ? DEFAULT_STICK_DISTANCE*2.f : DEFAULT_STICK_DISTANCE;
+                  if( distance < stickDistance )
+                  {
+                     stickradius = (geometryType==gtBackbone && !atom.isBackbone) ? defaultStickSize*0.2f : defaultStickSize; 
+
+                     float4 halfCenter;
+                     halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
+                     halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
+                     halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
+                     nb = cudaKernel.addPrimitive( ptCylinder );
+                     cudaKernel.setPrimitive( 
+                        nb,
+                        scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
+                        scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
+                        scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
+                        scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.x - center.x), 
+                        scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.y - center.y), 
+                        scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.z - center.z),
+                        scale*stickradius, 0.f,0.f,
+                        atom.materialId , 1, 1 );
+                  }
+               }
+               it2++;
+            }
+            radius = stickradius;
          }
          else
          {
-            int nb;
-            float radius = atom.position.w;
-            float stickradius = defaultStickSize;
+            radius *= 4.f; 
+         }
             
-            if( geometryType==gtSticks || 
-              ( geometryType==gtBackbone /* && atom.isBackbone*/) || 
-              ( geometryType==gtAtomsAndSticks && atom.chainId%2 == 1) ) 
-            {
-               int cptMeshes(0);
-               float4 meshes[3];
-               std::map<int,Atom>::iterator it2 = atoms.begin();
-               while( it2 != atoms.end() )
-               {
-                  if( it2 != it && (*it2).second.processed<2 && ((*it).second.isBackbone==(*it2).second.isBackbone))
-                  {
-                     Atom& atom2((*it2).second);
-                     float4 a;
-                     a.x = atom.position.x - atom2.position.x;
-                     a.y = atom.position.y - atom2.position.y;
-                     a.z = atom.position.z - atom2.position.z;
-                     float distance = sqrtf( a.x*a.x + a.y*a.y + a.z*a.z );
-                     float stickDistance = (geometryType==gtBackbone && atom2.isBackbone) ? DEFAULT_STICK_DISTANCE*2.f : DEFAULT_STICK_DISTANCE;
-                     if( distance < stickDistance )
-                     {
-                        stickradius = (geometryType==gtBackbone && !atom.isBackbone) ? defaultStickSize*0.2f : defaultStickSize; 
-
-#if 0
-                        if( geometryType==gtBackbone )
-                        {
-                           meshes[cptMeshes].x = atom2.position.x; 
-                           meshes[cptMeshes].y = atom2.position.y; 
-                           meshes[cptMeshes].z = atom2.position.z; 
-                           atom2.processed++;
-                           cptMeshes++;
-                           if( cptMeshes == 3 )
-                           {
-                              nb = cudaKernel.addPrimitive( ptTriangle );
-                              cudaKernel.setPrimitive( 
-                                 nb,
-                                 boxId + atom.boxId,
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[0].x - center.x), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[0].y - center.y), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[0].z - center.z),
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[1].x - center.x), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[1].y - center.y), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[1].z - center.z),
-                                 0.f, 0.f,0.f,
-                                 3, 1, 1 );
-
-                              nb = cudaKernel.addPrimitive( ptTriangle );
-                              cudaKernel.setPrimitive( 
-                                 nb,
-                                 boxId + atom.boxId,
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[0].x - center.x), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[0].y - center.y), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[0].z - center.z), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[1].x - center.x), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[1].y - center.y), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[1].z - center.z),
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[2].x - center.x), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[2].y - center.y), 
-                                 distanceRatio*DEFAULT_ATOM_DISTANCE*(meshes[2].z - center.z),
-                                 0.f, 0.f,0.f,
-                                 10, 1, 1 );
-                              cptMeshes = 0;
-                           }
-#else
-                        float4 halfCenter;
-                        halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
-                        halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
-                        halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
-                        nb = cudaKernel.addPrimitive( ptCylinder );
-                        cudaKernel.setPrimitive( 
-                           nb,
-                           boxId + atom.boxId,
-                           distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
-                           distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
-                           distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
-                           distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.x - center.x), 
-                           distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.y - center.y), 
-                           distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.z - center.z),
-                           stickradius, 0.f,0.f,
-                           atom.materialId , 1, 1 );
-#endif
-                     }
-                  }
-                  it2++;
-               }
-               radius = stickradius;
-            }
-            else
-            {
-               radius *= 4.f; 
-            }
-            
-            //if( geometryType != gtBackbone )
-            {
-               nb = cudaKernel.addPrimitive( ptSphere );
-               cudaKernel.setPrimitive( 
-                  nb, 
-                  boxId+atom.boxId,
-                  distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
-                  distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
-                  distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
-                  radius, 0.f, 0.f,
-                  atom.materialId, 1, 1 );
-            }
+         //if( geometryType != gtBackbone )
+         {
+            nb = cudaKernel.addPrimitive( ptSphere );
+            cudaKernel.setPrimitive( 
+               nb, 
+               scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
+               scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
+               scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
+               scale*radius, 0.f, 0.f,
+               atom.materialId, 1, 1 );
          }
       }
       ++it;
    }
    
-#if 0
-   // Connections
-   std::vector<Connection>::iterator itc = connections.begin();
-   while( itc != connections.end() )
-   {
-      Connection& connection(*itc);
-
-      // Add connection
-      Atom& atom1 = atoms[connection.atom1];
-      Atom& atom2 = atoms[connection.atom2];
-
-      // Add atom
-      int nb = cudaKernel.addPrimitive( ptCylinder );
-      cudaKernel.setPrimitive( 
-         nb, 
-         boxId+atom1.boxId,
-         DEFAULT_ATOM_DISTANCE*(atom1.position.x - center.x), 
-         DEFAULT_ATOM_DISTANCE*(atom1.position.y - center.y), 
-         DEFAULT_ATOM_DISTANCE*(atom1.position.z - center.z), 
-         DEFAULT_ATOM_DISTANCE*(atom2.position.x - center.x), 
-         DEFAULT_ATOM_DISTANCE*(atom2.position.y - center.y), 
-         DEFAULT_ATOM_DISTANCE*(atom2.position.z - center.z), 
-         50.f/10.f, 0.f,0.f,
-         atom1.materialId, 1, 1 );
-      
-      nb = cudaKernel.addPrimitive( ptSphere );
-      cudaKernel.setPrimitive( 
-         nb, 
-         boxId+atom1.boxId,
-         DEFAULT_ATOM_DISTANCE*(atom1.position.x - center.x), 
-         DEFAULT_ATOM_DISTANCE*(atom1.position.y - center.y), 
-         DEFAULT_ATOM_DISTANCE*(atom1.position.z - center.z), 
-         atom1.position.w, 0.f, 0.f,
-         atom1.materialId, 1, 1 );
-      nb = cudaKernel.addPrimitive( ptSphere );
-      cudaKernel.setPrimitive( 
-         nb, 
-         boxId+atom1.boxId,
-         DEFAULT_ATOM_DISTANCE*(atom2.position.x - center.x), 
-         DEFAULT_ATOM_DISTANCE*(atom2.position.y - center.y), 
-         DEFAULT_ATOM_DISTANCE*(atom2.position.z - center.z), 
-         atom2.position.w, 0.f, 0.f,
-         atom2.materialId, 1, 1 );
-
-      ++itc;
-   }
-#endif // 0
-
-   m_nbBoxes = cudaKernel.compactBoxes();
+   m_nbBoxes = cudaKernel.compactBoxes(true);
    m_nbPrimitives = static_cast<int>(atoms.size()+connections.size());
-
-#if 0
    std::cout << "-==========================================================-" << std::endl;
    std::cout << "filename: " << filename << std::endl;
    std::cout << "------------------------------------------------------------" << std::endl;
@@ -538,7 +366,6 @@ float4 PDBReader::loadAtomsFromFile(
    std::cout << "Number of boxes      : " << m_nbBoxes << std::endl;
    std::cout << "Number of connections: " << connections.size() << std::endl;
    std::cout << "------------------------------------------------------------" << std::endl;
-#endif // 0
 
    return size;
 }

@@ -130,14 +130,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename );
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture );
 
 // ---------- Molecules ----------
-extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
-   char* filename,
-   int boxId,
-   int nbMaxBoxes,
-   int geometryType,
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 
+   char*  filename,
+   int    boxId,
+   int    geometryType,
    double defaultAtomSize,
    double defaultStickSize,
-   int atomMaterialType );
+   int    atomMaterialType,
+   float  scale);
 
 #ifdef USE_KINECT
 // ---------- Kinect ----------

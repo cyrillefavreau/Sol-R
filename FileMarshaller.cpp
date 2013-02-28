@@ -140,7 +140,7 @@ void FileMarshaller::readPrimitive( const std::string& line )
 
    int n = m_gpuKernel->addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
    m_gpuKernel->setPrimitive(
-      n, boxId,
+      n, 
       primitive.p0.x, primitive.p0.y, primitive.p0.z,
       primitive.p1.x, primitive.p1.y, primitive.p1.z,
       primitive.p2.x, primitive.p2.y, primitive.p2.z,
@@ -295,11 +295,12 @@ void FileMarshaller::saveToFile( const std::string& filename)
       // Primitives
       for( int b(0); b<=m_gpuKernel->getNbActiveBoxes(); ++b )
       {
-         BoundingBox& box = m_gpuKernel->getBoundingBox(b);
+         CPUBoundingBox& box = m_gpuKernel->getBoundingBox(b);
          
-         for( int i(0); i<box.nbPrimitives.x; ++i )
+         std::vector<int>::const_iterator it = box.primitives.begin();
+         while( it != box.primitives.end() )
          {
-            Primitive* primitive = m_gpuKernel->getPrimitive( box.startIndex.x+i );
+            CPUPrimitive* primitive = m_gpuKernel->getPrimitive(*it);
             myfile << "PRIMITIVE;" <<  
                b << ";" <<
                primitive->type.x << ";" <<

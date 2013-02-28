@@ -31,9 +31,32 @@
 
 #include <stdio.h>
 #include <string>
+#include <map>
+#include <vector>
 
 #include "Cuda/CudaDataTypes.h"
 #include "DLL_API.h"
+
+struct CPUPrimitive
+{
+	float4 p0;
+	float4 p1;
+	float4 p2;
+	float4 axis;
+	float4 n0;
+	float4 n1;
+	float4 n2;
+	float4 size;
+	int1   type;
+	int1   materialId;
+	float2 materialInfo;
+};
+
+struct CPUBoundingBox
+{
+   float4 parameters[2];
+   std::vector<int> primitives;
+};
 
 class RAYTRACINGENGINE_API GPUKernel
 {
@@ -55,40 +78,39 @@ public:
 	// ---------- Primitives ----------
 	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
-		int   index, int boxId,
+		int   index,
 		float x0, float y0, float z0, float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-		int   index, int boxId,
+		int   index,
 		float x0, float y0, float z0, float x1, float y1, float z1,
       float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-		int   index, int boxId,
+		int   index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
       float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
    int getPrimitiveAt( int x, int y );
 
    void rotatePrimitives( float4 rotationCenter, float4 angles, int from, int to );
-	void rotatePrimitive( int boxId, int primitiveIndex, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
+	void rotatePrimitive( CPUPrimitive& primitive, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
 
-	void translatePrimitive( int   index, int boxId, float x, float y, float z );
-   void translatePrimitives( float x, float y, float z );
 	void setPrimitiveMaterial( int index, int materialId); 
 	int  getPrimitiveMaterial( int index); 
 	void getPrimitiveCenter( int index, float& x, float& y, float& z, float& w );
 	void getPrimitiveOtherCenter( int index, float4& otherCenter );
-	void setPrimitiveCenter( int index, int boxId, float  x, float  y, float  z, float  w );
+	void setPrimitiveCenter( int index, float  x, float  y, float  z, float  w );
 
    // Normals
 	void setPrimitiveNormals( int   index, float4 n0, float4 n1, float4 n2 );
 
-   Primitive* getPrimitive( const int index );
+   CPUPrimitive* getPrimitive( const int index );
      
 public:
    
-   void updateBoundingBox( const int boxId, const int primitiveIndex );
-   void resetBox( int boxId, const bool resetPrimitives = true );
-   BoundingBox& getBoundingBox( const int boxIndex ) { return m_hBoundingBoxes[boxIndex]; };
-   int compactBoxes();
+   void updateBoundingBox( CPUBoundingBox& box );
+   void resetBoxes( bool resetPrimitives=true );
+   void resetBox( CPUBoundingBox& box, bool resetPrimitives=true );
+   CPUBoundingBox& getBoundingBox( const int boxIndex ) { return m_boundingBoxes[boxIndex]; };
+   int compactBoxes( bool reconstructBoxes=false );
    void displayBoxesInfo();
 
 public:
@@ -186,9 +208,6 @@ public:
       int                param3 );
    void setPostProcessingInfo( const PostProcessingInfo& postProcessingInfo ) { m_postProcessingInfo = postProcessingInfo; }
 
-   // lamps
-   void resetLamps();
-
 public:
    
    // Bitmap export
@@ -216,9 +235,8 @@ public:
 
 public:
 
-	int getNbActiveBoxes()      { return m_nbActiveBoxes; };
-	void setNbActiveBoxes( const int nbActiveBoxes ) { m_nbActiveBoxes = nbActiveBoxes; };
-	int getNbActivePrimitives() { return m_nbActivePrimitives; };
+	int getNbActiveBoxes()      { return static_cast<int>(m_boundingBoxes.size()); };
+	int getNbActivePrimitives() { return m_primitives.size(); };
 	int getNbActiveints()       { return m_nbActiveLamps; };
 	int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 
@@ -228,13 +246,16 @@ public:
    void  saveToFile( const std::string& filename, const std::string& content );
 
 protected:
+   
+   int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
+
    void rotateVector( float4& v, const float4 rotationCenter, const float4& cosAngles, const float4& sinAngles );
 
 protected:
  
+   // GPU
 	BoundingBox* m_hBoundingBoxes;
    Primitive*   m_hPrimitives;
-   int*         m_hBoxPrimitivesIndex;
 	int*		    m_hLamps;
 	Material*    m_hMaterials;
 	char*        m_hTextures;
@@ -242,8 +263,10 @@ protected:
 	float*	    m_hRandoms;
    int*         m_hPrimitivesXYIds;
 
+   /*
    int         m_nbActiveBoxes;
 	int			m_nbActivePrimitives;
+   */
 	int			m_nbActiveLamps;
 	int			m_nbActiveMaterials;
 	int			m_nbActiveTextures;
@@ -253,8 +276,11 @@ protected:
 
 protected:
 
-	int			m_draft;
-	bool		   m_textureTransfered;
+	int	 m_draft;
+	bool	 m_textureTransfered;
+   // Scene Size
+   float4 m_minPos;
+   float4 m_maxPos;
 
 protected:
 
@@ -267,6 +293,12 @@ protected:
 protected:
 
    bool m_activeLogging; // activate or deactivate logging
+
+protected:
+
+   // CPU
+	std::map<int,CPUBoundingBox> m_boundingBoxes;
+	std::map<int,CPUPrimitive> m_primitives;
 
 	// Kinect declarations
 #ifdef USE_KINECT

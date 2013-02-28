@@ -162,7 +162,7 @@ extern "C" RAYTRACINGENGINE_API
    double materialPaddingY )
 {
    gpuKernel->setPrimitive(
-      index, boxId,
+      index,
       static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
       static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
       static_cast<float>(p2_x), static_cast<float>(p2_y), static_cast<float>(p2_z), 
@@ -181,7 +181,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
    double& size_x, double& size_y, double& size_z,
    int& materialId, double& materialPaddingX, double& materialPaddingY )
 {
-   Primitive* primitive = gpuKernel->getPrimitive(index);
+   CPUPrimitive* primitive = gpuKernel->getPrimitive(index);
    if( primitive != NULL )
    {
       p0_x = primitive->p0.x;
@@ -386,23 +386,21 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 
-   char* filename,
-   int boxId,
-   int nbMaxBoxes,
-   int geometryType,
+   char*  filename,
+   int    boxId,
+   int    geometryType,
    double defaultAtomSize,
    double defaultStickSize,
-   int atomMaterialType )
+   int    atomMaterialType,
+   float  scale)
 {
    // PDB
 	PDBReader prbReader;
-   nbMaxBoxes = (nbMaxBoxes>NB_MAX_BOXES) ? NB_MAX_BOXES : nbMaxBoxes;
 	float4 minPos = prbReader.loadAtomsFromFile(
-      filename, *gpuKernel, boxId, nbMaxBoxes,
+      filename, *gpuKernel, boxId, 
       static_cast<GeometryType>(geometryType),
       static_cast<float>(defaultAtomSize), 
       static_cast<float>(defaultStickSize),
-      atomMaterialType );
+      atomMaterialType, scale );
    return gpuKernel->compactBoxes();
 }
-

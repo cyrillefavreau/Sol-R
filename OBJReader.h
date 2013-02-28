@@ -39,11 +39,4 @@ public:
       const float4& center,
       int boxId, float scale, int materialId);
 
-private:
-   int processBoxes( std::map<int,float4>& vertices, std::map<int,int>& primitivesPerBox, const int boxSize, int& nbActiveBoxes );
-
-private:
-
-   float4 m_minPos;
-   float4 m_maxPos;
 };

@@ -49,7 +49,6 @@
 
 // Device arrays
 Primitive*   d_primitives;
-int*         d_boxPrimitivesIndex;
 BoundingBox* d_boundingBoxes; 
 int*         d_lamps;
 Material*    d_materials;
@@ -1143,7 +1142,6 @@ ________________________________________________________________________________
 __device__ float processShadows(
 	const SceneInfo& sceneInfo,
 	BoundingBox*  boudingBoxes, const int& nbActiveBoxes,
-	int*          boxPrimitivesIndex,
 	Primitive*    primitives,
 	Material*     materials,
 	char*         textures,
@@ -1173,9 +1171,9 @@ __device__ float processShadows(
 				float4 normal       = {0.f,0.f,0.f,0.f};
 				float  shadowIntensity = 0.f;
 
-				if( boxPrimitivesIndex[box.startIndex.x+cptPrimitives] != objectId )
+				if( (box.startIndex.x+cptPrimitives) != objectId )
 				{
-					Primitive& primitive = primitives[boxPrimitivesIndex[box.startIndex.x+cptPrimitives]];
+					Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
 
 					bool hit = false;
 					bool back;
@@ -1239,7 +1237,7 @@ __device__ float4 primitiveShader(
 	const SceneInfo&   sceneInfo,
 	const PostProcessingInfo&   postProcessingInfo,
 	BoundingBox* boundingBoxes, int nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive* primitives, const int& nbActivePrimitives,
+	Primitive* primitives, const int& nbActivePrimitives,
 	int* lamps, const int& nbActiveLamps,
 	Material* materials, char* textures,
 	float* randoms,
@@ -1324,7 +1322,7 @@ __device__ float4 primitiveShader(
 				{
 					shadowIntensity = processShadows(
 						sceneInfo, boundingBoxes, nbActiveBoxes,
-						boxPrimitivesIndex, primitives, materials, textures, 
+						primitives, materials, textures, 
 						nbActivePrimitives, center, 
 						intersection, lamps[cptLamps], iteration );
 				}
@@ -1392,7 +1390,7 @@ ________________________________________________________________________________
 __device__ bool intersectionWithPrimitives(
 	const SceneInfo& sceneInfo,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive* primitives, const int& nbActivePrimitives,
+	Primitive* primitives, const int& nbActivePrimitives,
 	Material* materials, char* textures,
 	const Ray& ray, 
 	const int& iteration,
@@ -1430,7 +1428,7 @@ __device__ bool intersectionWithPrimitives(
 			// Intersection with primitive within boxes
 			for( int cptPrimitives = 0; cptPrimitives<box.nbPrimitives.x; ++cptPrimitives )
 			{ 
-				Primitive& primitive = primitives[boxPrimitivesIndex[box.startIndex.x+cptPrimitives]];
+				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
             Material& material = materials[primitive.materialId.x];
             if( material.fastTransparency.x==0 || (material.fastTransparency.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
             {
@@ -1472,7 +1470,7 @@ __device__ bool intersectionWithPrimitives(
 				   {
 					   // Only keep intersection with the closest object
 					   minDistance         = distance;
-					   closestPrimitive    = boxPrimitivesIndex[box.startIndex.x+cptPrimitives];
+					   closestPrimitive    = box.startIndex.x+cptPrimitives;
 					   closestIntersection = intersection;
 					   closestNormal       = normal;
 					   intersections       = true;
@@ -1510,7 +1508,7 @@ ________________________________________________________________________________
 */
 __device__ float4 launchRay( 
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive* primitives, const int& nbActivePrimitives,
+	Primitive* primitives, const int& nbActivePrimitives,
 	int* lamps, const int& nbActiveLamps,
 	Material*  materials, char* textures,
 	float*           randoms,
@@ -1554,7 +1552,7 @@ __device__ float4 launchRay(
 			carryon = intersectionWithPrimitives(
 				sceneInfo,
 				boundingBoxes, nbActiveBoxes,
-				boxPrimitivesIndex, primitives, nbActivePrimitives,
+				primitives, nbActivePrimitives,
 				materials, textures,
 				rayOrigin,
 				iteration,  
@@ -1641,7 +1639,7 @@ __device__ float4 launchRay(
 			recursiveColor = primitiveShader( 
 				sceneInfo, postProcessingInfo,
 				boundingBoxes, nbActiveBoxes,
-			   boxPrimitivesIndex, primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
+			   primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
 			   randoms,
 			   rayOrigin.origin, normal, closestPrimitive, closestIntersection, 
 			   iteration, refractionFromColor, shadowIntensity, rBlinn );
@@ -1711,7 +1709,7 @@ ________________________________________________________________________________
 */
 __global__ void k_standardRenderer(
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive* primitives, int nbActivePrimitives,
+	Primitive* primitives, int nbActivePrimitives,
 	int* lamps, int nbActiveLamps,
 	Material*    materials,
 	char*        textures,
@@ -1781,7 +1779,7 @@ __global__ void k_standardRenderer(
 
 	float4 color = launchRay(
 		BoundingBoxes, nbActiveBoxes,
-		boxPrimitivesIndex, primitives, nbActivePrimitives,
+		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
 		randoms,
@@ -1808,7 +1806,7 @@ ________________________________________________________________________________
 */
 __global__ void k_anaglyphRenderer(
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive* primitives, int nbActivePrimitives,
+	Primitive* primitives, int nbActivePrimitives,
 	int* lamps, int nbActiveLamps,
 	Material*    materials,
 	char*        textures,
@@ -1853,7 +1851,7 @@ __global__ void k_anaglyphRenderer(
 
 	float4 colorLeft = launchRay(
 		BoundingBoxes, nbActiveBoxes,
-		boxPrimitivesIndex, primitives, nbActivePrimitives,
+		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
 		randoms,
@@ -1876,7 +1874,7 @@ __global__ void k_anaglyphRenderer(
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 	float4 colorRight = launchRay(
 		BoundingBoxes, nbActiveBoxes,
-		boxPrimitivesIndex, primitives, nbActivePrimitives,
+		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
 		randoms,
@@ -1908,7 +1906,7 @@ ________________________________________________________________________________
 */
 __global__ void k_3DVisionRenderer(
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive*   primitives,    int nbActivePrimitives,
+	Primitive*   primitives,    int nbActivePrimitives,
 	int* lamps, int nbActiveLamps,
 	Material*    materials,
 	char*        textures,
@@ -1968,7 +1966,7 @@ __global__ void k_3DVisionRenderer(
 
 	float4 color = launchRay(
 		BoundingBoxes, nbActiveBoxes,
-		boxPrimitivesIndex, primitives, nbActivePrimitives,
+		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
 		randoms,
@@ -2190,7 +2188,6 @@ extern "C" void initialize_scene(
 {
 	// Scene resources
 	checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes,      NB_MAX_BOXES*sizeof(BoundingBox)));
-	checkCudaErrors(cudaMalloc( (void**)&d_boxPrimitivesIndex, NB_MAX_PRIMITIVES*sizeof(int)));
 	checkCudaErrors(cudaMalloc( (void**)&d_primitives,         NB_MAX_PRIMITIVES*sizeof(Primitive)));
 	checkCudaErrors(cudaMalloc( (void**)&d_lamps,              NB_MAX_LAMPS*sizeof(int)));
 	checkCudaErrors(cudaMalloc( (void**)&d_materials,          NB_MAX_MATERIALS*sizeof(Material)));
@@ -2224,7 +2221,6 @@ ________________________________________________________________________________
 extern "C" void finalize_scene()
 {
 	checkCudaErrors(cudaFree( d_boundingBoxes ));
-	checkCudaErrors(cudaFree( d_boxPrimitivesIndex ));
 	checkCudaErrors(cudaFree( d_primitives ));
 	checkCudaErrors(cudaFree( d_lamps ));
 	checkCudaErrors(cudaFree( d_materials ));
@@ -2243,11 +2239,10 @@ ________________________________________________________________________________
 */
 extern "C" void h2d_scene( 
 	BoundingBox* boundingBoxes, int nbActiveBoxes,
-	int* boxPrimitivesIndex, Primitive*  primitives, int nbPrimitives,
+	Primitive*  primitives, int nbPrimitives,
 	int* lamps, int nbLamps )
 {
 	checkCudaErrors(cudaMemcpy( d_boundingBoxes,      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice ));
-	checkCudaErrors(cudaMemcpy( d_boxPrimitivesIndex, boxPrimitivesIndex, nbPrimitives*sizeof(int),          cudaMemcpyHostToDevice ));
 	checkCudaErrors(cudaMemcpy( d_primitives,         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice ));
 	checkCudaErrors(cudaMemcpy( d_lamps,              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice ));
 }
@@ -2310,7 +2305,7 @@ extern "C" void cudaRender(
 	case vtAnaglyph:
 		{
 			k_anaglyphRenderer<<<grid,blocks,sharedMemSize>>>(
-				d_boundingBoxes, objects.x, d_boxPrimitivesIndex, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
+				d_boundingBoxes, objects.x, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
 				d_randoms, origin, direction, angles, sceneInfo, 
 				postProcessingInfo, d_postProcessingBuffer, d_primitivesXYIds);
 			break;
@@ -2318,7 +2313,7 @@ extern "C" void cudaRender(
 	case vt3DVision:
 		{
 			k_3DVisionRenderer<<<grid,blocks,sharedMemSize>>>(
-				d_boundingBoxes, objects.x, d_boxPrimitivesIndex, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
+				d_boundingBoxes, objects.x, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
 				d_randoms, origin, direction, angles, sceneInfo, 
 				postProcessingInfo, d_postProcessingBuffer, d_primitivesXYIds);
 			break;
@@ -2326,7 +2321,7 @@ extern "C" void cudaRender(
 	default:
 		{
 			k_standardRenderer<<<grid,blocks,sharedMemSize>>>(
-				d_boundingBoxes, objects.x, d_boxPrimitivesIndex, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
+				d_boundingBoxes, objects.x, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
 				d_randoms, origin, direction, angles, sceneInfo,
 				postProcessingInfo, d_postProcessingBuffer, d_primitivesXYIds);
 			break;

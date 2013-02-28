@@ -161,8 +161,6 @@ void CudaKernel::initializeDevice()
 void CudaKernel::resetBoxesAndPrimitives()
 {
    LOG_INFO(3,"CudaKernel::resetBoxesAndPrimitives");
-   m_nbActiveBoxes = -1;
-   m_nbActivePrimitives = -1;
 }
 
 /*
@@ -226,8 +224,8 @@ void CudaKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
-   int nbBoxes = m_nbActiveBoxes+1;
-   int nbPrimitives = m_nbActivePrimitives+1;
+   int nbBoxes = m_boundingBoxes.size();
+   int nbPrimitives = m_primitives.size();
    int nbMaterials = m_nbActiveMaterials+1;
    int nbLamps = m_nbActiveLamps;
 
@@ -235,7 +233,7 @@ void CudaKernel::render_begin( const float timer )
 
 	h2d_scene( 
       m_hBoundingBoxes, nbBoxes, 
-      m_hBoxPrimitivesIndex, m_hPrimitives, nbPrimitives, 
+      m_hPrimitives, nbPrimitives, 
       m_hLamps, nbLamps );
 	
    if( !m_textureTransfered )
