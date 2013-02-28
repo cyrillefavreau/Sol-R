@@ -188,16 +188,19 @@
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_Kinect_d</TargetName>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -218,16 +221,19 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda</TargetName>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_OpenCL</TargetName>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_Kinect</TargetName>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
     <TargetName>$(ProjectName)_cuda_d</TargetName>
@@ -337,10 +343,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>_DEBUG</Defines>
@@ -366,10 +370,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>_DEBUG</Defines>
@@ -395,10 +397,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>_DEBUG;USE_KINECT</Defines>
@@ -513,10 +513,8 @@ copy "$(OutDir)$(TargetName).dll" $(PROJECT_OUTDIR)</Command>
       <AdditionalDependencies>cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
@@ -544,10 +542,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <AdditionalDependencies>opencl.lib;Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
@@ -574,10 +570,8 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <AdditionalDependencies>Kinect10.lib;cudart.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(OutDir)\$(TargetName).lib" $(PROJECT_OUTDIR)
-copy "$(OutDir)\$(TargetName).dll" $(PROJECT_OUTDIR)
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(PROJECT_OUTDIR)\resource.dll
-copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
@@ -603,8 +597,10 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="DLL_API.h" />
+    <ClInclude Include="FileMarshaller.h" />
     <ClInclude Include="GPUKernel.h" />
     <ClInclude Include="Logging.h" />
+    <ClInclude Include="OBJReader.h" />
     <ClInclude Include="OpenCL\OpenCLKernel.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>
@@ -626,7 +622,9 @@ copy "$(ProjectDir)\OpenCL\RayTracer.cl" $(ProjectDir)\resource.dll</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="FileMarshaller.cpp" />
     <ClCompile Include="GPUKernel.cpp" />
+    <ClCompile Include="OBJReader.cpp" />
     <ClCompile Include="OpenCL\OpenCLKernel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>

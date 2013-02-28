@@ -25,6 +25,8 @@
 
 #ifdef WIN32
 #include <windows.h>
+#else
+typedef char* HANDLE;
 #endif 
 
 #include "DLL_API.h"
@@ -38,12 +40,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
    bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
-   int outputType);
+   int outputType, int timer, int fogEffect, int isometric3D );
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 );
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, bool protein, int platform, int device );
+extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, int platform, int device, char* filename );
 extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel();
 
 // ---------- Camera ----------
@@ -57,12 +59,25 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, char* ima
 
 // ---------- Primitives ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive( int type );
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitive( 
    int index, int boxId,
-   double x, double y, double z, 
-   double width, double height, double depth,
-   int materialId, int materialPaddingX, int materialPaddingY );
+   double p0_x, double p0_y, double p0_z, 
+   double p1_x, double p1_y, double p1_z, 
+   double p2_x, double p2_y, double p2_z, 
+   double size_x, double size_y, double size_z,
+   int materialId, double materialPaddingX, double materialPaddingY );
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive( 
+   int index,
+   double& p0_x, double& p0_y, double& p0_z, 
+   double& p1_x, double& p1_y, double& p1_z, 
+   double& p2_x, double& p2_y, double& p2_z, 
+   double& size_x, double& size_y, double& size_z,
+   int& materialId, double& materialPaddingX, double& materialPaddingY );
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y );
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z);
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive( 
@@ -94,7 +109,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double transparency,
    int    textureId,
    double specValue, double specPower, double specCoef, 
-   double innerIllumination);
+   double innerIllumination,
+   bool   fastTransparency);
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int     index,
@@ -111,10 +127,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
 
 // ---------- Textures ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename );
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, char* texture );
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture );
 
-// ---------- Proteins ----------
-extern "C" RAYTRACINGENGINE_API int RayTracer_LoadProtein(
+// ---------- Molecules ----------
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    char* filename,
    int boxId,
    int nbMaxBoxes,

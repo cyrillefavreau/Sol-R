@@ -36,7 +36,8 @@ enum VisionType
 enum OutputType
 {
    otOpenGL = 0,
-   otDelphi = 1
+   otDelphi = 1,
+   otJPEG   = 2
 };
 
 // Scene information
@@ -55,7 +56,7 @@ struct SceneInfo
    int1    renderBoxes;
    int1    pathTracingIteration;
    int1    maxPathTracingIterations;
-   int4    misc; // x : OpenCL=0 or Delphi=1, y: timer
+   int4    misc; // x : OpenGL=0, Delphi=1, JPEG=2, y: timer, z: fog (0: disabled, 1: enabled), w: 1: Isometric 3D
 };
 
 struct Ray
@@ -77,8 +78,9 @@ enum PrimitiveType
 	ptXYPlane     = 5,
 	ptYZPlane     = 6,
 	ptXZPlane     = 7,
-   ptMagicCarpet = 8,
-   ptEnvironment = 9
+	ptMagicCarpet = 8,
+	ptEnvironment = 9,
+	ptEllipsoid   = 10
 };
 
 // TODO! Data structure is too big!!!
@@ -90,7 +92,7 @@ struct Material
    float1 reflection;     
 	float1 refraction;
    float1 transparency;
-   float1 bidon;
+   int1   fastTransparency;
 	int4   textureInfo;       // x: procedural, y: textureId, z: wireframe
 };
 
@@ -104,10 +106,13 @@ struct BoundingBox
 
 struct Primitive
 {
-	float4 center;
-	float4 otherCenter;
+	float4 p0;
+	float4 p1;
+	float4 p2;
 	float4 axis;
-	float4 normal;
+	float4 n0;
+	float4 n1;
+	float4 n2;
 	float4 size;
 	int1   type;
 	int1   materialId;

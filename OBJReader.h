@@ -1,4 +1,5 @@
 /* 
+* Raytracing Engine
 * Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
@@ -22,46 +23,27 @@
 
 #pragma once
 
-#include "../DLL_API.h"
-#include "../GPUKernel.h"
+#include <map>
 
-class RAYTRACINGENGINE_API CudaKernel : public GPUKernel
+#include "GPUKernel.h"
+
+class RAYTRACINGENGINE_API OBJReader
 {
 public:
+   OBJReader(void);
+   ~OBJReader(void);
 
-   CudaKernel(bool activeLogging, int platform = 0, int device = 0);
-	~CudaKernel();
+   float4 loadModelFromFile( 
+      const std::string& filename,
+      GPUKernel& cudaKernel,
+      const float4& center,
+      int boxId, float scale, int materialId);
 
-   virtual void initBuffers();
-
-public:
-	// ---------- Devices ----------
-	void initializeDevice();
-	void releaseDevice();
-
-   void deviceQuery();
-
-   void resetBoxesAndPrimitives();
-
-public:
-	// ---------- Rendering ----------
-	void render_begin( const float timer );
-   void render_end( char* bitmap);
-
-public:
-
-   void setBlockSize( int x, int y, int z)    { m_blockSize.x = x; m_blockSize.y = y; m_blockSize.z = z; };
-   void setSharedMemSize( int sharedMemSize ) { m_sharedMemSize = sharedMemSize; };
+private:
+   int processBoxes( std::map<int,float4>& vertices, std::map<int,int>& primitivesPerBox, const int boxSize, int& nbActiveBoxes );
 
 private:
 
-   // Runtime kernel execution parameters
-   int4 m_blockSize;
-   int  m_sharedMemSize;
-
-private:
-
-   // Bitmap output
-   int m_imageCount;
-
+   float4 m_minPos;
+   float4 m_maxPos;
 };

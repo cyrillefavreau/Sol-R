@@ -52,7 +52,7 @@ public:
    };
 
 public:
-	OpenCLKernel( bool activeLogging, bool protein, int platform = 0, int device = 0 );
+	OpenCLKernel( bool activeLogging, int platform = 0, int device = 0 );
 	~OpenCLKernel();
 
    virtual void initBuffers();

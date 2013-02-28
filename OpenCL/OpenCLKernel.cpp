@@ -124,7 +124,8 @@ void pfn_notify(cl_program, void *user_data)
 /*
 * OpenCLKernel constructor
 */
-OpenCLKernel::OpenCLKernel( bool activeLogging, bool protein, int platform, int device ) : GPUKernel( activeLogging, protein, platform, device ),
+OpenCLKernel::OpenCLKernel( bool activeLogging, int platform, int device )
+ : GPUKernel( activeLogging, platform, device ),
    m_hContext(0),
    m_hQueue(0),
    m_dRandoms(0),

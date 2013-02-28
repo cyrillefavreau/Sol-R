@@ -64,7 +64,8 @@ ________________________________________________________________________________
 CudaKernel::CudaKernel
 ________________________________________________________________________________
 */
-CudaKernel::CudaKernel( bool activeLogging, bool protein, int platform, int device ) : GPUKernel( activeLogging, protein, platform, device ),
+CudaKernel::CudaKernel( bool activeLogging, int platform, int device ) 
+ : GPUKernel( activeLogging, platform, device ),
    m_sharedMemSize(256),
    m_imageCount(0)
 {
@@ -114,7 +115,7 @@ CudaKernel::CudaKernel( bool activeLogging, bool protein, int platform, int devi
 
    setPostProcessingInfo( ppe_none, 0.f, 40.f, 50 );
    float4 bkColor = {0.f, 0.f, 0.f, 0.f};
-   setSceneInfo( 512, 512, 0.f, true, 10000.f, 0.9f, 5, bkColor, false, 0.f, false, 0, 1000, otOpenGL );
+   setSceneInfo( 512, 512, 0.f, true, 10000.f, 0.9f, 5, bkColor, false, 0.f, false, 0, 1000, otOpenGL, 0, 0 );
 }
 
 /*
@@ -257,6 +258,8 @@ void CudaKernel::render_begin( const float timer )
    objects.y = nbPrimitives;
    objects.z = nbLamps;
    objects.w = 0;
+
+   //m_sceneInfo.misc.y = static_cast<int>(timer);
 	cudaRender(
       m_blockSize, m_sharedMemSize,
       m_sceneInfo, objects,

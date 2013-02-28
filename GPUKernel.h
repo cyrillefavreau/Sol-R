@@ -39,7 +39,7 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel( bool activeLogging, bool protein, int platform = 0, int device = 0 );
+   GPUKernel( bool activeLogging, int platform = 0, int device = 0 );
    virtual ~GPUKernel();
 
    virtual void initBuffers();
@@ -56,28 +56,33 @@ public:
 	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
 		int   index, int boxId,
-		float x0, float y0, float z0, 
-      float w,  float h,  float d,
-		int   martialId, 
-		int   materialPaddingX, int materialPaddingY );
+		float x0, float y0, float z0, float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
 		int   index, int boxId,
-		float x0, float y0, float z0, 
-		float x1, float y1, float z1, 
-      float w,  float h,  float d,
-		int   martialId, 
-		int   materialPaddingX, int materialPaddingY );
+		float x0, float y0, float z0, float x1, float y1, float z1,
+      float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
+	void setPrimitive( 
+		int   index, int boxId,
+		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
+      float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
    int getPrimitiveAt( int x, int y );
 
    void rotatePrimitives( float4 rotationCenter, float4 angles, int from, int to );
 	void rotatePrimitive( int boxId, int primitiveIndex, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
+
 	void translatePrimitive( int   index, int boxId, float x, float y, float z );
    void translatePrimitives( float x, float y, float z );
 	void setPrimitiveMaterial( int index, int materialId); 
 	int  getPrimitiveMaterial( int index); 
 	void getPrimitiveCenter( int index, float& x, float& y, float& z, float& w );
+	void getPrimitiveOtherCenter( int index, float4& otherCenter );
 	void setPrimitiveCenter( int index, int boxId, float  x, float  y, float  z, float  w );
 
+   // Normals
+	void setPrimitiveNormals( int   index, float4 n0, float4 n1, float4 n2 );
+
+   Primitive* getPrimitive( const int index );
+     
 public:
    
    void updateBoundingBox( const int boxId, const int primitiveIndex );
@@ -94,14 +99,14 @@ public:
 		float x, float y, float z, 
 		float radius, 
 		int   martialId, 
-		int   materialPaddingX, int materialPaddingY );
+		float materialPaddingX, float materialPaddingY );
 
 	int addRectangle(
-      int boxId,
+		int boxId,
 		float x, float y, float z, 
-      float w, float h, float d,
+		float w, float h, float d,
 		int   martialId, 
-		int   materialPaddingX, int materialPaddingY );
+		float materialPaddingX, float materialPaddingY );
 
 public:
 
@@ -116,10 +121,11 @@ public:
       bool  wireframe, int wireframeWidth,
 		float transparency,
 		int   textureId,
-		float specValue, float specPower, 
-      float innerIllumination, float specCoef );
+		float specValue, float specPower, float specCoef,
+      float innerIllumination,
+      bool  fastTransparency);
 
-   int getMaterial( 
+   int getMaterialAttributes( 
 		int    index,
 		float& r, float& g, float& b, float& noise,
 		float& reflection, 
@@ -129,8 +135,10 @@ public:
       int&   wireframeDepth,
 		float& transparency,
 		int&   textureId,
-		float& specValue, float& specPower, 
-      float& innerIllumination, float& specCoef );
+		float& specValue, float& specPower, float& specCoef,
+      float& innerIllumination );
+
+   Material* getMaterial( const int index );
 
 public:
 
@@ -162,10 +170,15 @@ public:
       bool   renderBoxes,
       int    pathTracingIteration, 
       int    maxPathTracingIterations,
-      OutputType outputType);
+      OutputType outputType,
+      int    timer,
+      int    fogEffect);
 
+   // Scene
    void setSceneInfo( const SceneInfo& sceneInfo ) { m_sceneInfo = sceneInfo; };
+   SceneInfo getSceneInfo() { return m_sceneInfo; };
 
+   // Post processing
    void setPostProcessingInfo( 
       PostProcessingType type,
       float              param1,
@@ -179,7 +192,7 @@ public:
 public:
    
    // Bitmap export
-   void saveBitmapToFile( const std::string& filename, char* bitmap );
+   void saveBitmapToFile( const std::string& filename, char* bitmap, const int width, const int height, const int depth );
 
 
 #ifdef USE_KINECT
@@ -204,6 +217,7 @@ public:
 public:
 
 	int getNbActiveBoxes()      { return m_nbActiveBoxes; };
+	void setNbActiveBoxes( const int nbActiveBoxes ) { m_nbActiveBoxes = nbActiveBoxes; };
 	int getNbActivePrimitives() { return m_nbActivePrimitives; };
 	int getNbActiveints()       { return m_nbActiveLamps; };
 	int getNbActiveMaterials()  { return m_nbActiveMaterials; };
@@ -212,6 +226,9 @@ public:
 
 	char* loadFromFile( const std::string& filename, size_t& length );
    void  saveToFile( const std::string& filename, const std::string& content );
+
+protected:
+   void rotateVector( float4& v, const float4 rotationCenter, const float4& cosAngles, const float4& sinAngles );
 
 protected:
  
@@ -250,8 +267,6 @@ protected:
 protected:
 
    bool m_activeLogging; // activate or deactivate logging
-   bool m_protein; 
-
 
 	// Kinect declarations
 #ifdef USE_KINECT

@@ -1,4 +1,5 @@
 /* 
+* Raytracing Engine
 * Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
@@ -22,46 +23,29 @@
 
 #pragma once
 
-#include "../DLL_API.h"
-#include "../GPUKernel.h"
+#include "GPUKernel.h"
 
-class RAYTRACINGENGINE_API CudaKernel : public GPUKernel
+class RAYTRACINGENGINE_API FileMarshaller
 {
 public:
 
-   CudaKernel(bool activeLogging, int platform = 0, int device = 0);
-	~CudaKernel();
-
-   virtual void initBuffers();
-
-public:
-	// ---------- Devices ----------
-	void initializeDevice();
-	void releaseDevice();
-
-   void deviceQuery();
-
-   void resetBoxesAndPrimitives();
-
-public:
-	// ---------- Rendering ----------
-	void render_begin( const float timer );
-   void render_end( char* bitmap);
+   FileMarshaller(GPUKernel* cudaKernel);
+   ~FileMarshaller(void);
 
 public:
 
-   void setBlockSize( int x, int y, int z)    { m_blockSize.x = x; m_blockSize.y = y; m_blockSize.z = z; };
-   void setSharedMemSize( int sharedMemSize ) { m_sharedMemSize = sharedMemSize; };
+   void loadFromFile( const std::string& filename);
+   void saveToFile( const std::string& filename);
 
 private:
 
-   // Runtime kernel execution parameters
-   int4 m_blockSize;
-   int  m_sharedMemSize;
+   void readSceneInfo( const std::string& line );
+   void readPrimitive( const std::string& line );
+   void readMaterial( const std::string& line );
 
 private:
-
-   // Bitmap output
-   int m_imageCount;
+   
+   GPUKernel* m_gpuKernel;
 
 };
+

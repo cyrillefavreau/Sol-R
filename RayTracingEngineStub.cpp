@@ -24,19 +24,20 @@
 #include "RayTracingEngineStub.h"
 #include "Consts.h"
 #include "PDBReader.h"
+#include "FileMarshaller.h"
 
 #include <fstream>
 
-#ifdef USE_CUDA
+#if USE_CUDA
 #include "Cuda/CudaKernel.h"
 typedef CudaKernel GPUKERNEL;
-GPUKERNEL* gpuKernel = 0;
+GPUKERNEL* gpuKernel = NULL;
 #endif // USE_OPENCL
 
-#ifdef USE_OPENCL
+#if USE_OPENCL
 #include "OpenCL/OpenCLKernel.h"
 typedef OpenCLKernel GPUKERNEL;
-GPUKERNEL* gpuKernel = 0;
+GPUKERNEL* gpuKernel = NULL;
 #endif // USE_OPENCL
 
 SceneInfo gSceneInfo;
@@ -52,7 +53,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
    bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
-   int outputType)
+   int outputType, int timer, int fogEffect, int isometric3D)
 {
    gSceneInfo.width.x                   = width;
    gSceneInfo.height.x                  = height;
@@ -71,6 +72,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    gSceneInfo.pathTracingIteration.x    = pathTracingIteration;
    gSceneInfo.maxPathTracingIterations.x= maxPathTracingIterations;
    gSceneInfo.misc.x                    = outputType;
+   gSceneInfo.misc.y                    = timer;
+   gSceneInfo.misc.z                    = fogEffect;
+   gSceneInfo.misc.w                    = isometric3D;
    return 0;
 }
 
@@ -84,12 +88,24 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, bool protein, int platform, int device )
+extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( 
+   bool activeLogging, 
+   int platform, 
+   int device, 
+   char* filename )
 {
-	gpuKernel = new GPUKERNEL( activeLogging, protein, platform, device );
-   if( gpuKernel == 0 ) return -1;
-	gpuKernel->setSceneInfo( gSceneInfo );
-   gpuKernel->initBuffers();
+	gpuKernel = new GPUKERNEL( activeLogging, platform, device );
+   if( gpuKernel == NULL ) return -1;
+   if( filename != NULL )
+   {
+   	FileMarshaller reader( gpuKernel );
+      reader.loadFromFile(filename);
+   }
+   else
+   {
+	   gpuKernel->setSceneInfo( gSceneInfo );
+      gpuKernel->initBuffers();
+   }
    return 0;
 }
 
@@ -137,19 +153,53 @@ extern "C" RAYTRACINGENGINE_API
    int RayTracer_SetPrimitive( 
    int    index,
    int    boxId,
-   double x, double y, double z, 
-   double width,
-   double height,
-   double depth,
+   double p0_x, double p0_y, double p0_z, 
+   double p1_x, double p1_y, double p1_z, 
+   double p2_x, double p2_y, double p2_z, 
+   double size_x, double size_y, double size_z,
    int    materialId, 
-   int    materialPaddingX, 
-   int    materialPaddingY )
+   double materialPaddingX, 
+   double materialPaddingY )
 {
    gpuKernel->setPrimitive(
       index, boxId,
-      static_cast<float>(x), static_cast<float>(y), static_cast<float>(z), 
-      static_cast<float>(width), static_cast<float>(height), static_cast<float>(depth), 
-      materialId, materialPaddingX, materialPaddingY );
+      static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
+      static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
+      static_cast<float>(p2_x), static_cast<float>(p2_y), static_cast<float>(p2_z), 
+      static_cast<float>(size_x), static_cast<float>(size_y), static_cast<float>(size_z), 
+      materialId, 
+      static_cast<float>(materialPaddingX), 
+      static_cast<float>(materialPaddingY));
+   return 0;
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive( 
+   int index,
+   double& p0_x, double& p0_y, double& p0_z, 
+   double& p1_x, double& p1_y, double& p1_z, 
+   double& p2_x, double& p2_y, double& p2_z, 
+   double& size_x, double& size_y, double& size_z,
+   int& materialId, double& materialPaddingX, double& materialPaddingY )
+{
+   Primitive* primitive = gpuKernel->getPrimitive(index);
+   if( primitive != NULL )
+   {
+      p0_x = primitive->p0.x;
+      p0_y = primitive->p0.y;
+      p0_z = primitive->p0.z;
+      p1_x = primitive->p1.x;
+      p1_y = primitive->p1.y;
+      p1_z = primitive->p1.z;
+      p2_x = primitive->p2.x;
+      p2_y = primitive->p2.y;
+      p2_z = primitive->p2.z;
+      size_x = primitive->size.x;
+      size_y = primitive->size.y;
+      size_z = primitive->size.z;
+      materialId = primitive->materialId.x;
+      materialPaddingX = static_cast<int>(primitive->materialInfo.x);
+      materialPaddingY = static_cast<int>(primitive->materialInfo.y);
+   }
    return 0;
 }
 
@@ -208,7 +258,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( int index)
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons( 
    int index, int boxId,
-   double center_x, double  center_y, double center_z, 
+   double p0_x, double  p0_y, double p0_z, 
    double size,
    double radius,       int materialId,
    double head_radius,  int head_materialId,
@@ -216,7 +266,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
    double feet_radius,  int feet_materialId)
 {
 #if USE_KINECT
-   float4 position = { static_cast<float>(center_x), static_cast<float>(center_y), static_cast<float>(center_z), 0.f };
+   float4 position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 0.f };
    return gpuKernel->updateSkeletons(
       index, boxId,
       position,
@@ -238,7 +288,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename )
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, char* texture )
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture )
 {
    gpuKernel->setTexture( 
       index, 
@@ -262,7 +312,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    bool   wireframe, int wireframeDepth,
    double transparency,
    int    textureId,
-   double specValue, double specPower, double specCoef, double innerIllumination)
+   double specValue, double specPower, double specCoef, double innerIllumination,
+   bool   fastTransparency)
 {
    gpuKernel->setMaterial(
       index, 
@@ -279,8 +330,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
       static_cast<int>(textureId),
       static_cast<float>(specValue),
       static_cast<float>(specPower), 
+      static_cast<float>(specCoef ),
       static_cast<float>(innerIllumination),
-      static_cast<float>(specCoef )
+      fastTransparency
       );
    return 0;
 }
@@ -309,11 +361,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    bool  wireframe;
    int   wireframeDepth;
    int   textureId;
-   int returnValue = gpuKernel->getMaterial(
+   int returnValue = gpuKernel->getMaterialAttributes(
       in_index, 
       color_r, color_g, color_b,
       noise, reflection, refraction, procedural, wireframe, wireframeDepth, transparency, 
-      textureId, specValue, specPower, innerIllumination, specCoef );
+      textureId, specValue, specPower, specCoef, innerIllumination );
 
    out_color_r = static_cast<double>(color_r);
    out_color_g = static_cast<double>(color_g);
@@ -333,7 +385,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    return returnValue;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_LoadProtein( 
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 
    char* filename,
    int boxId,
    int nbMaxBoxes,
@@ -353,3 +405,4 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadProtein(
       atomMaterialType );
    return gpuKernel->compactBoxes();
 }
+

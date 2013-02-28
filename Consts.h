@@ -23,24 +23,27 @@
 
 #pragma once
 
-const int NB_MAX_BOXES      = 18*18*18;
-const int NB_MAX_PRIMITIVES = 100000;
-const int NB_MAX_LAMPS      = 100;
+const int NB_MAX_BOXES      = 32*32*32;
+const int NB_MAX_PRIMITIVES = 300000;
+const int NB_MAX_LAMPS      = 10;
 const int NB_MAX_MATERIALS  = 100;
-const int NB_MAX_TEXTURES   = 10;
+const int NB_MAX_TEXTURES   = 40;
 
 
 // Constants
-#define NO_MATERIAL -1
-#define NO_TEXTURE  -1
+#define MATERIAL_NONE -1
+#define TEXTURE_NONE  -1
+#define TEXTURE_MANDELBROT -2
+#define TEXTURE_JULIA -3
 #define gColorDepth  3
 
 // Textures
-const int gTextureWidth  = 1024;
-const int gTextureHeight = 1024;
+const int gTextureWidth  = 256;
+const int gTextureHeight = 256;
 const int gTextureDepth  = 3;
 const int gTextureSize   = gTextureWidth*gTextureHeight*gTextureDepth;
 
+#ifdef USE_KINECT
 // Kinect
 const int gKinectVideoWidth  = 640;
 const int gKinectVideoHeight = 480;
@@ -53,3 +56,6 @@ const int gKinectDepth       = 2;
 const int gKinectDepthSize   = gKinectDepthWidth*gKinectDepthHeight*gKinectDepth;
 
 const int gTextureOffset = gKinectVideoSize+gKinectDepthSize;
+#else
+const int gTextureOffset = 0;
+#endif // USE_KINECT

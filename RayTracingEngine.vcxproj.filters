@@ -22,6 +22,12 @@
     <Filter Include="Source Files\PDB">
       <UniqueIdentifier>{307bc309-c041-4b04-9d04-4c22ebb2bb36}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\File">
+      <UniqueIdentifier>{a3db0b32-5417-4acd-b347-54e00ebafea8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OBJ">
+      <UniqueIdentifier>{33b96ccb-ae4e-49be-8c01-9fd255014a52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -57,6 +63,12 @@
     <ClInclude Include="PDBReader.h">
       <Filter>Source Files\PDB</Filter>
     </ClInclude>
+    <ClInclude Include="FileMarshaller.h">
+      <Filter>Source Files\File</Filter>
+    </ClInclude>
+    <ClInclude Include="OBJReader.h">
+      <Filter>Source Files\OBJ</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -73,6 +85,12 @@
     </ClCompile>
     <ClCompile Include="PDBReader.cpp">
       <Filter>Source Files\PDB</Filter>
+    </ClCompile>
+    <ClCompile Include="FileMarshaller.cpp">
+      <Filter>Source Files\File</Filter>
+    </ClCompile>
+    <ClCompile Include="OBJReader.cpp">
+      <Filter>Source Files\OBJ</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
