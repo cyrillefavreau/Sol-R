@@ -211,7 +211,12 @@ public:
    void setPostProcessingInfo( const PostProcessingInfo& postProcessingInfo ) { m_postProcessingInfo = postProcessingInfo; }
 
 public:
-   
+
+   // Vector Utilities
+   float vectorLength( const float4& vector );
+   void normalizeVector( float4& v );
+   float4 crossProduct( const float4& b, const float4& c );
+     
    // Bitmap export
    void saveBitmapToFile( const std::string& filename, char* bitmap, const int width, const int height, const int depth );
 

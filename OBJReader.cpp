@@ -126,7 +126,7 @@ float4 OBJReader::loadModelFromFile(
                }
 
                if( line[1] == 'n' )
-               {
+               {  
                   normals[index_normals] = vertex;
                   ++index_normals;
                }

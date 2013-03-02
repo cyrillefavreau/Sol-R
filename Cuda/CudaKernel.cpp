@@ -70,9 +70,9 @@ CudaKernel::CudaKernel( bool activeLogging, int platform, int device )
    m_imageCount(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
-   m_blockSize.x = 1024;
-   m_blockSize.y = 1024;
-   m_blockSize.z = 1;
+   m_blockSize.x = 0;
+   m_blockSize.y = 0;
+   m_blockSize.z = 0;
    m_blockSize.w = 0;
 #ifdef LOGGING
 	// Initialize Log

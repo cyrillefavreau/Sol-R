@@ -1777,8 +1777,15 @@ __global__ void k_standardRenderer(
 	vectorRotation( ray.origin, rotationCenter, angles );
 	vectorRotation( ray.direction, rotationCenter, angles );
 
+   __shared__ BoundingBox shBoundingBoxes[128];
+   if( threadIdx.x==0 && threadIdx.y==0)
+   {
+      memcpy( shBoundingBoxes, BoundingBoxes, sizeof(BoundingBox)*nbActiveBoxes);
+   }
+   __syncthreads();
+
 	float4 color = launchRay(
-		BoundingBoxes, nbActiveBoxes,
+		shBoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -2299,6 +2306,7 @@ extern "C" void cudaRender(
 
 	dim3 grid((size.x+blockSize.x-1)/blockSize.x,(size.y+blockSize.y-1)/blockSize.y,1);
 	dim3 blocks( blockSize.x,blockSize.y,blockSize.z );
+   sharedMemSize = objects.x*sizeof(BoundingBox);
 
 	switch( sceneInfo.supportFor3DVision.x ) 
 	{

@@ -14,7 +14,7 @@
 #include "Consts.h"
 
 const int MAX_SOURCE_SIZE = 65535;
-const int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 25; //300;
+const int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 100; //300;
 
 float4 min4( const float4 a, const float4 b, const float4 c )
 {
@@ -35,13 +35,13 @@ float4 max4( const float4 a, const float4 b, const float4 c )
 }
 
 // ________________________________________________________________________________
-float vectorLength( const float4& vector )
+float GPUKernel::vectorLength( const float4& vector )
 {
 	return sqrt( vector.x*vector.x + vector.y*vector.y + vector.z*vector.z );
 }
 
 // ________________________________________________________________________________
-void normalizeVector( float4& v )
+void GPUKernel::normalizeVector( float4& v )
 {
 	float l = vectorLength( v );
    v.x /= l;
@@ -49,7 +49,7 @@ void normalizeVector( float4& v )
    v.z /= l;
 }
 
-float4 crossProduct( const float4& b, const float4& c )
+float4 GPUKernel::crossProduct( const float4& b, const float4& c )
 {
 	float4 a;
 	a.x = b.y*c.z - b.z*c.y;
@@ -597,7 +597,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       }
    }
 
-   return abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-maxPrimitivePerBox);
+   return abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes);
 }
 
 int GPUKernel::compactBoxes( bool reconstructBoxes )
