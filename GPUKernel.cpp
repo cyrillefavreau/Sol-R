@@ -351,9 +351,7 @@ void GPUKernel::setPrimitive(
 				break;
 			}
 		}
-		m_primitives[index].n0.w = 1.f; // 0 if other normals differ
-		//m_primitives[index].n1 = m_primitives[index].n0;
-		//m_primitives[index].n2 = m_primitives[index].n0;
+		m_primitives[index].n0.w = 1.f; 
 
       //min
       m_minPos.x = (x0 < m_minPos.x) ? x0 : m_minPos.x;
