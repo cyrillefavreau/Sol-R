@@ -87,7 +87,7 @@ void FileMarshaller::readSceneInfo( const std::string& line )
 
 void FileMarshaller::readPrimitive( const std::string& line )
 {
-   Primitive primitive;
+   Primitive primitive = {0.f};
    std::string value;
    size_t i( strlen(PRIMITIVE.c_str())+1 );
    int c(0);
