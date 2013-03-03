@@ -243,7 +243,7 @@ public:
 public:
 
 	int getNbActiveBoxes()      { return static_cast<int>(m_boundingBoxes.size()); };
-	int getNbActivePrimitives() { return m_primitives.size(); };
+	int getNbActivePrimitives() { return static_cast<int>(m_primitives.size()); };
 	int getNbActiveints()       { return m_nbActiveLamps; };
 	int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 

@@ -581,7 +581,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       }
       //if( primitivesPerBox.size() != 0 ) maxPrimitivePerBox /= static_cast<int>(primitivesPerBox.size());
 #else
-      maxPrimitivePerBox = m_primitives.size()/nbActiveBoxes;
+      maxPrimitivePerBox = static_cast<int>(m_primitives.size()/nbActiveBoxes);
 #endif
       //std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
    }
@@ -678,7 +678,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       ++itb;
    }
    //std::cout << "Compacted boxes (" << b << "/" << m_boundingBoxes.size() << ")" << std::endl;
-	return m_boundingBoxes.size();
+	return static_cast<int>(m_boundingBoxes.size());
 }
 
 void GPUKernel::displayBoxesInfo()

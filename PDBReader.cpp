@@ -297,8 +297,6 @@ float4 PDBReader::loadAtomsFromFile(
             ( geometryType==gtBackbone /* && atom.isBackbone*/) || 
             ( geometryType==gtAtomsAndSticks && atom.chainId%2 == 1) ) 
          {
-            int cptMeshes(0);
-            float4 meshes[3];
             std::map<int,Atom>::iterator it2 = atoms.begin();
             while( it2 != atoms.end() )
             {

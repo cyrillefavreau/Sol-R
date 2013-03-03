@@ -22,6 +22,8 @@
 
 #pragma once
 
+#pragma warning (disable:4251)
+
 #ifdef WIN32
 	#ifdef RAYTRACINGENGINE_EXPORTS
 	#define RAYTRACINGENGINE_API __declspec(dllexport)

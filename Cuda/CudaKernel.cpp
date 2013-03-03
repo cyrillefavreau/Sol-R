@@ -224,8 +224,8 @@ void CudaKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
-   int nbBoxes = m_boundingBoxes.size();
-   int nbPrimitives = m_primitives.size();
+   int nbBoxes = static_cast<int>(m_boundingBoxes.size());
+   int nbPrimitives = static_cast<int>(m_primitives.size());
    int nbMaterials = m_nbActiveMaterials+1;
    int nbLamps = m_nbActiveLamps;
 
