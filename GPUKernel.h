@@ -79,15 +79,15 @@ public:
 	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
 		int   index,
-		float x0, float y0, float z0, float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
+		float x0, float y0, float z0, float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
 		int   index,
 		float x0, float y0, float z0, float x1, float y1, float z1,
-      float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
+      float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
 		int   index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
-      float w,  float h,  float d, int   martialId, float materialPaddingX, float materialPaddingY );
+      float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
    int getPrimitiveAt( int x, int y );
    void setPrimitiveIsMovable( int index, bool movable );
 
@@ -103,6 +103,13 @@ public:
 
    // Normals
 	void setPrimitiveNormals( int   index, float4 n0, float4 n1, float4 n2 );
+
+   // Lights
+   int getLight( int index );
+	void setLight( 
+		int   index,
+		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
+      float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 
    CPUPrimitive* getPrimitive( const int index );
      
@@ -122,14 +129,14 @@ public:
       int boxId,
 		float x, float y, float z, 
 		float radius, 
-		int   martialId, 
+		int   materialId, 
 		float materialPaddingX, float materialPaddingY );
 
 	int addRectangle(
 		int boxId,
 		float x, float y, float z, 
 		float w, float h, float d,
-		int   martialId, 
+		int   materialId, 
 		float materialPaddingX, float materialPaddingY );
 
 public:
@@ -227,7 +234,6 @@ public:
 
 	int updateSkeletons( 
       int    primitiveIndex,
-      int    boxId,
 		float4 skeletonPosition, 
 		float size,
 		float radius,       int materialId,
@@ -270,10 +276,7 @@ protected:
 	float*	    m_hRandoms;
    int*         m_hPrimitivesXYIds;
 
-   /*
-   int         m_nbActiveBoxes;
 	int			m_nbActivePrimitives;
-   */
 	int			m_nbActiveLamps;
 	int			m_nbActiveMaterials;
 	int			m_nbActiveTextures;

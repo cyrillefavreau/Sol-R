@@ -1572,7 +1572,7 @@ __device__ float4 launchRay(
 				intersectionColor.w = 0.f;
 
 				firstIntersection = closestIntersection;
-				primitiveXYId = closestPrimitive;
+            primitiveXYId = primitives[closestPrimitive].index.x;
 			}
 
          float recursiveColorRatio = 1.f;

@@ -114,6 +114,7 @@ struct Primitive
 	float4 n2;
 	float4 size;
 	int1   type;
+   int1   index;
 	int1   materialId;
 	float2 materialInfo;
 };

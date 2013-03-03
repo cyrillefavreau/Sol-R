@@ -602,82 +602,88 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 {
 	LOG_INFO(3,"GPUKernel::compactBoxes" );
 
-   if( reconstructBoxes )
+   try 
    {
-      // Bounding boxes
-      // Search for best trade-off
-      std::map<int,int> primitivesPerBox;
-      int maxPrimitivePerBox(0);
-      int boxSize = 64;
-      int bestSize = boxSize;
-      int bestRatio = 100000;
-      int activeBoxes(NB_MAX_BOXES);
-      do 
+      if( reconstructBoxes )
       {
-         int ratio = processBoxes( boxSize, activeBoxes, true );
-         if( ratio < bestRatio ) 
+         // Bounding boxes
+         // Search for best trade-off
+         std::map<int,int> primitivesPerBox;
+         int maxPrimitivePerBox(0);
+         int boxSize = 64;
+         int bestSize = boxSize;
+         int bestRatio = 100000;
+         int activeBoxes(NB_MAX_BOXES);
+         do 
          {
-            bestSize = boxSize;
-            bestRatio = ratio;
+            int ratio = processBoxes( boxSize, activeBoxes, true );
+            if( ratio < bestRatio ) 
+            {
+               bestSize = boxSize;
+               bestRatio = ratio;
+            }
+            boxSize--;
          }
-         boxSize--;
+         while( boxSize>0 );
+         std::cout << "Best trade off: " << bestSize << "/" << activeBoxes << " boxes" << std::endl;
+         processBoxes( bestSize, activeBoxes, false );
       }
-      while( boxSize>0 );
-      std::cout << "Best trade off: " << bestSize << "/" << activeBoxes << " boxes" << std::endl;
-      processBoxes( bestSize, activeBoxes, false );
-   }
 
-   int b(0);
-   int primitivesIndex(0);
-   m_nbActiveLamps = 0;
-   std::map<int,CPUBoundingBox>::iterator itb=m_boundingBoxes.begin();
-   while( itb != m_boundingBoxes.end() )
+      int b(0);
+      int primitivesIndex(0);
+      m_nbActivePrimitives = 0;
+      m_nbActiveLamps = 0;
+      std::map<int,CPUBoundingBox>::iterator itb=m_boundingBoxes.begin();
+      while( itb != m_boundingBoxes.end() )
+      {
+         CPUBoundingBox& box = (*itb).second;
+         if( box.primitives.size() != 0 && b<NB_MAX_BOXES )
+         {
+            // Prepare boxes for GPU
+            m_hBoundingBoxes[b].parameters[0] = box.parameters[0];
+            m_hBoundingBoxes[b].parameters[1] = box.parameters[1];
+            m_hBoundingBoxes[b].startIndex.x  = primitivesIndex;
+            m_hBoundingBoxes[b].nbPrimitives.x= static_cast<int>(box.primitives.size());
+
+            std::vector<int>::const_iterator itp = box.primitives.begin();
+            while( itp != box.primitives.end() )
+            {
+               // Prepare primitives for GPU
+               CPUPrimitive& primitive = m_primitives[*itp];
+               m_hPrimitives[primitivesIndex].index.x = *itp;
+               m_hPrimitives[primitivesIndex].type.x  = primitive.type;
+               m_hPrimitives[primitivesIndex].p0 = primitive.p0;
+               m_hPrimitives[primitivesIndex].p1 = primitive.p1;
+               m_hPrimitives[primitivesIndex].p2 = primitive.p2;
+               m_hPrimitives[primitivesIndex].n0 = primitive.n0;
+               m_hPrimitives[primitivesIndex].n1 = primitive.n1;
+               m_hPrimitives[primitivesIndex].n2 = primitive.n2;
+               m_hPrimitives[primitivesIndex].size = primitive.size;
+               m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
+               m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
+
+               // Lights
+		         if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
+		         {
+                  primitive.movable = false;
+			         m_hLamps[m_nbActiveLamps] = primitivesIndex;
+			         m_nbActiveLamps++;
+			         LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
+		         }
+
+               ++itp;
+               ++primitivesIndex;
+            }
+            ++b;
+         }
+         ++itb;
+      }
+      //std::cout << "Compacted boxes (" << b << "/" << m_boundingBoxes.size() << ")" << std::endl;
+      m_nbActivePrimitives=primitivesIndex;
+   }
+   catch( ... ) 
    {
-      CPUBoundingBox& box = (*itb).second;
-      if( box.primitives.size() != 0 && b<NB_MAX_BOXES )
-      {
-         // Prepare boxes for GPU
-         m_hBoundingBoxes[b].parameters[0] = box.parameters[0];
-         m_hBoundingBoxes[b].parameters[1] = box.parameters[1];
-         m_hBoundingBoxes[b].startIndex.x  = primitivesIndex;
-         m_hBoundingBoxes[b].nbPrimitives.x= static_cast<int>(box.primitives.size());
-
-         std::vector<int>::const_iterator itp = box.primitives.begin();
-         while( itp != box.primitives.end() )
-         {
-            // Prepare primitives for GPU
-            CPUPrimitive& primitive = m_primitives[*itp];
-            m_hPrimitives[primitivesIndex].type.x = primitive.type;
-            m_hPrimitives[primitivesIndex].p0 = primitive.p0;
-            m_hPrimitives[primitivesIndex].p1 = primitive.p1;
-            m_hPrimitives[primitivesIndex].p2 = primitive.p2;
-            m_hPrimitives[primitivesIndex].n0 = primitive.n0;
-            m_hPrimitives[primitivesIndex].n1 = primitive.n1;
-            m_hPrimitives[primitivesIndex].n2 = primitive.n2;
-            m_hPrimitives[primitivesIndex].size = primitive.size;
-            m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
-            m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
-
-            // Lights
-		      if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
-		      {
-			      m_hLamps[m_nbActiveLamps] = primitivesIndex;///(*itp);
-			      m_nbActiveLamps++;
-			      LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
-		      }
-
-            ++itp;
-            ++primitivesIndex;
-         }
-         ++b;
-      }
-      else
-      {
-         m_boundingBoxes.erase(itb);
-      }
-      ++itb;
    }
-   //std::cout << "Compacted boxes (" << b << "/" << m_boundingBoxes.size() << ")" << std::endl;
 	return static_cast<int>(m_boundingBoxes.size());
 }
 
@@ -746,7 +752,6 @@ void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, int from
    while( itb != m_boundingBoxes.end() )
    {
       CPUBoundingBox& box((*itb).second);
-		//rotateBox( box, rotationCenter, cosAngles, sinAngles );
       resetBox(box,false);
       std::vector<int>::const_iterator it = box.primitives.begin();
       while( it != box.primitives.end() )
@@ -755,7 +760,7 @@ void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, int from
          if( primitive.movable )
          {
 			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
-         }
+         } 
          ++it;
 		}
       updateBoundingBox(box);
@@ -822,9 +827,12 @@ void GPUKernel::rotatePrimitive(
 				axis.y = primitive.p1.y - primitive.p0.y;
 				axis.z = primitive.p1.z - primitive.p0.z;
 				float len = sqrtf( axis.x*axis.x + axis.y*axis.y + axis.z*axis.z );
-				axis.x /= len;
-				axis.y /= len;
-				axis.z /= len;
+            if( len != 0 )
+            {
+				   axis.x /= len;
+				   axis.y /= len;
+				   axis.z /= len;
+            }
 				primitive.n1.x = axis.x;
 				primitive.n1.y = axis.y;
 				primitive.n1.z = axis.z;
@@ -889,45 +897,45 @@ int GPUKernel::addCube(
 	int boxId,
 	float x, float y, float z, 
 	float radius, 
-	int   martialId, 
+	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
 	LOG_INFO(3,"GPUKernel::addCube(" << boxId << ")" );
-	return addRectangle(boxId, x,y,z,radius,radius,radius,martialId,materialPaddingX,materialPaddingY);
+	return addRectangle(boxId, x,y,z,radius,radius,radius,materialId,materialPaddingX,materialPaddingY);
 }
 
 int GPUKernel::addRectangle( 
 	int boxId,
 	float x, float y, float z, 
 	float w, float h, float d,
-	int   martialId, 
+	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
 	LOG_INFO(3,"GPUKernel::addRectangle(" << boxId << ")" );
 	int returnValue;
 	// Back
 	returnValue = addPrimitive( ptXYPlane );
-	setPrimitive( returnValue, x, y, z+d, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, x, y, z+d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Front
 	returnValue = addPrimitive( ptXYPlane );
-	setPrimitive( returnValue, x, y, z-d, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, x, y, z-d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Left
 	returnValue = addPrimitive( ptYZPlane );
-	setPrimitive( returnValue, x-w, y, z, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, x-w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Right
 	returnValue = addPrimitive( ptYZPlane );
-	setPrimitive( returnValue, x+w, y, z, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, x+w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Top
 	returnValue = addPrimitive( ptXZPlane );
-	setPrimitive( returnValue, x, y+h, z, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, x, y+h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Bottom
 	returnValue = addPrimitive( ptXZPlane );
-	setPrimitive( returnValue, x, y-h, z, w, h, d, martialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive( returnValue, x, y-h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 	return returnValue;
 }
 
@@ -1279,7 +1287,6 @@ int GPUKernel::addTexture( const std::string& filename )
 #ifdef USE_KINECT
 int GPUKernel::updateSkeletons( 
 	int    primitiveIndex, 
-	int    boxId,
 	float4 skeletonPosition, 
 	float size,
 	float radius,       int materialId,
@@ -1391,3 +1398,40 @@ void GPUKernel::saveBitmapToFile( const std::string& filename, char* bitmap, con
 	fwrite(bitmap,1,width*height*depth,f );
 	fclose(f);
 };
+
+int GPUKernel::getLight( int index )
+{
+   if( index < m_nbActiveLamps )
+   {
+      return m_hLamps[index];
+   }
+   return -1;
+}
+
+void GPUKernel::setLight( 
+	int   index,
+	float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
+   float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY )
+{
+   bool found(false);
+   int i(0);
+   while( i<m_nbActiveLamps && !found )
+   {
+      if( m_hLamps[i] == index )
+      {
+         found = true;
+      }
+      else
+      {
+         ++i;
+      }
+   }
+   if( found )
+   {
+      setPrimitive( m_hPrimitives[m_hLamps[i]].index.x, x0, y0, z0, x1, y1, z1, x2, y2, z2,
+         w,h,d,materialId,materialPaddingX,materialPaddingY);
+      m_hPrimitives[m_hLamps[i]].p0.x = x0;
+      m_hPrimitives[m_hLamps[i]].p0.y = y0;
+      m_hPrimitives[m_hLamps[i]].p0.z = z0;
+   }
+}

@@ -61,7 +61,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, char* ima
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive( int type );
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitive( 
-   int index, int boxId,
+   int index,
    double p0_x, double p0_y, double p0_z, 
    double p1_x, double p1_y, double p1_z, 
    double p2_x, double p2_y, double p2_z, 
@@ -81,7 +81,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y );
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z);
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive( 
-   int index, int boxId,
+   int index,
    double rx, double ry, double rz,
    double ax, double ay, double az);
 extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives( 
@@ -125,6 +125,23 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& specValue, double& specPower, double& specCoef,
    double& innerIllumination);
 
+// Boxes
+extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update );
+
+// ---------- Lights ----------
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index );
+
+extern "C" RAYTRACINGENGINE_API 
+   int RayTracer_SetLight( 
+   int    index,
+   double p0_x, double p0_y, double p0_z, 
+   double p1_x, double p1_y, double p1_z, 
+   double p2_x, double p2_y, double p2_z, 
+   double size_x, double size_y, double size_z,
+   int    materialId, 
+   double materialPaddingX, 
+   double materialPaddingY );
+
 // ---------- Textures ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename );
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture );
@@ -136,7 +153,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    double defaultAtomSize,
    double defaultStickSize,
    int    atomMaterialType,
-   float  scale);
+   double scale);
 
 #ifdef USE_KINECT
 // ---------- Kinect ----------

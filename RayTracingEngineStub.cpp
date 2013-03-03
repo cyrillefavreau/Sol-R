@@ -152,7 +152,6 @@ extern "C" RAYTRACINGENGINE_API
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_SetPrimitive( 
    int    index,
-   int    boxId,
    double p0_x, double p0_y, double p0_z, 
    double p1_x, double p1_y, double p1_z, 
    double p2_x, double p2_y, double p2_z, 
@@ -197,10 +196,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
       size_y = primitive->size.y;
       size_z = primitive->size.z;
       materialId = primitive->materialId;
-      materialPaddingX = static_cast<int>(primitive->materialInfo.x);
-      materialPaddingY = static_cast<int>(primitive->materialInfo.y);
+      materialPaddingX = primitive->materialInfo.x;
+      materialPaddingY = primitive->materialInfo.y;
+      return 0;
    }
-   return 0;
+   return -1;
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y )
@@ -219,7 +219,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, dou
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive( 
-   int index, int boxId,
+   int index,
    double rx, double ry, double rz,
    double ax, double ay, double az)
 {
@@ -235,10 +235,16 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
    double rx, double ry, double rz,
    double ax, double ay, double az)
 {
-   float4 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz), 0.f };
-   float4 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az), 0.f };
+   try
+   {
+      float4 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz), 0.f };
+      float4 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az), 0.f };
 
-   gpuKernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
+      gpuKernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
+   }
+   catch( ... )
+   {
+   }
    return 0;
 }
 
@@ -257,7 +263,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( int index)
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons( 
-   int index, int boxId,
+   int index,
    double p0_x, double  p0_y, double p0_z, 
    double size,
    double radius,       int materialId,
@@ -268,7 +274,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
 #if USE_KINECT
    float4 position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 0.f };
    return gpuKernel->updateSkeletons(
-      index, boxId,
+      index,
       position,
       static_cast<float>(size),
       static_cast<float>(radius),
@@ -391,7 +397,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    double defaultAtomSize,
    double defaultStickSize,
    int    atomMaterialType,
-   float  scale)
+   double scale)
 {
    // PDB
 	PDBReader prbReader;
@@ -401,5 +407,40 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
       static_cast<float>(defaultAtomSize), 
       static_cast<float>(defaultStickSize),
       atomMaterialType, scale );
-   return gpuKernel->compactBoxes();
+   return gpuKernel->compactBoxes(true);
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update )
+{
+   return gpuKernel->compactBoxes(update);
+}
+
+// --------------------------------------------------------------------------------
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
+{
+   return gpuKernel->getLight(index);
+}
+
+// --------------------------------------------------------------------------------
+extern "C" RAYTRACINGENGINE_API 
+   int RayTracer_SetLight( 
+   int    index,
+   double p0_x, double p0_y, double p0_z, 
+   double p1_x, double p1_y, double p1_z, 
+   double p2_x, double p2_y, double p2_z, 
+   double size_x, double size_y, double size_z,
+   int    materialId, 
+   double materialPaddingX, 
+   double materialPaddingY )
+{
+   gpuKernel->setLight(
+      index,
+      static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
+      static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
+      static_cast<float>(p2_x), static_cast<float>(p2_y), static_cast<float>(p2_z), 
+      static_cast<float>(size_x), static_cast<float>(size_y), static_cast<float>(size_z), 
+      materialId, 
+      static_cast<float>(materialPaddingX), 
+      static_cast<float>(materialPaddingY));
+   return 0;
 }
