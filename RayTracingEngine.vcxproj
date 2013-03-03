@@ -188,19 +188,19 @@
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_d</TargetName>
-    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_d</TargetName>
-    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_Kinect_d</TargetName>
-    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -221,19 +221,19 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda</TargetName>
-    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_OpenCL</TargetName>
-    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda_Kinect</TargetName>
-    <OutDir>E:\Git\ProteinVisualizer\windows\x64</OutDir>
+    <OutDir>E:\Git\ProteinVisualizer\windows\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
     <TargetName>$(ProjectName)_cuda_d</TargetName>

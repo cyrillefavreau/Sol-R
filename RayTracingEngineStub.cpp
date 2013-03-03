@@ -406,7 +406,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
       static_cast<GeometryType>(geometryType),
       static_cast<float>(defaultAtomSize), 
       static_cast<float>(defaultStickSize),
-      atomMaterialType, scale );
+      atomMaterialType, 
+      static_cast<float>(scale) );
    return gpuKernel->compactBoxes(true);
 }
 
