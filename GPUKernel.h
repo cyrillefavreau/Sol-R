@@ -252,6 +252,7 @@ public:
 	int getNbActivePrimitives() { return static_cast<int>(m_primitives.size()); };
 	int getNbActiveints()       { return m_nbActiveLamps; };
 	int getNbActiveMaterials()  { return m_nbActiveMaterials; };
+	int getNbActiveTextures()   { return m_nbActiveTextures; };
 
 public:
 

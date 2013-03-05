@@ -957,13 +957,16 @@ ________________________________________________________________________________
 __device__ bool triangleIntersection( 
    const SceneInfo& sceneInfo,
 	const Primitive& triangle, 
-	Material* materials,
+	Material*        materials,
 	const Ray&       ray,
 	float4&          intersection,
 	float4&          normal,
-	float&           shadowIntensity
+	float&           shadowIntensity,
+   bool&            back
 	) 
 {
+   back = false;
+
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
    float4 E01 = triangle.p1 − triangle.p0;
@@ -1016,8 +1019,14 @@ __device__ bool triangleIntersection(
       float a1 = 0.5f*vectorLength(crossProduct( v0,v2 ));
       float a2 = 0.5f*vectorLength(crossProduct( v0,v1 ));
       normal = (triangle.n0*a0 + triangle.n1*a1 + triangle.n2*a2)/(a0+a1+a2);
+      normalizeVector(normal);
    }
-   normal *= (dotProduct(ray.direction,normal)>0.f) ? -1.f : 1.f;
+
+   if( dotProduct(ray.direction,normal)>0.f )
+   {
+      normal *= -1.f;
+      back = true;
+   }
 	shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
    return true;
 }
@@ -1196,7 +1205,7 @@ __device__ float processShadows(
 						}
 					case ptTriangle:
 						{
-							hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); 
+							hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
 							break;
 						}
 					default:
@@ -1454,7 +1463,7 @@ __device__ bool intersectionWithPrimitives(
                case ptTriangle:
                   {
 						   back = false;
-						   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); 
+						   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
                      break;
                   }
 				   default: 
