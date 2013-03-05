@@ -154,16 +154,16 @@ ________________________________________________________________________________
 */
 __device__ inline void vectorRotation( float4& vector, const float4 center, const float4 angles )
 { 
-	float4 result = vector; 
+	float4 result = vector-center; 
 	/* X axis */ 
 	result.y = vector.y*cos(angles.x) - vector.z*sin(angles.x); 
 	result.z = vector.y*sin(angles.x) + vector.z*cos(angles.x); 
-	vector = result; 
-	result = vector; 
+	vector = result+center; 
+	result = vector-center; 
 	/* Y axis */ 
 	result.z = vector.z*cos(angles.y) - vector.x*sin(angles.y); 
 	result.x = vector.z*sin(angles.y) + vector.x*cos(angles.y); 
-	vector = result; 
+	vector = result+center; 
 }
 
 /*

@@ -157,7 +157,8 @@ float4 OBJReader::loadModelFromFile(
 
    std::cout << "Nb Vertices: " << vertices.size() << std::endl;
    std::cout << "Nb Normals : " << normals.size() << std::endl;
-   scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   //scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   scale = (scale/max( maxPos.y - minPos.y, maxPos.z - minPos.z ));
 
    // Center align object
    float4 objectCenter = {0.f,0.f,0.f,0.f};
