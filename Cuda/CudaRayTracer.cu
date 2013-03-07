@@ -955,28 +955,26 @@ Triangle intersection
 ________________________________________________________________________________
 */
 __device__ bool triangleIntersection( 
-   const SceneInfo& sceneInfo,
+    const SceneInfo& sceneInfo,
 	const Primitive& triangle, 
 	Material*        materials,
 	const Ray&       ray,
 	float4&          intersection,
 	float4&          normal,
 	float&           shadowIntensity,
-   bool&            back
-	) 
+	bool&            back )
 {
    back = false;
-
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
-   float4 E01 = triangle.p1 − triangle.p0;
-   float4 E03 = triangle.p2 − triangle.p0;
+   float4 E01=triangle.p1-triangle.p0;
+   float4 E03=triangle.p2-triangle.p0;
    float4 P = crossProduct(ray.direction,E03);
    float det = dotProduct(E01,P);
    
    if (fabs(det) < EPSILON) return false;
    
-   float4 T = ray.origin − triangle.p0;
+   float4 T = ray.origin-triangle.p0;
    float a = dotProduct(T,P)/det;
    if (a < 0.f) return false;
    if (a > 1.f) return false;
@@ -990,12 +988,12 @@ __device__ bool triangleIntersection(
    // the intersection point with respect to T′.
    if ((a+b) > 1.f) 
    {
-      float4 E23 = triangle.p0 − triangle.p1;
-      float4 E21 = triangle.p1 − triangle.p1;
+      float4 E23 = triangle.p0-triangle.p1;
+      float4 E21 = triangle.p1-triangle.p1;
       float4 P_ = crossProduct(ray.direction,E21);
       float det_ = dotProduct(E23,P_);
       if(fabs(det_) < EPSILON) return false;
-      float4 T_ = ray.origin − triangle.p2;
+      float4 T_ = ray.origin-triangle.p2;
       float a_ = dotProduct(T_,P_)/det_;
       if (a_ < 0.f) return false;
       float4 Q_ = crossProduct(T_,E23);

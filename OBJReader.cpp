@@ -3,6 +3,9 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
+#include <algorithm>
+#include <string>
 
 #include "Consts.h"
 #include "OBJReader.h"
@@ -88,6 +91,7 @@ float4 OBJReader::loadModelFromFile(
       {
          std::string line;
          std::getline( file, line );
+         line.erase( std::remove(line.begin(), line.end(), '\r'), line.end());
          if( line.length() > 1 ) 
          {
             if( line[0] == 'v' )
@@ -157,15 +161,14 @@ float4 OBJReader::loadModelFromFile(
 
    std::cout << "Nb Vertices: " << vertices.size() << std::endl;
    std::cout << "Nb Normals : " << normals.size() << std::endl;
-   //scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
-   scale = (scale/max( maxPos.y - minPos.y, maxPos.z - minPos.z ));
+   scale = (scale/std::max( maxPos.y - minPos.y, maxPos.z - minPos.z ));
 
    // Center align object
    float4 objectCenter = {0.f,0.f,0.f,0.f};
    objectCenter.y = abs(minPos.y);
-
+   file.close();
    
-   file.open(filename);
+   file.open(filename.c_str());
    if( file.is_open() )
    {
       int material = 0;
@@ -173,13 +176,13 @@ float4 OBJReader::loadModelFromFile(
       {
          std::string line;
          std::getline( file, line );
+         line.erase( std::remove(line.begin(), line.end(), '\r'), line.end());
          if( line.length() != 0 ) 
          {
             if( line[0] == 'u' )
             {
                std::string value = line.substr(16,line.length());
                material = atoi(value.c_str())%10;
-               //std::cout << material << std::endl;
             }
 
             if( line[0] == 'f' )

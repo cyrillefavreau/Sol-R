@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include <algorithm>
 #endif
 
 #include <iostream>
@@ -19,18 +20,18 @@ const int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 100; //300;
 float4 min4( const float4 a, const float4 b, const float4 c )
 {
    float4 r;
-   r.x = min(min(a.x,b.x),c.x);
-   r.y = min(min(a.y,b.y),c.y);
-   r.z = min(min(a.z,b.z),c.z);
+   r.x = std::min(std::min(a.x,b.x),c.x);
+   r.y = std::min(std::min(a.y,b.y),c.y);
+   r.z = std::min(std::min(a.z,b.z),c.z);
    return r;
 }
 
 float4 max4( const float4 a, const float4 b, const float4 c )
 {
    float4 r;
-   r.x = max(max(a.x,b.x),c.x);
-   r.y = max(max(a.y,b.y),c.y);
-   r.z = max(max(a.z,b.z),c.z);
+   r.x = std::max(std::max(a.x,b.x),c.x);
+   r.y = std::max(std::max(a.y,b.y),c.y);
+   r.z = std::max(std::max(a.z,b.z),c.z);
    return r;
 }
 
