@@ -24,6 +24,7 @@
 #include "RayTracingEngineStub.h"
 #include "Consts.h"
 #include "PDBReader.h"
+#include "OBJReader.h"
 #include "FileMarshaller.h"
 
 #include <fstream>
@@ -408,6 +409,23 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
       static_cast<float>(defaultStickSize),
       atomMaterialType, 
       static_cast<float>(scale) );
+   return gpuKernel->compactBoxes(true);
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
+   char*  filename,
+   int    materialId,
+   double scale)
+{
+   float4 center={0.f,0.f,0.f,0.f};
+   // PDB
+	OBJReader objReader;
+	float4 minPos = objReader.loadModelFromFile( 
+      filename,
+      *gpuKernel,
+      center,
+      static_cast<float>(scale), 
+      materialId );
    return gpuKernel->compactBoxes(true);
 }
 

@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <algorithm>
 
 #include "Consts.h"
 #include "PDBReader.h"
@@ -282,7 +281,8 @@ float4 PDBReader::loadAtomsFromFile(
    center.y = (minPos.y+maxPos.y)/2.f;
    center.z = (minPos.z+maxPos.z)/2.f;
 
-   scale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   //scale = scale/( maxPos.y - minPos.y);
 
    std::map<int,Atom>::iterator it = atoms.begin();
    while( it != atoms.end() )
@@ -363,5 +363,8 @@ float4 PDBReader::loadAtomsFromFile(
    std::cout << "Number of connections: " << connections.size() << std::endl;
    std::cout << "------------------------------------------------------------" << std::endl;
 
+   size.x *= scale;
+   size.y *= scale;
+   size.z *= scale;
    return size;
 }

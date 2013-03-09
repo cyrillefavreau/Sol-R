@@ -155,6 +155,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    int    atomMaterialType,
    double scale);
 
+// ---------- OBJ models ----------
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
+   char*  filename,
+   int    materialId,
+   double scale);
+
 #ifdef USE_KINECT
 // ---------- Kinect ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
