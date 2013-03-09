@@ -37,7 +37,7 @@ public:
       const std::string& filename,
       GPUKernel& cudaKernel,
       const float4& center,
-      float scale, 
+      const float& scale, 
       int materialId);
 
 };

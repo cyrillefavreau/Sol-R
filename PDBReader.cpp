@@ -60,7 +60,7 @@ struct Connection
 };
 
 const int NB_ELEMENTS = 70;
-const float DEFAULT_ATOM_DISTANCE = 100.f;
+const float DEFAULT_ATOM_DISTANCE = 90.f;
 const float DEFAULT_STICK_DISTANCE = 1.65f;
 const Element elements[NB_ELEMENTS] =
 {
@@ -153,8 +153,10 @@ float4 PDBReader::loadAtomsFromFile(
    float defaultAtomSize,
    float defaultStickSize,
    int   materialType,
-   float scale)
+   float scale,
+   bool  useModels)
 {
+   int chainSelection(rand()%2);
    cudaKernel.resetBoxes(true);
 
    float distanceRatio = 2.f; //(geometryType==gtSticks || geometryType==gtAtomsAndSticks) ? 2.f : 1.f;
@@ -281,8 +283,7 @@ float4 PDBReader::loadAtomsFromFile(
    center.y = (minPos.y+maxPos.y)/2.f;
    center.z = (minPos.z+maxPos.z)/2.f;
 
-   scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
-   //scale = scale/( maxPos.y - minPos.y);
+   scale = (scale/std::max( maxPos.x - minPos.x, std::max( maxPos.y - minPos.y, maxPos.z - minPos.z )));
 
    std::map<int,Atom>::iterator it = atoms.begin();
    while( it != atoms.end() )
@@ -340,7 +341,14 @@ float4 PDBReader::loadAtomsFromFile(
             radius *= 4.f; 
          }
             
-         //if( geometryType != gtBackbone )
+         bool addAtom(true);
+         
+         if( useModels && (atom.chainId%2==chainSelection) )
+         {
+            addAtom = false;
+         }
+
+         if( addAtom )
          {
             nb = cudaKernel.addPrimitive( ptSphere );
             cudaKernel.setPrimitive( 

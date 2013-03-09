@@ -1762,13 +1762,10 @@ __global__ void k_standardRenderer(
 
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
-      //ray.origin.z = (ray.origin.z<0.f ) ? ray.origin.z : 0.f;
-      ray.direction.x = /* ray.direction.x - (ray.origin.z*0.01f)* */ ray.origin.z*0.001f*(float)(x - (sceneInfo.width.x/2));
-	   ray.direction.y = /* ray.direction.y - (ray.origin.z*0.01f)* */ -ray.origin.z*0.001f*(float)(y - (sceneInfo.height.x/2));
-      //ray.direction.z = 3000.f;
+      ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.width.x/2));
+	   ray.direction.y = -ray.origin.z*0.001f*(float)(y - (sceneInfo.height.x/2));
 	   ray.origin.x = ray.direction.x;
 	   ray.origin.y = ray.direction.y;
-      //ray.origin.z = -5000.f;
    }
    else
    {
@@ -1851,20 +1848,32 @@ __global__ void k_anaglyphRenderer(
 	float4 intersection;
 	Ray eyeRay;
 
-	// Left eye
+   float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
+   float2 step;
+   step.x=4.f*ratio*6400.f/(float)sceneInfo.width.x;
+   step.y=4.f*6400.f/(float)sceneInfo.height.x;
+
+   // Left eye
 	eyeRay.origin.x = origin.x + sceneInfo.width3DVision.x;
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
-	eyeRay.direction.x = direction.x - 8.f*(float)(x - (sceneInfo.width.x/2));
-	eyeRay.direction.y = direction.y + 8.f*(float)(y - (sceneInfo.height.x/2));
+	eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
+	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 	eyeRay.direction.z = direction.z;
 
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
-	float4 colorLeft = launchRay(
-		BoundingBoxes, nbActiveBoxes,
+   __shared__ BoundingBox shBoundingBoxes[128];
+   if( threadIdx.x==0 && threadIdx.y==0)
+   {
+      memcpy( shBoundingBoxes, BoundingBoxes, sizeof(BoundingBox)*nbActiveBoxes);
+   }
+   __syncthreads();
+
+   float4 colorLeft = launchRay(
+		shBoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -1880,14 +1889,14 @@ __global__ void k_anaglyphRenderer(
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
-	eyeRay.direction.x = direction.x - 8.f*(float)(x - (sceneInfo.width.x/2));
-	eyeRay.direction.y = direction.y + 8.f*(float)(y - (sceneInfo.height.x/2));
+	eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
+	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 	eyeRay.direction.z = direction.z;
 
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 	float4 colorRight = launchRay(
-		BoundingBoxes, nbActiveBoxes,
+		shBoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -1951,7 +1960,12 @@ __global__ void k_3DVisionRenderer(
 	float4 intersection;
 	int halfWidth  = sceneInfo.width.x/2;
 
-	Ray eyeRay;
+   float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
+   float2 step;
+   step.x=4.f*ratio*6400.f/(float)sceneInfo.width.x;
+   step.y=4.f*6400.f/(float)sceneInfo.height.x;
+
+   Ray eyeRay;
 	if( x<halfWidth ) 
 	{
 		// Left eye
@@ -1959,8 +1973,8 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-		eyeRay.direction.x = direction.x - 8.f*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 );
-		eyeRay.direction.y = direction.y + 8.f*(float)(y - (sceneInfo.height.x/2));
+		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 );
+		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 		eyeRay.direction.z = direction.z;
 	}
 	else
@@ -1970,16 +1984,23 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-		eyeRay.direction.x = direction.x - 8.f*(float)(x - (sceneInfo.width.x/2) - halfWidth/2);
-		eyeRay.direction.y = direction.y + 8.f*(float)(y - (sceneInfo.height.x/2));
+		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) - halfWidth/2);
+		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 		eyeRay.direction.z = direction.z;
 	}
 
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
-	float4 color = launchRay(
-		BoundingBoxes, nbActiveBoxes,
+   __shared__ BoundingBox shBoundingBoxes[128];
+   if( threadIdx.x==0 && threadIdx.y==0)
+   {
+      memcpy( shBoundingBoxes, BoundingBoxes, sizeof(BoundingBox)*nbActiveBoxes);
+   }
+   __syncthreads();
+
+   float4 color = launchRay(
+		shBoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 

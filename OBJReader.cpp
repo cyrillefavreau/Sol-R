@@ -71,7 +71,7 @@ float4 OBJReader::loadModelFromFile(
    const std::string& filename,
    GPUKernel& gpuKernel,
    const float4& center,
-   float scale,
+   const float& scale,
    int materialId)
 {
    std::cout << "Loading " << filename.c_str() << std::endl;
@@ -161,12 +161,7 @@ float4 OBJReader::loadModelFromFile(
 
    std::cout << "Nb Vertices: " << vertices.size() << std::endl;
    std::cout << "Nb Normals : " << normals.size() << std::endl;
-<<<<<<< .mine
-   scale = (scale/max( maxPos.x - minPos.x, max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
-   //scale = scale/( maxPos.y - minPos.y);
-=======
-   scale = (scale/std::max( maxPos.y - minPos.y, maxPos.z - minPos.z ));
->>>>>>> .r572
+   float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
 
    // Center align object
    float4 objectCenter = {0.f,0.f,0.f,0.f};
@@ -177,7 +172,7 @@ float4 OBJReader::loadModelFromFile(
    std::cout << "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z << std::endl;
    std::cout << "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z << std::endl;
    std::cout << "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z << std::endl;
-   std::cout << "Scale : " << scale << std::endl;
+   std::cout << "Scale : " << objectScale << std::endl;
 
    file.open(filename.c_str());
    if( file.is_open() )
@@ -224,48 +219,51 @@ float4 OBJReader::loadModelFromFile(
                   ++i;
                }
 
-               int f(0);
-               //std::cout << "F(" << face[f] << "," << face[f+1] << "," << face[f+2] << ")" << std::endl;
-               int nbPrimitives = gpuKernel.addPrimitive( ptTriangle );
-               gpuKernel.setPrimitive( 
-                  nbPrimitives,
-                  center.x+scale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+scale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+scale*(-objectCenter.z+vertices[face[f  ].x].z),
-                  center.x+scale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+scale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+scale*(-objectCenter.z+vertices[face[f+1].x].z),
-                  center.x+scale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+scale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+scale*(-objectCenter.z+vertices[face[f+2].x].z),
-                  0.f, 0.f, 0.f,
-                  materialId+material, 1, 1);
-               if( face[f].z!=0 && face[f+1].z!=0 && face[f+2].z!=0 )
+               try
                {
-                  gpuKernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
-               }
-
-               if( face.size() == 4 )
-               {
-                  nbPrimitives = gpuKernel.addPrimitive( ptTriangle );
+                  int f(0);
+                  //std::cout << "F(" << face[f] << "," << face[f+1] << "," << face[f+2] << ")" << std::endl;
+                  int nbPrimitives = gpuKernel.addPrimitive( ptTriangle );
                   gpuKernel.setPrimitive( 
-                     nbPrimitives, 
-                     center.x+scale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+scale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+scale*(-objectCenter.z+vertices[face[f+3].x].z),
-                     center.x+scale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+scale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+scale*(-objectCenter.z+vertices[face[f+2].x].z),
-                     center.x+scale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+scale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+scale*(-objectCenter.z+vertices[face[f  ].x].z),
+                     nbPrimitives,
+                     center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
+                     center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
+                     center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
                      0.f, 0.f, 0.f,
                      materialId+material, 1, 1);
-                  if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )
+
+                  if( face[f].z!=0 && face[f+1].z!=0 && face[f+2].z!=0 )
                   {
-                     gpuKernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
+                     gpuKernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
                   }
+
+                  if( face.size() == 4 )
+                  {
+                     nbPrimitives = gpuKernel.addPrimitive( ptTriangle );
+                     gpuKernel.setPrimitive( 
+                        nbPrimitives, 
+                        center.x+objectScale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+3].x].z),
+                        center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
+                        center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
+                        0.f, 0.f, 0.f,
+                        materialId+material, 1, 1);
+                     if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )
+                     {
+                        gpuKernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
+                     }
+                  }
+               }
+               catch( ... )
+               {
                }
             }
          }
       }
       file.close();
    }
-<<<<<<< .mine
-   minPos.x *= scale;
-   minPos.y *= scale;
-   minPos.z *= scale;
-   return minPos;
+   float4 objectSize;
+   objectSize.x = (maxPos.x - minPos.x)*objectScale;
+   objectSize.y = (maxPos.y - minPos.y)*objectScale;
+   objectSize.z = (maxPos.z - minPos.z)*objectScale;
+   return objectSize;
 }
-=======
-   return center;
-}
->>>>>>> .r572

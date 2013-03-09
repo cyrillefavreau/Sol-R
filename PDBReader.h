@@ -50,7 +50,8 @@ public:
       float defaultAtomSize,
       float defaultStickSize,
       int   materialType,
-      float scale);
+      float scale,
+      bool  useModels = false);
 
    int getNbBoxes() { return m_nbBoxes; }
    int getNbPrimitives() { return m_nbPrimitives; }

@@ -45,9 +45,12 @@ float GPUKernel::vectorLength( const float4& vector )
 void GPUKernel::normalizeVector( float4& v )
 {
 	float l = vectorLength( v );
-   v.x /= l;
-   v.y /= l;
-   v.z /= l;
+   if( l != 0.f )
+   {
+      v.x /= l;
+      v.y /= l;
+      v.z /= l;
+   }
 }
 
 float4 GPUKernel::crossProduct( const float4& b, const float4& c )
@@ -223,12 +226,14 @@ void GPUKernel::setPrimitive(
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
+   /*
 	LOG_INFO(3,"GPUKernel::setPrimitive( " << 
 		index << " (" << 
 		"center (" << x0 << "," << y0 << "," << z0 << ")," <<
 		"size (" << w << "," << h << "," << d << ")," <<
 		"material (" << materialId << "," << materialPaddingX << "," << materialPaddingY << ")"
 		);
+      */
    if( index>=0 && index<m_primitives.size()) 
 	{
       m_primitives[index].movable= true;
@@ -355,14 +360,14 @@ void GPUKernel::setPrimitive(
 		m_primitives[index].n0.w = 1.f; 
 
       //min
-      m_minPos.x = (x0 < m_minPos.x) ? x0 : m_minPos.x;
-      m_minPos.y = (y0 < m_minPos.y) ? y0 : m_minPos.y;
-      m_minPos.z = (z0 < m_minPos.z) ? z0 : m_minPos.z;
+      m_minPos.x = std::min(x0,m_minPos.x);
+      m_minPos.y = std::min(y0,m_minPos.y);
+      m_minPos.z = std::min(z0,m_minPos.z);
              
       // max
-      m_maxPos.x = (x0 > m_maxPos.x) ? x0 : m_maxPos.x;
-      m_maxPos.y = (y0 > m_maxPos.y) ? y0 : m_maxPos.y;
-      m_maxPos.z = (z0 > m_maxPos.z) ? z0 : m_maxPos.z;
+      m_maxPos.x = std::max(x0,m_maxPos.x);
+      m_maxPos.y = std::max(y0,m_maxPos.y);
+      m_maxPos.z = std::max(z0,m_maxPos.z);
    }
 	else
 	{
