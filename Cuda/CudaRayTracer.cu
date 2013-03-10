@@ -1206,6 +1206,11 @@ __device__ float processShadows(
 							hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
 							break;
 						}
+					case ptCamera:
+                  {
+                     hit = false;
+                     break;
+                  }
 					default:
 						{
 							hit = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false /*true*/ ); 

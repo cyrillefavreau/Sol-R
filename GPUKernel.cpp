@@ -305,7 +305,7 @@ void GPUKernel::setPrimitive(
 			{
 				m_primitives[index].n0.x = 0.f;
 				m_primitives[index].n0.y = 0.f;
-				m_primitives[index].n0.z = 1.f;
+				m_primitives[index].n0.z = -1.f;
 				m_primitives[index].materialInfo.x = ( w != 0.f ) ? (gKinectVideoWidth /w/2)*materialPaddingX : 1.f;
 				m_primitives[index].materialInfo.y = ( w != 0.f ) ? (gKinectVideoHeight/h/2)*materialPaddingY : 1.f;
 				break;
@@ -763,7 +763,7 @@ void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, int from
       while( it != box.primitives.end() )
 		{
          CPUPrimitive& primitive(m_primitives[*it]);
-         if( primitive.movable )
+         if( primitive.movable && primitive.type != ptCamera )
          {
 			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
          } 
