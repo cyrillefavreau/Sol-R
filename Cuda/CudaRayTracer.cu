@@ -507,7 +507,7 @@ __device__ inline bool boxIntersection(
 	const BoundingBox& box, 
 	const Ray&     ray,
 	const float    t0,
-	const float    t1)
+	const float    t1 )
 {
 	float tmin, tmax, tymin, tymax, tzmin, tzmax;
 
@@ -529,6 +529,7 @@ __device__ inline bool boxIntersection(
 
 	if (tzmin > tmin) tmin = tzmin;
 	if (tzmax < tmax) tmax = tzmax;
+   //tdist = min(tmin,tmax);
 	return ( (tmin < t1) && (tmax > t0) );
 }
 
@@ -658,9 +659,6 @@ __device__ inline bool sphereIntersection(
 	// TO REMOVE - For Charts only
 	//if( intersection.y < sphere.p0.y ) return false;
 
-	// Shadow intensity
-	shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[sphere.materialId.x].transparency.x);
-
 	if( materials[sphere.materialId.x].textureInfo.x == 0) 
 	{
 		// Compute normal vector
@@ -678,6 +676,12 @@ __device__ inline bool sphereIntersection(
 	normal.w = 0.f;
 	normal *= (back) ? -1.f : 1.f;
 	normalizeVector(normal);
+
+   // Shadow management
+   r = dotProduct(dir,normal);
+	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
+   shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+   shadowIntensity *= sceneInfo.shadowIntensity.x;
 
 #if EXTENDED_FEATURES
 	// Power textures
@@ -710,7 +714,6 @@ __device__ bool cylinderIntersection(
 {
 	back = false;
 	float4 dir = ray.direction;
-	/// normalizeVector(dir); // DO NOT NORMALIZE!!!
 	float4 RC = ray.origin-cylinder.p0;
 	float4 n = crossProduct(dir, cylinder.n1);
 
@@ -789,9 +792,13 @@ __device__ bool cylinderIntersection(
 
 			normalizeVector( normal );
 
-			// Shadow intensity
-			shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[cylinder.materialId.x].transparency.x);
-			return true;
+         // Shadow management
+         normalizeVector(dir);
+         float r = dotProduct(dir,normal);
+	      //shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
+         shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+         shadowIntensity *= sceneInfo.shadowIntensity.x;
+         return true;
 		}
 	}
    return false;
@@ -1020,12 +1027,20 @@ __device__ bool triangleIntersection(
       normalizeVector(normal);
    }
 
-   if( dotProduct(ray.direction,normal)>0.f )
+   float4 dir(ray.direction);
+   normalizeVector(dir);
+   float r = dotProduct(dir,normal);
+
+   if( r>0.f )
    {
       normal *= -1.f;
-      back = true;
+      //back = true;
    }
-	shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
+
+   // Shadow management
+	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
+   shadowIntensity = (materials[triangle.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+   shadowIntensity *= sceneInfo.shadowIntensity.x;
    return true;
 }
 
@@ -1156,18 +1171,22 @@ __device__ float processShadows(
 	const float4& lampCenter, 
 	const float4& origin, 
 	const int&    objectId,
-	const int&    iteration)
+	const int&    iteration,
+   float4&       color)
 {
 	float result = 0.f;
 	int cptBoxes = 0;
-	while( result<=1.f && cptBoxes < nbActiveBoxes )
+   color.x = 0.f;
+   color.y = 0.f;
+   color.z = 0.f;
+   int it=-1;
+	while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
 	{
 		Ray r;
 		r.origin    = origin;
 		r.direction = lampCenter-origin;
-		//normalizeVector(r.direction); // TODO???
 		computeRayAttributes( r );
-
+      
 		BoundingBox& box = boudingBoxes[cptBoxes];
 		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x/iteration))
 		{
@@ -1186,36 +1205,12 @@ __device__ float processShadows(
 					bool back;
 					switch(primitive.type.x)
 					{
-					case ptSphere: 
-						{
-							hit = sphereIntersection  ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); 
-							break;
-						}
-               case ptEllipsoid:
-                  {
-						   hit = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back );
-                     break;
-                  }
-					case ptCylinder:
-						{
-							hit = cylinderIntersection( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); 
-							break;
-						}
-					case ptTriangle:
-						{
-							hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
-							break;
-						}
-					case ptCamera:
-                  {
-                     hit = false;
-                     break;
-                  }
-					default:
-						{
-							hit = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false /*true*/ ); 
-							break;
-						}
+					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); break;
+               case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
+					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); break;
+					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
+					case ptCamera   : hit=false; break;
+					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
 
 					if( hit )
@@ -1225,8 +1220,24 @@ __device__ float processShadows(
 						float length = vectorLength(O_I);
 						if( length>EPSILON && length<vectorLength(O_L) )
 						{
-							result += hit ? (shadowIntensity-materials[primitive.materialId.x].innerIllumination.x) : 0.f;
-						}
+#if 1
+                     if( materials[primitive.materialId.x].transparency.x != 0.f )
+                     {
+                        normalizeVector(O_L);
+                        float angle=sqrt(fabs(dotProduct(O_L,normal)));
+							   result += sceneInfo.shadowIntensity.x*(
+                           (1.f-angle*materials[primitive.materialId.x].transparency.x)*shadowIntensity-materials[primitive.materialId.x].innerIllumination.x);
+                     
+                        float4 inv = {1.f,1.f,1.f,1.f};
+                        color += 0.1f*angle*(1.f-materials[primitive.materialId.x].transparency.x)*(inv-materials[primitive.materialId.x].color);
+                     }
+                     else
+#endif
+                     {
+                        result += sceneInfo.shadowIntensity.x;
+                     }
+                  }
+                  it++;
 					}
 				}
 				cptPrimitives++;
@@ -1234,7 +1245,7 @@ __device__ float processShadows(
 		}
 		cptBoxes++;
 	}
-	result = (result>1.f) ? 1.f : result;
+	result = (result>sceneInfo.shadowIntensity.x) ? sceneInfo.shadowIntensity.x : result;
 	result = (result<0.f) ? 0.f : result;
 	return result;
 }
@@ -1248,7 +1259,7 @@ ________________________________________________________________________________
 __device__ float4 primitiveShader(
 	const SceneInfo&   sceneInfo,
 	const PostProcessingInfo&   postProcessingInfo,
-	BoundingBox* boundingBoxes, int nbActiveBoxes,
+	BoundingBox* boundingBoxes, const int& nbActiveBoxes, 
 	Primitive* primitives, const int& nbActivePrimitives,
 	int* lamps, const int& nbActiveLamps,
 	Material* materials, char* textures,
@@ -1264,9 +1275,6 @@ __device__ float4 primitiveShader(
 {
 	Primitive primitive = primitives[objectId];
 	float4 color = materials[primitive.materialId.x].color;
-	//color += materials[primitive.materialId.x].innerIllumination.x;
-	//normalizeVector(color);
-
 	float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
 	// Lamp Impact
@@ -1276,9 +1284,6 @@ __device__ float4 primitiveShader(
 
 	if( materials[primitive.materialId.x].textureInfo.z == 1 )
 		return color; //TODO? wireframe have constant color
-
-	//if( sceneInfo.pathTracingIteration.x > 0 && materials[primitive.materialId.x].innerIllumination.x != 0.f ) 
-	//   return color; 
 
 	if( primitive.type.x == ptEnvironment )
 	{
@@ -1319,24 +1324,19 @@ __device__ float4 primitiveShader(
 				{
 					int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
 					// randomize lamp center
-#if 0
-					center.x += size.x*randoms[t  ]; //*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.y += size.y*randoms[t+1]; //*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.z += size.z*randoms[t+2]; //*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-#else
 					center.x += 10.f*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 					center.y += 10.f*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 					center.z += 10.f*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-#endif
 				}
 
+            float4 shadowColor = {0.f,0.f,0.f,0.f};
 				if( sceneInfo.shadowsEnabled.x && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
 				{
 					shadowIntensity = processShadows(
 						sceneInfo, boundingBoxes, nbActiveBoxes,
 						primitives, materials, textures, 
 						nbActivePrimitives, center, 
-						intersection, lamps[cptLamps], iteration );
+						intersection, lamps[cptLamps], iteration, shadowColor );
 				}
 
 				Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
@@ -1353,7 +1353,7 @@ __device__ float4 primitiveShader(
 				totalLambert += lambert;
 
 				// Lighted object, not in the shades
-				lampsColor += lambert*material.color*material.innerIllumination.x;
+				lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
 
 				if( /*materials[primitive.materialId.x].innerIllumination.x == 0.f &&*/ shadowIntensity < sceneInfo.shadowIntensity.x )
 				{
@@ -1406,7 +1406,7 @@ __device__ bool intersectionWithPrimitives(
 	Material* materials, char* textures,
 	const Ray& ray, 
 	const int& iteration,
-	int&    closestPrimitive, 
+   int&    closestPrimitive, 
 	float4& closestIntersection,
 	float4& closestNormal,
 	float4& colorBox,
@@ -1426,7 +1426,7 @@ __device__ bool intersectionWithPrimitives(
 	bool i = false;
 	float shadowIntensity = 0.f;
 
-	for( int cptBoxes = 0; cptBoxes<nbActiveBoxes; ++cptBoxes )
+   for( int cptBoxes = 0; cptBoxes<nbActiveBoxes; ++cptBoxes )
 	{
 		BoundingBox& box = boundingBoxes[cptBoxes];
 		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x/iteration) )
@@ -1485,7 +1485,7 @@ __device__ bool intersectionWithPrimitives(
 					   closestPrimitive    = box.startIndex.x+cptPrimitives;
 					   closestIntersection = intersection;
 					   closestNormal       = normal;
-					   intersections       = true;
+                  intersections       = true;
 				   }
             }
 			}
@@ -1541,10 +1541,19 @@ __device__ float4 launchRay(
 	Ray    rayOrigin         = ray;
 	float  initialRefraction = 1.f;
 	int    iteration         = 0;
-	float  previousWeight    = 1.f;
 	primitiveXYId = -1;
 
-	float4 recursiveColor = { 0.f, 0.f, 0.f, 0.f };
+#if 1
+   float  colorContributions[10];
+   float4 colors[10];
+   memset(&colorContributions[0],0,sizeof(float)*10);
+   memset(&colors[0],0,sizeof(float4)*10);
+#else
+   float4 recursiveColor = { 0.f, 0.f, 0.f, 0.f };
+	float  previousWeight    = 1.f;
+   float recursiveColorRatio = 1.f;
+#endif 
+
 	float4 recursiveBlinn = { 0.f, 0.f, 0.f, 0.f };
 
 	// Variable declarations
@@ -1556,9 +1565,13 @@ __device__ float4 launchRay(
 
    int currentMaterialId=-2;
 
+#if 1
+	while( iteration<10 && carryon ) 
+#else
 	while( iteration<(sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x) && carryon ) 
+#endif
 	{
-		// If no intersection with lamps detected. Now compute intersection with Primitives
+      // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
 		{
 			carryon = intersectionWithPrimitives(
@@ -1578,16 +1591,23 @@ __device__ float4 launchRay(
 
 			if ( iteration==0 )
 			{
+#if 1
+            colors[iteration].x = 0.f;
+            colors[iteration].y = 0.f;
+            colors[iteration].z = 0.f;
+            colors[iteration].w = 0.f;
+            colorContributions[iteration]=1.f;
+#else
 				intersectionColor.x = 0.f;
 				intersectionColor.y = 0.f;
 				intersectionColor.z = 0.f;
 				intersectionColor.w = 0.f;
+#endif
 
 				firstIntersection = closestIntersection;
             primitiveXYId = primitives[closestPrimitive].index.x;
 			}
 
-         float recursiveColorRatio = 1.f;
 			float4 rBlinn = {0.f,0.f,0.f,0.f};
 
 			if( shadowIntensity <= 0.9f ) // No reflection/refraction if in shades
@@ -1598,12 +1618,14 @@ __device__ float4 launchRay(
 
 				if( materials[primitives[closestPrimitive].materialId.x].transparency.x != 0.f ) 
 				{
+#if 0
 					// Replace the normal using the intersection color
 					// r,g,b become x,y,z... What the fuck!!
 					if( materials[primitives[closestPrimitive].materialId.x].textureInfo.y != TEXTURE_NONE) 
 					{
 						normal *= (recursiveColor-0.5f);
 					}
+#endif // 0
 
 					// Back of the object? If so, reset refraction to 1.f (air)
 					float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
@@ -1614,9 +1636,13 @@ __device__ float4 launchRay(
 					vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
 					reflectedTarget = closestIntersection - rayOrigin.direction;
 
+#if 1
+               colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].transparency.x;
+#else
                recursiveColorRatio = previousWeight*(1.f-materials[primitives[closestPrimitive].materialId.x].transparency.x);
 					previousWeight = previousWeight*materials[primitives[closestPrimitive].materialId.x].transparency.x;
-
+#endif 
+               
                // Prepare next ray
 					initialRefraction = refraction;
 				}
@@ -1629,41 +1655,60 @@ __device__ float4 launchRay(
 					{
 						float4 O_E = rayOrigin.origin - closestIntersection;
 						vectorReflection( rayOrigin.direction, O_E, normal );
-
 						reflectedTarget = closestIntersection - rayOrigin.direction;
+#if 1
+                  colorContributions[iteration] = 1.f-materials[primitives[closestPrimitive].materialId.x].reflection.x;
+#else
 						recursiveColorRatio = previousWeight*(1.f-materials[primitives[closestPrimitive].materialId.x].reflection.x);
 						previousWeight = previousWeight*materials[primitives[closestPrimitive].materialId.x].reflection.x;
+#endif 
 					}
 					else 
 					{
+#if 1
+                  colorContributions[iteration] = 1.f;
+#else
 						recursiveColorRatio *= previousWeight;
+#endif
 						carryon = false;
 					}         
 				}
 			}
 			else 
 			{
+#if 1
+            colorContributions[iteration] = 1.f;
+#else
 				recursiveColorRatio *= previousWeight;
+#endif
 				carryon = false;
 			}
 
 			// Get object color
-			recursiveColor = primitiveShader( 
-				sceneInfo, postProcessingInfo,
-				boundingBoxes, nbActiveBoxes,
-			   primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
-			   randoms,
-			   rayOrigin.origin, normal, closestPrimitive, closestIntersection, 
-			   iteration, refractionFromColor, shadowIntensity, rBlinn );
+#if 1
+         colors[iteration] =
+#else
+			recursiveColor = 
+#endif
+            primitiveShader( 
+				   sceneInfo, postProcessingInfo,
+				   boundingBoxes, nbActiveBoxes, 
+			      primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
+			      randoms,
+			      rayOrigin.origin, normal, closestPrimitive, closestIntersection, 
+			      iteration, refractionFromColor, shadowIntensity, rBlinn );
 
 			// Contribute to final color
+#if 1
+#else
          intersectionColor += recursiveColor*recursiveColorRatio;
  			recursiveBlinn += rBlinn;
 			intersectionColor -= colorBox;
+#endif
+ 			recursiveBlinn += rBlinn;
 
          rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
 			rayOrigin.direction = reflectedTarget;
-
 
 			// Noise management
 			if( sceneInfo.pathTracingIteration.x != 0 && materials[primitives[closestPrimitive].materialId.x].color.w != 0.f)
@@ -1678,11 +1723,29 @@ __device__ float4 launchRay(
 		}
 		else
 		{
-			intersectionColor += previousWeight*sceneInfo.backgroundColor;
+         // Background
+         float4 normal = {0.f, 1.f, 0.f, 0.f };
+         float4 dir = rayOrigin.direction-rayOrigin.origin;
+         normalizeVector(dir);
+         float angle = 1.f-fabs(dotProduct( normal, dir ));
+#if 1
+			colors[iteration] = angle*sceneInfo.backgroundColor;
+			colorContributions[iteration] = 1.f;
+#else
+			intersectionColor += angle*sceneInfo.backgroundColor;
+#endif
 		}
-		iteration++; 
+		iteration++;
 	}
 
+#if 1
+   for( int i=iteration-2; i>=0; --i)
+   {
+      colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
+   }
+   intersectionColor = colors[0];
+#else
+#endif
 	intersectionColor += recursiveBlinn;
 
 	saturateVector( intersectionColor );
@@ -1698,13 +1761,8 @@ __device__ float4 launchRay(
 	   len = 1.f-((len-halfDistance)/(sceneInfo.viewDistance.x-halfDistance));
 	   len = (len>0.f) ? len : 0.f; 
 	   len = (len<1.f) ? len : 1.f; 
-	   intersectionColor.x *= len;
-	   intersectionColor.y *= len;
-	   intersectionColor.z *= len;
-	   
-      intersectionColor.x += sceneInfo.backgroundColor.x*(1.f-len);
-	   intersectionColor.y += sceneInfo.backgroundColor.y*(1.f-len);
-	   intersectionColor.z += sceneInfo.backgroundColor.z*(1.f-len);
+	   intersectionColor *= len;
+      intersectionColor += sceneInfo.backgroundColor*(1.f-len);
    }
 
 	// Depth of field
@@ -1781,7 +1839,6 @@ __global__ void k_standardRenderer(
       ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
       ray.direction.y = ray.direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
    }
-
 
 	vectorRotation( ray.origin, rotationCenter, angles );
 	vectorRotation( ray.direction, rotationCenter, angles );

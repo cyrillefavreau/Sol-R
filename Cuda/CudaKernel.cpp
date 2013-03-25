@@ -87,19 +87,34 @@ CudaKernel::CudaKernel( bool activeLogging, int platform, int device )
 
 #if USE_KINECT
 	// Initialize Kinect
-	NuiInitialize( NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
+   std::cout << "----------------------------" << std::endl;
+   std::cout << "                         O  " << std::endl;
+   std::cout << "                       --+--" << std::endl;
+   std::cout << "                         |  " << std::endl;
+   std::cout << "Kinect initialization   / \\" << std::endl;
+	HRESULT err=NuiInitialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
+   m_kinectEnabled = (err==S_OK);
 
-	m_hNextDepthFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
-	m_hNextVideoFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
-	m_hNextSkeletonEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
+   if( m_kinectEnabled )
+   {
+	   m_hNextDepthFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
+	   m_hNextVideoFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
+	   m_hNextSkeletonEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
 
-	m_skeletons = CreateEvent( NULL, TRUE, FALSE, NULL );			 
-	NuiSkeletonTrackingEnable( m_skeletons, NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT );
+	   m_skeletons = CreateEvent( NULL, TRUE, FALSE, NULL );			 
+	   NuiSkeletonTrackingEnable( m_skeletons, NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT );
 
-	NuiImageStreamOpen( NUI_IMAGE_TYPE_COLOR,                  NUI_IMAGE_RESOLUTION_640x480, 0, 2, m_hNextVideoFrameEvent, &m_pVideoStreamHandle );
-	NuiImageStreamOpen( NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX, NUI_IMAGE_RESOLUTION_320x240, 0, 2, m_hNextDepthFrameEvent, &m_pDepthStreamHandle );
+	   NuiImageStreamOpen( NUI_IMAGE_TYPE_COLOR,                  NUI_IMAGE_RESOLUTION_640x480, 0, 2, m_hNextVideoFrameEvent, &m_pVideoStreamHandle );
+	   NuiImageStreamOpen( NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX, NUI_IMAGE_RESOLUTION_320x240, 0, 2, m_hNextDepthFrameEvent, &m_pDepthStreamHandle );
 
-	NuiCameraElevationSetAngle( 0 );
+	   NuiCameraElevationSetAngle( 0 );
+      std::cout << "    SUCCESS" << std::endl;
+   }
+   else
+   {
+      std::cout << "*** FAILED  ***" << std::endl;
+   }
+   std::cout << "----------------------------" << std::endl;
 #endif // USE_KINECT
 
    // Eye position
@@ -131,11 +146,14 @@ CudaKernel::~CudaKernel()
    releaseDevice();
 
 #if USE_KINECT
-   CloseHandle(m_skeletons);
-   CloseHandle(m_hNextDepthFrameEvent); 
-   CloseHandle(m_hNextVideoFrameEvent); 
-   CloseHandle(m_hNextSkeletonEvent);
-   NuiShutdown();
+   if( m_kinectEnabled ) 
+   {
+      CloseHandle(m_skeletons);
+      CloseHandle(m_hNextDepthFrameEvent); 
+      CloseHandle(m_hNextVideoFrameEvent); 
+      CloseHandle(m_hNextSkeletonEvent);
+      NuiShutdown();
+   }
 #endif // USE_KINECT
 }
 
@@ -184,43 +202,46 @@ ________________________________________________________________________________
 void CudaKernel::render_begin( const float timer )
 {
 #if USE_KINECT
-	// Video
-	const NUI_IMAGE_FRAME* pImageFrame = 0;
-	WaitForSingleObject (m_hNextVideoFrameEvent,INFINITE); 
-	HRESULT status = NuiImageStreamGetNextFrame( m_pVideoStreamHandle, 0, &pImageFrame ); 
-	if(( status == S_OK) && pImageFrame ) 
-	{
-		INuiFrameTexture* pTexture = pImageFrame->pFrameTexture;
-		NUI_LOCKED_RECT LockedRect;
-		pTexture->LockRect( 0, &LockedRect, NULL, 0 ) ; 
-		if( LockedRect.Pitch != 0 ) 
-		{
-			m_hVideo = (char*) LockedRect.pBits;
-		}
-	}
+   if( m_kinectEnabled )
+   {
+	   // Video
+	   const NUI_IMAGE_FRAME* pImageFrame = 0;
+	   WaitForSingleObject (m_hNextVideoFrameEvent,INFINITE); 
+	   HRESULT status = NuiImageStreamGetNextFrame( m_pVideoStreamHandle, 0, &pImageFrame ); 
+	   if(( status == S_OK) && pImageFrame ) 
+	   {
+		   INuiFrameTexture* pTexture = pImageFrame->pFrameTexture;
+		   NUI_LOCKED_RECT LockedRect;
+		   pTexture->LockRect( 0, &LockedRect, NULL, 0 ) ; 
+		   if( LockedRect.Pitch != 0 ) 
+		   {
+			   m_hVideo = (char*) LockedRect.pBits;
+		   }
+	   }
 
-	// Depth
-	const NUI_IMAGE_FRAME* pDepthFrame = 0;
-	WaitForSingleObject (m_hNextDepthFrameEvent,INFINITE); 
-	status = NuiImageStreamGetNextFrame( m_pDepthStreamHandle, 0, &pDepthFrame ); 
-	if(( status == S_OK) && pDepthFrame ) 
-	{
-		INuiFrameTexture* pTexture = pDepthFrame->pFrameTexture;
-		if( pTexture ) 
-		{
-			NUI_LOCKED_RECT LockedRectDepth;
-			pTexture->LockRect( 0, &LockedRectDepth, NULL, 0 ) ; 
-			if( LockedRectDepth.Pitch != 0 ) 
-			{
-				m_hDepth = (char*) LockedRectDepth.pBits;
-			}
-		}
-	}
-	NuiImageStreamReleaseFrame( m_pVideoStreamHandle, pImageFrame ); 
-	NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
+	   // Depth
+	   const NUI_IMAGE_FRAME* pDepthFrame = 0;
+	   WaitForSingleObject (m_hNextDepthFrameEvent,INFINITE); 
+	   status = NuiImageStreamGetNextFrame( m_pDepthStreamHandle, 0, &pDepthFrame ); 
+	   if(( status == S_OK) && pDepthFrame ) 
+	   {
+		   INuiFrameTexture* pTexture = pDepthFrame->pFrameTexture;
+		   if( pTexture ) 
+		   {
+			   NUI_LOCKED_RECT LockedRectDepth;
+			   pTexture->LockRect( 0, &LockedRectDepth, NULL, 0 ) ; 
+			   if( LockedRectDepth.Pitch != 0 ) 
+			   {
+				   m_hDepth = (char*) LockedRectDepth.pBits;
+			   }
+		   }
+	   }
+	   NuiImageStreamReleaseFrame( m_pVideoStreamHandle, pImageFrame ); 
+	   NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
 
-   // copy kinect data to GPU
-   h2d_kinect( m_hVideo, m_hDepth );
+      // copy kinect data to GPU
+      h2d_kinect( m_hVideo, m_hDepth );
+   }
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers

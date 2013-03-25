@@ -589,7 +589,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
 #else
       maxPrimitivePerBox = static_cast<int>(m_primitives.size()/nbActiveBoxes);
 #endif
-      //std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
+      std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
    }
    else
    {
@@ -618,6 +618,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          int maxPrimitivePerBox(0);
          int boxSize = 64;
          int bestSize = boxSize;
+         int bestActiveBoxes = 0;
          int bestRatio = 100000;
          int activeBoxes(NB_MAX_BOXES);
          do 
@@ -627,11 +628,12 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             {
                bestSize = boxSize;
                bestRatio = ratio;
+               bestActiveBoxes = activeBoxes;
             }
             boxSize--;
          }
          while( boxSize>0 );
-         std::cout << "Best trade off: " << bestSize << "/" << activeBoxes << " boxes" << std::endl;
+         std::cout << "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" << std::endl;
          processBoxes( bestSize, activeBoxes, false );
       }
 
@@ -655,28 +657,30 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             while( itp != box.primitives.end() )
             {
                // Prepare primitives for GPU
-               CPUPrimitive& primitive = m_primitives[*itp];
-               m_hPrimitives[primitivesIndex].index.x = *itp;
-               m_hPrimitives[primitivesIndex].type.x  = primitive.type;
-               m_hPrimitives[primitivesIndex].p0 = primitive.p0;
-               m_hPrimitives[primitivesIndex].p1 = primitive.p1;
-               m_hPrimitives[primitivesIndex].p2 = primitive.p2;
-               m_hPrimitives[primitivesIndex].n0 = primitive.n0;
-               m_hPrimitives[primitivesIndex].n1 = primitive.n1;
-               m_hPrimitives[primitivesIndex].n2 = primitive.n2;
-               m_hPrimitives[primitivesIndex].size = primitive.size;
-               m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
-               m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
+               if( *itp < NB_MAX_PRIMITIVES )
+               {
+                  CPUPrimitive& primitive = m_primitives[*itp];
+                  m_hPrimitives[primitivesIndex].index.x = *itp;
+                  m_hPrimitives[primitivesIndex].type.x  = primitive.type;
+                  m_hPrimitives[primitivesIndex].p0 = primitive.p0;
+                  m_hPrimitives[primitivesIndex].p1 = primitive.p1;
+                  m_hPrimitives[primitivesIndex].p2 = primitive.p2;
+                  m_hPrimitives[primitivesIndex].n0 = primitive.n0;
+                  m_hPrimitives[primitivesIndex].n1 = primitive.n1;
+                  m_hPrimitives[primitivesIndex].n2 = primitive.n2;
+                  m_hPrimitives[primitivesIndex].size = primitive.size;
+                  m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
+                  m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
 
-               // Lights
-		         if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
-		         {
-                  primitive.movable = false;
-			         m_hLamps[m_nbActiveLamps] = primitivesIndex;
-			         m_nbActiveLamps++;
-			         LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
-		         }
-
+                  // Lights
+		            if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
+		            {
+                     primitive.movable = false;
+			            m_hLamps[m_nbActiveLamps] = primitivesIndex;
+			            m_nbActiveLamps++;
+			            LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
+		            }
+               }
                ++itp;
                ++primitivesIndex;
             }

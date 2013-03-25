@@ -314,6 +314,7 @@ protected:
 	// Kinect declarations
 #ifdef USE_KINECT
 protected:
+   bool               m_kinectEnabled;
 	HANDLE             m_skeletons;
 	HANDLE             m_hNextDepthFrameEvent; 
 	HANDLE             m_hNextVideoFrameEvent;
