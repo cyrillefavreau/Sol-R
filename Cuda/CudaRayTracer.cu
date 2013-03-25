@@ -550,7 +550,8 @@ __device__ inline bool ellipsoidIntersection(
    bool& back) 
 {
 	// Shadow intensity
-	shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[ellipsoid.materialId.x].transparency.x);
+	shadowIntensity = 1.f;
+	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[ellipsoid.materialId.x].transparency.x);
 
    // solve the equation sphere-ray to find the intersections
 	float4 O_C = ray.origin-ellipsoid.p0;
@@ -681,7 +682,7 @@ __device__ inline bool sphereIntersection(
    r = dotProduct(dir,normal);
 	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
    shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-   shadowIntensity *= sceneInfo.shadowIntensity.x;
+   //shadowIntensity *= sceneInfo.shadowIntensity.x;
 
 #if EXTENDED_FEATURES
 	// Power textures
@@ -797,7 +798,7 @@ __device__ bool cylinderIntersection(
          float r = dotProduct(dir,normal);
 	      //shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
          shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-         shadowIntensity *= sceneInfo.shadowIntensity.x;
+         //shadowIntensity *= sceneInfo.shadowIntensity.x;
          return true;
 		}
 	}
@@ -933,7 +934,7 @@ __device__ bool planeIntersection(
 	if( collision ) 
 	{
 		// Shadow intensity
-		shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[primitive.materialId.x].transparency.x);
+		shadowIntensity = 1.f; //sceneInfo.shadowIntensity.x*(1.f-materials[primitive.materialId.x].transparency.x);
 
 		float4 color;
 		color = materials[primitive.materialId.x].color;
@@ -946,11 +947,13 @@ __device__ bool planeIntersection(
 		{
 			collision = false;
 		}
+      /*
 		else 
 		{
 			shadowIntensity = sceneInfo.shadowIntensity.x*
 				(1.f-(color.x+color.y+color.z)/3.f*materials[primitive.materialId.x].transparency.x);
 		}
+      */
 	}
 	return collision;
 }
@@ -1038,9 +1041,10 @@ __device__ bool triangleIntersection(
    }
 
    // Shadow management
+   shadowIntensity = 1.f;
 	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
-   shadowIntensity = (materials[triangle.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-   shadowIntensity *= sceneInfo.shadowIntensity.x;
+   //shadowIntensity = (materials[triangle.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+   //shadowIntensity *= sceneInfo.shadowIntensity.x;
    return true;
 }
 
@@ -1224,17 +1228,19 @@ __device__ float processShadows(
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
                      {
                         normalizeVector(O_L);
-                        float angle=sqrt(fabs(dotProduct(O_L,normal)));
-							   result += sceneInfo.shadowIntensity.x*(
-                           (1.f-angle*materials[primitive.materialId.x].transparency.x)*shadowIntensity-materials[primitive.materialId.x].innerIllumination.x);
+                        float a=fabs(dotProduct(O_L,normal));
+                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-materials[primitive.materialId.x].transparency.x);
+                        result += r*a*shadowIntensity*sceneInfo.shadowIntensity.x;
                      
-                        float4 inv = {1.f,1.f,1.f,1.f};
-                        color += 0.1f*angle*(1.f-materials[primitive.materialId.x].transparency.x)*(inv-materials[primitive.materialId.x].color);
+                        //float4 inv = {1.f,1.f,1.f,1.f};
+                        //color += 0.3f*r*(1.f-materials[primitive.materialId.x].transparency.x)*(inv-materials[primitive.materialId.x].color);
                      }
                      else
 #endif
                      {
-                        result += sceneInfo.shadowIntensity.x;
+                        //result += 1.f-materials[primitive.materialId.x].transparency.x; //sceneInfo.shadowIntensity.x;
+                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-materials[primitive.materialId.x].transparency.x);
+                        result += r*shadowIntensity*sceneInfo.shadowIntensity.x;
                      }
                   }
                   it++;
@@ -1544,10 +1550,11 @@ __device__ float4 launchRay(
 	primitiveXYId = -1;
 
 #if 1
-   float  colorContributions[10];
-   float4 colors[10];
-   memset(&colorContributions[0],0,sizeof(float)*10);
-   memset(&colors[0],0,sizeof(float4)*10);
+   const int nbMaxIterations = 110;
+   float  colorContributions[nbMaxIterations];
+   float4 colors[nbMaxIterations];
+   memset(&colorContributions[0],0,sizeof(float)*nbMaxIterations);
+   memset(&colors[0],0,sizeof(float4)*nbMaxIterations);
 #else
    float4 recursiveColor = { 0.f, 0.f, 0.f, 0.f };
 	float  previousWeight    = 1.f;
@@ -1565,11 +1572,7 @@ __device__ float4 launchRay(
 
    int currentMaterialId=-2;
 
-#if 1
-	while( iteration<10 && carryon ) 
-#else
 	while( iteration<(sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x) && carryon ) 
-#endif
 	{
       // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
@@ -1654,8 +1657,10 @@ __device__ float4 launchRay(
 					if( materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f ) 
 					{
 						float4 O_E = rayOrigin.origin - closestIntersection;
+                  //normalizeVector(O_E);
 						vectorReflection( rayOrigin.direction, O_E, normal );
 						reflectedTarget = closestIntersection - rayOrigin.direction;
+                  //normalizeVector(reflectedTarget);
 #if 1
                   colorContributions[iteration] = 1.f-materials[primitives[closestPrimitive].materialId.x].reflection.x;
 #else
@@ -1707,7 +1712,7 @@ __device__ float4 launchRay(
 #endif
  			recursiveBlinn += rBlinn;
 
-         rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
+         rayOrigin.origin    = closestIntersection + reflectedTarget*0.000001f; 
 			rayOrigin.direction = reflectedTarget;
 
 			// Noise management
@@ -1850,7 +1855,39 @@ __global__ void k_standardRenderer(
    }
    __syncthreads();
 
-	float4 color = launchRay(
+   // Antialisazing
+   float2 AArotatedGrid[4] =
+   {
+      {  3.f,  5.f },
+      {  5.f, -3.f },
+      { -3.f, -5.f },
+      { -5.f,  3.f }
+   };
+
+   float4 color = {0.f,0.f,0.f,0.f};
+   if( sceneInfo.misc.w == 2 )
+   {
+      // Antialiazing
+      Ray r=ray;
+	   for( int I=0; I<4; ++I )
+	   {
+         r.direction.x = ray.direction.x + AArotatedGrid[I].x;
+         r.direction.y = ray.direction.y + AArotatedGrid[I].y;
+	      float4 c = launchRay(
+		      shBoundingBoxes, nbActiveBoxes,
+		      primitives, nbActivePrimitives,
+		      lamps, nbActiveLamps,
+		      materials, textures, 
+		      randoms,
+		      r, 
+		      sceneInfo, postProcessingInfo,
+		      intersection,
+		      dof,
+		      primitiveXYIds[index]);
+         color += c;
+      }
+   }
+   color += launchRay(
 		shBoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
@@ -1861,6 +1898,12 @@ __global__ void k_standardRenderer(
 		intersection,
 		dof,
 		primitiveXYIds[index]);
+   
+   // Antialiazing
+   if( sceneInfo.misc.w == 2 )
+   {
+      color /= 5.f;
+   }
 
 	if( sceneInfo.pathTracingIteration.x == 0 )
 	{
@@ -2229,7 +2272,7 @@ __global__ void k_antiAliasing(
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
-	float4 localColor = {0.f,0.f,0.f,0.f};
+	float4 localColor = postProcessingBuffer[index];
 
 	for( int X=-1; X<=1; X+=2 )
 	{
@@ -2240,13 +2283,11 @@ __global__ void k_antiAliasing(
 			if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
 			{
 				int localIndex = yy*sceneInfo.width.x+xx;
-				localColor += 0.2f*postProcessingBuffer[localIndex];
+				localColor += postProcessingBuffer[localIndex];
 			}
 		}
 	}
-	localColor /= 4.f;
-	localColor += postProcessingBuffer[index];
-	localColor /= (sceneInfo.pathTracingIteration.x+1);
+	localColor /= 5.f;
 	saturateVector( localColor );
 	localColor.w = 1.f;
 

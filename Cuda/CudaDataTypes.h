@@ -56,7 +56,7 @@ struct SceneInfo
    int1    renderBoxes;
    int1    pathTracingIteration;
    int1    maxPathTracingIterations;
-   int4    misc; // x : OpenGL=0, Delphi=1, JPEG=2, y: timer, z: fog (0: disabled, 1: enabled), w: 1: Isometric 3D
+   int4    misc; // x : OpenGL=0, Delphi=1, JPEG=2, y: timer, z: fog (0: disabled, 1: enabled), w: 1: Isometric 3D, 2: Antializing
 };
 
 struct Ray
