@@ -1548,18 +1548,13 @@ __device__ float4 launchRay(
 	float  initialRefraction = 1.f;
 	int    iteration         = 0;
 	primitiveXYId = -1;
+   int currentMaterialId=-2;
 
-#if 1
    const int nbMaxIterations = 110;
    float  colorContributions[nbMaxIterations];
    float4 colors[nbMaxIterations];
    memset(&colorContributions[0],0,sizeof(float)*nbMaxIterations);
    memset(&colors[0],0,sizeof(float4)*nbMaxIterations);
-#else
-   float4 recursiveColor = { 0.f, 0.f, 0.f, 0.f };
-	float  previousWeight    = 1.f;
-   float recursiveColorRatio = 1.f;
-#endif 
 
 	float4 recursiveBlinn = { 0.f, 0.f, 0.f, 0.f };
 
@@ -1570,7 +1565,11 @@ __device__ float4 launchRay(
 	float4 colorBox = { 0.f, 0.f, 0.f, 0.f };
 	bool   back = false;
 
-   int currentMaterialId=-2;
+   // Reflected rays
+   int reflectedRays=-1;
+   Ray reflectedRay;
+
+   float4 rBlinn = {0.f,0.f,0.f,0.f};
 
 	while( iteration<(sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x) && carryon ) 
 	{
@@ -1594,24 +1593,15 @@ __device__ float4 launchRay(
 
 			if ( iteration==0 )
 			{
-#if 1
             colors[iteration].x = 0.f;
             colors[iteration].y = 0.f;
             colors[iteration].z = 0.f;
             colors[iteration].w = 0.f;
             colorContributions[iteration]=1.f;
-#else
-				intersectionColor.x = 0.f;
-				intersectionColor.y = 0.f;
-				intersectionColor.z = 0.f;
-				intersectionColor.w = 0.f;
-#endif
 
 				firstIntersection = closestIntersection;
             primitiveXYId = primitives[closestPrimitive].index.x;
 			}
-
-			float4 rBlinn = {0.f,0.f,0.f,0.f};
 
 			if( shadowIntensity <= 0.9f ) // No reflection/refraction if in shades
 			{
@@ -1639,15 +1629,21 @@ __device__ float4 launchRay(
 					vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
 					reflectedTarget = closestIntersection - rayOrigin.direction;
 
-#if 1
                colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].transparency.x;
-#else
-               recursiveColorRatio = previousWeight*(1.f-materials[primitives[closestPrimitive].materialId.x].transparency.x);
-					previousWeight = previousWeight*materials[primitives[closestPrimitive].materialId.x].transparency.x;
-#endif 
                
                // Prepare next ray
 					initialRefraction = refraction;
+
+					if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f )
+               {
+						vectorReflection( reflectedRay.direction, O_E, normal );
+						float4 rt = closestIntersection - reflectedRay.direction;
+
+                  reflectedRay.origin    = closestIntersection + rt*0.000001f;
+						reflectedRay.direction = rt;
+                  reflectedRay.origin.w  = materials[primitives[closestPrimitive].materialId.x].reflection.x;
+						reflectedRays=iteration;
+               }
 				}
 				else
 				{
@@ -1657,44 +1653,25 @@ __device__ float4 launchRay(
 					if( materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f ) 
 					{
 						float4 O_E = rayOrigin.origin - closestIntersection;
-                  //normalizeVector(O_E);
 						vectorReflection( rayOrigin.direction, O_E, normal );
 						reflectedTarget = closestIntersection - rayOrigin.direction;
-                  //normalizeVector(reflectedTarget);
-#if 1
-                  colorContributions[iteration] = 1.f-materials[primitives[closestPrimitive].materialId.x].reflection.x;
-#else
-						recursiveColorRatio = previousWeight*(1.f-materials[primitives[closestPrimitive].materialId.x].reflection.x);
-						previousWeight = previousWeight*materials[primitives[closestPrimitive].materialId.x].reflection.x;
-#endif 
+                  colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].reflection.x;
 					}
 					else 
 					{
-#if 1
                   colorContributions[iteration] = 1.f;
-#else
-						recursiveColorRatio *= previousWeight;
-#endif
 						carryon = false;
 					}         
 				}
 			}
 			else 
 			{
-#if 1
             colorContributions[iteration] = 1.f;
-#else
-				recursiveColorRatio *= previousWeight;
-#endif
 				carryon = false;
 			}
 
 			// Get object color
-#if 1
          colors[iteration] =
-#else
-			recursiveColor = 
-#endif
             primitiveShader( 
 				   sceneInfo, postProcessingInfo,
 				   boundingBoxes, nbActiveBoxes, 
@@ -1704,12 +1681,6 @@ __device__ float4 launchRay(
 			      iteration, refractionFromColor, shadowIntensity, rBlinn );
 
 			// Contribute to final color
-#if 1
-#else
-         intersectionColor += recursiveColor*recursiveColorRatio;
- 			recursiveBlinn += rBlinn;
-			intersectionColor -= colorBox;
-#endif
  			recursiveBlinn += rBlinn;
 
          rayOrigin.origin    = closestIntersection + reflectedTarget*0.000001f; 
@@ -1733,24 +1704,43 @@ __device__ float4 launchRay(
          float4 dir = rayOrigin.direction-rayOrigin.origin;
          normalizeVector(dir);
          float angle = 1.f-fabs(dotProduct( normal, dir ));
-#if 1
 			colors[iteration] = angle*sceneInfo.backgroundColor;
 			colorContributions[iteration] = 1.f;
-#else
-			intersectionColor += angle*sceneInfo.backgroundColor;
-#endif
 		}
 		iteration++;
 	}
 
-#if 1
+   if( /*sceneInfo.pathTracingIteration.x>0 &&*/ reflectedRays != -1 )
+   {
+      // TODO: Dodgy implementation		
+      if( intersectionWithPrimitives(
+			sceneInfo,
+			boundingBoxes, nbActiveBoxes,
+			primitives, nbActivePrimitives,
+			materials, textures,
+			reflectedRay,
+			reflectedRays,  
+			closestPrimitive, closestIntersection, 
+			normal, colorBox, back, currentMaterialId) )
+      {
+         float4 color = primitiveShader( 
+				sceneInfo, postProcessingInfo,
+				boundingBoxes, nbActiveBoxes, 
+			   primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
+			   randoms,
+			   reflectedRay.origin, normal, closestPrimitive, closestIntersection, 
+			   reflectedRays, 
+            refractionFromColor, shadowIntensity, rBlinn );
+
+         colors[reflectedRays] += color;//*reflectedRay.origin.w;
+      }
+   }
+
    for( int i=iteration-2; i>=0; --i)
    {
       colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
    }
    intersectionColor = colors[0];
-#else
-#endif
 	intersectionColor += recursiveBlinn;
 
 	saturateVector( intersectionColor );
