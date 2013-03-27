@@ -1732,7 +1732,7 @@ __device__ float4 launchRay(
 			   reflectedRays, 
             refractionFromColor, shadowIntensity, rBlinn );
 
-         colors[reflectedRays] += color;//*reflectedRay.origin.w;
+         colors[reflectedRays] += color*reflectedRay.origin.w;
       }
    }
 
