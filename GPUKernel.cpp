@@ -149,7 +149,7 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%1000-500)/1000.f;
+		m_hRandoms[i] = (rand()%2000-1000)/1000.f;
 	}
 }
 

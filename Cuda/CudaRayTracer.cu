@@ -1229,7 +1229,7 @@ __device__ float processShadows(
                      {
                         normalizeVector(O_L);
                         float a=fabs(dotProduct(O_L,normal));
-                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-materials[primitive.materialId.x].transparency.x);
+                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-0.8f*materials[primitive.materialId.x].transparency.x);
                         result += r*a*shadowIntensity*sceneInfo.shadowIntensity.x;
                      
                         //float4 inv = {1.f,1.f,1.f,1.f};
@@ -1307,6 +1307,7 @@ __device__ float4 primitiveShader(
 			if(lamps[cptLamps] != objectId)
 			{
 				float4 center;
+   			// randomize lamp center
 				float4 size;
 				switch( primitives[lamps[cptLamps]].type.x )
 				{
@@ -1329,10 +1330,9 @@ __device__ float4 primitiveShader(
 				if( sceneInfo.pathTracingIteration.x > 0 )
 				{
 					int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-					// randomize lamp center
-					center.x += 10.f*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.y += 10.f*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.z += 10.f*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.x += size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.y += size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.z += size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 				}
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
@@ -1347,6 +1347,7 @@ __device__ float4 primitiveShader(
 
 				Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
 				float4 lightRay = center - intersection;
+
 				normalizeVector(lightRay);
 
 				// --------------------------------------------------------------------------------
@@ -1565,13 +1566,17 @@ __device__ float4 launchRay(
 	float4 colorBox = { 0.f, 0.f, 0.f, 0.f };
 	bool   back = false;
 
+   // Photon energy
+   float photonDistance = sceneInfo.viewDistance.x;
+   float previousTransparency = 1.f;
+
    // Reflected rays
    int reflectedRays=-1;
    Ray reflectedRay;
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
 
-	while( iteration<(sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x) && carryon ) 
+	while( iteration<(sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x) && carryon && photonDistance>0.f ) 
 	{
       // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
@@ -1602,6 +1607,10 @@ __device__ float4 launchRay(
 				firstIntersection = closestIntersection;
             primitiveXYId = primitives[closestPrimitive].index.x;
 			}
+
+         // Photon
+         photonDistance -= vectorLength(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
+         previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
 
 			if( shadowIntensity <= 0.9f ) // No reflection/refraction if in shades
 			{
@@ -1639,7 +1648,7 @@ __device__ float4 launchRay(
 						vectorReflection( reflectedRay.direction, O_E, normal );
 						float4 rt = closestIntersection - reflectedRay.direction;
 
-                  reflectedRay.origin    = closestIntersection + rt*0.000001f;
+                  reflectedRay.origin    = closestIntersection + rt*0.00001f;
 						reflectedRay.direction = rt;
                   reflectedRay.origin.w  = materials[primitives[closestPrimitive].materialId.x].reflection.x;
 						reflectedRays=iteration;
@@ -1683,7 +1692,7 @@ __device__ float4 launchRay(
 			// Contribute to final color
  			recursiveBlinn += rBlinn;
 
-         rayOrigin.origin    = closestIntersection + reflectedTarget*0.000001f; 
+         rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
 			rayOrigin.direction = reflectedTarget;
 
 			// Noise management
@@ -1746,13 +1755,18 @@ __device__ float4 launchRay(
 	saturateVector( intersectionColor );
 	intersection = closestIntersection;
 
+	// --------------------------------------------------
+   // Photon energy
+	// --------------------------------------------------
+   intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
+
+	// --------------------------------------------------
+	// Attenation effect (Fog)
+	// --------------------------------------------------
 	float len = vectorLength(firstIntersection - ray.origin);
    float halfDistance = sceneInfo.viewDistance.x*0.75f;
    if( sceneInfo.misc.z==1 && len>halfDistance)
    {
-	   // --------------------------------------------------
-	   // Attenation effect (Fog)
-	   // --------------------------------------------------
 	   len = 1.f-((len-halfDistance)/(sceneInfo.viewDistance.x-halfDistance));
 	   len = (len>0.f) ? len : 0.f; 
 	   len = (len<1.f) ? len : 1.f; 
@@ -1899,6 +1913,7 @@ __global__ void k_standardRenderer(
 	{
 		postProcessingBuffer[index].w = dof;
 	}
+
    postProcessingBuffer[index].x += color.x;
    postProcessingBuffer[index].y += color.y;
    postProcessingBuffer[index].z += color.z;
