@@ -28,16 +28,14 @@
 #include <cuda_runtime_api.h>
 #if CUDART_VERSION>=5000
 #include <helper_cuda.h>
-  #ifdef WIN32
-    #include <helper_math.h>
-  #else
-    #include <cutil_math.h>
-  #endif // WIN32
+#include <helper_math.h>
 #else
 #include <cutil_inline.h>
 #include <cutil_math.h>
 #endif
 
+// Consts
+const int MAX_GPU_COUNT = 32;
 
 // Project
 #include "CudaDataTypes.h"
@@ -47,16 +45,18 @@
 #define M_PI 3.14159265358979323846
 #define EPSILON 10.f
 
-// Device arrays
-Primitive*   d_primitives;
-BoundingBox* d_boundingBoxes; 
-int*         d_lamps;
-Material*    d_materials;
-char*        d_textures;
-float*       d_randoms;
-float4*      d_postProcessingBuffer;
-char*        d_bitmap;
-int*         d_primitivesXYIds;
+// Device resources
+Primitive*   d_primitives[MAX_GPU_COUNT];
+BoundingBox* d_boundingBoxes[MAX_GPU_COUNT]; 
+int*         d_lamps[MAX_GPU_COUNT];
+Material*    d_materials[MAX_GPU_COUNT];
+char*        d_textures[MAX_GPU_COUNT];
+float*       d_randoms[MAX_GPU_COUNT];
+float4*      d_postProcessingBuffer[MAX_GPU_COUNT];
+char*        d_bitmap[MAX_GPU_COUNT];
+int*         d_primitivesXYIds[MAX_GPU_COUNT];
+cudaStream_t d_streams[MAX_GPU_COUNT];
+int          d_nbGPUs;
 
 // ________________________________________________________________________________
 __device__ inline float vectorLength( const float4& vector )
@@ -1787,6 +1787,7 @@ Standard renderer
 ________________________________________________________________________________
 */
 __global__ void k_standardRenderer(
+   int split_y, int nbGPUs,
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
 	int* lamps, int nbActiveLamps,
@@ -1835,7 +1836,7 @@ __global__ void k_standardRenderer(
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
       ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.width.x/2));
-	   ray.direction.y = -ray.origin.z*0.001f*(float)(y - (sceneInfo.height.x/2));
+	   ray.direction.y = -ray.origin.z*0.001f*(float)(split_y+y - (sceneInfo.height.x/2));
 	   ray.origin.x = ray.direction.x;
 	   ray.origin.y = ray.direction.y;
    }
@@ -1846,7 +1847,7 @@ __global__ void k_standardRenderer(
       step.x=ratio*6400.f/(float)sceneInfo.width.x;
       step.y=6400.f/(float)sceneInfo.height.x;
       ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
-      ray.direction.y = ray.direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
+      ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.height.x/2));
    }
 
 	vectorRotation( ray.origin, rotationCenter, angles );
@@ -2329,19 +2330,32 @@ ________________________________________________________________________________
 extern "C" void initialize_scene( 
 	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials, int nbTextures )
 {
-	// Scene resources
-	checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes,      NB_MAX_BOXES*sizeof(BoundingBox)));
-	checkCudaErrors(cudaMalloc( (void**)&d_primitives,         NB_MAX_PRIMITIVES*sizeof(Primitive)));
-	checkCudaErrors(cudaMalloc( (void**)&d_lamps,              NB_MAX_LAMPS*sizeof(int)));
-	checkCudaErrors(cudaMalloc( (void**)&d_materials,          NB_MAX_MATERIALS*sizeof(Material)));
-	checkCudaErrors(cudaMalloc( (void**)&d_textures,           NB_MAX_TEXTURES*gTextureDepth*gTextureWidth*gTextureHeight + gTextureOffset));
-	checkCudaErrors(cudaMalloc( (void**)&d_randoms,            width*height*sizeof(float)));
+   // Multi GPU initialization
+   checkCudaErrors(cudaGetDeviceCount(&d_nbGPUs));
+   if(d_nbGPUs > MAX_GPU_COUNT)
+   {
+	   d_nbGPUs = MAX_GPU_COUNT;
+   }
+   std::cout << "CUDA-capable device count: " << d_nbGPUs << std::endl;
 
-	// Rendering canvas
-	checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer,  width*height*sizeof(float4)));
-	checkCudaErrors(cudaMalloc( (void**)&d_bitmap,                width*height*gColorDepth*sizeof(char)));
-	checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds,       width*height*gColorDepth*sizeof(int)));
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+      checkCudaErrors(cudaStreamCreate(&d_streams[d]));
 
+      // Scene resources
+	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[d],      NB_MAX_BOXES*sizeof(BoundingBox)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitives[d],         NB_MAX_PRIMITIVES*sizeof(Primitive)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_lamps[d],              NB_MAX_LAMPS*sizeof(int)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_materials[d],          NB_MAX_MATERIALS*sizeof(Material)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_textures[d],           NB_MAX_TEXTURES*gTextureDepth*gTextureWidth*gTextureHeight + gTextureOffset));
+	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[d],            width*height*sizeof(float)));
+
+	   // Rendering canvas
+	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*gColorDepth*sizeof(int)));
+   }
 #if 0
 	std::cout <<"GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
 	std::cout <<"GPU: Ray               : " << sizeof(Ray) << std::endl;
@@ -2363,15 +2377,20 @@ ________________________________________________________________________________
 */
 extern "C" void finalize_scene()
 {
-	checkCudaErrors(cudaFree( d_boundingBoxes ));
-	checkCudaErrors(cudaFree( d_primitives ));
-	checkCudaErrors(cudaFree( d_lamps ));
-	checkCudaErrors(cudaFree( d_materials ));
-	checkCudaErrors(cudaFree( d_textures ));
-	checkCudaErrors(cudaFree( d_randoms ));
-	checkCudaErrors(cudaFree( d_postProcessingBuffer ));
-	checkCudaErrors(cudaFree( d_bitmap ));
-	checkCudaErrors(cudaFree( d_primitivesXYIds ));
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+	   checkCudaErrors(cudaFree( d_boundingBoxes[d] ));
+	   checkCudaErrors(cudaFree( d_primitives[d] ));
+	   checkCudaErrors(cudaFree( d_lamps[d] ));
+	   checkCudaErrors(cudaFree( d_materials[d] ));
+	   checkCudaErrors(cudaFree( d_textures[d] ));
+	   checkCudaErrors(cudaFree( d_randoms[d] ));
+	   checkCudaErrors(cudaFree( d_postProcessingBuffer[d] ));
+	   checkCudaErrors(cudaFree( d_bitmap[d] ));
+	   checkCudaErrors(cudaFree( d_primitivesXYIds[d] ));
+      checkCudaErrors(cudaStreamDestroy(d_streams[d]));
+   }
 }
 
 /*
@@ -2385,9 +2404,13 @@ extern "C" void h2d_scene(
 	Primitive*  primitives, int nbPrimitives,
 	int* lamps, int nbLamps )
 {
-	checkCudaErrors(cudaMemcpy( d_boundingBoxes,      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice ));
-	checkCudaErrors(cudaMemcpy( d_primitives,         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice ));
-	checkCudaErrors(cudaMemcpy( d_lamps,              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice ));
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[d],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_primitives[d],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_lamps[d],              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice, d_streams[d] ));
+   }
 }
 
 extern "C" void h2d_materials( 
@@ -2395,17 +2418,24 @@ extern "C" void h2d_materials(
 	char*      textures , int nbActiveTextures,
 	float*     randoms,   int nbRandoms)
 {
-	checkCudaErrors(cudaMemcpy( d_materials, materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice ));
-	checkCudaErrors(cudaMemcpy( d_textures,  textures,  gTextureOffset+nbActiveTextures*sizeof(char)*gTextureSize,  cudaMemcpyHostToDevice ));
-	checkCudaErrors(cudaMemcpy( d_randoms,   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice ));
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+	   checkCudaErrors(cudaMemcpyAsync( d_materials[d], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[d],  textures,  gTextureOffset+nbActiveTextures*sizeof(char)*gTextureSize, cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_randoms[d],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[d] ));
+   }
 }
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
 	char* kinectVideo, char* kinectDepth )
 {
-	checkCudaErrors(cudaMemcpy( d_textures, kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice ));
-	checkCudaErrors(cudaMemcpy( d_textures+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice ));
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[d], kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[d]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+   }
 }
 #endif // USE_KINECT
 
@@ -2417,8 +2447,18 @@ ________________________________________________________________________________
 */
 extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo sceneInfo )
 {
-	checkCudaErrors(cudaMemcpy( bitmap, d_bitmap, sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char), cudaMemcpyDeviceToHost ));
-	checkCudaErrors(cudaMemcpy( primitivesXYIds, d_primitivesXYIds, sceneInfo.width.x*sceneInfo.height.x*sizeof(int), cudaMemcpyDeviceToHost ));
+   int offset = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/d_nbGPUs;
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+      
+      // Synchronize stream
+      checkCudaErrors(cudaStreamSynchronize(d_streams[d]));
+
+      // Copy results back to CPU
+      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offset, d_bitmap[d], offset, cudaMemcpyDeviceToHost, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds, d_primitivesXYIds[d], sceneInfo.width.x*sceneInfo.height.x*sizeof(int), cudaMemcpyDeviceToHost, d_streams[d] ));
+   }
 }
 
 /*
@@ -2438,92 +2478,98 @@ extern "C" void cudaRender(
 {
 	int2 size;
 	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x);
+	size.y = static_cast<int>(sceneInfo.height.x) / d_nbGPUs;
 
 	dim3 grid((size.x+blockSize.x-1)/blockSize.x,(size.y+blockSize.y-1)/blockSize.y,1);
 	dim3 blocks( blockSize.x,blockSize.y,blockSize.z );
    sharedMemSize = objects.x*sizeof(BoundingBox);
 
-	switch( sceneInfo.supportFor3DVision.x ) 
-	{
-	case vtAnaglyph:
-		{
-			k_anaglyphRenderer<<<grid,blocks,sharedMemSize>>>(
-				d_boundingBoxes, objects.x, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
-				d_randoms, origin, direction, angles, sceneInfo, 
-				postProcessingInfo, d_postProcessingBuffer, d_primitivesXYIds);
-			break;
-		}
-	case vt3DVision:
-		{
-			k_3DVisionRenderer<<<grid,blocks,sharedMemSize>>>(
-				d_boundingBoxes, objects.x, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
-				d_randoms, origin, direction, angles, sceneInfo, 
-				postProcessingInfo, d_postProcessingBuffer, d_primitivesXYIds);
-			break;
-		}
-	default:
-		{
-			k_standardRenderer<<<grid,blocks,sharedMemSize>>>(
-				d_boundingBoxes, objects.x, d_primitives, objects.y,  d_lamps, objects.z, d_materials, d_textures, 
-				d_randoms, origin, direction, angles, sceneInfo,
-				postProcessingInfo, d_postProcessingBuffer, d_primitivesXYIds);
-			break;
-		}
-	}
+   for( int d=0; d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
 
-	cudaThreadSynchronize();
-	cudaError_t status = cudaGetLastError();
-	if(status != cudaSuccess) 
-	{
-		std::cout << "ERROR: (" << status << ") " << cudaGetErrorString(status) << std::endl;
-		std::cout << "INFO: Size(" << size.x << ", " << size.y << ") " << std::endl;
-		std::cout << "INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") " << std::endl;
-		std::cout << "nbActiveBoxes :" << objects.x << std::endl;
-		std::cout << "nbActivePrimitives :" << objects.y << std::endl;
-		std::cout << "nbActiveLamps :" << objects.z << std::endl;
-	}
+	   switch( sceneInfo.supportFor3DVision.x ) 
+	   {
+	   case vtAnaglyph:
+		   {
+			   k_anaglyphRenderer<<<grid,blocks,sharedMemSize,d_streams[d]>>>(
+				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y,  d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_randoms[d], origin, direction, angles, sceneInfo, 
+				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			   break;
+		   }
+	   case vt3DVision:
+		   {
+			   k_3DVisionRenderer<<<grid,blocks,sharedMemSize,d_streams[d]>>>(
+				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y, d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_randoms[d], origin, direction, angles, sceneInfo, 
+				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			   break;
+		   }
+	   default:
+		   {
+			   k_standardRenderer<<<grid,blocks,sharedMemSize,d_streams[d]>>>(
+               d*size.y, d_nbGPUs,
+				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y,  d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_randoms[d], origin, direction, angles, sceneInfo,
+				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			   break;
+		   }
+	   }
 
-	switch( postProcessingInfo.type.x )
-	{
-	case ppe_depthOfField:
-		k_depthOfField<<<grid,blocks>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer,
-			d_randoms, 
-			d_bitmap );
-		break;
-	case ppe_ambientOcclusion:
-		k_ambiantOcclusion<<<grid,blocks>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer,
-			d_randoms, 
-			d_bitmap );
-		break;
-	case ppe_cartoon:
-		k_cartoon<<<grid,blocks>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer,
-			d_randoms, 
-			d_bitmap );
-		break;
-	case ppe_antiAliasing:
-		k_antiAliasing<<<grid,blocks>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer,
-			d_randoms, 
-			d_bitmap );
-		break;
-	default:
-		k_default<<<grid,blocks>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer,
-			d_bitmap );
-		break;
-	}
+	   cudaThreadSynchronize();
+	   cudaError_t status = cudaGetLastError();
+	   if(status != cudaSuccess) 
+	   {
+		   std::cout << "ERROR: (" << status << ") " << cudaGetErrorString(status) << std::endl;
+		   std::cout << "INFO: Size(" << size.x << ", " << size.y << ") " << std::endl;
+		   std::cout << "INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") " << std::endl;
+		   std::cout << "nbActiveBoxes :" << objects.x << std::endl;
+		   std::cout << "nbActivePrimitives :" << objects.y << std::endl;
+		   std::cout << "nbActiveLamps :" << objects.z << std::endl;
+	   }
+
+	   switch( postProcessingInfo.type.x )
+	   {
+	   case ppe_depthOfField:
+		   k_depthOfField<<<grid,blocks,0,d_streams[d]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[d],
+			   d_randoms[d], 
+			   d_bitmap[d] );
+		   break;
+	   case ppe_ambientOcclusion:
+		   k_ambiantOcclusion<<<grid,blocks,0,d_streams[d]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[d],
+			   d_randoms[d], 
+			   d_bitmap[d] );
+		   break;
+	   case ppe_cartoon:
+		   k_cartoon<<<grid,blocks,0,d_streams[d]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[d],
+			   d_randoms[d], 
+			   d_bitmap[d] );
+		   break;
+	   case ppe_antiAliasing:
+		   k_antiAliasing<<<grid,blocks,0,d_streams[d]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[d],
+			   d_randoms[d], 
+			   d_bitmap[d] );
+		   break;
+	   default:
+		   k_default<<<grid,blocks,0,d_streams[d]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[d],
+			   d_bitmap[d] );
+		   break;
+	   }
+   }
 }
