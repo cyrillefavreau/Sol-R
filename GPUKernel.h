@@ -55,7 +55,7 @@ struct CPUPrimitive
 struct CPUBoundingBox
 {
    float4 parameters[2];
-   std::vector<int> primitives;
+   std::vector<unsigned int> primitives;
 };
 
 class RAYTRACINGENGINE_API GPUKernel
@@ -78,47 +78,47 @@ public:
 	// ---------- Primitives ----------
 	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
-		int   index,
+		unsigned int index,
 		float x0, float y0, float z0, float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-		int   index,
+		unsigned int index,
 		float x0, float y0, float z0, float x1, float y1, float z1,
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-		int   index,
+		unsigned int index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
-   int getPrimitiveAt( int x, int y );
-   void setPrimitiveIsMovable( int index, bool movable );
+   unsigned int getPrimitiveAt( int x, int y );
+   void setPrimitiveIsMovable( unsigned int index, bool movable );
 
-   void rotatePrimitives( float4 rotationCenter, float4 angles, int from, int to );
+   void rotatePrimitives( float4 rotationCenter, float4 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
    void rotateBox( CPUBoundingBox& box, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
 
-	void setPrimitiveMaterial( int index, int materialId); 
-	int  getPrimitiveMaterial( int index); 
-	void getPrimitiveCenter( int index, float& x, float& y, float& z, float& w );
-	void getPrimitiveOtherCenter( int index, float4& otherCenter );
-	void setPrimitiveCenter( int index, float  x, float  y, float  z, float  w );
+	void setPrimitiveMaterial( unsigned int index, int materialId); 
+	int  getPrimitiveMaterial( unsigned int index); 
+	void getPrimitiveCenter( unsigned int index, float& x, float& y, float& z, float& w );
+	void getPrimitiveOtherCenter( unsigned int index, float4& otherCenter );
+	void setPrimitiveCenter( unsigned int index, float  x, float  y, float  z, float  w );
 
    // Normals
-	void setPrimitiveNormals( int   index, float4 n0, float4 n1, float4 n2 );
+	void setPrimitiveNormals( unsigned int index, float4 n0, float4 n1, float4 n2 );
 
    // Lights
-   int getLight( int index );
+   int getLight( unsigned int index );
 	void setLight( 
-		int   index,
+		unsigned int index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 
-   CPUPrimitive* getPrimitive( const int index );
+   CPUPrimitive* getPrimitive( const unsigned int index );
      
 public:
    
    void updateBoundingBox( CPUBoundingBox& box );
    void resetBoxes( bool resetPrimitives=true );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives=true );
-   CPUBoundingBox& getBoundingBox( const int boxIndex ) { return m_boundingBoxes[boxIndex]; };
+   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return m_boundingBoxes[boxIndex]; };
    int compactBoxes( bool reconstructBoxes=false );
    void displayBoxesInfo();
 
@@ -126,14 +126,14 @@ public:
 
 	// ---------- Complex objects ----------
 	int addCube( 
-      int boxId,
+      unsigned int boxId,
 		float x, float y, float z, 
 		float radius, 
 		int   materialId, 
 		float materialPaddingX, float materialPaddingY );
 
 	int addRectangle(
-		int boxId,
+		unsigned int boxId,
 		float x, float y, float z, 
 		float w, float h, float d,
 		int   materialId, 
@@ -144,7 +144,7 @@ public:
 	// ---------- Materials ----------
 	int addMaterial();
 	void setMaterial( 
-		int   index,
+		unsigned int index,
 		float r, float g, float b, float noise,
 		float reflection, 
 		float refraction,
@@ -157,7 +157,7 @@ public:
       bool  fastTransparency);
 
    int getMaterialAttributes( 
-		int    index,
+		unsigned int index,
 		float& r, float& g, float& b, float& noise,
 		float& reflection, 
 		float& refraction,
@@ -181,7 +181,7 @@ public:
 
 	// ---------- Textures ----------
 	void setTexture(
-		int   index,
+		unsigned int index,
 		char* texture );
 
 	int addTexture( 
@@ -233,7 +233,7 @@ public:
 	// ---------- Kinect ----------
 
 	int updateSkeletons( 
-      int    primitiveIndex,
+      unsigned int primitiveIndex,
 		float4 skeletonPosition, 
 		float size,
 		float radius,       int materialId,
@@ -248,11 +248,11 @@ public:
 
 public:
 
-	int getNbActiveBoxes()      { return static_cast<int>(m_boundingBoxes.size()); };
-	int getNbActivePrimitives() { return static_cast<int>(m_primitives.size()); };
-	int getNbActiveints()       { return m_nbActiveLamps; };
-	int getNbActiveMaterials()  { return m_nbActiveMaterials; };
-	int getNbActiveTextures()   { return m_nbActiveTextures; };
+	unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes.size()); };
+	unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives.size()); };
+	unsigned int getNbActiveints()       { return m_nbActiveLamps; };
+	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
+	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
 
 public:
 
@@ -261,7 +261,7 @@ public:
 
 protected:
    
-   int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
+   unsigned int processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
 
    void rotateVector( float4& v, const float4 rotationCenter, const float4& cosAngles, const float4& sinAngles );
 
@@ -277,13 +277,13 @@ protected:
 	float*	    m_hRandoms;
    int*         m_hPrimitivesXYIds;
 
-	int			m_nbActivePrimitives;
-	int			m_nbActiveLamps;
-	int			m_nbActiveMaterials;
-	int			m_nbActiveTextures;
-	float4		m_viewPos;
-	float4		m_viewDir;
-	float4		m_angles;
+	unsigned int m_nbActivePrimitives;
+	unsigned int m_nbActiveLamps;
+	unsigned int m_nbActiveMaterials;
+	unsigned int m_nbActiveTextures;
+	float4		 m_viewPos;
+	float4		 m_viewDir;
+	float4		 m_angles;
 
 protected:
 
@@ -308,8 +308,8 @@ protected:
 protected:
 
    // CPU
-	std::map<int,CPUBoundingBox> m_boundingBoxes;
-	std::map<int,CPUPrimitive> m_primitives;
+	std::map<unsigned int,CPUBoundingBox> m_boundingBoxes;
+	std::map<unsigned int,CPUPrimitive> m_primitives;
 
 	// Kinect declarations
 #ifdef USE_KINECT

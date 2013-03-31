@@ -267,7 +267,7 @@ void FileMarshaller::saveToFile( const std::string& filename)
          sceneInfo.misc.y << std::endl;
 
       // Materials
-      for( int i(0); i<=m_gpuKernel->getNbActiveMaterials(); ++i )
+      for( unsigned int i(0); i<=m_gpuKernel->getNbActiveMaterials(); ++i )
       {
          Material* material = m_gpuKernel->getMaterial(i);
          myfile << "MATERIAL;" <<  
@@ -293,11 +293,11 @@ void FileMarshaller::saveToFile( const std::string& filename)
             material->fastTransparency.x << std::endl;
       }
       // Primitives
-      for( int b(0); b<=m_gpuKernel->getNbActiveBoxes(); ++b )
+      for( unsigned int b(0); b<=m_gpuKernel->getNbActiveBoxes(); ++b )
       {
          CPUBoundingBox& box = m_gpuKernel->getBoundingBox(b);
          
-         std::vector<int>::const_iterator it = box.primitives.begin();
+         std::vector<unsigned int>::const_iterator it = box.primitives.begin();
          while( it != box.primitives.end() )
          {
             CPUPrimitive* primitive = m_gpuKernel->getPrimitive(*it);

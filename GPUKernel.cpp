@@ -14,8 +14,8 @@
 #include "Logging.h"
 #include "Consts.h"
 
-const int MAX_SOURCE_SIZE = 65535;
-const int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 100; //300;
+const unsigned int MAX_SOURCE_SIZE = 65535;
+const unsigned int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 100; //300;
 
 float4 min4( const float4 a, const float4 b, const float4 c )
 {
@@ -186,7 +186,7 @@ int GPUKernel::addPrimitive( PrimitiveType type )
 	return static_cast<int>(m_primitives.size()-1);
 }
 
-CPUPrimitive* GPUKernel::getPrimitive( const int index )
+CPUPrimitive* GPUKernel::getPrimitive( const unsigned int index )
 {
    CPUPrimitive* returnValue(NULL);
 	if( index>=0 && index<=m_primitives.size()) 
@@ -197,7 +197,7 @@ CPUPrimitive* GPUKernel::getPrimitive( const int index )
 }
 
 void GPUKernel::setPrimitive( 
-	int index,
+	unsigned int index,
 	float x0, float y0, float z0, 
 	float w,  float h,  float d,
 	int   materialId, 
@@ -207,7 +207,7 @@ void GPUKernel::setPrimitive(
 }
 
 void GPUKernel::setPrimitive( 
-	int index,
+	unsigned int index,
 	float x0, float y0, float z0, 
 	float x1, float y1, float z1, 
 	float w,  float h,  float d,
@@ -218,7 +218,7 @@ void GPUKernel::setPrimitive(
 }
 
 void GPUKernel::setPrimitive( 
-	int index,
+	unsigned int index,
 	float x0, float y0, float z0, 
 	float x1, float y1, float z1, 
 	float x2, float y2, float z2, 
@@ -375,7 +375,7 @@ void GPUKernel::setPrimitive(
 	}
 }
 
-void GPUKernel::setPrimitiveIsMovable( int index, bool movable )
+void GPUKernel::setPrimitiveIsMovable( int unsigned index, bool movable )
 {
    if( index>=0 && index<m_primitives.size()) 
 	{
@@ -385,7 +385,7 @@ void GPUKernel::setPrimitiveIsMovable( int index, bool movable )
 }
 
 
-void GPUKernel::setPrimitiveNormals( int index, float4 n0, float4 n1, float4 n2 )
+void GPUKernel::setPrimitiveNormals( int unsigned index, float4 n0, float4 n1, float4 n2 )
 {
    if( index>=0 && index<m_primitives.size()) 
 	{
@@ -399,12 +399,12 @@ void GPUKernel::setPrimitiveNormals( int index, float4 n0, float4 n1, float4 n2 
    }
 }
 
-int GPUKernel::getPrimitiveAt( int x, int y )
+unsigned int GPUKernel::getPrimitiveAt( int x, int y )
 {
 	LOG_INFO(3,"GPUKernel::getPrimitiveAt(" << x << "," << y << ")" );
-	int returnValue = -1;
-	int index = y*m_sceneInfo.width.x+x;
-	if( index>=0 && index<m_sceneInfo.width.x*m_sceneInfo.height.x)
+	unsigned int returnValue = -1;
+	unsigned int index = y*m_sceneInfo.width.x+x;
+	if( index>=0 && index<static_cast<unsigned int>(m_sceneInfo.width.x*m_sceneInfo.height.x))
 		returnValue = m_hPrimitivesXYIds[index];
 	return returnValue;
 }
@@ -417,7 +417,7 @@ void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 	float4 corner0;
 	float4 corner1;
 
-   std::vector<int>::const_iterator it = box.primitives.begin();
+   std::vector<unsigned int>::const_iterator it = box.primitives.begin();
    while( it != box.primitives.end() )
    {
       CPUPrimitive& primitive = m_primitives[*it];
@@ -514,7 +514,7 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 	box.parameters[1].z = -m_sceneInfo.viewDistance.x;
 }
 
-int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate )
+unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate )
 {
    float4 boxSteps;
    boxSteps.x = ( m_maxPos.x - m_minPos.x ) / boxSize;
@@ -531,10 +531,10 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    //std::cout << "box [" << boxSize << "] " << boxSteps.x << "," << boxSteps.y << "," << boxSteps.z  << std::endl;
 
    nbActiveBoxes = 0;
-   std::map<int,int> primitivesPerBox;
+   std::map<unsigned int,unsigned int> primitivesPerBox;
 
    int p(0);
-   std::map<int,CPUPrimitive>::iterator it = m_primitives.begin();
+   std::map<unsigned int,CPUPrimitive>::iterator it = m_primitives.begin();
    while( it != m_primitives.end() )
    {
       CPUPrimitive& primitive((*it).second);
@@ -575,6 +575,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    }
 
    int maxPrimitivePerBox(0);
+   int delta = 0;
    if( simulate )
    {
 #if 0
@@ -589,11 +590,12 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
 #else
       maxPrimitivePerBox = static_cast<int>(m_primitives.size()/nbActiveBoxes);
 #endif
-      std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
+      delta = OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes;
+      //std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(delta) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
    }
    else
    {
-      std::map<int,CPUBoundingBox>::iterator itb = m_boundingBoxes.begin();
+      std::map<unsigned int,CPUBoundingBox>::iterator itb = m_boundingBoxes.begin();
       while( itb != m_boundingBoxes.end() )
       {
          updateBoundingBox((*itb).second);
@@ -601,7 +603,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       }
    }
 
-   return abs(OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes);
+   return delta;
 }
 
 int GPUKernel::compactBoxes( bool reconstructBoxes )
@@ -614,16 +616,16 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       {
          // Bounding boxes
          // Search for best trade-off
-         std::map<int,int> primitivesPerBox;
-         int maxPrimitivePerBox(0);
-         int boxSize = 64;
-         int bestSize = boxSize;
-         int bestActiveBoxes = 0;
-         int bestRatio = 100000;
-         int activeBoxes(NB_MAX_BOXES);
+         std::map<unsigned int,unsigned int> primitivesPerBox;
+         unsigned int maxPrimitivePerBox(0);
+         unsigned int boxSize = 64;
+         unsigned int bestSize = boxSize;
+         unsigned int bestActiveBoxes = 0;
+         unsigned int bestRatio = 100000;
+         unsigned int activeBoxes(NB_MAX_BOXES);
          do 
          {
-            int ratio = processBoxes( boxSize, activeBoxes, true );
+            unsigned int ratio = processBoxes( boxSize, activeBoxes, true );
             if( ratio < bestRatio ) 
             {
                bestSize = boxSize;
@@ -633,15 +635,15 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             boxSize--;
          }
          while( boxSize>0 );
-         std::cout << "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" << std::endl;
+         //std::cout << "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" << std::endl;
          processBoxes( bestSize, activeBoxes, false );
       }
 
-      int b(0);
-      int primitivesIndex(0);
+      unsigned int b(0);
+      unsigned int primitivesIndex(0);
       m_nbActivePrimitives = 0;
       m_nbActiveLamps = 0;
-      std::map<int,CPUBoundingBox>::iterator itb=m_boundingBoxes.begin();
+      std::map<unsigned int,CPUBoundingBox>::iterator itb=m_boundingBoxes.begin();
       while( itb != m_boundingBoxes.end() )
       {
          CPUBoundingBox& box = (*itb).second;
@@ -653,7 +655,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             m_hBoundingBoxes[b].startIndex.x  = primitivesIndex;
             m_hBoundingBoxes[b].nbPrimitives.x= static_cast<int>(box.primitives.size());
 
-            std::vector<int>::const_iterator itp = box.primitives.begin();
+            std::vector<unsigned int>::const_iterator itp = box.primitives.begin();
             while( itp != box.primitives.end() )
             {
                // Prepare primitives for GPU
@@ -699,15 +701,15 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 
 void GPUKernel::displayBoxesInfo()
 {
-	for( int i(0); i<=m_boundingBoxes.size(); ++i )
+	for( unsigned int i(0); i<=m_boundingBoxes.size(); ++i )
 	{
 		CPUBoundingBox& box = m_boundingBoxes[i];
 		std::cout << "Box " << i << std::endl;
 		std::cout << "- # of primitives: " << box.primitives.size() << std::endl;
 		std::cout << "- Corners 1      : " << box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z << std::endl;
 		std::cout << "- Corners 2      : " << box.parameters[1].x << "," << box.parameters[1].y << "," << box.parameters[1].z << std::endl;
-      int p(0);
-      std::vector<int>::const_iterator it = box.primitives.begin();
+      unsigned int p(0);
+      std::vector<unsigned int>::const_iterator it = box.primitives.begin();
       while( it != box.primitives.end() )
       {
          CPUPrimitive& primitive(m_primitives[*it]);
@@ -724,7 +726,7 @@ void GPUKernel::displayBoxesInfo()
 	}
 }
 
-void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, int from, int to )
+void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
 	float4 cosAngles, sinAngles;
@@ -758,12 +760,12 @@ void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, int from
       }
 	}
 #else
-   std::map<int,CPUBoundingBox>::iterator itb = m_boundingBoxes.begin();
+   std::map<unsigned int,CPUBoundingBox>::iterator itb = m_boundingBoxes.begin();
    while( itb != m_boundingBoxes.end() )
    {
       CPUBoundingBox& box((*itb).second);
       resetBox(box,false);
-      std::vector<int>::const_iterator it = box.primitives.begin();
+      std::vector<unsigned int>::const_iterator it = box.primitives.begin();
       while( it != box.primitives.end() )
 		{
          CPUPrimitive& primitive(m_primitives[*it]);
@@ -860,7 +862,7 @@ void GPUKernel::rotateBox(
 }
 
 void GPUKernel::getPrimitiveCenter(
-	int   index, 
+	unsigned int index, 
 	float& x, 
 	float& y, 
 	float& z,
@@ -876,7 +878,7 @@ void GPUKernel::getPrimitiveCenter(
 }
 
 void GPUKernel::getPrimitiveOtherCenter(
-	int   index, 
+	unsigned int index, 
 	float4& p1)
 {
 	if( index>=0 && index<=m_primitives.size()) 
@@ -886,7 +888,7 @@ void GPUKernel::getPrimitiveOtherCenter(
 }
 
 void GPUKernel::setPrimitiveCenter(
-	int   index, 
+	unsigned int index, 
 	float x, 
 	float y, 
 	float z,
@@ -904,7 +906,7 @@ void GPUKernel::setPrimitiveCenter(
 }
 
 int GPUKernel::addCube( 
-	int boxId,
+	unsigned int boxId,
 	float x, float y, float z, 
 	float radius, 
 	int   materialId, 
@@ -915,7 +917,7 @@ int GPUKernel::addCube(
 }
 
 int GPUKernel::addRectangle( 
-	int boxId,
+	unsigned int boxId,
 	float x, float y, float z, 
 	float w, float h, float d,
 	int   materialId, 
@@ -950,7 +952,7 @@ int GPUKernel::addRectangle(
 }
 
 void GPUKernel::setPrimitiveMaterial( 
-	int   index, 
+	unsigned int index, 
 	int   materialId)
 {
 	LOG_INFO(3,"GPUKernel::setPrimitiveMaterial(" << index << "," << materialId << ")" );
@@ -961,10 +963,10 @@ void GPUKernel::setPrimitiveMaterial(
 	}
 }
 
-int GPUKernel::getPrimitiveMaterial( int index )
+int GPUKernel::getPrimitiveMaterial( unsigned int index )
 {
 	LOG_INFO(3,"GPUKernel::getPrimitiveMaterial(" << index << ")" );
-	int returnValue(-1);
+	unsigned int returnValue(-1);
 	if( index>=0 && index<=m_primitives.size()) 
 	{
 		returnValue = m_primitives[index].materialId;
@@ -982,7 +984,7 @@ int GPUKernel::addMaterial()
 }
 
 void GPUKernel::setMaterial( 
-	int   index,
+	unsigned int index,
 	float r, float g, float b, float noise,
 	float reflection, 
 	float refraction, 
@@ -1036,7 +1038,7 @@ void GPUKernel::setMaterial(
 }
 
 int GPUKernel::getMaterialAttributes( 
-	int    index,
+	unsigned int index,
 	float& r, float& g, float& b, float& noise,
 	float& reflection, 
 	float& refraction,
@@ -1047,7 +1049,7 @@ int GPUKernel::getMaterialAttributes(
 	float& specValue, float& specPower, float& specCoef,
    float& innerIllumination )
 {
-	int returnValue = -1;
+	unsigned int returnValue = -1;
 
 	if( index>=0 && index<=m_nbActiveMaterials ) 
 	{
@@ -1078,7 +1080,7 @@ Material* GPUKernel::getMaterial( const int index )
 {
 	Material* returnValue = NULL;
 
-	if( index>=0 && index<=m_nbActiveMaterials ) 
+	if( index>=0 && index<=static_cast<int>(m_nbActiveMaterials) ) 
 	{
       returnValue = &m_hMaterials[index];
    }
@@ -1088,7 +1090,7 @@ Material* GPUKernel::getMaterial( const int index )
 
 // ---------- Textures ----------
 void GPUKernel::setTexture(
-	int   index,
+	unsigned int index,
 	char* texture )
 {
 	LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
@@ -1296,7 +1298,7 @@ int GPUKernel::addTexture( const std::string& filename )
 
 #ifdef USE_KINECT
 int GPUKernel::updateSkeletons( 
-	int    primitiveIndex, 
+	unsigned int primitiveIndex, 
 	float4 skeletonPosition, 
 	float size,
 	float radius,       int materialId,
@@ -1409,7 +1411,7 @@ void GPUKernel::saveBitmapToFile( const std::string& filename, char* bitmap, con
 	fclose(f);
 };
 
-int GPUKernel::getLight( int index )
+int GPUKernel::getLight( unsigned int index )
 {
    if( index < m_nbActiveLamps )
    {
@@ -1419,12 +1421,12 @@ int GPUKernel::getLight( int index )
 }
 
 void GPUKernel::setLight( 
-	int   index,
+	unsigned int index,
 	float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
    float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY )
 {
    bool found(false);
-   int i(0);
+   unsigned int i(0);
    while( i<m_nbActiveLamps && !found )
    {
       if( m_hLamps[i] == index )

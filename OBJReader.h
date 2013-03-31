@@ -27,11 +27,29 @@
 
 #include "GPUKernel.h"
 
+struct MaterialMTL
+{
+   unsigned int index;
+   float4 Ka;
+   float4 Kd;
+   float4 Ks;
+   float  Ns;
+   float  reflection;
+   float  transparency;
+   float  refraction;
+};
+
 class RAYTRACINGENGINE_API OBJReader
 {
 public:
    OBJReader(void);
    ~OBJReader(void);
+
+   unsigned int OBJReader::loadMaterialsFromFile(
+      const std::string& filename,
+      std::map<std::string,MaterialMTL>& m_materials,
+      GPUKernel& gpuKernel,
+      int materialId);
 
    float4 loadModelFromFile( 
       const std::string& filename,
