@@ -1712,8 +1712,9 @@ __device__ float4 launchRay(
          float4 normal = {0.f, 1.f, 0.f, 0.f };
          float4 dir = rayOrigin.direction-rayOrigin.origin;
          normalizeVector(dir);
-         float angle = 1.f-fabs(dotProduct( normal, dir ));
-			colors[iteration] = angle*sceneInfo.backgroundColor;
+         float angle = 2.f*fabs(dotProduct( normal, dir));
+         angle = (angle>1.f) ? 1.f: angle;
+			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
 			colorContributions[iteration] = 1.f;
 		}
 		iteration++;
@@ -1767,11 +1768,10 @@ __device__ float4 launchRay(
    float halfDistance = sceneInfo.viewDistance.x*0.75f;
    if( sceneInfo.misc.z==1 && len>halfDistance)
    {
-	   len = 1.f-((len-halfDistance)/(sceneInfo.viewDistance.x-halfDistance));
-	   len = (len>0.f) ? len : 0.f; 
-	   len = (len<1.f) ? len : 1.f; 
-	   intersectionColor *= len;
-      intersectionColor += sceneInfo.backgroundColor*(1.f-len);
+	   len = len-halfDistance/(sceneInfo.viewDistance.x-halfDistance);
+	   len = (len>0.f) ? len : 0.f;
+	   len = (len<1.f) ? len : 0.f;
+      intersectionColor = intersectionColor*(1.f-len) + sceneInfo.backgroundColor*len;
    }
 
 	// Depth of field

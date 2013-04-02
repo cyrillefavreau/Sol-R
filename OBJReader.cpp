@@ -311,7 +311,8 @@ float4 OBJReader::loadModelFromFile(
 
    std::cout << "Nb Vertices: " << vertices.size() << std::endl;
    std::cout << "Nb Normals : " << normals.size() << std::endl;
-   float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   //float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   float objectScale = scale/(maxPos.y - minPos.y);
 
    // Center align object
    float4 objectCenter = {0.f,0.f,0.f,0.f};
@@ -338,12 +339,12 @@ float4 OBJReader::loadModelFromFile(
             if( line.find("usemtl") == 0 && line.length()>7)
             {
                std::string value = line.substr(7);
-               std::cout << "Material [" << value << "]: ";
+               //std::cout << "Material [" << value << "]: ";
                if( materials.find(value) != materials.end() )
                {
                   MaterialMTL& m=materials[value];
                   material = m.index;
-                  std::cout << material << std::endl;
+                  //std::cout << material << std::endl;
                }
                else
                {

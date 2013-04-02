@@ -410,7 +410,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
       static_cast<float>(defaultStickSize),
       atomMaterialType, 
       static_cast<float>(scale) );
-   return gpuKernel->compactBoxes(true);
+   gpuKernel->compactBoxes(true);
+   return gpuKernel->getNbActivePrimitives();
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
@@ -427,7 +428,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
       center,
       static_cast<float>(scale), 
       materialId );
-   return gpuKernel->compactBoxes(true);
+   gpuKernel->compactBoxes(true);
+   return gpuKernel->getNbActivePrimitives();
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update )
