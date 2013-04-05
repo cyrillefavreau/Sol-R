@@ -59,18 +59,6 @@ cudaStream_t d_streams[MAX_GPU_COUNT];
 int          d_nbGPUs;
 
 // ________________________________________________________________________________
-__device__ inline float vectorLength( const float4& vector )
-{
-	return sqrt( vector.x*vector.x + vector.y*vector.y + vector.z*vector.z );
-}
-
-// ________________________________________________________________________________
-__device__ inline void normalizeVector( float4& v )
-{
-	v /= vectorLength( v );
-}
-
-// ________________________________________________________________________________
 __device__ inline void saturateVector( float4& v )
 {
 	v.x = (v.x<0.f) ? 0.f : v.x;
@@ -82,12 +70,6 @@ __device__ inline void saturateVector( float4& v )
 	v.y = (v.y>1.f) ? 1.f : v.y; 
 	v.z = (v.z>1.f) ? 1.f : v.z;
 	v.w = (v.w>1.f) ? 1.f : v.w;
-}
-
-// ________________________________________________________________________________
-__device__ inline float dotProduct( const float4& v1, const float4& v2 )
-{
-	return ( v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
 }
 
 // ________________________________________________________________________________
@@ -112,12 +94,7 @@ ________________________________________________________________________________
 */
 __device__ inline void vectorReflection( float4& r, const float4& i, const float4& n )
 {
-	r = i-2.f*dotProduct(i,n)*n;
-}
-
-__device__ float maxValue( const float& a, const float& b )
-{
-	return ( a>b ) ? a : b;
+	r = i-2.f*dot(i,n)*n;
 }
 
 /*
@@ -139,7 +116,7 @@ __device__ inline void vectorRefraction(
 	if(n1!=n2 && n2!=0.f) 
 	{
 		float r = n1/n2;
-		float cosI = dotProduct( incident, normal );
+		float cosI = dot( incident, normal );
 		float cosT2 = 1.f - r*r*(1.f - cosI*cosI);
 		refracted = r*incident + (r*cosI-sqrt( fabs(cosT2) ))*normal;
 	}
@@ -316,8 +293,7 @@ __device__ float4 sphereUVMapping(
 {
 	float4 result = materials[primitive.materialId.x].color;
 
-	float4 d = primitive.p0-intersection;
-	normalize(d);
+	float4 d = normalize(primitive.p0-intersection);
 	int u = primitive.size.x / primitive.materialInfo.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
 	int v = primitive.size.y / primitive.materialInfo.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
 
@@ -529,8 +505,7 @@ __device__ inline bool boxIntersection(
 
 	if (tzmin > tmin) tmin = tzmin;
 	if (tzmax < tmax) tmax = tzmax;
-   //tdist = min(tmin,tmax);
-	return ( (tmin < t1) && (tmax > t0) );
+   return ( (tmin < t1) && (tmax > t0) );
 }
 
 /*
@@ -555,8 +530,7 @@ __device__ inline bool ellipsoidIntersection(
 
    // solve the equation sphere-ray to find the intersections
 	float4 O_C = ray.origin-ellipsoid.p0;
-	float4 dir = ray.direction;
-	normalizeVector( dir );
+	float4 dir = normalize(ray.direction);
 
    float a = 
         ((dir.x*dir.x)/(ellipsoid.size.x*ellipsoid.size.x))
@@ -604,7 +578,7 @@ __device__ inline bool ellipsoidIntersection(
 
 	normal.w = 0.f;
 	normal *= (back) ? -1.f : 1.f;
-	normalizeVector(normal);
+	normal = normalize(normal);
    return true;
 }
 
@@ -629,12 +603,11 @@ __device__ inline bool sphereIntersection(
 {
 	// solve the equation sphere-ray to find the intersections
 	float4 O_C = ray.origin-sphere.p0;
-	float4 dir = ray.direction;
-	normalizeVector( dir );
+	float4 dir = normalize(ray.direction);
 
-	float a = 2.f*dotProduct(dir,dir);
-	float b = 2.f*dotProduct(O_C,dir);
-	float c = dotProduct(O_C,O_C) - (sphere.size.x*sphere.size.x);
+	float a = 2.f*dot(dir,dir);
+	float b = 2.f*dot(O_C,dir);
+	float c = dot(O_C,O_C) - (sphere.size.x*sphere.size.x);
 	float d = b*b-2.f*a*c;
 
 	if( d<=0.f || a == 0.f) return false;
@@ -676,10 +649,10 @@ __device__ inline bool sphereIntersection(
 	}
 	normal.w = 0.f;
 	normal *= (back) ? -1.f : 1.f;
-	normalizeVector(normal);
+	normal = normalize(normal);
 
    // Shadow management
-   r = dotProduct(dir,normal);
+   r = dot(dir,normal);
 	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
    shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
    //shadowIntensity *= sceneInfo.shadowIntensity.x;
@@ -715,25 +688,24 @@ __device__ bool cylinderIntersection(
 {
 	back = false;
 	float4 dir = ray.direction;
-	float4 RC = ray.origin-cylinder.p0;
-	float4 n = crossProduct(dir, cylinder.n1);
+	float4 RC  = ray.origin-cylinder.p0;
+	float4 n   = crossProduct(dir, cylinder.n1);
 
-	float ln = vectorLength(n);
+	float ln = length(n);
 
 	// Parallel? (?)
 	if((ln<EPSILON)&&(ln>-EPSILON))
 		return false;
 
-	normalizeVector(n);
+	n = normalize(n);
 
-	float d = fabs(dotProduct(RC,n));
+	float d = fabs(dot(RC,n));
 	if (d>cylinder.p0.w) return false;
 
 	float4 O = crossProduct(RC,cylinder.n1);
-	float t = -dotProduct(O, n)/ln;
-	O = crossProduct(n,cylinder.n1);
-	normalizeVector(O);
-	float s=fabs( sqrtf(cylinder.p0.w*cylinder.p0.w-d*d) / dotProduct( dir,O ) );
+	float t = -dot(O, n)/ln;
+	O = normalize(crossProduct(n,cylinder.n1));
+	float s=fabs( sqrtf(cylinder.p0.w*cylinder.p0.w-d*d) / dot( dir,O ) );
 
 	float in=t-s;
 	float out=t+s;
@@ -772,8 +744,8 @@ __device__ bool cylinderIntersection(
 			float4 HB1 = intersection-cylinder.p0;
 			float4 HB2 = intersection-cylinder.p1;
 
-			float scale1 = dotProduct(HB1,cylinder.n1);
-			float scale2 = dotProduct(HB2,cylinder.n1);
+			float scale1 = dot(HB1,cylinder.n1);
+			float scale2 = dot(HB2,cylinder.n1);
 
 			// Cylinder length
 			if( scale1 < EPSILON || scale2 > EPSILON ) return false;
@@ -788,14 +760,12 @@ __device__ bool cylinderIntersection(
 				HB1 = intersection - newCenter;
 			}
 
-			normal = HB1-cylinder.n1*scale1;
+			normal = normalize(HB1-cylinder.n1*scale1);
 			normal.w = 0.f;
 
-			normalizeVector( normal );
-
          // Shadow management
-         normalizeVector(dir);
-         float r = dotProduct(dir,normal);
+         dir = normalize(dir);
+         float r = dot(dir,normal);
 	      //shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
          shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
          //shadowIntensity *= sceneInfo.shadowIntensity.x;
@@ -980,17 +950,17 @@ __device__ bool triangleIntersection(
    float4 E01=triangle.p1-triangle.p0;
    float4 E03=triangle.p2-triangle.p0;
    float4 P = crossProduct(ray.direction,E03);
-   float det = dotProduct(E01,P);
+   float det = dot(E01,P);
    
    if (fabs(det) < EPSILON) return false;
    
    float4 T = ray.origin-triangle.p0;
-   float a = dotProduct(T,P)/det;
+   float a = dot(T,P)/det;
    if (a < 0.f) return false;
    if (a > 1.f) return false;
 
    float4 Q = crossProduct(T,E01);
-   float b = dotProduct(ray.direction,Q)/det;
+   float b = dot(ray.direction,Q)/det;
    if (b < 0.f) return false;
    if (b > 1.f) return false;
 
@@ -1001,19 +971,19 @@ __device__ bool triangleIntersection(
       float4 E23 = triangle.p0-triangle.p1;
       float4 E21 = triangle.p1-triangle.p1;
       float4 P_ = crossProduct(ray.direction,E21);
-      float det_ = dotProduct(E23,P_);
+      float det_ = dot(E23,P_);
       if(fabs(det_) < EPSILON) return false;
       float4 T_ = ray.origin-triangle.p2;
-      float a_ = dotProduct(T_,P_)/det_;
+      float a_ = dot(T_,P_)/det_;
       if (a_ < 0.f) return false;
       float4 Q_ = crossProduct(T_,E23);
-      float b_ = dotProduct(ray.direction,Q_)/det_;
+      float b_ = dot(ray.direction,Q_)/det_;
       if (b_ < 0.f) return false;
    }
 
    // Compute the ray parameter of the intersection
    // point.
-   float t = dotProduct(E03,Q)/det;
+   float t = dot(E03,Q)/det;
    if (t < 0) return false;
 
    intersection = ray.origin + t*ray.direction;
@@ -1023,16 +993,14 @@ __device__ bool triangleIntersection(
       float4 v0 = triangle.p0 - intersection;
       float4 v1 = triangle.p1 - intersection;
       float4 v2 = triangle.p2 - intersection;
-      float a0 = 0.5f*vectorLength(crossProduct( v1,v2 ));
-      float a1 = 0.5f*vectorLength(crossProduct( v0,v2 ));
-      float a2 = 0.5f*vectorLength(crossProduct( v0,v1 ));
-      normal = (triangle.n0*a0 + triangle.n1*a1 + triangle.n2*a2)/(a0+a1+a2);
-      normalizeVector(normal);
+      float a0 = 0.5f*length(crossProduct( v1,v2 ));
+      float a1 = 0.5f*length(crossProduct( v0,v2 ));
+      float a2 = 0.5f*length(crossProduct( v0,v1 ));
+      normal = normalize((triangle.n0*a0 + triangle.n1*a1 + triangle.n2*a2)/(a0+a1+a2));
    }
 
-   float4 dir(ray.direction);
-   normalizeVector(dir);
-   float r = dotProduct(dir,normal);
+   float4 dir = normalize(ray.direction);
+   float r = dot(dir,normal);
 
    if( r>0.f )
    {
@@ -1221,24 +1189,18 @@ __device__ float processShadows(
 					{
 						float4 O_I = intersection-r.origin;
 						float4 O_L = r.direction;
-						float length = vectorLength(O_I);
-						if( length>EPSILON && length<vectorLength(O_L) )
+						float l = length(O_I);
+						if( l>EPSILON && l<length(O_L) )
 						{
-#if 1
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
                      {
-                        normalizeVector(O_L);
-                        float a=fabs(dotProduct(O_L,normal));
+                        O_L=normalize(O_L);
+                        float a=fabs(dot(O_L,normal));
                         float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-0.8f*materials[primitive.materialId.x].transparency.x);
                         result += r*a*shadowIntensity*sceneInfo.shadowIntensity.x;
-                     
-                        //float4 inv = {1.f,1.f,1.f,1.f};
-                        //color += 0.3f*r*(1.f-materials[primitive.materialId.x].transparency.x)*(inv-materials[primitive.materialId.x].color);
                      }
                      else
-#endif
                      {
-                        //result += 1.f-materials[primitive.materialId.x].transparency.x; //sceneInfo.shadowIntensity.x;
                         float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-materials[primitive.materialId.x].transparency.x);
                         result += r*shadowIntensity*sceneInfo.shadowIntensity.x;
                      }
@@ -1285,7 +1247,6 @@ __device__ float4 primitiveShader(
 
 	// Lamp Impact
 	float lambert      = 0.f;
-	float totalLambert = (materials[primitive.materialId.x].innerIllumination.x != 0.f) ? 0.8f : sceneInfo.backgroundColor.w; // Ambient light
 	shadowIntensity    = 0.f;
 
 	if( materials[primitive.materialId.x].textureInfo.z == 1 )
@@ -1346,38 +1307,33 @@ __device__ float4 primitiveShader(
 				}
 
 				Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
-				float4 lightRay = center - intersection;
-
-				normalizeVector(lightRay);
+				float4 lightRay = normalize(center - intersection);
 
 				// --------------------------------------------------------------------------------
 				// Lambert
 				// --------------------------------------------------------------------------------
-				lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dotProduct(normal,lightRay);
+				lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
 				lambert = (lambert<0.f) ? 0.f : lambert;
 				lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
 				lambert *= (1.f-shadowIntensity);
-				totalLambert += lambert;
 
 				// Lighted object, not in the shades
 				lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
 
-				if( /*materials[primitive.materialId.x].innerIllumination.x == 0.f &&*/ shadowIntensity < sceneInfo.shadowIntensity.x )
+				if( shadowIntensity < sceneInfo.shadowIntensity.x )
 				{
 					// --------------------------------------------------------------------------------
 					// Blinn - Phong
 					// --------------------------------------------------------------------------------
-					float4 viewRay = intersection - origin;
-					normalizeVector(viewRay);
-
+					float4 viewRay = normalize(intersection - origin);
 					float4 blinnDir = lightRay - viewRay;
-					float temp = sqrt(dotProduct(blinnDir,blinnDir));
+					float temp = sqrt(dot(blinnDir,blinnDir));
 					if (temp != 0.f ) 
 					{
 						// Specular reflection
 						blinnDir = (1.f / temp) * blinnDir;
 
-						float blinnTerm = dotProduct(blinnDir,normal);
+						float blinnTerm = dot(blinnDir,normal);
 						blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
 						blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y); //*materials[primitive.materialId.x].specular.w
@@ -1391,7 +1347,7 @@ __device__ float4 primitiveShader(
 			intersectionShader( sceneInfo, primitive, materials, textures,
 			intersection, false );
 
-		color += /*totalLambert**/ intersectionColor*lampsColor;
+		color += intersectionColor*lampsColor;
 		saturateVector(color);
 
 		refractionFromColor = intersectionColor; // Refraction depending on color;
@@ -1484,7 +1440,7 @@ __device__ bool intersectionWithPrimitives(
 					   }
 				   }
 
-				   float distance = vectorLength( intersection - r.origin ); // <- Pb ici!!
+				   float distance = length(intersection-r.origin);
 				   if( i && distance>EPSILON && distance<minDistance ) 
 				   {
 					   // Only keep intersection with the closest object
@@ -1609,7 +1565,7 @@ __device__ float4 launchRay(
 			}
 
          // Photon
-         photonDistance -= vectorLength(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
+         photonDistance -= length(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
          previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
 
 			if( shadowIntensity <= 0.9f ) // No reflection/refraction if in shades
@@ -1633,8 +1589,7 @@ __device__ float4 launchRay(
 					float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
 
 					// Actual refraction
-					float4 O_E = rayOrigin.origin - closestIntersection;
-					normalizeVector(O_E);
+					float4 O_E = normalize(rayOrigin.origin - closestIntersection);
 					vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
 					reflectedTarget = closestIntersection - rayOrigin.direction;
 
@@ -1710,9 +1665,8 @@ __device__ float4 launchRay(
 		{
          // Background
          float4 normal = {0.f, 1.f, 0.f, 0.f };
-         float4 dir = rayOrigin.direction-rayOrigin.origin;
-         normalizeVector(dir);
-         float angle = 2.f*fabs(dotProduct( normal, dir));
+         float4 dir = normalize(rayOrigin.direction-rayOrigin.origin);
+         float angle = 2.f*fabs(dot( normal, dir));
          angle = (angle>1.f) ? 1.f: angle;
 			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
 			colorContributions[iteration] = 1.f;
@@ -1720,7 +1674,7 @@ __device__ float4 launchRay(
 		iteration++;
 	}
 
-   if( /*sceneInfo.pathTracingIteration.x>0 &&*/ reflectedRays != -1 )
+   if( reflectedRays != -1 )
    {
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
@@ -1764,7 +1718,7 @@ __device__ float4 launchRay(
 	// --------------------------------------------------
 	// Attenation effect (Fog)
 	// --------------------------------------------------
-	float len = vectorLength(firstIntersection - ray.origin);
+	float len = length(firstIntersection - ray.origin);
    float halfDistance = sceneInfo.viewDistance.x*0.75f;
    if( sceneInfo.misc.z==1 && len>halfDistance)
    {
@@ -1853,12 +1807,14 @@ __global__ void k_standardRenderer(
 	vectorRotation( ray.origin, rotationCenter, angles );
 	vectorRotation( ray.direction, rotationCenter, angles );
 
+   /*
    __shared__ BoundingBox shBoundingBoxes[128];
    if( threadIdx.x==0 && threadIdx.y==0)
    {
       memcpy( shBoundingBoxes, BoundingBoxes, sizeof(BoundingBox)*nbActiveBoxes);
    }
    __syncthreads();
+   */
 
    // Antialisazing
    float2 AArotatedGrid[4] =
@@ -1879,7 +1835,7 @@ __global__ void k_standardRenderer(
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
 	      float4 c = launchRay(
-		      shBoundingBoxes, nbActiveBoxes,
+		      BoundingBoxes, nbActiveBoxes,
 		      primitives, nbActivePrimitives,
 		      lamps, nbActiveLamps,
 		      materials, textures, 
@@ -1893,7 +1849,7 @@ __global__ void k_standardRenderer(
       }
    }
    color += launchRay(
-		shBoundingBoxes, nbActiveBoxes,
+		BoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -2265,44 +2221,6 @@ __global__ void k_cartoon(
 /*
 ________________________________________________________________________________
 
-Post Processing Effect: Ambiant Occlusion
-________________________________________________________________________________
-*/
-__global__ void k_antiAliasing(
-	SceneInfo        sceneInfo,
-	PostProcessingInfo PostProcessingInfo,
-	float4*          postProcessingBuffer,
-	float*           randoms,
-	char*            bitmap) 
-{
-	int x = blockDim.x*blockIdx.x + threadIdx.x;
-	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
-	float4 localColor = postProcessingBuffer[index];
-
-	for( int X=-1; X<=1; X+=2 )
-	{
-		for( int Y=-1; Y<=1; Y+=2 )
-		{
-			int xx = x+X;
-			int yy = y+Y;
-			if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
-			{
-				int localIndex = yy*sceneInfo.width.x+xx;
-				localColor += postProcessingBuffer[localIndex];
-			}
-		}
-	}
-	localColor /= 5.f;
-	saturateVector( localColor );
-	localColor.w = 1.f;
-
-	makeColor( sceneInfo, localColor, bitmap, index ); 
-}
-
-/*
-________________________________________________________________________________
-
 Post Processing Effect: Default
 ________________________________________________________________________________
 */
@@ -2352,9 +2270,9 @@ extern "C" void initialize_scene(
 	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[d],            width*height*sizeof(float)));
 
 	   // Rendering canvas
-	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*gColorDepth*sizeof(int)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)/d_nbGPUs));
+	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)/d_nbGPUs));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int)/d_nbGPUs));
    }
 #if 0
 	std::cout <<"GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
@@ -2447,7 +2365,8 @@ ________________________________________________________________________________
 */
 extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo sceneInfo )
 {
-   int offset = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/d_nbGPUs;
+   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth/d_nbGPUs;
+   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x/d_nbGPUs;
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
@@ -2456,8 +2375,8 @@ extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo 
       checkCudaErrors(cudaStreamSynchronize(d_streams[d]));
 
       // Copy results back to CPU
-      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offset, d_bitmap[d], offset, cudaMemcpyDeviceToHost, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds, d_primitivesXYIds[d], sceneInfo.width.x*sceneInfo.height.x*sizeof(int), cudaMemcpyDeviceToHost, d_streams[d] ));
+      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap*sizeof(char), cudaMemcpyDeviceToHost, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds*sizeof(int),   cudaMemcpyDeviceToHost, d_streams[d] ));
    }
 }
 
@@ -2549,14 +2468,6 @@ extern "C" void cudaRender(
 		   break;
 	   case ppe_cartoon:
 		   k_cartoon<<<grid,blocks,0,d_streams[d]>>>(
-			   sceneInfo, 
-			   postProcessingInfo, 
-			   d_postProcessingBuffer[d],
-			   d_randoms[d], 
-			   d_bitmap[d] );
-		   break;
-	   case ppe_antiAliasing:
-		   k_antiAliasing<<<grid,blocks,0,d_streams[d]>>>(
 			   sceneInfo, 
 			   postProcessingInfo, 
 			   d_postProcessingBuffer[d],

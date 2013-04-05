@@ -15,7 +15,7 @@
 #include "Consts.h"
 
 const unsigned int MAX_SOURCE_SIZE = 65535;
-const unsigned int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 100; //300;
+const unsigned int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 250;
 
 float4 min4( const float4 a, const float4 b, const float4 c )
 {

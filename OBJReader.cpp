@@ -128,10 +128,12 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.transparency, TEXTURE_NONE,
                   m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
                   0.f, false );
+               /*
                std::cout << "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   std::endl;
+               */
             }
             id = line.substr(7);
             MaterialMTL material;
@@ -312,7 +314,7 @@ float4 OBJReader::loadModelFromFile(
    std::cout << "Nb Vertices: " << vertices.size() << std::endl;
    std::cout << "Nb Normals : " << normals.size() << std::endl;
    //float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
-   float objectScale = scale/(maxPos.y - minPos.y);
+   float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
 
    // Center align object
    float4 objectCenter = {0.f,0.f,0.f,0.f};
@@ -346,10 +348,12 @@ float4 OBJReader::loadModelFromFile(
                   material = m.index;
                   //std::cout << material << std::endl;
                }
+               /*
                else
                {
                   std::cout << "<undefined>" << std::endl;
                }
+               */
             }
 
             if( line[0] == 'f' )
