@@ -32,14 +32,13 @@
 
 #if USE_CUDA
 #include "Cuda/CudaKernel.h"
-typedef CudaKernel GPUKERNEL;
-GPUKERNEL* gpuKernel = NULL;
+CudaKernel* kernel = NULL;
 #endif // USE_OPENCL
 
 #if USE_OPENCL
 #include "OpenCL/OpenCLKernel.h"
-typedef OpenCLKernel GPUKERNEL;
-GPUKERNEL* gpuKernel = NULL;
+typedef OpenCLKernel kernel;
+kernel* kernel = NULL;
 #endif // USE_OPENCL
 
 SceneInfo gSceneInfo;
@@ -93,21 +92,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
 extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( 
    bool activeLogging, 
    int platform, 
-   int device, 
-   char* filename )
+   int device )
 {
-	gpuKernel = new GPUKERNEL( activeLogging, platform, device );
-   if( gpuKernel == NULL ) return -1;
-   if( filename != NULL )
-   {
-   	FileMarshaller reader( gpuKernel );
-      reader.loadFromFile(filename);
-   }
-   else
-   {
-	   gpuKernel->setSceneInfo( gSceneInfo );
-      gpuKernel->initBuffers();
-   }
+	kernel = new CudaKernel( activeLogging, platform, device );
+   if( kernel == NULL ) return -1;
+	kernel->setSceneInfo( gSceneInfo );
+   kernel->initBuffers();
    return 0;
 }
 
@@ -115,8 +105,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_FinalizeKernel()
 {
-   if( gpuKernel ) delete gpuKernel;
-   gpuKernel = 0;
+   if( kernel ) delete kernel;
+   kernel = 0;
    return 0;   
 }
 
@@ -130,16 +120,16 @@ extern "C" RAYTRACINGENGINE_API
    float4 eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z),   0.f };
    float4 dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z),   0.f };
    float4 angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z), 0.f };
-   gpuKernel->setCamera( eye, dir, angles );
+   kernel->setCamera( eye, dir, angles );
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, char* image )
 {
-	gpuKernel->setSceneInfo( gSceneInfo );
-   gpuKernel->setPostProcessingInfo( gPostProcessingInfo );
-	gpuKernel->render_begin( static_cast<float>(timer) );
-   gpuKernel->render_end( image );
+	kernel->setSceneInfo( gSceneInfo );
+   kernel->setPostProcessingInfo( gPostProcessingInfo );
+	kernel->render_begin( static_cast<float>(timer) );
+   kernel->render_end( image );
    return 0;
 }
 
@@ -147,7 +137,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, char* ima
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_AddPrimitive( int type )
 {
-   return gpuKernel->addPrimitive( static_cast<PrimitiveType>(type) );
+   return kernel->addPrimitive( static_cast<PrimitiveType>(type) );
 }
 
 // --------------------------------------------------------------------------------
@@ -162,7 +152,7 @@ extern "C" RAYTRACINGENGINE_API
    double materialPaddingX, 
    double materialPaddingY )
 {
-   gpuKernel->setPrimitive(
+   kernel->setPrimitive(
       index,
       static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
       static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
@@ -182,7 +172,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
    double& size_x, double& size_y, double& size_z,
    int& materialId, double& materialPaddingX, double& materialPaddingY )
 {
-   CPUPrimitive* primitive = gpuKernel->getPrimitive(index);
+   CPUPrimitive* primitive = kernel->getPrimitive(index);
    if( primitive != NULL )
    {
       p0_x = primitive->p0.x;
@@ -207,13 +197,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y )
 {
-   return gpuKernel->getPrimitiveAt(x,y);
+   return kernel->getPrimitiveAt(x,y);
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z)
 {
    float cx,cy,cz, cw;
-   gpuKernel->getPrimitiveCenter( index, cx, cy, cz, cw );
+   kernel->getPrimitiveCenter( index, cx, cy, cz, cw );
    x = static_cast<double>(cx);
    y = static_cast<double>(cy);
    z = static_cast<double>(cz);
@@ -228,7 +218,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive(
    float4 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz), 0.f };
    float4 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az), 0.f };
 
-   //gpuKernel->rotatePrimitive( index, boxId, rotationCenter, angles ); // TODO!!
+   //kernel->rotatePrimitive( index, boxId, rotationCenter, angles ); // TODO!!
    return 0;
 }
 
@@ -242,7 +232,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
       float4 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz), 0.f };
       float4 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az), 0.f };
 
-      gpuKernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
+      kernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
    }
    catch( ... )
    {
@@ -254,13 +244,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveMaterial(
    int    index,
    int    materialId)
 {
-   gpuKernel->setPrimitiveMaterial( index,  materialId );
+   kernel->setPrimitiveMaterial( index,  materialId );
    return 0;
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( int index)
 {
-   return gpuKernel->getPrimitiveMaterial( index );
+   return kernel->getPrimitiveMaterial( index );
 }
 
 // --------------------------------------------------------------------------------
@@ -275,7 +265,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
 {
 #if USE_KINECT
    float4 position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 0.f };
-   return gpuKernel->updateSkeletons(
+   return kernel->updateSkeletons(
       index,
       position,
       static_cast<float>(size),
@@ -292,13 +282,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename )
 {
-   return gpuKernel->addTexture( filename );
+   return kernel->addTexture( filename );
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture )
 {
-   gpuKernel->setTexture( 
+   kernel->setTexture( 
       index, 
       static_cast<char*>(texture) );
    return 0;
@@ -307,9 +297,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE text
 // ---------- Materials ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddMaterial()
 {
-   return gpuKernel->addMaterial();
+   return kernel->addMaterial();
 }
 
+// --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    int    index,
    double color_r, double color_g, double color_b, 
@@ -323,7 +314,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double specValue, double specPower, double specCoef, double innerIllumination,
    bool   fastTransparency)
 {
-   gpuKernel->setMaterial(
+   kernel->setMaterial(
       index, 
       static_cast<float>(color_r), 
       static_cast<float>(color_g), 
@@ -345,6 +336,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    return 0;
 }
 
+// --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int     in_index,
    double& out_color_r, 
@@ -369,7 +361,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    bool  wireframe;
    int   wireframeDepth;
    int   textureId;
-   int returnValue = gpuKernel->getMaterialAttributes(
+   int returnValue = kernel->getMaterialAttributes(
       in_index, 
       color_r, color_g, color_b,
       noise, reflection, refraction, procedural, wireframe, wireframeDepth, transparency, 
@@ -393,6 +385,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    return returnValue;
 }
 
+// --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 
    char*  filename,
    int    geometryType,
@@ -404,16 +397,17 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    // PDB
 	PDBReader prbReader;
 	float4 minPos = prbReader.loadAtomsFromFile(
-      filename, *gpuKernel,
+      filename, *kernel,
       static_cast<GeometryType>(geometryType),
       static_cast<float>(defaultAtomSize), 
       static_cast<float>(defaultStickSize),
       atomMaterialType, 
       static_cast<float>(scale) );
-   gpuKernel->compactBoxes(true);
-   return gpuKernel->getNbActivePrimitives();
+   kernel->compactBoxes(true);
+   return kernel->getNbActivePrimitives();
 }
 
+// --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
    char*  filename,
    int    materialId,
@@ -424,23 +418,39 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
 	OBJReader objReader;
 	float4 minPos = objReader.loadModelFromFile( 
       filename,
-      *gpuKernel,
+      *kernel,
       center,
       static_cast<float>(scale), 
       materialId );
-   gpuKernel->compactBoxes(true);
-   return gpuKernel->getNbActivePrimitives();
+   return kernel->getNbActivePrimitives();
 }
 
+// --------------------------------------------------------------------------------
+extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
+{
+   FileMarshaller fm;
+   fm.saveToFile( *kernel, filename );
+   return kernel->getNbActivePrimitives();
+}
+
+// --------------------------------------------------------------------------------
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename)
+{
+   FileMarshaller fm;
+   fm.loadFromFile( *kernel, filename );
+   return kernel->getNbActivePrimitives();
+}
+
+// --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update )
 {
-   return gpuKernel->compactBoxes(update);
+   return kernel->compactBoxes(update);
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
 {
-   return gpuKernel->getLight(index);
+   return kernel->getLight(index);
 }
 
 // --------------------------------------------------------------------------------
@@ -455,7 +465,7 @@ extern "C" RAYTRACINGENGINE_API
    double materialPaddingX, 
    double materialPaddingY )
 {
-   gpuKernel->setLight(
+   kernel->setLight(
       index,
       static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
       static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 

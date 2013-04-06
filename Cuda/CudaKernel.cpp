@@ -196,7 +196,7 @@ void CudaKernel::releaseDevice()
 /*
 ________________________________________________________________________________
 
-Execute GPU kernel
+Execute GPU GPUKernel
 ________________________________________________________________________________
 */
 void CudaKernel::render_begin( const float timer )
@@ -391,7 +391,7 @@ void CudaKernel::deviceQuery()
       LOG_INFO(3,"  Support host page-locked memory mapping:       " << (deviceProp.canMapHostMemory ? "Yes" : "No"));
 #endif
 #if CUDART_VERSION >= 3000
-      LOG_INFO(3,"  Concurrent kernel execution:                   " << (deviceProp.concurrentKernels ? "Yes" : "No"));
+      LOG_INFO(3,"  Concurrent GPUKernel execution:                   " << (deviceProp.concurrentKernels ? "Yes" : "No"));
       LOG_INFO(3,"  Alignment requirement for Surfaces:            " << (deviceProp.surfaceAlignment ? "Yes" : "No"));
 #endif
 #if CUDART_VERSION >= 3010

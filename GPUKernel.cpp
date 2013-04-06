@@ -81,14 +81,12 @@ typedef struct {
 GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
  : m_hPrimitives(0), 
 	m_hMaterials(0), 
-	m_hTextures(0), 
+	m_hTextures(0),
+   m_hLamps(0),
+   m_hBoundingBoxes(0),
 	m_hDepthOfField(0),
+   m_hPrimitivesXYIds(0),
 	m_hRandoms(0), 
-   /*
-	m_primitivesXYIds(0),
-	m_nbActiveBoxes(-1),
-	m_primitives.size()(-1), 
-   */
 	m_nbActiveLamps(0),
 	m_nbActiveMaterials(-1),
 	m_nbActiveTextures(0),
@@ -115,18 +113,12 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
 GPUKernel::~GPUKernel()
 {
 	LOG_INFO(3,"GPUKernel::~GPUKernel");
-	delete m_hPrimitives;
-	delete m_hMaterials;
-	delete m_hTextures;
-	delete m_hBoundingBoxes;
-	delete m_hLamps;
-	delete m_hPrimitivesXYIds;
-	delete m_hRandoms;
 }
 
 void GPUKernel::initBuffers()
 {
 	LOG_INFO(3,"GPUKernel::initBuffers");
+
 	// Setup World
 	m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];
 	memset(m_hPrimitives,0,NB_MAX_PRIMITIVES*sizeof(Primitive) ); 
@@ -149,8 +141,54 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%2000-1000)/1000.f;
+		m_hRandoms[i] = (rand()%2000-1000)/5000.f;
 	}
+}
+
+void GPUKernel::cleanup()
+{
+	if(m_hPrimitives!=0) delete m_hPrimitives;
+	if(m_hMaterials!=0) delete m_hMaterials;
+	if(m_hTextures!=0) delete m_hTextures;
+	if(m_hBoundingBoxes!=0) delete m_hBoundingBoxes;
+	if(m_hLamps!=0) delete m_hLamps;
+	if(m_hPrimitivesXYIds!=0) delete m_hPrimitivesXYIds;
+	if(m_hRandoms!=0) delete m_hRandoms;
+
+   m_boundingBoxes.clear();
+   m_primitives.clear();
+   m_hPrimitives = 0; 
+	m_hMaterials = 0;
+	m_hTextures = 0;
+	m_hDepthOfField = 0;
+	m_hRandoms = 0;
+   m_hLamps = 0,
+   m_hBoundingBoxes = 0,
+   m_hPrimitivesXYIds = 0,
+	m_nbActiveLamps = 0;
+	m_nbActiveMaterials = -1;
+	m_nbActiveTextures = 0;
+#if USE_KINECT
+	m_hVideo = 0;
+   m_hDepth = 0;
+	m_skeletons = 0;
+   m_hNextDepthFrameEvent = 0;
+   m_hNextVideoFrameEvent = 0;
+   m_hNextSkeletonEvent = 0;
+	m_pVideoStreamHandle = 0;
+   m_pDepthStreamHandle = 0;
+	m_skeletonsBody = -1;
+   m_skeletonsLamp = -1;
+   m_skeletonIndex = -1;
+#endif // USE_KINECT
+	m_textureTransfered = false;
+
+   m_minPos.x =  100000.f;
+   m_minPos.y =  100000.f;
+   m_minPos.z =  100000.f;
+   m_maxPos.x = -100000.f;
+   m_maxPos.y = -100000.f;
+   m_maxPos.z = -100000.f;
 }
 
 /*
@@ -1160,7 +1198,7 @@ void GPUKernel::setPostProcessingInfo(
 */
 char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 {
-	// Load the kernel source code into the array source_str
+	// Load the GPUKernel source code into the array source_str
 	FILE *fp = 0;
 	char *source_str = 0;
 
@@ -1171,7 +1209,7 @@ char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 #endif
 	if( fp == 0 ) 
 	{
-		LOG_INFO(3,"Failed to load kernel " << filename.c_str() );
+		LOG_INFO(3,"Failed to load GPUKernel " << filename.c_str() );
 	}
 	else 
 	{
@@ -1192,7 +1230,7 @@ char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 
 void GPUKernel::saveToFile( const std::string& filename, const std::string& content )
 {
-	// Load the kernel source code into the array source_str
+	// Load the GPUKernel source code into the array source_str
 	FILE *fp = 0;
 	std::string tmp(content);
 
@@ -1212,7 +1250,7 @@ void GPUKernel::saveToFile( const std::string& filename, const std::string& cont
 
 	if( fp == 0 ) 
 	{
-		LOG_INFO(3,"Failed to save kernel " << filename.c_str() );
+		LOG_INFO(3,"Failed to save GPUKernel " << filename.c_str() );
 	}
 	else 
 	{

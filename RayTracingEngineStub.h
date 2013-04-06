@@ -45,7 +45,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 );
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, int platform, int device, char* filename );
+extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, int platform, int device );
 extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel();
 
 // ---------- Camera ----------
@@ -160,6 +160,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
    char*  filename,
    int    materialId,
    double scale);
+
+// ---------- File marshaller ----------
+extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename);
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename);
 
 #ifdef USE_KINECT
 // ---------- Kinect ----------

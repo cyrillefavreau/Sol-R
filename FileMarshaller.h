@@ -29,23 +29,19 @@ class RAYTRACINGENGINE_API FileMarshaller
 {
 public:
 
-   FileMarshaller(GPUKernel* cudaKernel);
-   ~FileMarshaller(void);
+   FileMarshaller();
+   ~FileMarshaller();
 
 public:
 
-   void loadFromFile( const std::string& filename);
-   void saveToFile( const std::string& filename);
+   void loadFromFile( GPUKernel& kernel, const std::string& filename);
+   void saveToFile  ( GPUKernel& kernel, const std::string& filename);
 
 private:
 
-   void readSceneInfo( const std::string& line );
-   void readPrimitive( const std::string& line );
-   void readMaterial( const std::string& line );
-
-private:
-   
-   GPUKernel* m_gpuKernel;
+   void readSceneInfo( GPUKernel& kernel, const std::string& line );
+   void readPrimitive( GPUKernel& kernel, const std::string& line );
+   void readMaterial ( GPUKernel& kernel, const std::string& line );
 
 };
 

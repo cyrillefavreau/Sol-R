@@ -48,7 +48,7 @@ public:
    unsigned int OBJReader::loadMaterialsFromFile(
       const std::string& filename,
       std::map<std::string,MaterialMTL>& m_materials,
-      GPUKernel& gpuKernel,
+      GPUKernel& GPUKernel,
       int materialId);
 
    float4 loadModelFromFile( 

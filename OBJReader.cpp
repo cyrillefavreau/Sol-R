@@ -93,7 +93,7 @@ int4 readFace( const std::string& face )
 unsigned int OBJReader::loadMaterialsFromFile(
    const std::string& filename,
    std::map<std::string,MaterialMTL>& m_materials,
-   GPUKernel& gpuKernel,
+   GPUKernel& kernel,
    int materialId)
 {
    std::string materialsFilename(filename);
@@ -121,7 +121,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             {
                MaterialMTL& m = m_materials[id];
                m.index = (m_materials.size()-1)%50 + materialId;
-               gpuKernel.setMaterial(
+               kernel.setMaterial(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   0.f,m.reflection,m.refraction, false, false, 0,
@@ -186,7 +186,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
       {
          MaterialMTL& m = m_materials[id];
          m.index = (m_materials.size()-1)%50 + materialId;
-         gpuKernel.setMaterial(
+         kernel.setMaterial(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
             0.f,m.reflection,m.refraction, false, false, 0,
@@ -206,7 +206,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
 
 float4 OBJReader::loadModelFromFile(
    const std::string& filename,
-   GPUKernel& gpuKernel,
+   GPUKernel& kernel,
    const float4& center,
    const float& scale,
    int materialId)
@@ -226,7 +226,7 @@ float4 OBJReader::loadModelFromFile(
 
    // Load materials
    std::map<std::string,MaterialMTL> materials;
-   loadMaterialsFromFile( noExtFilename, materials, gpuKernel, materialId );
+   loadMaterialsFromFile( noExtFilename, materials, kernel, materialId );
 
    // Load model
    std::string modelFilename(noExtFilename);
@@ -384,8 +384,8 @@ float4 OBJReader::loadModelFromFile(
 
                int f(0);
                //std::cout << "F(" << face[f] << "," << face[f+1] << "," << face[f+2] << ")" << std::endl;
-               unsigned int nbPrimitives = gpuKernel.addPrimitive( ptTriangle );
-               gpuKernel.setPrimitive( 
+               unsigned int nbPrimitives = kernel.addPrimitive( ptTriangle );
+               kernel.setPrimitive( 
                   nbPrimitives,
                   center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
                   center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
@@ -395,13 +395,13 @@ float4 OBJReader::loadModelFromFile(
 
                if( face[f].z!=0 && face[f+1].z!=0 && face[f+2].z!=0 )
                {
-                  gpuKernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
+                  kernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
                }
 
                if( face.size() == 4 )
                {
-                  nbPrimitives = gpuKernel.addPrimitive( ptTriangle );
-                  gpuKernel.setPrimitive( 
+                  nbPrimitives = kernel.addPrimitive( ptTriangle );
+                  kernel.setPrimitive( 
                      nbPrimitives, 
                      center.x+objectScale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+3].x].z),
                      center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
@@ -410,7 +410,7 @@ float4 OBJReader::loadModelFromFile(
                      material, 1, 1);
                   if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )
                   {
-                     gpuKernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
+                     kernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
                   }
                }
             }

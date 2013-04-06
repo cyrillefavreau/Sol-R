@@ -66,6 +66,7 @@ public:
    virtual ~GPUKernel();
 
    virtual void initBuffers();
+   void cleanup();
 
 public:
 
@@ -250,7 +251,7 @@ public:
 
 	unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes.size()); };
 	unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives.size()); };
-	unsigned int getNbActiveints()       { return m_nbActiveLamps; };
+	unsigned int getNbActiveLamps()      { return m_nbActiveLamps; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
 
