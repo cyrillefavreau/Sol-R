@@ -31,9 +31,9 @@ float4 readFloat4( const std::string& value )
       {
          switch( item )
          {
-            case 0: returnValue.x = atof(tmp.c_str()); break;
-            case 1: returnValue.y = atof(tmp.c_str()); break;
-            case 2: returnValue.z = atof(tmp.c_str()); break;
+            case 0: returnValue.x = static_cast<float>(atof(tmp.c_str())); break;
+            case 1: returnValue.y = static_cast<float>(atof(tmp.c_str())); break;
+            case 2: returnValue.z = static_cast<float>(atof(tmp.c_str())); break;
          }
          ++item;
          tmp = "";
@@ -314,7 +314,8 @@ float4 OBJReader::loadModelFromFile(
    std::cout << "Nb Vertices: " << vertices.size() << std::endl;
    std::cout << "Nb Normals : " << normals.size() << std::endl;
    //float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
-   float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
+   //float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
+   float objectScale = scale/(maxPos.y - minPos.y);
 
    // Center align object
    float4 objectCenter = {0.f,0.f,0.f,0.f};

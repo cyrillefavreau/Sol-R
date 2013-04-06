@@ -59,6 +59,12 @@ cudaStream_t d_streams[MAX_GPU_COUNT];
 int          d_nbGPUs;
 
 // ________________________________________________________________________________
+__device__ inline float dotProduct( const float4& v1, const float4& v2 )
+{
+	return ( v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
+}
+
+// ________________________________________________________________________________
 __device__ inline void saturateVector( float4& v )
 {
 	v.x = (v.x<0.f) ? 0.f : v.x;
@@ -94,7 +100,7 @@ ________________________________________________________________________________
 */
 __device__ inline void vectorReflection( float4& r, const float4& i, const float4& n )
 {
-	r = i-2.f*dot(i,n)*n;
+	r = i-2.f*dotProduct(i,n)*n;
 }
 
 /*
@@ -116,7 +122,7 @@ __device__ inline void vectorRefraction(
 	if(n1!=n2 && n2!=0.f) 
 	{
 		float r = n1/n2;
-		float cosI = dot( incident, normal );
+		float cosI = dotProduct( incident, normal );
 		float cosT2 = 1.f - r*r*(1.f - cosI*cosI);
 		refracted = r*incident + (r*cosI-sqrt( fabs(cosT2) ))*normal;
 	}
@@ -582,7 +588,6 @@ __device__ inline bool ellipsoidIntersection(
    return true;
 }
 
-
 /*
 ________________________________________________________________________________
 
@@ -603,11 +608,11 @@ __device__ inline bool sphereIntersection(
 {
 	// solve the equation sphere-ray to find the intersections
 	float4 O_C = ray.origin-sphere.p0;
-	float4 dir = normalize(ray.direction);
+	float4 dir = normalize(ray.direction); 
 
-	float a = 2.f*dot(dir,dir);
-	float b = 2.f*dot(O_C,dir);
-	float c = dot(O_C,O_C) - (sphere.size.x*sphere.size.x);
+	float a = 2.f*dotProduct(dir,dir);
+	float b = 2.f*dotProduct(O_C,dir);
+	float c = dotProduct(O_C,O_C) - (sphere.size.x*sphere.size.x);
 	float d = b*b-2.f*a*c;
 
 	if( d<=0.f || a == 0.f) return false;
@@ -652,7 +657,7 @@ __device__ inline bool sphereIntersection(
 	normal = normalize(normal);
 
    // Shadow management
-   r = dot(dir,normal);
+   r = dotProduct(dir,normal);
 	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
    shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
    //shadowIntensity *= sceneInfo.shadowIntensity.x;
@@ -687,8 +692,8 @@ __device__ bool cylinderIntersection(
 	bool&      back) 
 {
 	back = false;
+	float4 O_C = ray.origin-cylinder.p0;
 	float4 dir = ray.direction;
-	float4 RC  = ray.origin-cylinder.p0;
 	float4 n   = crossProduct(dir, cylinder.n1);
 
 	float ln = length(n);
@@ -699,13 +704,13 @@ __device__ bool cylinderIntersection(
 
 	n = normalize(n);
 
-	float d = fabs(dot(RC,n));
+	float d = fabs(dotProduct(O_C,n));
 	if (d>cylinder.p0.w) return false;
 
-	float4 O = crossProduct(RC,cylinder.n1);
-	float t = -dot(O, n)/ln;
+	float4 O = crossProduct(O_C,cylinder.n1);
+	float t = -dotProduct(O, n)/ln;
 	O = normalize(crossProduct(n,cylinder.n1));
-	float s=fabs( sqrtf(cylinder.p0.w*cylinder.p0.w-d*d) / dot( dir,O ) );
+	float s=fabs( sqrtf(cylinder.p0.w*cylinder.p0.w-d*d) / dotProduct( dir,O ) );
 
 	float in=t-s;
 	float out=t+s;
@@ -744,8 +749,8 @@ __device__ bool cylinderIntersection(
 			float4 HB1 = intersection-cylinder.p0;
 			float4 HB2 = intersection-cylinder.p1;
 
-			float scale1 = dot(HB1,cylinder.n1);
-			float scale2 = dot(HB2,cylinder.n1);
+			float scale1 = dotProduct(HB1,cylinder.n1);
+			float scale2 = dotProduct(HB2,cylinder.n1);
 
 			// Cylinder length
 			if( scale1 < EPSILON || scale2 > EPSILON ) return false;
@@ -765,7 +770,7 @@ __device__ bool cylinderIntersection(
 
          // Shadow management
          dir = normalize(dir);
-         float r = dot(dir,normal);
+         float r = dotProduct(dir,normal);
 	      //shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
          shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
          //shadowIntensity *= sceneInfo.shadowIntensity.x;
@@ -950,17 +955,17 @@ __device__ bool triangleIntersection(
    float4 E01=triangle.p1-triangle.p0;
    float4 E03=triangle.p2-triangle.p0;
    float4 P = crossProduct(ray.direction,E03);
-   float det = dot(E01,P);
+   float det = dotProduct(E01,P);
    
    if (fabs(det) < EPSILON) return false;
    
    float4 T = ray.origin-triangle.p0;
-   float a = dot(T,P)/det;
+   float a = dotProduct(T,P)/det;
    if (a < 0.f) return false;
    if (a > 1.f) return false;
 
    float4 Q = crossProduct(T,E01);
-   float b = dot(ray.direction,Q)/det;
+   float b = dotProduct(ray.direction,Q)/det;
    if (b < 0.f) return false;
    if (b > 1.f) return false;
 
@@ -971,19 +976,19 @@ __device__ bool triangleIntersection(
       float4 E23 = triangle.p0-triangle.p1;
       float4 E21 = triangle.p1-triangle.p1;
       float4 P_ = crossProduct(ray.direction,E21);
-      float det_ = dot(E23,P_);
+      float det_ = dotProduct(E23,P_);
       if(fabs(det_) < EPSILON) return false;
       float4 T_ = ray.origin-triangle.p2;
-      float a_ = dot(T_,P_)/det_;
+      float a_ = dotProduct(T_,P_)/det_;
       if (a_ < 0.f) return false;
       float4 Q_ = crossProduct(T_,E23);
-      float b_ = dot(ray.direction,Q_)/det_;
+      float b_ = dotProduct(ray.direction,Q_)/det_;
       if (b_ < 0.f) return false;
    }
 
    // Compute the ray parameter of the intersection
    // point.
-   float t = dot(E03,Q)/det;
+   float t = dotProduct(E03,Q)/det;
    if (t < 0) return false;
 
    intersection = ray.origin + t*ray.direction;
@@ -1000,7 +1005,7 @@ __device__ bool triangleIntersection(
    }
 
    float4 dir = normalize(ray.direction);
-   float r = dot(dir,normal);
+   float r = dotProduct(dir,normal);
 
    if( r>0.f )
    {
@@ -1195,7 +1200,7 @@ __device__ float processShadows(
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
                      {
                         O_L=normalize(O_L);
-                        float a=fabs(dot(O_L,normal));
+                        float a=fabs(dotProduct(O_L,normal));
                         float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-0.8f*materials[primitive.materialId.x].transparency.x);
                         result += r*a*shadowIntensity*sceneInfo.shadowIntensity.x;
                      }
@@ -1291,9 +1296,9 @@ __device__ float4 primitiveShader(
 				if( sceneInfo.pathTracingIteration.x > 0 )
 				{
 					int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-					center.x += size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.y += size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.z += size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.x += 5.f*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.y += 5.f*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.z += 5.f*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 				}
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
@@ -1312,7 +1317,7 @@ __device__ float4 primitiveShader(
 				// --------------------------------------------------------------------------------
 				// Lambert
 				// --------------------------------------------------------------------------------
-				lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+				lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dotProduct(normal,lightRay);
 				lambert = (lambert<0.f) ? 0.f : lambert;
 				lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
 				lambert *= (1.f-shadowIntensity);
@@ -1327,13 +1332,13 @@ __device__ float4 primitiveShader(
 					// --------------------------------------------------------------------------------
 					float4 viewRay = normalize(intersection - origin);
 					float4 blinnDir = lightRay - viewRay;
-					float temp = sqrt(dot(blinnDir,blinnDir));
+					float temp = sqrt(dotProduct(blinnDir,blinnDir));
 					if (temp != 0.f ) 
 					{
 						// Specular reflection
 						blinnDir = (1.f / temp) * blinnDir;
 
-						float blinnTerm = dot(blinnDir,normal);
+						float blinnTerm = dotProduct(blinnDir,normal);
 						blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
 						blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y); //*materials[primitive.materialId.x].specular.w
@@ -1666,7 +1671,7 @@ __device__ float4 launchRay(
          // Background
          float4 normal = {0.f, 1.f, 0.f, 0.f };
          float4 dir = normalize(rayOrigin.direction-rayOrigin.origin);
-         float angle = 2.f*fabs(dot( normal, dir));
+         float angle = 2.f*fabs(dotProduct( normal, dir));
          angle = (angle>1.f) ? 1.f: angle;
 			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
 			colorContributions[iteration] = 1.f;

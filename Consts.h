@@ -24,7 +24,7 @@
 #pragma once
 
 const int NB_MAX_BOXES      = 4096;
-const int NB_MAX_PRIMITIVES = 100000;
+const int NB_MAX_PRIMITIVES = 500000;
 const int NB_MAX_LAMPS      = 10;
 const int NB_MAX_MATERIALS  = 100;
 const int NB_MAX_TEXTURES   = 40;
