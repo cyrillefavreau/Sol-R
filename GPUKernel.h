@@ -154,7 +154,7 @@ public:
 		float transparency,
 		int   textureId,
 		float specValue, float specPower, float specCoef,
-      float innerIllumination,
+      float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
       bool  fastTransparency);
 
    int getMaterialAttributes( 
@@ -168,7 +168,7 @@ public:
 		float& transparency,
 		int&   textureId,
 		float& specValue, float& specPower, float& specCoef,
-      float& innerIllumination );
+      float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation );
 
    Material* getMaterial( const int index );
 

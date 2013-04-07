@@ -127,7 +127,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   0.f,m.reflection,m.refraction, false, false, 0,
                   m.transparency, TEXTURE_NONE,
                   m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
-                  0.f, false );
+                  0.f, 10.f, 10000.f,
+                  false );
                /*
                std::cout << "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
@@ -192,7 +193,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             0.f,m.reflection,m.refraction, false, false, 0,
             m.transparency, TEXTURE_NONE,
             m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
-            0.f, false );
+            0.f, 10.f, 100000.f,
+            false );
          std::cout << "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<

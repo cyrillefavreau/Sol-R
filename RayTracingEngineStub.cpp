@@ -311,7 +311,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    bool   wireframe, int wireframeDepth,
    double transparency,
    int    textureId,
-   double specValue, double specPower, double specCoef, double innerIllumination,
+   double specValue, double specPower, double specCoef, 
+   double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
    bool   fastTransparency)
 {
    kernel->setMaterial(
@@ -331,6 +332,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
       static_cast<float>(specPower), 
       static_cast<float>(specCoef ),
       static_cast<float>(innerIllumination),
+      static_cast<float>(illuminationDiffusion),
+      static_cast<float>(illuminationPropagation),
       fastTransparency
       );
    return 0;
@@ -339,24 +342,19 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int     in_index,
-   double& out_color_r, 
-   double& out_color_g, 
-   double& out_color_b,
+   double& out_color_r, double& out_color_g, double& out_color_b,
    double& out_noise,
    double& out_reflection,
    double& out_refraction,
    int&    out_procedural,
-   int&    out_wireframe,
-   int&    out_wireframeDepth,
+   int&    out_wireframe, int&    out_wireframeDepth,
    double& out_transparency,
    int&    out_textureId,
-   double& out_specValue, 
-   double& out_specPower, 
-   double& out_specCoef,
-   double& out_innerIllumination)
+   double& out_specValue, double& out_specPower, double& out_specCoef,
+   double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation)
 {
    float color_r,color_g,color_b, noise, reflection, refraction, transparency;
-   float specValue, specPower, specCoef, innerIllumination;
+   float specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation;
    bool  procedural;
    bool  wireframe;
    int   wireframeDepth;
@@ -365,7 +363,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
       in_index, 
       color_r, color_g, color_b,
       noise, reflection, refraction, procedural, wireframe, wireframeDepth, transparency, 
-      textureId, specValue, specPower, specCoef, innerIllumination );
+      textureId, specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation );
 
    out_color_r = static_cast<double>(color_r);
    out_color_g = static_cast<double>(color_g);
@@ -382,6 +380,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    out_specPower = static_cast<double>(specPower);
    out_specCoef = static_cast<double>(specCoef);
    out_innerIllumination = static_cast<double>(innerIllumination);
+   out_illuminationDiffusion = static_cast<double>(illuminationDiffusion);
+   out_illuminationPropagation = static_cast<double>(illuminationPropagation);
    return returnValue;
 }
 

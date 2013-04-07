@@ -1147,13 +1147,14 @@ __device__ float processShadows(
    color.y = 0.f;
    color.z = 0.f;
    int it=-1;
-	while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
+	Ray r;
+	r.origin    = origin;
+	r.direction = lampCenter-origin;
+	computeRayAttributes( r );
+
+   while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
 	{
-		Ray r;
-		r.origin    = origin;
-		r.direction = lampCenter-origin;
-		computeRayAttributes( r );
-      
+
 		BoundingBox& box = boudingBoxes[cptBoxes];
 		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x/iteration))
 		{
@@ -1286,9 +1287,9 @@ __device__ float4 primitiveShader(
 				if( sceneInfo.pathTracingIteration.x > 0 )
 				{
 					int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-					center.x += innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.y += innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.z += innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 				}
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
@@ -1302,7 +1303,13 @@ __device__ float4 primitiveShader(
 				}
 
 				Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
-				float3 lightRay = normalize(center - intersection);
+				float3 lightRay = center - intersection;
+
+            // Lightning intensity decreases with distance
+            float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
+            lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
+				
+            lightRay = normalize(lightRay);
 
 				// --------------------------------------------------------------------------------
 				// Lambert
@@ -1311,6 +1318,7 @@ __device__ float4 primitiveShader(
 				lambert = (lambert<0.f) ? 0.f : lambert;
 				lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
 				lambert *= (1.f-shadowIntensity);
+            lambert *= lampIntensity;
 
 				// Lighted object, not in the shades
 				lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
@@ -1503,7 +1511,7 @@ __device__ float4 launchRay(
    int currentMaterialId=-2;
 
    // TODO
-   const int nbMaxIterations = 110;
+   const int nbMaxIterations = 20;
    float  colorContributions[nbMaxIterations];
    float4 colors[nbMaxIterations];
    memset(&colorContributions[0],0,sizeof(float)*nbMaxIterations);
@@ -1529,7 +1537,9 @@ __device__ float4 launchRay(
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
 
-	while( iteration<(sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x) && carryon && photonDistance>0.f ) 
+   int currentMaxIteration = sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
+   currentMaxIteration = (currentMaxIteration>nbMaxIterations) ? nbMaxIterations : currentMaxIteration;
+	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
 	{
       // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
@@ -1763,7 +1773,8 @@ __global__ void k_standardRenderer(
 	ray.direction = direction;
 
 	float3 rotationCenter = {0.f,0.f,0.f};
-
+   bool antialiasingActivated = (sceneInfo.misc.w == 2);
+   
 	if( sceneInfo.pathTracingIteration.x == 0 )
    {
 		postProcessingBuffer[index].x = 0.f;
@@ -1779,6 +1790,11 @@ __global__ void k_standardRenderer(
 		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+
+      if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
+      {
+         antialiasingActivated = true;
+      }
 	}
 
 	float dof = postProcessingInfo.param1.x;
@@ -1805,15 +1821,6 @@ __global__ void k_standardRenderer(
 	vectorRotation( ray.origin, rotationCenter, angles );
 	vectorRotation( ray.direction, rotationCenter, angles );
 
-   /*
-   __shared__ BoundingBox shBoundingBoxes[128];
-   if( threadIdx.x==0 && threadIdx.y==0)
-   {
-      memcpy( shBoundingBoxes, BoundingBoxes, sizeof(BoundingBox)*nbActiveBoxes);
-   }
-   __syncthreads();
-   */
-
    // Antialisazing
    float2 AArotatedGrid[4] =
    {
@@ -1824,9 +1831,8 @@ __global__ void k_standardRenderer(
    };
 
    float4 color = {0.f,0.f,0.f,0.f};
-   if( sceneInfo.misc.w == 2 )
+   if( antialiasingActivated )
    {
-      // Antialiazing
       Ray r=ray;
 	   for( int I=0; I<4; ++I )
 	   {
@@ -1858,8 +1864,7 @@ __global__ void k_standardRenderer(
 		dof,
 		primitiveXYIds[index]);
    
-   // Antialiazing
-   if( sceneInfo.misc.w == 2 )
+   if( antialiasingActivated )
    {
       color /= 5.f;
    }

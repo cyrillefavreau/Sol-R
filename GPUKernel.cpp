@@ -1027,7 +1027,7 @@ void GPUKernel::setMaterial(
 	float transparency,
 	int   textureId,
 	float specValue, float specPower, float specCoef, 
-   float innerIllumination,
+   float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
    bool fastTransparency)
 {
 	LOG_INFO(3,"GPUKernel::setMaterial( " << 
@@ -1055,7 +1055,8 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].specular.z  = 0.f; // Not used
 		m_hMaterials[index].specular.w  = specCoef;
 		m_hMaterials[index].innerIllumination.x = innerIllumination;
-		m_hMaterials[index].innerIllumination.y = 10.f;
+		m_hMaterials[index].innerIllumination.y = illuminationDiffusion;
+		m_hMaterials[index].innerIllumination.z = illuminationPropagation;
 		m_hMaterials[index].reflection.x  = reflection;
 		m_hMaterials[index].refraction.x  = refraction;
 		m_hMaterials[index].transparency.x= transparency;
@@ -1082,7 +1083,7 @@ int GPUKernel::getMaterialAttributes(
 	float& transparency,
 	int&   textureId,
 	float& specValue, float& specPower, float& specCoef,
-   float& innerIllumination )
+   float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation )
 {
 	unsigned int returnValue = -1;
 
@@ -1100,6 +1101,8 @@ int GPUKernel::getMaterialAttributes(
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;
 		innerIllumination = m_hMaterials[index].innerIllumination.x;
+		illuminationDiffusion = m_hMaterials[index].innerIllumination.y;
+		illuminationPropagation = m_hMaterials[index].innerIllumination.z;
 		wireframe =  (m_hMaterials[index].textureInfo.z == 1);
 		wireframeDepth = m_hMaterials[index].textureInfo.w;
 		returnValue = 0;

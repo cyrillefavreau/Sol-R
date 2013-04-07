@@ -109,7 +109,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double transparency,
    int    textureId,
    double specValue, double specPower, double specCoef, 
-   double innerIllumination,
+   double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
    bool   fastTransparency);
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
@@ -123,7 +123,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& transparency,
    int&    textureId,
    double& specValue, double& specPower, double& specCoef,
-   double& innerIllumination);
+   double& innerIllumination, double& illuminationDiffusion, double& illuminationPropagation);
 
 // Boxes
 extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update );
