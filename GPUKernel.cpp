@@ -146,7 +146,7 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%2000-1000)/5000.f;
+		m_hRandoms[i] = (rand()%2000-1000)/1000.f;
 	}
 }
 
@@ -1055,6 +1055,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].specular.z  = 0.f; // Not used
 		m_hMaterials[index].specular.w  = specCoef;
 		m_hMaterials[index].innerIllumination.x = innerIllumination;
+		m_hMaterials[index].innerIllumination.y = 10.f;
 		m_hMaterials[index].reflection.x  = reflection;
 		m_hMaterials[index].refraction.x  = refraction;
 		m_hMaterials[index].transparency.x= transparency;

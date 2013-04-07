@@ -264,7 +264,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
    double feet_radius,  int feet_materialId)
 {
 #if USE_KINECT
-   float4 position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 0.f };
+   float3 position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z) };
    return kernel->updateSkeletons(
       index,
       position,
