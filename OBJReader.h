@@ -30,9 +30,9 @@
 struct MaterialMTL
 {
    unsigned int index;
-   float4 Ka;
-   float4 Kd;
-   float4 Ks;
+   float3 Ka;
+   float3 Kd;
+   float3 Ks;
    float  Ns;
    float  reflection;
    float  transparency;
@@ -51,10 +51,10 @@ public:
       GPUKernel& GPUKernel,
       int materialId);
 
-   float4 loadModelFromFile( 
+   float3 loadModelFromFile( 
       const std::string& filename,
       GPUKernel& cudaKernel,
-      const float4& center,
+      const float3& center,
       const float& scale, 
       int materialId);
 

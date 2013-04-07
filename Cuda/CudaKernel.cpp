@@ -126,7 +126,6 @@ CudaKernel::CudaKernel( bool activeLogging, int platform, int device )
 	m_angles.x = 0.f;
 	m_angles.y = 0.f;
 	m_angles.z = 0.f;
-	m_angles.w = 0.f;
 
    setPostProcessingInfo( ppe_none, 0.f, 40.f, 50 );
    float4 bkColor = {0.f, 0.f, 0.f, 0.f};
@@ -263,6 +262,7 @@ void CudaKernel::render_begin( const float timer )
          m_hMaterials, nbMaterials, 
          m_hTextures,  m_nbActiveTextures, 
          m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
+      std::cout << "Transfering " << m_nbActiveTextures << " textures" << std::endl;
 		m_textureTransfered = true;
 
       LOG_INFO(3,"Boxes     : " << nbBoxes );

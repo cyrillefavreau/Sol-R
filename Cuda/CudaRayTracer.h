@@ -47,9 +47,9 @@ extern "C" void cudaRender(
    SceneInfo sceneInfo,
    int4 objects,
    PostProcessingInfo PostProcessingInfo,
-   float4 origin, 
-   float4 direction, 
-   float4 angles);
+   float3 origin, 
+   float3 direction, 
+   float3 angles);
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( char* video, char* depth );

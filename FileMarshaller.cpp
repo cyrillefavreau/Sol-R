@@ -86,7 +86,7 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
    kernel.initBuffers();
 }
 
-void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line )
+void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max )
 {
    Primitive primitive = {0.f};
    std::string value;
@@ -105,40 +105,33 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line )
             case  1: primitive.p0.x = static_cast<float>(atof( value.c_str() )); break;
             case  2: primitive.p0.y = static_cast<float>(atof( value.c_str() )); break;
             case  3: primitive.p0.z = static_cast<float>(atof( value.c_str() )); break;
-            case  4: primitive.p0.w = static_cast<float>(atof( value.c_str() )); break;
 
-            case  5: primitive.p1.x = static_cast<float>(atof( value.c_str() )); break;
-            case  6: primitive.p1.y = static_cast<float>(atof( value.c_str() )); break;
-            case  7: primitive.p1.z = static_cast<float>(atof( value.c_str() )); break;
-            case  8: primitive.p1.w = static_cast<float>(atof( value.c_str() )); break;
+            case  4: primitive.p1.x = static_cast<float>(atof( value.c_str() )); break;
+            case  5: primitive.p1.y = static_cast<float>(atof( value.c_str() )); break;
+            case  6: primitive.p1.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case  9: primitive.p2.x = static_cast<float>(atof( value.c_str() )); break;
-            case 10: primitive.p2.y = static_cast<float>(atof( value.c_str() )); break;
-            case 11: primitive.p2.z = static_cast<float>(atof( value.c_str() )); break;
-            case 12: primitive.p2.w = static_cast<float>(atof( value.c_str() )); break;
+            case  7: primitive.p2.x = static_cast<float>(atof( value.c_str() )); break;
+            case  8: primitive.p2.y = static_cast<float>(atof( value.c_str() )); break;
+            case  9: primitive.p2.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 13: primitive.n0.x = static_cast<float>(atof( value.c_str() )); break;
-            case 14: primitive.n0.y = static_cast<float>(atof( value.c_str() )); break;
-            case 15: primitive.n0.z = static_cast<float>(atof( value.c_str() )); break;
-            case 16: primitive.n0.w = static_cast<float>(atof( value.c_str() )); break;
+            case 10: primitive.n0.x = static_cast<float>(atof( value.c_str() )); break;
+            case 11: primitive.n0.y = static_cast<float>(atof( value.c_str() )); break;
+            case 12: primitive.n0.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 17: primitive.n1.x = static_cast<float>(atof( value.c_str() )); break;
-            case 18: primitive.n1.y = static_cast<float>(atof( value.c_str() )); break;
-            case 19: primitive.n1.z = static_cast<float>(atof( value.c_str() )); break;
-            case 20: primitive.n1.w = static_cast<float>(atof( value.c_str() )); break;
+            case 13: primitive.n1.x = static_cast<float>(atof( value.c_str() )); break;
+            case 14: primitive.n1.y = static_cast<float>(atof( value.c_str() )); break;
+            case 15: primitive.n1.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 21: primitive.n2.x = static_cast<float>(atof( value.c_str() )); break;
-            case 22: primitive.n2.y = static_cast<float>(atof( value.c_str() )); break;
-            case 23: primitive.n2.z = static_cast<float>(atof( value.c_str() )); break;
-            case 24: primitive.n2.w = static_cast<float>(atof( value.c_str() )); break;
+            case 16: primitive.n2.x = static_cast<float>(atof( value.c_str() )); break;
+            case 17: primitive.n2.y = static_cast<float>(atof( value.c_str() )); break;
+            case 18: primitive.n2.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 25: primitive.size.x = static_cast<float>(atof( value.c_str() )); break;
-            case 26: primitive.size.y = static_cast<float>(atof( value.c_str() )); break;
-            case 27: primitive.size.z = static_cast<float>(atof( value.c_str() )); break;
-            case 28: primitive.size.w = static_cast<float>(atof( value.c_str() )); break;
+            case 19: primitive.size.x = static_cast<float>(atof( value.c_str() )); break;
+            case 20: primitive.size.y = static_cast<float>(atof( value.c_str() )); break;
+            case 21: primitive.size.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 29: primitive.materialId.x = static_cast<int>(atoi( value.c_str() )); break;
-            case 30: primitive.materialInfo.x = static_cast<float>(atof( value.c_str() )); break;
+            case 22: primitive.materialId.x = static_cast<int>(atoi( value.c_str() )); break;
+            case 23: primitive.materialInfo.x = static_cast<float>(atof( value.c_str() )); break;
          }
          value = "";
          ++i;
@@ -163,7 +156,24 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line )
       primitive.materialId.x, 
       primitive.materialInfo.x, 
       primitive.materialInfo.y );
+
    kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
+
+   float3 pmin, pmax;
+   pmin.x = std::min(std::min( primitive.p0.x, primitive.p1.x ), primitive.p2.x );
+   pmin.y = std::min(std::min( primitive.p0.y, primitive.p1.y ), primitive.p2.y );
+   pmin.z = std::min(std::min( primitive.p0.z, primitive.p1.z ), primitive.p2.z );
+   pmax.x = std::max(std::max( primitive.p0.x, primitive.p1.x ), primitive.p2.x );
+   pmax.y = std::max(std::max( primitive.p0.y, primitive.p1.y ), primitive.p2.y );
+   pmax.z = std::max(std::max( primitive.p0.z, primitive.p1.z ), primitive.p2.z );
+
+   min.x = ( pmin.x < min.x ) ? pmin.x : min.x;
+   min.y = ( pmin.y < min.y ) ? pmin.y : min.y;
+   min.z = ( pmin.z < min.z ) ? pmin.z : min.z;
+
+   max.x = ( pmax.x > max.x ) ? pmax.x : max.x;
+   max.y = ( pmax.y > max.y ) ? pmax.y : max.y;
+   max.z = ( pmax.z > max.z ) ? pmax.z : max.z;
 }
 
 void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
@@ -218,18 +228,24 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
       n,
       material.color.x, material.color.y, material.color.z, material.color.w,
       material.reflection.x, material.refraction.x,
-      (material.textureInfo.x==1), (material.textureInfo.z==1), material.textureInfo.w, // TODO!!!
-      material.transparency.x, material.textureInfo.y,
+      (material.textureInfo.x==1), 
+      (material.textureInfo.z==1), material.textureInfo.w, // TODO!!!
+      material.transparency.x, 
+      material.textureInfo.y,
       material.specular.x, material.specular.y, material.specular.z,
       material.innerIllumination.x,
       (material.fastTransparency.x==1));
-      
 }
 
-void FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename)
+float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename)
 {
    std::cout << "--------------------------------------------------------------------------------" << std::endl;
    std::cout << "Loading 3D scene from " << filename << std::endl;
+
+   float3 returnValue;
+
+   float3 min = {  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x };
+   float3 max = { -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x };
 
    kernel.cleanup();
    std::ifstream myfile;
@@ -250,7 +266,7 @@ void FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filenam
          }
          else if( line.find(PRIMITIVE) == 0 )
          {
-            readPrimitive( kernel, line );
+            readPrimitive( kernel, line, min, max );
          }
       }
    }
@@ -258,7 +274,13 @@ void FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filenam
    std::cout << kernel.getNbActiveMaterials()  << " materials" << std::endl;
    std::cout << kernel.getNbActivePrimitives() << " primitives" << std::endl;
    std::cout << kernel.getNbActiveLamps()      << " lamps" << std::endl;
+
+   returnValue.x = fabs( max.x - min.x );
+   returnValue.y = fabs( max.y - min.y );
+   returnValue.z = fabs( max.z - min.z );
+   std::cout << "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z << std::endl;
    std::cout << "--------------------------------------------------------------------------------" << std::endl;
+   return returnValue;
 }
 
 void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
@@ -327,39 +349,37 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
       for( int i(0); i<nbPrimitives; ++i )
       {
          CPUPrimitive* primitive = kernel.getPrimitive(i);
-         myfile << "PRIMITIVE;" <<  
-            primitive->type << ";" <<
-            primitive->p0.x << ";" <<
-            primitive->p0.y << ";" <<
-            primitive->p0.z << ";" <<
-            primitive->p0.w << ";" <<
-            primitive->p1.x << ";" <<
-            primitive->p1.y << ";" <<
-            primitive->p1.z << ";" <<
-            primitive->p1.w << ";" <<
-            primitive->p2.x << ";" <<
-            primitive->p2.y << ";" <<
-            primitive->p2.z << ";" <<
-            primitive->p2.w << ";" <<
-            primitive->n0.x << ";" <<
-            primitive->n0.y << ";" <<
-            primitive->n0.z << ";" <<
-            primitive->n0.w << ";" <<
-            primitive->n1.x << ";" <<
-            primitive->n1.y << ";" <<
-            primitive->n1.z << ";" <<
-            primitive->n1.w << ";" <<
-            primitive->n2.x << ";" <<
-            primitive->n2.y << ";" <<
-            primitive->n2.z << ";" <<
-            primitive->n2.w << ";" <<
-            primitive->size.x << ";" <<
-            primitive->size.y << ";" <<
-            primitive->size.z << ";" <<
-            primitive->size.w << ";" <<
-            primitive->materialId << ";" <<
-            primitive->materialInfo.x << ";" <<
-            primitive->materialInfo.y << std::endl;
+         Material* m = kernel.getMaterial( primitive->materialId );
+         bool isLight = (m != NULL && m->innerIllumination.x!=0.f );
+         if( !isLight )
+         {
+            myfile << "PRIMITIVE;" <<  
+               primitive->type << ";" <<
+               primitive->p0.x << ";" <<
+               primitive->p0.y << ";" <<
+               primitive->p0.z << ";" <<
+               primitive->p1.x << ";" <<
+               primitive->p1.y << ";" <<
+               primitive->p1.z << ";" <<
+               primitive->p2.x << ";" <<
+               primitive->p2.y << ";" <<
+               primitive->p2.z << ";" <<
+               primitive->n0.x << ";" <<
+               primitive->n0.y << ";" <<
+               primitive->n0.z << ";" <<
+               primitive->n1.x << ";" <<
+               primitive->n1.y << ";" <<
+               primitive->n1.z << ";" <<
+               primitive->n2.x << ";" <<
+               primitive->n2.y << ";" <<
+               primitive->n2.z << ";" <<
+               primitive->size.x << ";" <<
+               primitive->size.y << ";" <<
+               primitive->size.z << ";" <<
+               primitive->materialId << ";" <<
+               primitive->materialInfo.x << ";" <<
+               primitive->materialInfo.y << std::endl;
+         }
       }
       std::cout << "--------------------------------------------------------------------------------" << std::endl;
       myfile.close();

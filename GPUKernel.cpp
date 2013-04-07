@@ -17,18 +17,18 @@
 const unsigned int MAX_SOURCE_SIZE = 65535;
 const unsigned int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 250;
 
-float4 min4( const float4 a, const float4 b, const float4 c )
+float3 min4( const float3 a, const float3 b, const float3 c )
 {
-   float4 r;
+   float3 r;
    r.x = std::min(std::min(a.x,b.x),c.x);
    r.y = std::min(std::min(a.y,b.y),c.y);
    r.z = std::min(std::min(a.z,b.z),c.z);
    return r;
 }
 
-float4 max4( const float4 a, const float4 b, const float4 c )
+float3 max4( const float3 a, const float3 b, const float3 c )
 {
-   float4 r;
+   float3 r;
    r.x = std::max(std::max(a.x,b.x),c.x);
    r.y = std::max(std::max(a.y,b.y),c.y);
    r.z = std::max(std::max(a.z,b.z),c.z);
@@ -36,13 +36,13 @@ float4 max4( const float4 a, const float4 b, const float4 c )
 }
 
 // ________________________________________________________________________________
-float GPUKernel::vectorLength( const float4& vector )
+float GPUKernel::vectorLength( const float3& vector )
 {
 	return sqrt( vector.x*vector.x + vector.y*vector.y + vector.z*vector.z );
 }
 
 // ________________________________________________________________________________
-void GPUKernel::normalizeVector( float4& v )
+void GPUKernel::normalizeVector( float3& v )
 {
 	float l = vectorLength( v );
    if( l != 0.f )
@@ -53,9 +53,9 @@ void GPUKernel::normalizeVector( float4& v )
    }
 }
 
-float4 GPUKernel::crossProduct( const float4& b, const float4& c )
+float3 GPUKernel::crossProduct( const float3& b, const float3& c )
 {
-	float4 a;
+	float3 a;
 	a.x = b.y*c.z - b.z*c.y;
 	a.y = b.z*c.x - b.x*c.z;
 	a.z = b.x*c.y - b.y*c.x;
@@ -101,12 +101,17 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
 {
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
 
-   m_minPos.x =  100000.f;
-   m_minPos.y =  100000.f;
-   m_minPos.z =  100000.f;
-   m_maxPos.x = -100000.f;
-   m_maxPos.y = -100000.f;
-   m_maxPos.z = -100000.f;
+#if 1
+	std::cout <<"CPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
+	std::cout <<"CPU: Ray               : " << sizeof(Ray) << std::endl;
+	std::cout <<"CPU: PrimitiveType     : " << sizeof(PrimitiveType) << std::endl;
+	std::cout <<"CPU: Material          : " << sizeof(Material) << std::endl;
+	std::cout <<"CPU: BoundingBox       : " << sizeof(BoundingBox) << std::endl;
+	std::cout <<"CPU: Primitive         : " << sizeof(Primitive) << std::endl;
+	std::cout <<"CPU: PostProcessingType: " << sizeof(PostProcessingType) << std::endl;
+	std::cout <<"CPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) << std::endl;
+	std::cout <<"Textures " << NB_MAX_TEXTURES << std::endl;
+#endif // 0
 }
 
 
@@ -198,7 +203,7 @@ Sets camera
 ________________________________________________________________________________
 */
 void GPUKernel::setCamera( 
-	float4 eye, float4 dir, float4 angles )
+	float3 eye, float3 dir, float3 angles )
 {
 	LOG_INFO(3,"GPUKernel::setCamera(" << 
 		eye.x << "," << eye.y << "," << eye.z << " -> " <<
@@ -210,7 +215,6 @@ void GPUKernel::setCamera(
 	m_angles.x  += angles.x;
 	m_angles.y  += angles.y;
 	m_angles.z  += angles.z;
-	m_angles.w = 0.f;
 }
 
 int GPUKernel::addPrimitive( PrimitiveType type )
@@ -278,7 +282,6 @@ void GPUKernel::setPrimitive(
 		m_primitives[index].p0.x   = x0;
 		m_primitives[index].p0.y   = y0;
 		m_primitives[index].p0.z   = z0;
-		m_primitives[index].p0.w   = w;
 		m_primitives[index].p1.x   = x1;
 		m_primitives[index].p1.y   = y1;
 		m_primitives[index].p1.z   = z1;
@@ -288,7 +291,6 @@ void GPUKernel::setPrimitive(
 		m_primitives[index].size.x = w;
 		m_primitives[index].size.y = h;
 		m_primitives[index].size.z = d;
-		m_primitives[index].size.w = 0.f; // Not used
 		m_primitives[index].materialId = materialId;
 
 		switch( m_primitives[index].type )
@@ -314,7 +316,7 @@ void GPUKernel::setPrimitive(
 		case ptCylinder:
 			{
 				// Axis
-				float4 axis;
+				float3 axis;
 				axis.x = x1 - x0;
 				axis.y = y1 - y0;
 				axis.z = z1 - z0;
@@ -329,9 +331,9 @@ void GPUKernel::setPrimitive(
 				m_primitives[index].n1.y = axis.y;
 				m_primitives[index].n1.z = axis.z;
 
-            m_primitives[index].size.x = (x1 - x0)/2.f;
-            m_primitives[index].size.y = (y1 - y0)/2.f;
-            m_primitives[index].size.z = (z1 - z0)/2.f;
+            m_primitives[index].size.x = w; //(x1 - x0)/2.f;
+            m_primitives[index].size.y = w; //(y1 - y0)/2.f;
+            m_primitives[index].size.z = w; // (z1 - z0)/2.f;
 
 				// Material
 				m_primitives[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
@@ -379,7 +381,7 @@ void GPUKernel::setPrimitive(
 			}
 		case ptTriangle:
 			{
-            float4 v0,v1;
+            float3 v0,v1;
             v0.x = m_primitives[index].p1.x-m_primitives[index].p0.x;
             v0.y = m_primitives[index].p1.y-m_primitives[index].p0.y;
             v0.z = m_primitives[index].p1.z-m_primitives[index].p0.z;
@@ -395,8 +397,6 @@ void GPUKernel::setPrimitive(
 				break;
 			}
 		}
-		m_primitives[index].n0.w = 1.f; 
-
       //min
       m_minPos.x = std::min(x0,m_minPos.x);
       m_minPos.y = std::min(y0,m_minPos.y);
@@ -423,7 +423,7 @@ void GPUKernel::setPrimitiveIsMovable( int unsigned index, bool movable )
 }
 
 
-void GPUKernel::setPrimitiveNormals( int unsigned index, float4 n0, float4 n1, float4 n2 )
+void GPUKernel::setPrimitiveNormals( int unsigned index, float3 n0, float3 n1, float3 n2 )
 {
    if( index>=0 && index<m_primitives.size()) 
 	{
@@ -452,8 +452,8 @@ void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 	LOG_INFO(3,"GPUKernel::updateBoundingBox()" );
 
    // Process box size
-	float4 corner0;
-	float4 corner1;
+	float3 corner0;
+	float3 corner1;
 
    std::vector<unsigned int>::const_iterator it = box.primitives.begin();
    while( it != box.primitives.end() )
@@ -476,7 +476,7 @@ void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 		   }
 	   }
 
-	   float4 p0,p1;
+	   float3 p0,p1;
 	   p0.x = ( corner0.x <= corner1.x ) ? corner0.x : corner1.x;
 	   p0.y = ( corner0.y <= corner1.y ) ? corner0.y : corner1.y;
 	   p0.z = ( corner0.z <= corner1.z ) ? corner0.z : corner1.z;
@@ -489,13 +489,13 @@ void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 	   case ptCylinder: 
 	   case ptSphere: 
 		   {
-			   p0.x -= primitive.p0.w;
-			   p0.y -= primitive.p0.w;
-			   p0.z -= primitive.p0.w;
+			   p0.x -= primitive.size.x;
+			   p0.y -= primitive.size.x;
+			   p0.z -= primitive.size.x;
 
-			   p1.x += primitive.p0.w;
-			   p1.y += primitive.p0.w;
-			   p1.z += primitive.p0.w;
+			   p1.x += primitive.size.x;
+			   p1.y += primitive.size.x;
+			   p1.z += primitive.size.x;
 			   break;
 		   }
 	   default:
@@ -554,7 +554,7 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 
 unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate )
 {
-   float4 boxSteps;
+   float3 boxSteps;
    boxSteps.x = ( m_maxPos.x - m_minPos.x ) / boxSize;
    boxSteps.y = ( m_maxPos.y - m_minPos.y ) / boxSize;
    boxSteps.z = ( m_maxPos.z - m_minPos.z ) / boxSize;
@@ -764,18 +764,16 @@ void GPUKernel::displayBoxesInfo()
 	}
 }
 
-void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, unsigned int from, unsigned int to )
+void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
-	float4 cosAngles, sinAngles;
+	float3 cosAngles, sinAngles;
 	cosAngles.x = cos(angles.x);
 	cosAngles.y = cos(angles.y);
 	cosAngles.z = cos(angles.z);
-	cosAngles.w = 0.f;
 	sinAngles.x = sin(angles.x);
 	sinAngles.y = sin(angles.y);
 	sinAngles.z = sin(angles.z);
-	sinAngles.w = 0.f;
 
 #if 0
 	int i=0;
@@ -821,14 +819,14 @@ void GPUKernel::rotatePrimitives( float4 rotationCenter, float4 angles, unsigned
    compactBoxes(false);
 }
 
-void GPUKernel::rotateVector( float4& v, const float4 rotationCenter, const float4& cosAngles, const float4& sinAngles )
+void GPUKernel::rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles )
 {
    // Rotate Center
-   float4 vector;
+   float3 vector;
    vector.x = v.x - rotationCenter.x;
    vector.y = v.y - rotationCenter.y;
    vector.z = v.z - rotationCenter.z;
-   float4 result = vector; 
+   float3 result = vector; 
 
    /* X axis */ 
    result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 
@@ -852,7 +850,7 @@ void GPUKernel::rotateVector( float4& v, const float4 rotationCenter, const floa
 }
 
 void GPUKernel::rotatePrimitive( 
-	CPUPrimitive& primitive, float4 rotationCenter, float4 cosAngles, float4 sinAngles )
+	CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
    if( primitive.type == ptTriangle || primitive.type == ptSphere || primitive.type == ptEllipsoid || primitive.type == ptCylinder )
@@ -872,7 +870,7 @@ void GPUKernel::rotatePrimitive(
          else
          {
             // Axis
-				float4 axis;
+				float3 axis;
 				axis.x = primitive.p1.x - primitive.p0.x;
 				axis.y = primitive.p1.y - primitive.p0.y;
 				axis.z = primitive.p1.z - primitive.p0.z;
@@ -892,7 +890,7 @@ void GPUKernel::rotatePrimitive(
 }
 
 void GPUKernel::rotateBox( 
-	CPUBoundingBox& box, float4 rotationCenter, float4 cosAngles, float4 sinAngles )
+	CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotateBox" );
    rotateVector( box.parameters[0], rotationCenter, cosAngles, sinAngles );
@@ -911,13 +909,12 @@ void GPUKernel::getPrimitiveCenter(
 		x = m_primitives[index].p0.x;
 		y = m_primitives[index].p0.y;
 		z = m_primitives[index].p0.z;
-		w = m_primitives[index].p0.w;
 	}
 }
 
 void GPUKernel::getPrimitiveOtherCenter(
 	unsigned int index, 
-	float4& p1)
+	float3& p1)
 {
 	if( index>=0 && index<=m_primitives.size()) 
 	{
@@ -938,7 +935,6 @@ void GPUKernel::setPrimitiveCenter(
 		m_primitives[index].p0.x = x;
 		m_primitives[index].p0.y = y;
 		m_primitives[index].p0.z = z;
-		m_primitives[index].p0.w = w;
 		m_primitives[index].size.x = w;
 	}
 }
@@ -1275,9 +1271,12 @@ int GPUKernel::addTexture( const std::string& filename )
 #else
 	filePtr = fopen(filename.c_str(), "rb");
 #endif
-	if (filePtr == NULL) {
+	if (filePtr == NULL) 
+   {
+      std::cout << "Failed to load " << filename << std::endl;
 		return 1;
 	}
+   std::cout << "Loading " << filename << std::endl;
 
 	//read the bitmap file header
 	size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
@@ -1337,7 +1336,7 @@ int GPUKernel::addTexture( const std::string& filename )
 #ifdef USE_KINECT
 int GPUKernel::updateSkeletons( 
 	unsigned int primitiveIndex, 
-	float4 skeletonPosition, 
+	float3 skeletonPosition, 
 	float size,
 	float radius,       int materialId,
 	float head_radius,  int head_materialId,
@@ -1396,7 +1395,7 @@ int GPUKernel::updateSkeletons(
 	return hr;
 }
 
-bool GPUKernel::getSkeletonPosition( int index, float4& position )
+bool GPUKernel::getSkeletonPosition( int index, float3& position )
 {
 	bool returnValue(false);
 	if( m_skeletonIndex != -1 ) 

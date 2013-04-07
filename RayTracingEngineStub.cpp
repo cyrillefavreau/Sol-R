@@ -117,9 +117,9 @@ extern "C" RAYTRACINGENGINE_API
    double dir_x,   double dir_y,   double dir_z,
    double angle_x, double angle_y, double angle_z )
 {
-   float4 eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z),   0.f };
-   float4 dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z),   0.f };
-   float4 angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z), 0.f };
+   float3 eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z)};
+   float3 dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z)};
+   float3 angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z)};
    kernel->setCamera( eye, dir, angles );
 }
 
@@ -229,8 +229,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
 {
    try
    {
-      float4 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz), 0.f };
-      float4 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az), 0.f };
+      float3 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz) };
+      float3 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az) };
 
       kernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
    }
@@ -413,10 +413,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
    int    materialId,
    double scale)
 {
-   float4 center={0.f,0.f,0.f,0.f};
+   float3 center={0.f,0.f,0.f};
    // PDB
 	OBJReader objReader;
-	float4 minPos = objReader.loadModelFromFile( 
+	float3 minPos = objReader.loadModelFromFile( 
       filename,
       *kernel,
       center,

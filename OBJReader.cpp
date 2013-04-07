@@ -18,9 +18,9 @@ OBJReader::~OBJReader(void)
 {
 }
 
-float4 readFloat4( const std::string& value )
+float3 readfloat3( const std::string& value )
 {
-   float4 returnValue = {0.f,0.f,0.f,0.f};
+   float3 returnValue = {0.f,0.f,0.f};
    int item(0);
    std::string tmp;
    for( int i(0); i<value.length(); ++i)
@@ -145,14 +145,14 @@ unsigned int OBJReader::loadMaterialsFromFile(
          {
             // RGB Color
             line = line.substr(3);
-            m_materials[id].Kd = readFloat4(line);
+            m_materials[id].Kd = readfloat3(line);
          }
 
          if( line.find("Ks") == 0 )
          {
             // Specular values
             line = line.substr(3);
-            m_materials[id].Ks = readFloat4(line);
+            m_materials[id].Ks = readfloat3(line);
          }
 
          if( line.find("d") == 0 || line.find("Tr") == 0 )
@@ -204,18 +204,18 @@ unsigned int OBJReader::loadMaterialsFromFile(
    return 0;
 }
 
-float4 OBJReader::loadModelFromFile(
+float3 OBJReader::loadModelFromFile(
    const std::string& filename,
    GPUKernel& kernel,
-   const float4& center,
+   const float3& center,
    const float& scale,
    int materialId)
 {
-   std::map<int,float4> vertices;
-   std::map<int,float4> normals;
+   std::map<int,float3> vertices;
+   std::map<int,float3> normals;
 
-   float4 minPos = { 100000.f, 100000.f, 100000.f, 0.f };
-   float4 maxPos = {-100000.f,-100000.f,-100000.f, 0.f };
+   float3 minPos = { 100000.f, 100000.f, 100000.f };
+   float3 maxPos = {-100000.f,-100000.f,-100000.f };
 
    std::string noExtFilename(filename);
    size_t pos(noExtFilename.find(".obj"));
@@ -248,7 +248,7 @@ float4 OBJReader::loadModelFromFile(
          {
             if( line[0] == 'v' )
             {
-               float4 vertex = {0.f,0.f,0.f,0.f};
+               float3 vertex = {0.f,0.f,0.f};
                std::string value("");
 
                size_t i(1);
@@ -318,7 +318,7 @@ float4 OBJReader::loadModelFromFile(
    float objectScale = scale/(maxPos.y - minPos.y);
 
    // Center align object
-   float4 objectCenter = {0.f,0.f,0.f,0.f};
+   float3 objectCenter = {0.f,0.f,0.f};
    objectCenter.x = (minPos.x+maxPos.x) / 2.f;
    objectCenter.y = (minPos.y+maxPos.y) / 2.f;
    objectCenter.z = (minPos.z+maxPos.z) / 2.f;
@@ -418,7 +418,7 @@ float4 OBJReader::loadModelFromFile(
       }
       file.close();
    }
-   float4 objectSize;
+   float3 objectSize;
    objectSize.x = (maxPos.x - minPos.x)*objectScale;
    objectSize.y = (maxPos.y - minPos.y)*objectScale;
    objectSize.z = (maxPos.z - minPos.z)*objectScale;

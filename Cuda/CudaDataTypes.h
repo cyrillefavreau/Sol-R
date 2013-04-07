@@ -61,9 +61,9 @@ struct SceneInfo
 
 struct Ray
 {
-   float4 origin;
-   float4 direction;
-   float4 inv_direction;
+   float3 origin;
+   float3 direction;
+   float3 inv_direction;
    int4   signs;
 };
 
@@ -98,7 +98,7 @@ struct Material
 
 struct BoundingBox
 {
-   float4 parameters[2];
+   float3 parameters[2];
    int1   nbPrimitives;
    int1   startIndex;
    int2   type; // Alignment issues
@@ -106,13 +106,13 @@ struct BoundingBox
 
 struct Primitive
 {
-	float4 p0;
-	float4 p1;
-	float4 p2;
-	float4 n0;
-	float4 n1;
-	float4 n2;
-	float4 size;
+	float3 p0;
+	float3 p1;
+	float3 p2;
+	float3 n0;
+	float3 n1;
+	float3 n2;
+	float3 size;
 	int1   type;
    int1   index;
 	int1   materialId;

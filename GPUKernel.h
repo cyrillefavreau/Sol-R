@@ -40,13 +40,13 @@
 struct CPUPrimitive
 {
    bool   movable;
-	float4 p0;
-	float4 p1;
-	float4 p2;
-	float4 n0;
-	float4 n1;
-	float4 n2;
-	float4 size;
+	float3 p0;
+	float3 p1;
+	float3 p2;
+	float3 n0;
+	float3 n1;
+	float3 n2;
+	float3 size;
 	int    type;
 	int    materialId;
 	float2 materialInfo;
@@ -54,7 +54,7 @@ struct CPUPrimitive
 
 struct CPUBoundingBox
 {
-   float4 parameters[2];
+   float3 parameters[2];
    std::vector<unsigned int> primitives;
 };
 
@@ -92,18 +92,18 @@ public:
    unsigned int getPrimitiveAt( int x, int y );
    void setPrimitiveIsMovable( unsigned int index, bool movable );
 
-   void rotatePrimitives( float4 rotationCenter, float4 angles, unsigned int from, unsigned int to );
-	void rotatePrimitive( CPUPrimitive& primitive, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
-   void rotateBox( CPUBoundingBox& box, float4 rotationCenter, float4 cosAngles, float4 sinAngles );
+   void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
+	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
+   void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
 
 	void setPrimitiveMaterial( unsigned int index, int materialId); 
 	int  getPrimitiveMaterial( unsigned int index); 
 	void getPrimitiveCenter( unsigned int index, float& x, float& y, float& z, float& w );
-	void getPrimitiveOtherCenter( unsigned int index, float4& otherCenter );
+	void getPrimitiveOtherCenter( unsigned int index, float3& otherCenter );
 	void setPrimitiveCenter( unsigned int index, float  x, float  y, float  z, float  w );
 
    // Normals
-	void setPrimitiveNormals( unsigned int index, float4 n0, float4 n1, float4 n2 );
+	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );
 
    // Lights
    int getLight( unsigned int index );
@@ -176,7 +176,7 @@ public:
 
 	// ---------- Camera ----------
 	void setCamera( 
-		float4 eye, float4 dir, float4 angles );
+		float3 eye, float3 dir, float3 angles );
 
 public:
 
@@ -221,9 +221,9 @@ public:
 public:
 
    // Vector Utilities
-   float vectorLength( const float4& vector );
-   void normalizeVector( float4& v );
-   float4 crossProduct( const float4& b, const float4& c );
+   float vectorLength( const float3& vector );
+   void normalizeVector( float3& v );
+   float3 crossProduct( const float3& b, const float3& c );
      
    // Bitmap export
    void saveBitmapToFile( const std::string& filename, char* bitmap, const int width, const int height, const int depth );
@@ -235,14 +235,14 @@ public:
 
 	int updateSkeletons( 
       unsigned int primitiveIndex,
-		float4 skeletonPosition, 
+		float3 skeletonPosition, 
 		float size,
 		float radius,       int materialId,
 		float head_radius,  int head_materialId,
 		float hands_radius, int hands_materialId,
 		float feet_radius,  int feet_materialId);
 
-	bool getSkeletonPosition( int index, float4& position );
+	bool getSkeletonPosition( int index, float3& position );
    char* getDepthBitmap() { return m_hDepth; }
    char* getVideoBitmap() { return m_hVideo; }
 #endif // USE_KINECT
@@ -264,7 +264,7 @@ protected:
    
    unsigned int processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
 
-   void rotateVector( float4& v, const float4 rotationCenter, const float4& cosAngles, const float4& sinAngles );
+   void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
 protected:
  
@@ -274,7 +274,7 @@ protected:
 	int*		    m_hLamps;
 	Material*    m_hMaterials;
 	char*        m_hTextures;
-	float4*      m_hDepthOfField;
+	float3*      m_hDepthOfField;
 	float*	    m_hRandoms;
    int*         m_hPrimitivesXYIds;
 
@@ -282,17 +282,17 @@ protected:
 	unsigned int m_nbActiveLamps;
 	unsigned int m_nbActiveMaterials;
 	unsigned int m_nbActiveTextures;
-	float4		 m_viewPos;
-	float4		 m_viewDir;
-	float4		 m_angles;
+	float3		 m_viewPos;
+	float3		 m_viewDir;
+	float3		 m_angles;
 
 protected:
 
 	int	 m_draft;
 	bool	 m_textureTransfered;
    // Scene Size
-   float4 m_minPos;
-   float4 m_maxPos;
+   float3 m_minPos;
+   float3 m_maxPos;
 
 protected:
 
