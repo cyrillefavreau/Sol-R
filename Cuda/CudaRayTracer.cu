@@ -1670,12 +1670,16 @@ __device__ float4 launchRay(
 		}
 		else
 		{
+#if 0
          // Background
          float3 normal = {0.f, 1.f, 0.f };
          float3 dir = normalize(rayOrigin.direction-rayOrigin.origin);
          float angle = 2.f*fabs(dot( normal, dir));
          angle = (angle>1.f) ? 1.f: angle;
 			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
+#else
+			colors[iteration] = sceneInfo.backgroundColor;
+#endif // 0
 			colorContributions[iteration] = 1.f;
 		}
 		iteration++;
