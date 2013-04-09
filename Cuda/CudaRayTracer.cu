@@ -1248,7 +1248,7 @@ __device__ float4 primitiveShader(
 	if( materials[primitive.materialId.x].textureInfo.z == 1 )
 		return color; //TODO? wireframe have constant color
 
-	if( primitive.type.x == ptEnvironment )
+   if( primitive.type.x==ptEnvironment || primitive.type.x==ptXYPlane || primitive.type.x==ptXZPlane || primitive.type.x==ptYZPlane )
 	{
 		// Final color
 		color = intersectionShader( 
@@ -1529,6 +1529,7 @@ __device__ float4 launchRay(
    // Photon energy
    float photonDistance = sceneInfo.viewDistance.x;
    float previousTransparency = 1.f;
+   depthOfField = 0;
 
    // Reflected rays
    int reflectedRays=-1;
@@ -1720,26 +1721,30 @@ __device__ float4 launchRay(
 
 	intersection = closestIntersection;
 
-	// --------------------------------------------------
-   // Photon energy
-	// --------------------------------------------------
-   intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
-
-	// --------------------------------------------------
-	// Attenation effect (Fog)
-	// --------------------------------------------------
-	float len = length(firstIntersection - ray.origin);
-   float halfDistance = sceneInfo.viewDistance.x*0.75f;
-   if( sceneInfo.misc.z==1 && len>halfDistance)
+   Primitive& primitive=primitives[closestPrimitive];
+   if( primitive.type.x!=ptEnvironment && primitive.type.x!=ptXYPlane && primitive.type.x!=ptXZPlane && primitive.type.x!=ptYZPlane )
    {
-	   len = len-halfDistance/(sceneInfo.viewDistance.x-halfDistance);
-	   len = (len>0.f) ? len : 0.f;
-	   len = (len<1.f) ? len : 0.f;
-      intersectionColor = intersectionColor*(1.f-len) + sceneInfo.backgroundColor*len;
+	   // --------------------------------------------------
+      // Photon energy
+	   // --------------------------------------------------
+      intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
+
+	   // --------------------------------------------------
+	   // Attenation effect (Fog)
+	   // --------------------------------------------------
+	   float len = length(firstIntersection - ray.origin);
+      float halfDistance = sceneInfo.viewDistance.x*0.75f;
+      if( sceneInfo.misc.z==1 && len>halfDistance)
+      {
+	      len = len-halfDistance/(sceneInfo.viewDistance.x-halfDistance);
+	      len = (len>0.f) ? len : 0.f;
+	      len = (len<1.f) ? len : 0.f;
+         intersectionColor = intersectionColor*(1.f-len) + sceneInfo.backgroundColor*len;
+      }
+      depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
    }
 
 	// Depth of field
-   depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
    intersectionColor -= colorBox;
 	saturateVector( intersectionColor );
 	return intersectionColor;
