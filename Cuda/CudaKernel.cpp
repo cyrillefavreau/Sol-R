@@ -171,7 +171,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::initializeDevice()
 {
-   LOG_INFO(3,"CudaKernel::initializeDevice");
+   LOG_INFO(1,"CudaKernel::initializeDevice");
 	initialize_scene( m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS, NB_MAX_TEXTURES );
 }
 
@@ -188,7 +188,6 @@ ________________________________________________________________________________
 */
 void CudaKernel::releaseDevice()
 {
-	LOG_INFO(3,"Release device memory\n");
 	finalize_scene();
 }
 
@@ -262,7 +261,7 @@ void CudaKernel::render_begin( const float timer )
          m_hMaterials, nbMaterials, 
          m_hTextures,  m_nbActiveTextures, 
          m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
-      std::cout << "Transfering " << m_nbActiveTextures << " textures" << std::endl;
+      LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures");
 		m_textureTransfered = true;
 
       LOG_INFO(3,"Boxes     : " << nbBoxes );

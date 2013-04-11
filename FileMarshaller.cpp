@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Logging.h"
 #include "FileMarshaller.h"
 
 const std::string SCENEINFO = "SCENEINFO";
@@ -239,8 +240,8 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
 
 float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename)
 {
-   std::cout << "--------------------------------------------------------------------------------" << std::endl;
-   std::cout << "Loading 3D scene from " << filename << std::endl;
+   LOG_INFO(1, "--------------------------------------------------" );
+   LOG_INFO(1, "Loading 3D scene from " << filename );
 
    float3 returnValue;
 
@@ -271,27 +272,27 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
       }
    }
    myfile.close();
-   std::cout << kernel.getNbActiveMaterials()  << " materials" << std::endl;
-   std::cout << kernel.getNbActivePrimitives() << " primitives" << std::endl;
-   std::cout << kernel.getNbActiveLamps()      << " lamps" << std::endl;
+   LOG_INFO(1, kernel.getNbActiveMaterials()  << " materials" );
+   LOG_INFO(1, kernel.getNbActivePrimitives() << " primitives" );
+   LOG_INFO(1, kernel.getNbActiveLamps()      << " lamps" );
 
    returnValue.x = fabs( max.x - min.x );
    returnValue.y = fabs( max.y - min.y );
    returnValue.z = fabs( max.z - min.z );
-   std::cout << "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z << std::endl;
-   std::cout << "--------------------------------------------------------------------------------" << std::endl;
+   LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z );
+   LOG_INFO(1, "--------------------------------------------------" );
    return returnValue;
 }
 
 void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
 {
-   std::cout << "--------------------------------------------------------------------------------" << std::endl;
-   std::cout << "Saving 3D scene to " << filename << std::endl;
+   LOG_INFO(1, "--------------------------------------------------" );
+   LOG_INFO(1, "Saving 3D scene to " << filename );
    std::ofstream myfile;
    myfile.open(filename.c_str());
    if( myfile.is_open() ) 
    {
-      std::cout << "Scene information " << std::endl;
+      LOG_INFO(1, "Scene information " );
 
       SceneInfo sceneInfo = kernel.getSceneInfo();
       // Scene
@@ -316,7 +317,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          sceneInfo.misc.y << std::endl;
 
       // Materials
-      std::cout << kernel.getNbActiveMaterials() << " materials" << std::endl;
+      LOG_INFO(1, kernel.getNbActiveMaterials() << " materials");
       for( unsigned int i(0); i<=kernel.getNbActiveMaterials(); ++i )
       {
          Material* material = kernel.getMaterial(i);
@@ -345,7 +346,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
 
       // Primitives
       int nbPrimitives = kernel.getNbActivePrimitives();
-      std::cout << nbPrimitives << " primitives" << std::endl;
+      LOG_INFO(1,nbPrimitives << " primitives");
       for( int i(0); i<nbPrimitives; ++i )
       {
          CPUPrimitive* primitive = kernel.getPrimitive(i);
@@ -381,7 +382,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
                primitive->materialInfo.y << std::endl;
          }
       }
-      std::cout << "--------------------------------------------------------------------------------" << std::endl;
+      LOG_INFO(1, "--------------------------------------------------" );
       myfile.close();
    }
 }

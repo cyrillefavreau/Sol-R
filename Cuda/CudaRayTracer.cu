@@ -33,6 +33,7 @@
 #include <cutil_inline.h>
 #include <cutil_math.h>
 #endif
+#include "../Logging.h"
 
 // Consts
 const int MAX_GPU_COUNT = 32;
@@ -1529,7 +1530,6 @@ __device__ float4 launchRay(
    // Photon energy
    float photonDistance = sceneInfo.viewDistance.x;
    float previousTransparency = 1.f;
-   depthOfField = 0;
 
    // Reflected rays
    int reflectedRays=-1;
@@ -1722,6 +1722,7 @@ __device__ float4 launchRay(
 	intersection = closestIntersection;
 
    Primitive& primitive=primitives[closestPrimitive];
+	float len = length(firstIntersection - ray.origin);
    if( primitive.type.x!=ptEnvironment && primitive.type.x!=ptXYPlane && primitive.type.x!=ptXZPlane && primitive.type.x!=ptYZPlane )
    {
 	   // --------------------------------------------------
@@ -1732,7 +1733,6 @@ __device__ float4 launchRay(
 	   // --------------------------------------------------
 	   // Attenation effect (Fog)
 	   // --------------------------------------------------
-	   float len = length(firstIntersection - ray.origin);
       float halfDistance = sceneInfo.viewDistance.x*0.75f;
       if( sceneInfo.misc.z==1 && len>halfDistance)
       {
@@ -1741,8 +1741,8 @@ __device__ float4 launchRay(
 	      len = (len<1.f) ? len : 0.f;
          intersectionColor = intersectionColor*(1.f-len) + sceneInfo.backgroundColor*len;
       }
-      depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
    }
+   depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
 
 	// Depth of field
    intersectionColor -= colorBox;
@@ -2262,7 +2262,7 @@ extern "C" void initialize_scene(
    {
 	   d_nbGPUs = MAX_GPU_COUNT;
    }
-   std::cout << "CUDA-capable device count: " << d_nbGPUs << std::endl;
+   LOG_INFO(1 ,"CUDA-capable device count: " << d_nbGPUs);
 
    for( int d(0); d<d_nbGPUs; ++d )
    {
@@ -2283,15 +2283,15 @@ extern "C" void initialize_scene(
 	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int)/d_nbGPUs));
    }
 #if 1
-	std::cout <<"GPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
-	std::cout <<"GPU: Ray               : " << sizeof(Ray) << std::endl;
-	std::cout <<"GPU: PrimitiveType     : " << sizeof(PrimitiveType) << std::endl;
-	std::cout <<"GPU: Material          : " << sizeof(Material) << std::endl;
-	std::cout <<"GPU: BoundingBox       : " << sizeof(BoundingBox) << std::endl;
-	std::cout <<"GPU: Primitive         : " << sizeof(Primitive) << std::endl;
-	std::cout <<"GPU: PostProcessingType: " << sizeof(PostProcessingType) << std::endl;
-	std::cout <<"GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) << std::endl;
-	std::cout <<"Textures " << NB_MAX_TEXTURES << std::endl;
+	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
+	LOG_INFO( 3, "GPU: Ray               : " << sizeof(Ray) );
+	LOG_INFO( 3, "GPU: PrimitiveType     : " << sizeof(PrimitiveType) );
+	LOG_INFO( 3, "GPU: Material          : " << sizeof(Material) );
+	LOG_INFO( 3, "GPU: BoundingBox       : " << sizeof(BoundingBox) );
+	LOG_INFO( 3, "GPU: Primitive         : " << sizeof(Primitive) );
+	LOG_INFO( 3, "GPU: PostProcessingType: " << sizeof(PostProcessingType) );
+	LOG_INFO( 3, "GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) );
+	LOG_INFO( 3, "Textures " << NB_MAX_TEXTURES );
 #endif // 0
 }
 
@@ -2303,6 +2303,7 @@ ________________________________________________________________________________
 */
 extern "C" void finalize_scene()
 {
+   LOG_INFO(1 ,"Releasing device resources");
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
@@ -2448,12 +2449,12 @@ extern "C" void cudaRender(
 	   cudaError_t status = cudaGetLastError();
 	   if(status != cudaSuccess) 
 	   {
-		   std::cout << "ERROR: (" << status << ") " << cudaGetErrorString(status) << std::endl;
-		   std::cout << "INFO: Size(" << size.x << ", " << size.y << ") " << std::endl;
-		   std::cout << "INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<") " << std::endl;
-		   std::cout << "nbActiveBoxes :" << objects.x << std::endl;
-		   std::cout << "nbActivePrimitives :" << objects.y << std::endl;
-		   std::cout << "nbActiveLamps :" << objects.z << std::endl;
+		   LOG_ERROR("ERROR: (" << status << ") " << cudaGetErrorString(status));
+		   LOG_ERROR("INFO: Size(" << size.x << ", " << size.y << ")");
+		   LOG_ERROR("INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<")");
+		   LOG_ERROR("nbActiveBoxes :" << objects.x);
+		   LOG_ERROR("nbActivePrimitives :" << objects.y);
+		   LOG_ERROR("nbActiveLamps :" << objects.z);
 	   }
 
 	   switch( postProcessingInfo.type.x )

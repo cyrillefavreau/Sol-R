@@ -38,8 +38,8 @@ const int NB_MAX_TEXTURES   = 40;
 #define gColorDepth  3
 
 // Textures
-const int gTextureWidth  = 256;
-const int gTextureHeight = 256;
+const int gTextureWidth  = 1024;
+const int gTextureHeight = 1024;
 const int gTextureDepth  = 3;
 const int gTextureSize   = gTextureWidth*gTextureHeight*gTextureDepth;
 

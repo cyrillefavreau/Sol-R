@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <string>
 
+#include "Logging.h"
+
 #include "Consts.h"
 #include "OBJReader.h"
 
@@ -195,10 +197,9 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         std::cout << "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
-            "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
-            std::endl;
+            "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " );
       }
 
       file.close();
@@ -234,7 +235,7 @@ float3 OBJReader::loadModelFromFile(
    std::string modelFilename(noExtFilename);
    modelFilename += ".obj";
 
-   std::cout << "Loading " << modelFilename.c_str() << std::endl;
+   LOG_INFO( 3, "Loading " << modelFilename.c_str() );
 
    int index_vertices(1);
    int index_normals(1);
@@ -313,8 +314,8 @@ float3 OBJReader::loadModelFromFile(
       file.close();
    }
 
-   std::cout << "Nb Vertices: " << vertices.size() << std::endl;
-   std::cout << "Nb Normals : " << normals.size() << std::endl;
+   LOG_INFO(3, "Nb Vertices: " << vertices.size());
+   LOG_INFO(3, "Nb Normals : " << normals.size());
    //float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
    //float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
    float objectScale = scale/(maxPos.y - minPos.y);
@@ -325,10 +326,10 @@ float3 OBJReader::loadModelFromFile(
    objectCenter.y = (minPos.y+maxPos.y) / 2.f;
    objectCenter.z = (minPos.z+maxPos.z) / 2.f;
    file.close();
-   std::cout << "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z << std::endl;
-   std::cout << "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z << std::endl;
-   std::cout << "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z << std::endl;
-   std::cout << "Scale : " << objectScale << std::endl;
+   LOG_INFO(3, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
+   LOG_INFO(3, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
+   LOG_INFO(3, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
+   LOG_INFO(3, "Scale : " << objectScale );
 
    file.open(modelFilename.c_str());
    if( file.is_open() )

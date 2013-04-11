@@ -102,15 +102,15 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
 
 #if 1
-	std::cout <<"CPU: SceneInfo         : " << sizeof(SceneInfo) << std::endl;
-	std::cout <<"CPU: Ray               : " << sizeof(Ray) << std::endl;
-	std::cout <<"CPU: PrimitiveType     : " << sizeof(PrimitiveType) << std::endl;
-	std::cout <<"CPU: Material          : " << sizeof(Material) << std::endl;
-	std::cout <<"CPU: BoundingBox       : " << sizeof(BoundingBox) << std::endl;
-	std::cout <<"CPU: Primitive         : " << sizeof(Primitive) << std::endl;
-	std::cout <<"CPU: PostProcessingType: " << sizeof(PostProcessingType) << std::endl;
-	std::cout <<"CPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) << std::endl;
-	std::cout <<"Textures " << NB_MAX_TEXTURES << std::endl;
+	LOG_INFO(3, "CPU: SceneInfo         : " << sizeof(SceneInfo) );
+	LOG_INFO(3, "CPU: Ray               : " << sizeof(Ray) );
+	LOG_INFO(3, "CPU: PrimitiveType     : " << sizeof(PrimitiveType) );
+	LOG_INFO(3, "CPU: Material          : " << sizeof(Material) );
+	LOG_INFO(3, "CPU: BoundingBox       : " << sizeof(BoundingBox) );
+	LOG_INFO(3, "CPU: Primitive         : " << sizeof(Primitive) );
+	LOG_INFO(3, "CPU: PostProcessingType: " << sizeof(PostProcessingType) );
+	LOG_INFO(3, "CPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) );
+	LOG_INFO(3, "Textures " << NB_MAX_TEXTURES );
 #endif // 0
 }
 
@@ -118,6 +118,7 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
 GPUKernel::~GPUKernel()
 {
 	LOG_INFO(3,"GPUKernel::~GPUKernel");
+   cleanup();
 }
 
 void GPUKernel::initBuffers()
@@ -152,13 +153,14 @@ void GPUKernel::initBuffers()
 
 void GPUKernel::cleanup()
 {
+	if(m_hBoundingBoxes!=0) delete m_hBoundingBoxes;
 	if(m_hPrimitives!=0) delete m_hPrimitives;
+	if(m_hLamps!=0) delete m_hLamps;
 	if(m_hMaterials!=0) delete m_hMaterials;
 	if(m_hTextures!=0) delete m_hTextures;
-	if(m_hBoundingBoxes!=0) delete m_hBoundingBoxes;
-	if(m_hLamps!=0) delete m_hLamps;
-	if(m_hPrimitivesXYIds!=0) delete m_hPrimitivesXYIds;
+	if(m_hDepthOfField!=0) delete m_hDepthOfField;
 	if(m_hRandoms!=0) delete m_hRandoms;
+	if(m_hPrimitivesXYIds!=0) delete m_hPrimitivesXYIds;
 
    m_boundingBoxes.clear();
    m_primitives.clear();
@@ -742,25 +744,23 @@ void GPUKernel::displayBoxesInfo()
 	for( unsigned int i(0); i<=m_boundingBoxes.size(); ++i )
 	{
 		CPUBoundingBox& box = m_boundingBoxes[i];
-		std::cout << "Box " << i << std::endl;
-		std::cout << "- # of primitives: " << box.primitives.size() << std::endl;
-		std::cout << "- Corners 1      : " << box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z << std::endl;
-		std::cout << "- Corners 2      : " << box.parameters[1].x << "," << box.parameters[1].y << "," << box.parameters[1].z << std::endl;
+		LOG_INFO( 3, "Box " << i );
+		LOG_INFO( 3, "- # of primitives: " << box.primitives.size() );
+		LOG_INFO( 3, "- Corners 1      : " << box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z );
+		LOG_INFO( 3, "- Corners 2      : " << box.parameters[1].x << "," << box.parameters[1].y << "," << box.parameters[1].z );
       unsigned int p(0);
       std::vector<unsigned int>::const_iterator it = box.primitives.begin();
       while( it != box.primitives.end() )
       {
          CPUPrimitive& primitive(m_primitives[*it]);
-			std::cout << "- - " << 
+			LOG_INFO( 3, "- - " << 
 				p << ":" << 
 				"type = " << primitive.type << ", " << 
 				"center = (" << primitive.p0.x << "," << primitive.p0.y << "," << primitive.p0.z << "), " << 
-				"p1 = (" << primitive.p1.x << "," << primitive.p1.y << "," << primitive.p1.z << ")" <<
-				std::endl;
+				"p1 = (" << primitive.p1.x << "," << primitive.p1.y << "," << primitive.p1.z << ")" );
          ++p;
          ++it;
 		}
-		std::cout << std::endl;
 	}
 }
 
@@ -1277,16 +1277,16 @@ int GPUKernel::addTexture( const std::string& filename )
 #endif
 	if (filePtr == NULL) 
    {
-      std::cout << "Failed to load " << filename << std::endl;
+      LOG_ERROR( "Failed to load " << filename );
 		return 1;
 	}
-   std::cout << "Loading " << filename << std::endl;
 
 	//read the bitmap file header
 	size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
 
 	//verify that this is a bmp file by check bitmap id
 	if (bitmapFileHeader.bfType !=0x4D42) {
+      LOG_ERROR( "Failed to load " << filename << ", wrong bitmap id" );
 		fclose(filePtr);
 		return 1;
 	}
@@ -1297,29 +1297,33 @@ int GPUKernel::addTexture( const std::string& filename )
 	//move file point to the begging of bitmap data
 	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
+   int bitmapSize = bitmapInfoHeader.biWidth*bitmapInfoHeader.biHeight*bitmapInfoHeader.biBitCount/8;
+
 	//allocate enough memory for the bitmap image data
-	bitmapImage = (char*)malloc(bitmapInfoHeader.biSizeImage);
+	bitmapImage = (char*)malloc(bitmapSize);
 
 	//verify memory allocation
 	if (!bitmapImage)
 	{
 		free(bitmapImage);
 		fclose(filePtr);
+      LOG_ERROR( "Failed to load " << filename << ", invalid memory allocation" );
 		return 1;
 	}
 
 	//read in the bitmap image data
-	status = fread( bitmapImage, bitmapInfoHeader.biSizeImage, 1, filePtr);
+	status = fread( bitmapImage, bitmapSize, 1, filePtr);
 
 	//make sure bitmap image data was read
 	if (bitmapImage == NULL)
 	{
 		fclose(filePtr);
+      LOG_ERROR( "Failed to load " << filename << ", bitmap image could not be read" );
 		return 0;
 	}
 
 	//swap the r and b values to get RGB (bitmap is BGR)
-	for (imageIdx = 0; imageIdx < bitmapInfoHeader.biSizeImage; imageIdx += 3)
+	for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
 	{
 		tempRGB = bitmapImage[imageIdx];
 		bitmapImage[imageIdx] = bitmapImage[imageIdx + 2];
@@ -1329,11 +1333,21 @@ int GPUKernel::addTexture( const std::string& filename )
 	//close file and return bitmap image data
 	fclose(filePtr);
 
-	char* index = m_hTextures + gTextureOffset + (m_nbActiveTextures*bitmapInfoHeader.biSizeImage);
-	memcpy( index, bitmapImage, bitmapInfoHeader.biSizeImage );
+	char* index = m_hTextures + gTextureOffset + (m_nbActiveTextures*bitmapSize);
+	memcpy( index, bitmapImage, bitmapSize );
 	m_nbActiveTextures++;
 
 	free( bitmapImage );
+   LOG_INFO( 3, "Successfully loaded " << filename  << std::endl <<
+      "biSize         : " << bitmapInfoHeader.biSize << std::endl <<
+      "biWidth        : " << bitmapInfoHeader.biWidth << std::endl <<
+      "biHeight       : " << bitmapInfoHeader.biHeight << std::endl <<
+      "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl <<
+      "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl <<
+      "biCompression  : " << bitmapInfoHeader.biCompression << std::endl <<
+      "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl <<
+      "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
+      "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
 	return m_nbActiveTextures-1;
 }
 
