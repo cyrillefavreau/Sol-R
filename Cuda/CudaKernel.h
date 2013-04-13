@@ -33,6 +33,7 @@ public:
 	~CudaKernel();
 
    virtual void initBuffers();
+   virtual void cleanup();
 
 public:
 	// ---------- Devices ----------

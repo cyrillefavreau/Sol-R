@@ -225,6 +225,20 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
    }
 
    int n = kernel.addMaterial();
+   
+   // Force sky and ground textures
+   switch(n)
+   {
+   case 0: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 0; break;
+   case 1: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 1; break;
+   case 2: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 2; break;
+   case 3: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 3; break;
+   case 4: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 4; break;
+   case 5: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 5; break;
+   case 6: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 6; break;
+   case 99: material.innerIllumination.y = 10.f; break;
+   }
+
    kernel.setMaterial(
       n,
       material.color.x, material.color.y, material.color.z, material.color.w,

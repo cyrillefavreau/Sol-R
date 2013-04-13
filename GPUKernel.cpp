@@ -1121,6 +1121,7 @@ Material* GPUKernel::getMaterial( const int index )
 	if( index>=0 && index<=static_cast<int>(m_nbActiveMaterials) ) 
 	{
       returnValue = &m_hMaterials[index];
+		m_textureTransfered = false;
    }
    return returnValue;
 }

@@ -66,7 +66,7 @@ public:
    virtual ~GPUKernel();
 
    virtual void initBuffers();
-   void cleanup();
+   virtual void cleanup();
 
 public:
 

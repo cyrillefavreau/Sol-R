@@ -163,6 +163,13 @@ void CudaKernel::initBuffers()
 	initializeDevice();
 }
 
+void CudaKernel::cleanup()
+{
+   GPUKernel::cleanup();
+   releaseDevice();
+}
+
+
 /*
 ________________________________________________________________________________
 

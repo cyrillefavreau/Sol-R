@@ -1157,7 +1157,7 @@ __device__ float processShadows(
 	{
 
 		BoundingBox& box = boudingBoxes[cptBoxes];
-		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x/iteration))
+		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x))
 		{
 			int cptPrimitives = 0;
 			while( result<sceneInfo.shadowIntensity.x && cptPrimitives<box.nbPrimitives.x)
@@ -1396,7 +1396,7 @@ __device__ bool intersectionWithPrimitives(
    for( int cptBoxes = 0; cptBoxes<nbActiveBoxes; ++cptBoxes )
 	{
 		BoundingBox& box = boundingBoxes[cptBoxes];
-		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x/iteration) )
+		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x) )
 		{
 			// Intersection with Box
 			if( sceneInfo.renderBoxes.x != 0 ) 
@@ -1791,20 +1791,22 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
+#if 0
    else
 	{
-		// Randomize view
+		// Randomize view for natural depth of field
 		int rindex = index + sceneInfo.pathTracingIteration.x;
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
 		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 
-      if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
-      {
-         antialiasingActivated = true;
-      }
 	}
+#endif // 0
+   if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
+   {
+      antialiasingActivated = true;
+   }
 
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
@@ -2121,8 +2123,8 @@ __global__ void k_depthOfField(
 	{
 		int ix = i%wh;
 		int iy = (i+sceneInfo.width.x)%wh;
-		int xx = x+depth*randoms[ix]*0.1f;
-		int yy = y+depth*randoms[iy]*0.1f;
+		int xx = x+depth*randoms[ix]*0.5f;
+		int yy = y+depth*randoms[iy]*0.5f;
 		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
 		{
 			int localIndex = yy*sceneInfo.width.x+xx;
