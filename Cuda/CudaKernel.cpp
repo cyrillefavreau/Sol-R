@@ -262,21 +262,21 @@ void CudaKernel::render_begin( const float timer )
       m_hPrimitives, nbPrimitives, 
       m_hLamps, nbLamps );
 	
-   if( !m_textureTransfered )
+   if( !m_materialsTransfered )
 	{
 		h2d_materials( 
          m_hMaterials, nbMaterials, 
-         m_hTextures,  m_nbActiveTextures, 
          m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
-      LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures");
-		m_textureTransfered = true;
-
-      LOG_INFO(3,"Boxes     : " << nbBoxes );
-      LOG_INFO(3,"Primitives: " << nbPrimitives );
-      LOG_INFO(3,"Materials : " << nbMaterials );
-      LOG_INFO(3,"Lamps     : " << nbLamps );
+      LOG_INFO(3, "Transfering " << nbMaterials << " materials");
+		m_materialsTransfered = true;
 	}
-
+   if( !m_texturesTransfered )
+	{
+		h2d_textures( 
+         m_hTextures,  m_nbActiveTextures);
+      LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures");
+		m_texturesTransfered = true;
+   }
    // Kernel execution
    int4 objects;
    objects.x = nbBoxes;

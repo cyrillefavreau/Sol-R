@@ -1671,7 +1671,7 @@ __device__ float4 launchRay(
 		}
 		else
 		{
-#if 0
+#if 1
          // Background
          float3 normal = {0.f, 1.f, 0.f };
          float3 dir = normalize(rayOrigin.direction-rayOrigin.origin);
@@ -2344,15 +2344,23 @@ extern "C" void h2d_scene(
 
 extern "C" void h2d_materials( 
 	Material*  materials, int nbActiveMaterials,
-	char*      textures , int nbActiveTextures,
 	float*     randoms,   int nbRandoms)
 {
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
 	   checkCudaErrors(cudaMemcpyAsync( d_materials[d], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[d],  textures,  gTextureOffset+nbActiveTextures*sizeof(char)*gTextureSize, cudaMemcpyHostToDevice, d_streams[d] ));
 	   checkCudaErrors(cudaMemcpyAsync( d_randoms[d],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[d] ));
+   }
+}
+
+extern "C" void h2d_textures( 
+	char*      textures , int nbActiveTextures)
+{
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[d],  textures,  gTextureOffset+nbActiveTextures*sizeof(char)*gTextureSize, cudaMemcpyHostToDevice, d_streams[d] ));
    }
 }
 

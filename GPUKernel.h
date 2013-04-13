@@ -289,7 +289,8 @@ protected:
 protected:
 
 	int	 m_draft;
-	bool	 m_textureTransfered;
+	bool	 m_materialsTransfered;
+	bool	 m_texturesTransfered;
    // Scene Size
    float3 m_minPos;
    float3 m_maxPos;

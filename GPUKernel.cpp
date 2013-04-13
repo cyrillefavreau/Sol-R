@@ -97,7 +97,8 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
 	m_pVideoStreamHandle(0), m_pDepthStreamHandle(0),
 	m_skeletonsBody(-1), m_skeletonsLamp(-1), m_skeletonIndex(-1),
 #endif // USE_KINECT
-	m_textureTransfered(false)
+	m_materialsTransfered(false),
+   m_texturesTransfered(false)
 {
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
 
@@ -188,7 +189,7 @@ void GPUKernel::cleanup()
    m_skeletonsLamp = -1;
    m_skeletonIndex = -1;
 #endif // USE_KINECT
-	m_textureTransfered = false;
+	m_materialsTransfered = false;
 
    m_minPos.x =  100000.f;
    m_minPos.y =  100000.f;
@@ -650,7 +651,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 {
 	LOG_INFO(3,"GPUKernel::compactBoxes" );
 
-   try 
+   if( m_hBoundingBoxes )
    {
       if( reconstructBoxes )
       {
@@ -733,8 +734,9 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       //std::cout << "Compacted boxes (" << b << "/" << m_boundingBoxes.size() << ")" << std::endl;
       m_nbActivePrimitives=primitivesIndex;
    }
-   catch( ... ) 
+   else
    {
+      LOG_ERROR("Boxes memory not allocated");
    }
 	return static_cast<int>(m_boundingBoxes.size());
 }
@@ -1065,7 +1067,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureInfo.z = wireframe ? 1 : 0;
 		m_hMaterials[index].textureInfo.w = wireframeWidth;
       m_hMaterials[index].fastTransparency.x = fastTransparency ? 1 : 0;
-		m_textureTransfered = false;
+		m_materialsTransfered = false;
 	}
 	else
 	{
@@ -1121,7 +1123,7 @@ Material* GPUKernel::getMaterial( const int index )
 	if( index>=0 && index<=static_cast<int>(m_nbActiveMaterials) ) 
 	{
       returnValue = &m_hMaterials[index];
-		m_textureTransfered = false;
+		m_materialsTransfered= false;
    }
    return returnValue;
 }
@@ -1263,92 +1265,99 @@ void GPUKernel::saveToFile( const std::string& filename, const std::string& cont
 // ---------- Kinect ----------
 int GPUKernel::addTexture( const std::string& filename )
 {
-	FILE *filePtr(0); //our file pointer
-	BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
-	char *bitmapImage;  //store image data
-	BITMAPINFOHEADER bitmapInfoHeader;
-	unsigned int imageIdx=0;  //image index counter
-	char tempRGB;  //our swap variable
-
-	//open filename in read binary mode
-#ifdef WIN32
-	fopen_s(&filePtr, filename.c_str(), "rb");
-#else
-	filePtr = fopen(filename.c_str(), "rb");
-#endif
-	if (filePtr == NULL) 
+   if( m_hTextures )
    {
-      LOG_ERROR( "Failed to load " << filename );
-		return 1;
-	}
+	   FILE *filePtr(0); //our file pointer
+	   BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
+	   char *bitmapImage;  //store image data
+	   BITMAPINFOHEADER bitmapInfoHeader;
+	   unsigned int imageIdx=0;  //image index counter
+	   char tempRGB;  //our swap variable
 
-	//read the bitmap file header
-	size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+	   //open filename in read binary mode
+   #ifdef WIN32
+	   fopen_s(&filePtr, filename.c_str(), "rb");
+   #else
+	   filePtr = fopen(filename.c_str(), "rb");
+   #endif
+	   if (filePtr == NULL) 
+      {
+         LOG_ERROR( "Failed to load " << filename );
+		   return 1;
+	   }
 
-	//verify that this is a bmp file by check bitmap id
-	if (bitmapFileHeader.bfType !=0x4D42) {
-      LOG_ERROR( "Failed to load " << filename << ", wrong bitmap id" );
-		fclose(filePtr);
-		return 1;
-	}
+	   //read the bitmap file header
+	   size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
 
-	//read the bitmap info header
-	status = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER),1,filePtr);
+	   //verify that this is a bmp file by check bitmap id
+	   if (bitmapFileHeader.bfType !=0x4D42) {
+         LOG_ERROR( "Failed to load " << filename << ", wrong bitmap id" );
+		   fclose(filePtr);
+		   return 1;
+	   }
 
-	//move file point to the begging of bitmap data
-	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
+	   //read the bitmap info header
+	   status = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER),1,filePtr);
 
-   int bitmapSize = bitmapInfoHeader.biWidth*bitmapInfoHeader.biHeight*bitmapInfoHeader.biBitCount/8;
+	   //move file point to the begging of bitmap data
+	   fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
-	//allocate enough memory for the bitmap image data
-	bitmapImage = (char*)malloc(bitmapSize);
+      int bitmapSize = bitmapInfoHeader.biWidth*bitmapInfoHeader.biHeight*bitmapInfoHeader.biBitCount/8;
 
-	//verify memory allocation
-	if (!bitmapImage)
-	{
-		free(bitmapImage);
-		fclose(filePtr);
-      LOG_ERROR( "Failed to load " << filename << ", invalid memory allocation" );
-		return 1;
-	}
+	   //allocate enough memory for the bitmap image data
+	   bitmapImage = (char*)malloc(bitmapSize);
 
-	//read in the bitmap image data
-	status = fread( bitmapImage, bitmapSize, 1, filePtr);
+	   //verify memory allocation
+	   if (!bitmapImage)
+	   {
+		   free(bitmapImage);
+		   fclose(filePtr);
+         LOG_ERROR( "Failed to load " << filename << ", invalid memory allocation" );
+		   return 1;
+	   }
 
-	//make sure bitmap image data was read
-	if (bitmapImage == NULL)
-	{
-		fclose(filePtr);
-      LOG_ERROR( "Failed to load " << filename << ", bitmap image could not be read" );
-		return 0;
-	}
+	   //read in the bitmap image data
+	   status = fread( bitmapImage, bitmapSize, 1, filePtr);
 
-	//swap the r and b values to get RGB (bitmap is BGR)
-	for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
-	{
-		tempRGB = bitmapImage[imageIdx];
-		bitmapImage[imageIdx] = bitmapImage[imageIdx + 2];
-		bitmapImage[imageIdx + 2] = tempRGB;
-	}
+	   //make sure bitmap image data was read
+	   if (bitmapImage == NULL)
+	   {
+		   fclose(filePtr);
+         LOG_ERROR( "Failed to load " << filename << ", bitmap image could not be read" );
+		   return 0;
+	   }
 
-	//close file and return bitmap image data
-	fclose(filePtr);
+	   //swap the r and b values to get RGB (bitmap is BGR)
+	   for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
+	   {
+		   tempRGB = bitmapImage[imageIdx];
+		   bitmapImage[imageIdx] = bitmapImage[imageIdx + 2];
+		   bitmapImage[imageIdx + 2] = tempRGB;
+	   }
 
-	char* index = m_hTextures + gTextureOffset + (m_nbActiveTextures*bitmapSize);
-	memcpy( index, bitmapImage, bitmapSize );
-	m_nbActiveTextures++;
+	   //close file and return bitmap image data
+	   fclose(filePtr);
 
-	free( bitmapImage );
-   LOG_INFO( 3, "Successfully loaded " << filename  << std::endl <<
-      "biSize         : " << bitmapInfoHeader.biSize << std::endl <<
-      "biWidth        : " << bitmapInfoHeader.biWidth << std::endl <<
-      "biHeight       : " << bitmapInfoHeader.biHeight << std::endl <<
-      "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl <<
-      "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl <<
-      "biCompression  : " << bitmapInfoHeader.biCompression << std::endl <<
-      "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl <<
-      "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
-      "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
+	   char* index = m_hTextures + gTextureOffset + (m_nbActiveTextures*bitmapSize);
+	   memcpy( index, bitmapImage, bitmapSize );
+	   m_nbActiveTextures++;
+
+	   free( bitmapImage );
+      LOG_INFO( 3, "Successfully loaded " << filename  << std::endl <<
+         "biSize         : " << bitmapInfoHeader.biSize << std::endl <<
+         "biWidth        : " << bitmapInfoHeader.biWidth << std::endl <<
+         "biHeight       : " << bitmapInfoHeader.biHeight << std::endl <<
+         "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl <<
+         "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl <<
+         "biCompression  : " << bitmapInfoHeader.biCompression << std::endl <<
+         "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl <<
+         "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
+         "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
+   }
+   else
+   {
+      LOG_ERROR("Texture memory not allocated");
+   }
 	return m_nbActiveTextures-1;
 }
 

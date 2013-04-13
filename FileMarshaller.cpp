@@ -258,15 +258,15 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
    LOG_INFO(1, "Loading 3D scene from " << filename );
 
    float3 returnValue;
-
    float3 min = {  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x };
    float3 max = { -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x };
 
-   kernel.cleanup();
    std::ifstream myfile;
    myfile.open(filename.c_str());
    if( myfile.is_open() ) 
    {
+      kernel.cleanup();
+
       while( !myfile.eof() ) 
       {
          std::string line;

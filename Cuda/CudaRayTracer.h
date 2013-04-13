@@ -37,8 +37,10 @@ extern "C" void h2d_scene(
 
 extern "C" void h2d_materials( 
 	Material*  materials, int nbActiveMaterials,
-	char*      textures,  int nbActiveTextures,
    float*     randoms,   int nbRandoms );
+
+extern "C" void h2d_textures( 
+	char*      textures,  int nbActiveTextures );
 
 extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo sceneInfo );
 
