@@ -822,7 +822,7 @@ __device__ bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
-				if( materials[primitive.materialId.x].textureInfo.z == 1 ) 
+				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.x, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
 			if( !collision && reverted*ray.direction.y>0.f && reverted*ray.origin.y<reverted*primitive.p0.y) 
@@ -834,7 +834,7 @@ __device__ bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
-				if( materials[primitive.materialId.x].textureInfo.z == 1 ) 
+				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.x, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
 			break;
@@ -850,7 +850,7 @@ __device__ bool planeIntersection(
 				collision = 
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
-				if( materials[primitive.materialId.x].textureInfo.z == 1 ) 
+				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
 			if( !collision && reverted*ray.direction.x>0.f && reverted*ray.origin.x<reverted*primitive.p0.x ) 
@@ -862,7 +862,7 @@ __device__ bool planeIntersection(
 				collision = 
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
-				if( materials[primitive.materialId.x].textureInfo.z == 1 ) 
+				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
 			break;
@@ -879,7 +879,7 @@ __device__ bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y;
-				if( materials[primitive.materialId.x].textureInfo.z == 1 ) 
+				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.x, intersection.y, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
 			if( !collision && reverted*ray.direction.z>0.f && reverted*ray.origin.z<reverted*primitive.p0.z )
@@ -891,7 +891,7 @@ __device__ bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y;
-				if( materials[primitive.materialId.x].textureInfo.z == 1 ) 
+				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.x, intersection.y, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
 			break;
@@ -913,13 +913,6 @@ __device__ bool planeIntersection(
 		{
 			collision = false;
 		}
-      /*
-		else 
-		{
-			shadowIntensity = sceneInfo.shadowIntensity.x*
-				(1.f-(color.x+color.y+color.z)/3.f*materials[primitive.materialId.x].transparency.x);
-		}
-      */
 	}
 	return collision;
 }
@@ -1246,103 +1239,103 @@ __device__ float4 primitiveShader(
 	float lambert      = 0.f;
 	shadowIntensity    = 0.f;
 
-	if( materials[primitive.materialId.x].textureInfo.z == 1 )
-		return color; //TODO? wireframe have constant color
+	if( materials[primitive.materialId.x].innerIllumination.x != 0.f || materials[primitive.materialId.x].textureInfo.z == 2 )
+   {
+      // Wireframe returns constant color
+		return color; 
+   }
 
-   if( primitive.type.x==ptEnvironment || primitive.type.x==ptXYPlane || primitive.type.x==ptXZPlane || primitive.type.x==ptYZPlane )
+   if( materials[primitive.materialId.x].textureInfo.z == 1 )
 	{
-		// Final color
-		color = intersectionShader( 
+		// Sky box returns color with constant lightning
+		return intersectionShader( 
 			sceneInfo, primitive, materials, textures, 
 			intersection, false );
 	}
-	else 
+
+	color *= materials[primitive.materialId.x].innerIllumination.x;
+	for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
 	{
-		color *= materials[primitive.materialId.x].innerIllumination.x;
-
-		for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
+		if(lamps[cptLamps] != objectId)
 		{
-			if(lamps[cptLamps] != objectId)
+			float3 center;
+   		// randomize lamp center
+			float3 size;
+			switch( primitives[lamps[cptLamps]].type.x )
 			{
-				float3 center;
-   			// randomize lamp center
-				float3 size;
-				switch( primitives[lamps[cptLamps]].type.x )
+			case ptCylinder:
 				{
-				case ptCylinder:
-					{
-						center = (primitives[lamps[cptLamps]].p0 + primitives[lamps[cptLamps]].p1)/ 2.f;
-						size.x = primitives[lamps[cptLamps]].size.y; 
-						size.y = primitives[lamps[cptLamps]].size.y; 
-						size.z = primitives[lamps[cptLamps]].size.y; 
-						break;
-					}
-				default:
-					{
-						center = primitives[lamps[cptLamps]].p0; 
-						size=primitives[lamps[cptLamps]].size; 
-						break;
-					}
+					center = (primitives[lamps[cptLamps]].p0 + primitives[lamps[cptLamps]].p1)/ 2.f;
+					size.x = primitives[lamps[cptLamps]].size.y; 
+					size.y = primitives[lamps[cptLamps]].size.y; 
+					size.z = primitives[lamps[cptLamps]].size.y; 
+					break;
 				}
-
-				if( sceneInfo.pathTracingIteration.x > 0 )
+			default:
 				{
-					int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-					center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-					center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+					center = primitives[lamps[cptLamps]].p0; 
+					size=primitives[lamps[cptLamps]].size; 
+					break;
 				}
+			}
 
-            float4 shadowColor = {0.f,0.f,0.f,0.f};
-				if( sceneInfo.shadowsEnabled.x && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
-				{
-					shadowIntensity = processShadows(
-						sceneInfo, boundingBoxes, nbActiveBoxes,
-						primitives, materials, textures, 
-						nbActivePrimitives, center, 
-						intersection, lamps[cptLamps], iteration, shadowColor );
-				}
+			if( sceneInfo.pathTracingIteration.x > 0 )
+			{
+				int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
+				center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+			}
 
-				Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
-				float3 lightRay = center - intersection;
+         float4 shadowColor = {0.f,0.f,0.f,0.f};
+			if( sceneInfo.shadowsEnabled.x && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
+			{
+				shadowIntensity = processShadows(
+					sceneInfo, boundingBoxes, nbActiveBoxes,
+					primitives, materials, textures, 
+					nbActivePrimitives, center, 
+					intersection, lamps[cptLamps], iteration, shadowColor );
+			}
 
-            // Lightning intensity decreases with distance
-            float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
-            lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
+			Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
+			float3 lightRay = center - intersection;
+
+         // Lightning intensity decreases with distance
+         float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
+         lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
 				
-            lightRay = normalize(lightRay);
+         lightRay = normalize(lightRay);
 
+			// --------------------------------------------------------------------------------
+			// Lambert
+			// --------------------------------------------------------------------------------
+			lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+			lambert = (lambert<0.f) ? 0.f : lambert;
+			lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
+			lambert *= (1.f-shadowIntensity);
+         lambert *= lampIntensity;
+
+			// Lighted object, not in the shades
+			lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
+
+			if( shadowIntensity < sceneInfo.shadowIntensity.x )
+			{
 				// --------------------------------------------------------------------------------
-				// Lambert
+				// Blinn - Phong
 				// --------------------------------------------------------------------------------
-				lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-				lambert = (lambert<0.f) ? 0.f : lambert;
-				lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
-				lambert *= (1.f-shadowIntensity);
-            lambert *= lampIntensity;
-
-				// Lighted object, not in the shades
-				lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
-
-				if( shadowIntensity < sceneInfo.shadowIntensity.x )
+				float3 viewRay = normalize(intersection - origin);
+				float3 blinnDir = lightRay - viewRay;
+				float temp = sqrt(dot(blinnDir,blinnDir));
+				if (temp != 0.f ) 
 				{
-					// --------------------------------------------------------------------------------
-					// Blinn - Phong
-					// --------------------------------------------------------------------------------
-					float3 viewRay = normalize(intersection - origin);
-					float3 blinnDir = lightRay - viewRay;
-					float temp = sqrt(dot(blinnDir,blinnDir));
-					if (temp != 0.f ) 
-					{
-						// Specular reflection
-						blinnDir = (1.f / temp) * blinnDir;
+					// Specular reflection
+					blinnDir = (1.f / temp) * blinnDir;
 
-						float blinnTerm = dot(blinnDir,normal);
-						blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
+					float blinnTerm = dot(blinnDir,normal);
+					blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
-						blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y); //*materials[primitive.materialId.x].specular.w
-						totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
-					}
+					blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y); //*materials[primitive.materialId.x].specular.w
+					totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
 				}
 			}
 		}
@@ -1723,7 +1716,7 @@ __device__ float4 launchRay(
 
    Primitive& primitive=primitives[closestPrimitive];
 	float len = length(firstIntersection - ray.origin);
-   if( primitive.type.x!=ptEnvironment && primitive.type.x!=ptXYPlane && primitive.type.x!=ptXZPlane && primitive.type.x!=ptYZPlane )
+   if( materials[primitive.materialId.x].textureInfo.z == 0 )
    {
 	   // --------------------------------------------------
       // Photon energy
@@ -1791,7 +1784,6 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
-#if 0
    else
 	{
 		// Randomize view for natural depth of field
@@ -1802,7 +1794,6 @@ __global__ void k_standardRenderer(
 		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 
 	}
-#endif // 0
    if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
    {
       antialiasingActivated = true;

@@ -87,13 +87,13 @@ enum PrimitiveType
 struct Material
 {
    float4 innerIllumination; // x: inner illumination, y: diffusion strength
-	float4 color;
+	float4 color;             // w: noise
    float4 specular;          // x: value, y: power, w: coef
    float1 reflection;     
 	float1 refraction;
    float1 transparency;
    int1   fastTransparency;
-	int4   textureInfo;       // x: procedural, y: textureId, z: wireframe
+	int4   textureInfo;       // x: procedural, y: textureId, z: wireframe, w: wireframeWidth
 };
 
 struct BoundingBox

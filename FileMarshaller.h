@@ -41,7 +41,7 @@ private:
 
    void readSceneInfo( GPUKernel& kernel, const std::string& line );
    void readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max );
-   void readMaterial ( GPUKernel& kernel, const std::string& line );
+   void readMaterial ( GPUKernel& kernel, const std::string& line, const int materialId );
 
 };
 

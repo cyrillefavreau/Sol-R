@@ -74,6 +74,9 @@ CudaKernel::CudaKernel( bool activeLogging, int platform, int device )
    m_blockSize.y = 0;
    m_blockSize.z = 0;
    m_blockSize.w = 0;
+
+   m_gpuDescription = "CUDA device";
+
 #ifdef LOGGING
 	// Initialize Log
 	LOG_INITIALIZE_ETW(
@@ -250,7 +253,7 @@ void CudaKernel::render_begin( const float timer )
 #endif // USE_KINECT
 
 	// CPU -> GPU Data transfers
-   int nbBoxes = static_cast<int>(m_boundingBoxes.size());
+   int nbBoxes = static_cast<int>(m_boundingBoxes->size());
    int nbPrimitives = m_nbActivePrimitives;
    int nbMaterials = m_nbActiveMaterials+1;
    int nbLamps = m_nbActiveLamps;
@@ -338,6 +341,8 @@ void CudaKernel::deviceQuery()
       cudaGetDeviceProperties(&deviceProp, dev);
 
       LOG_INFO(3,"Device :" << dev <<", " << deviceProp.name );
+
+      m_gpuDescription = deviceProp.name;
 
 #if CUDART_VERSION >= 2020
       // Console log

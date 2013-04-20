@@ -131,17 +131,6 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update );
 // ---------- Lights ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index );
 
-extern "C" RAYTRACINGENGINE_API 
-   int RayTracer_SetLight( 
-   int    index,
-   double p0_x, double p0_y, double p0_z, 
-   double p1_x, double p1_y, double p1_z, 
-   double p2_x, double p2_y, double p2_z, 
-   double size_x, double size_y, double size_z,
-   int    materialId, 
-   double materialPaddingX, 
-   double materialPaddingY );
-
 // ---------- Textures ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename );
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture );

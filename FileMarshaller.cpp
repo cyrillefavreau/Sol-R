@@ -84,7 +84,6 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
    sceneInfo.width.x = kernel.getSceneInfo().width.x;
    sceneInfo.height.x = kernel.getSceneInfo().height.x;
    kernel.setSceneInfo( sceneInfo );
-   kernel.initBuffers();
 }
 
 void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max )
@@ -177,7 +176,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
    max.z = ( pmax.z > max.z ) ? pmax.z : max.z;
 }
 
-void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
+void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, const int materialId )
 {
    Material material;
    std::string value;
@@ -224,23 +223,9 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
       material.fastTransparency.x = static_cast<int>(atoi( value.c_str() ));
    }
 
-   int n = kernel.addMaterial();
-   
    // Force sky and ground textures
-   switch(n)
-   {
-   case 0: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 0; break;
-   case 1: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 1; break;
-   case 2: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 2; break;
-   case 3: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 3; break;
-   case 4: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 4; break;
-   case 5: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 5; break;
-   case 6: material.reflection.x = 0.f; material.transparency.x = 0.f; material.textureInfo.y = 6; break;
-   case 99: material.innerIllumination.y = 10.f; break;
-   }
-
    kernel.setMaterial(
-      n,
+      materialId,
       material.color.x, material.color.y, material.color.z, material.color.w,
       material.reflection.x, material.refraction.x,
       (material.textureInfo.x==1), 
@@ -254,7 +239,6 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line )
 
 float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename)
 {
-   LOG_INFO(1, "--------------------------------------------------" );
    LOG_INFO(1, "Loading 3D scene from " << filename );
 
    float3 returnValue;
@@ -265,7 +249,8 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
    myfile.open(filename.c_str());
    if( myfile.is_open() ) 
    {
-      kernel.cleanup();
+      int materialId(0);
+      //kernel.cleanup();
 
       while( !myfile.eof() ) 
       {
@@ -274,10 +259,12 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
          if( line.find(SCENEINFO) == 0 )
          {
             readSceneInfo( kernel, line );
+            //kernel.initBuffers();
          }
          else if( line.find(MATERIAL) == 0 )
          {
-            readMaterial( kernel, line );
+            readMaterial( kernel, line, materialId );
+            materialId++;
          }
          else if( line.find(PRIMITIVE) == 0 )
          {
@@ -294,13 +281,11 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
    returnValue.y = fabs( max.y - min.y );
    returnValue.z = fabs( max.z - min.z );
    LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z );
-   LOG_INFO(1, "--------------------------------------------------" );
    return returnValue;
 }
 
 void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
 {
-   LOG_INFO(1, "--------------------------------------------------" );
    LOG_INFO(1, "Saving 3D scene to " << filename );
    std::ofstream myfile;
    myfile.open(filename.c_str());
@@ -332,7 +317,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
 
       // Materials
       LOG_INFO(1, kernel.getNbActiveMaterials() << " materials");
-      for( unsigned int i(0); i<=kernel.getNbActiveMaterials(); ++i )
+      for( unsigned int i(0); i<=kernel.getNbActiveMaterials()-30; ++i )
       {
          Material* material = kernel.getMaterial(i);
          myfile << "MATERIAL;" <<  
@@ -396,7 +381,6 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
                primitive->materialInfo.y << std::endl;
          }
       }
-      LOG_INFO(1, "--------------------------------------------------" );
       myfile.close();
    }
 }

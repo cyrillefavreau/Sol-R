@@ -58,6 +58,10 @@ struct CPUBoundingBox
    std::vector<unsigned int> primitives;
 };
 
+typedef std::map<unsigned int,CPUBoundingBox> BoxContainer;
+typedef std::map<unsigned int,CPUPrimitive>   PrimitiveContainer;
+typedef std::map<unsigned int,unsigned int>   LampContainer;
+
 class RAYTRACINGENGINE_API GPUKernel
 {
 
@@ -98,19 +102,15 @@ public:
 
 	void setPrimitiveMaterial( unsigned int index, int materialId); 
 	int  getPrimitiveMaterial( unsigned int index); 
-	void getPrimitiveCenter( unsigned int index, float& x, float& y, float& z, float& w );
+	float3 getPrimitiveCenter( unsigned int index );
 	void getPrimitiveOtherCenter( unsigned int index, float3& otherCenter );
-	void setPrimitiveCenter( unsigned int index, float  x, float  y, float  z, float  w );
+	void setPrimitiveCenter( unsigned int index, const float3& center );
 
    // Normals
 	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );
 
    // Lights
    int getLight( unsigned int index );
-	void setLight( 
-		unsigned int index,
-		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
-      float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 
    CPUPrimitive* getPrimitive( const unsigned int index );
      
@@ -119,7 +119,7 @@ public:
    void updateBoundingBox( CPUBoundingBox& box );
    void resetBoxes( bool resetPrimitives=true );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives=true );
-   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return m_boundingBoxes[boxIndex]; };
+   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[boxIndex]; };
    int compactBoxes( bool reconstructBoxes=false );
    void displayBoxesInfo();
 
@@ -249,8 +249,8 @@ public:
 
 public:
 
-	unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes.size()); };
-	unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives.size()); };
+	unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes->size()); };
+	unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives->size()); };
 	unsigned int getNbActiveLamps()      { return m_nbActiveLamps; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
@@ -259,6 +259,10 @@ public:
 
 	char* loadFromFile( const std::string& filename, size_t& length );
    void  saveToFile( const std::string& filename, const std::string& content );
+
+public:
+
+   std::string getGPUDescription() { return m_gpuDescription; };
 
 protected:
    
@@ -305,13 +309,18 @@ protected:
 
 protected:
 
-   bool m_activeLogging; // activate or deactivate logging
+   // activate or deactivate logging
+   bool m_activeLogging; 
+
+   // GPU information
+   std::string m_gpuDescription;
 
 protected:
 
    // CPU
-	std::map<unsigned int,CPUBoundingBox> m_boundingBoxes;
-	std::map<unsigned int,CPUPrimitive> m_primitives;
+	BoxContainer*       m_boundingBoxes;
+	PrimitiveContainer* m_primitives;
+	LampContainer*      m_lamps;
 
 	// Kinect declarations
 #ifdef USE_KINECT

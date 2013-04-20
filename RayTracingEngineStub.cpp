@@ -202,11 +202,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y )
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z)
 {
-   float cx,cy,cz, cw;
-   kernel->getPrimitiveCenter( index, cx, cy, cz, cw );
-   x = static_cast<double>(cx);
-   y = static_cast<double>(cy);
-   z = static_cast<double>(cz);
+   float3 center = kernel->getPrimitiveCenter( index );
+   x = static_cast<double>(center.x);
+   y = static_cast<double>(center.y);
+   z = static_cast<double>(center.z);
    return 0;
 }
 
@@ -453,26 +452,3 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
    return kernel->getLight(index);
 }
 
-// --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API 
-   int RayTracer_SetLight( 
-   int    index,
-   double p0_x, double p0_y, double p0_z, 
-   double p1_x, double p1_y, double p1_z, 
-   double p2_x, double p2_y, double p2_z, 
-   double size_x, double size_y, double size_z,
-   int    materialId, 
-   double materialPaddingX, 
-   double materialPaddingY )
-{
-   kernel->setLight(
-      index,
-      static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
-      static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
-      static_cast<float>(p2_x), static_cast<float>(p2_y), static_cast<float>(p2_z), 
-      static_cast<float>(size_x), static_cast<float>(size_y), static_cast<float>(size_z), 
-      materialId, 
-      static_cast<float>(materialPaddingX), 
-      static_cast<float>(materialPaddingY));
-   return 0;
-}
