@@ -374,11 +374,11 @@ void GPUKernel::setPrimitive(
 #ifdef USE_KINECT 
 		case ptCamera:
 			{
-				m_primitives[index].n0.x = 0.f;
-				m_primitives[index].n0.y = 0.f;
-				m_primitives[index].n0.z = -1.f;
-				m_primitives[index].materialInfo.x = ( w != 0.f ) ? (gKinectVideoWidth /w/2)*materialPaddingX : 1.f;
-				m_primitives[index].materialInfo.y = ( w != 0.f ) ? (gKinectVideoHeight/h/2)*materialPaddingY : 1.f;
+				(*m_primitives)[index].n0.x = 0.f;
+				(*m_primitives)[index].n0.y = 0.f;
+				(*m_primitives)[index].n0.z = -1.f;
+				(*m_primitives)[index].materialInfo.x = ( w != 0.f ) ? (gKinectVideoWidth /w/2)*materialPaddingX : 1.f;
+				(*m_primitives)[index].materialInfo.y = ( w != 0.f ) ? (gKinectVideoHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 #endif // USE_KINECT
