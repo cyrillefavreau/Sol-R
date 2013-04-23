@@ -260,10 +260,14 @@ void CudaKernel::render_begin( const float timer )
 
    LOG_INFO(3,"Data sizes: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps);
 
-	h2d_scene( 
-      m_hBoundingBoxes, nbBoxes, 
-      m_hPrimitives, nbPrimitives, 
-      m_hLamps, nbLamps );
+   if( !m_primitivesTransfered )
+   {
+	   h2d_scene( 
+         m_hBoundingBoxes, nbBoxes, 
+         m_hPrimitives, nbPrimitives, 
+         m_hLamps, nbLamps );
+      m_primitivesTransfered = true;
+   }
 	
    if( !m_materialsTransfered )
 	{

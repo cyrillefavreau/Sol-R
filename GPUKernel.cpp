@@ -91,12 +91,16 @@ GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
 	m_nbActiveMaterials(-1),
 	m_nbActiveTextures(0),
 	m_activeLogging(activeLogging),
+   m_primitives(nullptr),
+   m_boundingBoxes(nullptr),
+   m_lamps(nullptr),
 #if USE_KINECT
 	m_hVideo(0), m_hDepth(0), 
 	m_skeletons(0), m_hNextDepthFrameEvent(0), m_hNextVideoFrameEvent(0), m_hNextSkeletonEvent(0),
 	m_pVideoStreamHandle(0), m_pDepthStreamHandle(0),
 	m_skeletonsBody(-1), m_skeletonsLamp(-1), m_skeletonIndex(-1),
 #endif // USE_KINECT
+   m_primitivesTransfered(false),
 	m_materialsTransfered(false),
    m_texturesTransfered(false)
 {
@@ -133,6 +137,10 @@ void GPUKernel::initBuffers()
    m_primitives    = new PrimitiveContainer;
    m_boundingBoxes = new BoxContainer;
    m_lamps         = new LampContainer;
+   if( m_primitives && m_boundingBoxes && m_lamps )
+   {
+      LOG_INFO(1, "CPU resources successfully initialized" );
+   }
 
 	// Setup GPU resources
 	m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];
@@ -163,43 +171,61 @@ void GPUKernel::initBuffers()
 void GPUKernel::cleanup()
 {
    LOG_INFO(1,"Cleaning up resources");
-	if(m_hBoundingBoxes) delete m_hBoundingBoxes;
-	if(m_hPrimitives) delete m_hPrimitives;
-	if(m_hLamps) delete m_hLamps;
-	if(m_hMaterials) delete m_hMaterials;
-	if(m_hTextures) delete m_hTextures;
+	if(m_hBoundingBoxes) 
+   {
+      delete m_hBoundingBoxes;
+      m_hBoundingBoxes = nullptr;
+   }
+	if(m_hPrimitives) 
+   {
+      delete m_hPrimitives;
+      m_hPrimitives = nullptr;
+   }
+	if(m_hLamps)
+   {
+      delete m_hLamps;
+      m_hLamps = nullptr;
+   }
+
+	if(m_hMaterials)
+   {
+      delete m_hMaterials;
+      m_hMaterials = nullptr;
+   }
+
+	if(m_hTextures)
+   {
+      delete m_hTextures;
+      m_hTextures = nullptr;
+   }
+
 	if(m_hDepthOfField) delete m_hDepthOfField;
 	if(m_hRandoms) delete m_hRandoms;
 	if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
 
    if(m_lamps) 
    {
-      m_lamps->clear();
+      //m_lamps->clear();
       delete m_lamps;
-      m_lamps = 0;
+      m_lamps = nullptr;
    }
 
    if( m_boundingBoxes )
    {
-      m_boundingBoxes->clear();
+      //m_boundingBoxes->clear();
       delete m_boundingBoxes;
-      m_boundingBoxes = 0;
+      m_boundingBoxes = nullptr;
    }
 
    if( m_primitives )
    {
-      m_primitives->clear();
+      //m_primitives->clear();
       delete m_primitives;
-      m_primitives = 0;
+      m_primitives = nullptr;
    }
 
-   m_hPrimitives = 0; 
-	m_hMaterials = 0;
-	m_hTextures = 0;
 	m_hDepthOfField = 0;
 	m_hRandoms = 0;
-   m_hLamps = 0,
-   m_hBoundingBoxes = 0,
    m_hPrimitivesXYIds = 0,
 	m_nbActiveLamps = 0;
 	m_nbActiveMaterials = -1;
@@ -218,6 +244,8 @@ void GPUKernel::cleanup()
    m_skeletonIndex = -1;
 #endif // USE_KINECT
 	m_materialsTransfered = false;
+   m_primitivesTransfered = false;
+   m_texturesTransfered = false;
 
    m_minPos.x =  100000.f;
    m_minPos.y =  100000.f;
@@ -299,6 +327,7 @@ void GPUKernel::setPrimitive(
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
+   m_primitivesTransfered = false;
    /*
 	LOG_INFO(3,"GPUKernel::setPrimitive( " << 
 		index << " (" << 
@@ -712,62 +741,69 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       unsigned int primitivesIndex(0);
       m_nbActivePrimitives = 0;
       m_nbActiveLamps = 0;
-      BoxContainer::iterator itb=m_boundingBoxes->begin();
-      while( itb != m_boundingBoxes->end() )
+      if( m_boundingBoxes )
       {
-         CPUBoundingBox& box = (*itb).second;
-         if( box.primitives.size() != 0 && b<NB_MAX_BOXES )
+         BoxContainer::iterator itb=m_boundingBoxes->begin();
+         while( itb != m_boundingBoxes->end() )
          {
-            // Prepare boxes for GPU
-
-            resetBox(box,false);
-            updateBoundingBox(box);
-
-            m_hBoundingBoxes[b].parameters[0] = box.parameters[0];
-            m_hBoundingBoxes[b].parameters[1] = box.parameters[1];
-            m_hBoundingBoxes[b].startIndex.x  = primitivesIndex;
-            m_hBoundingBoxes[b].nbPrimitives.x= static_cast<int>(box.primitives.size());
-
-            std::vector<unsigned int>::const_iterator itp = box.primitives.begin();
-            while( itp != box.primitives.end() )
+            CPUBoundingBox& box = (*itb).second;
+            if( box.primitives.size() != 0 && b<NB_MAX_BOXES )
             {
-               // Prepare primitives for GPU
-               if( *itp < NB_MAX_PRIMITIVES )
-               {
-                  CPUPrimitive& primitive = (*m_primitives)[*itp];
-                  m_hPrimitives[primitivesIndex].index.x = *itp;
-                  m_hPrimitives[primitivesIndex].type.x  = primitive.type;
-                  m_hPrimitives[primitivesIndex].p0 = primitive.p0;
-                  m_hPrimitives[primitivesIndex].p1 = primitive.p1;
-                  m_hPrimitives[primitivesIndex].p2 = primitive.p2;
-                  m_hPrimitives[primitivesIndex].n0 = primitive.n0;
-                  m_hPrimitives[primitivesIndex].n1 = primitive.n1;
-                  m_hPrimitives[primitivesIndex].n2 = primitive.n2;
-                  m_hPrimitives[primitivesIndex].size = primitive.size;
-                  m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
-                  m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
+               // Prepare boxes for GPU
 
-                  // Lights
-		            if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
-		            {
-                     primitive.movable = false;
-                     //std::cout << "Primitive " << primitivesIndex << " is lamp " << m_nbActiveLamps << std::endl; 
-                     m_hLamps[m_nbActiveLamps] = primitivesIndex;
-			            (*m_lamps)[m_nbActiveLamps] = (*itp);
-			            m_nbActiveLamps++;
-			            LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
-		            }
+               resetBox(box,false);
+               updateBoundingBox(box);
+
+               m_hBoundingBoxes[b].parameters[0] = box.parameters[0];
+               m_hBoundingBoxes[b].parameters[1] = box.parameters[1];
+               m_hBoundingBoxes[b].startIndex.x  = primitivesIndex;
+               m_hBoundingBoxes[b].nbPrimitives.x= static_cast<int>(box.primitives.size());
+
+               std::vector<unsigned int>::const_iterator itp = box.primitives.begin();
+               while( itp != box.primitives.end() )
+               {
+                  // Prepare primitives for GPU
+                  if( *itp < NB_MAX_PRIMITIVES )
+                  {
+                     CPUPrimitive& primitive = (*m_primitives)[*itp];
+                     m_hPrimitives[primitivesIndex].index.x = *itp;
+                     m_hPrimitives[primitivesIndex].type.x  = primitive.type;
+                     m_hPrimitives[primitivesIndex].p0 = primitive.p0;
+                     m_hPrimitives[primitivesIndex].p1 = primitive.p1;
+                     m_hPrimitives[primitivesIndex].p2 = primitive.p2;
+                     m_hPrimitives[primitivesIndex].n0 = primitive.n0;
+                     m_hPrimitives[primitivesIndex].n1 = primitive.n1;
+                     m_hPrimitives[primitivesIndex].n2 = primitive.n2;
+                     m_hPrimitives[primitivesIndex].size = primitive.size;
+                     m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
+                     m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
+
+                     // Lights
+		               if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
+		               {
+                        primitive.movable = false;
+                        //std::cout << "Primitive " << primitivesIndex << " is lamp " << m_nbActiveLamps << std::endl; 
+                        m_hLamps[m_nbActiveLamps] = primitivesIndex;
+			               (*m_lamps)[m_nbActiveLamps] = (*itp);
+			               m_nbActiveLamps++;
+			               LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
+		               }
+                  }
+                  ++itp;
+                  ++primitivesIndex;
                }
-               ++itp;
-               ++primitivesIndex;
+               ++b;
             }
-            ++b;
+            ++itb;
          }
-         ++itb;
+         m_nbActivePrimitives=primitivesIndex;
+   	   return static_cast<int>(m_boundingBoxes->size());
+      }
+      else
+      {
+         LOG_INFO(1, "m_boundingBoxes == nullptr" );
       }
       //std::cout << "Compacted boxes (" << b << "/" << m_boundingBoxes.size() << ")" << std::endl;
-      m_nbActivePrimitives=primitivesIndex;
-   	return static_cast<int>(m_boundingBoxes->size());
    }
    else
    {
@@ -804,6 +840,7 @@ void GPUKernel::displayBoxesInfo()
 void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
+   m_primitivesTransfered = false;
 	float3 cosAngles, sinAngles;
 	cosAngles.x = cos(angles.x);
 	cosAngles.y = cos(angles.y);

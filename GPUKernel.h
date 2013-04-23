@@ -293,6 +293,7 @@ protected:
 protected:
 
 	int	 m_draft;
+   bool   m_primitivesTransfered;
 	bool	 m_materialsTransfered;
 	bool	 m_texturesTransfered;
    // Scene Size
