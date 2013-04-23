@@ -996,6 +996,8 @@ void GPUKernel::getPrimitiveOtherCenter(
 void GPUKernel::setPrimitiveCenter(
 	unsigned int index, const float3& center)
 {
+   m_primitivesTransfered = false;
+
    // TODO, Box needs to be updated
 	if( index>=0 && index<=m_primitives->size()) 
 	{
