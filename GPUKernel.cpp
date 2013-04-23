@@ -1334,6 +1334,8 @@ int GPUKernel::addTexture( const std::string& filename )
 {
    if( m_hTextures )
    {
+      m_texturesTransfered = false;
+
 	   FILE *filePtr(0); //our file pointer
 	   BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
 	   char *bitmapImage;  //store image data
