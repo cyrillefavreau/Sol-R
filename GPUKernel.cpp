@@ -842,36 +842,16 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
    m_primitivesTransfered = false;
 	float3 cosAngles, sinAngles;
-	cosAngles.x = cos(angles.x);
+	
+   cosAngles.x = cos(angles.x);
 	cosAngles.y = cos(angles.y);
 	cosAngles.z = cos(angles.z);
-	sinAngles.x = sin(angles.x);
+	
+   sinAngles.x = sin(angles.x);
 	sinAngles.y = sin(angles.y);
 	sinAngles.z = sin(angles.z);
 
-#if 0
-	int i=0;
-#pragma omp parallel for
-	for( i=0; i<m_boundingBoxes.size(); ++i )
-	{
-      std::map<int,CPUBoundingBox>::iterator itb = m_boundingBoxes.find(i);
-      if( itb != m_boundingBoxes.end() )
-      {
-         CPUBoundingBox& box((*itb).second);
-         resetBox(box, false);
-         std::vector<int>::const_iterator it = box.primitives.begin();
-         while( it != box.primitives.end() )
-		   {
-            CPUPrimitive& primitive(m_primitives[*it]);
-			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
-            ++it;
-		   }
-         updateBoundingBox(box);
-      }
-	}
-#else
-   BoxContainer::iterator itb = m_boundingBoxes->begin();
-   while( itb != m_boundingBoxes->end() )
+   for( BoxContainer::iterator itb = m_boundingBoxes->begin(); itb != m_boundingBoxes->end(); ++itb )
    {
       CPUBoundingBox& box((*itb).second);
       resetBox(box,false);
@@ -881,14 +861,19 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          CPUPrimitive& primitive((*m_primitives)[*it]);
          if( primitive.movable && primitive.type != ptCamera )
          {
+            /*
+            float3 center;
+            center.x = (primitive.p0.x + primitive.p1.x + primitive.p2.x) / 3.f;
+            center.y = (primitive.p0.y + primitive.p1.y + primitive.p2.y) / 3.f;
+            center.z = (primitive.p0.z + primitive.p1.z + primitive.p2.z) / 3.f;
+
+			   rotatePrimitive( primitive, center, cosAngles, sinAngles );
+            */
 			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
          } 
          ++it;
 		}
-      updateBoundingBox(box);
-      ++itb;
    }
-#endif // 0
 
    compactBoxes(false);
 }
