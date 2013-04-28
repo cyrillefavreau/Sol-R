@@ -42,7 +42,7 @@ extern "C" void h2d_materials(
 extern "C" void h2d_textures( 
 	char*      textures,  int nbActiveTextures );
 
-extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo sceneInfo );
+extern "C" void d2h_bitmap( char* bitmap, int2* primitivesXYIds, const SceneInfo sceneInfo );
 
 extern "C" void cudaRender(
    int4 blockSize, int sharedMemSize,

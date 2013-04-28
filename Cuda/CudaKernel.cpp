@@ -119,20 +119,6 @@ CudaKernel::CudaKernel( bool activeLogging, int platform, int device )
    }
    std::cout << "----------------------------" << std::endl;
 #endif // USE_KINECT
-
-   // Eye position
-	m_viewPos.x =   0.f;
-	m_viewPos.y =   0.f;
-	m_viewPos.z = -40.f;
-
-	// Rotation angles
-	m_angles.x = 0.f;
-	m_angles.y = 0.f;
-	m_angles.z = 0.f;
-
-   setPostProcessingInfo( ppe_none, 0.f, 40.f, 50 );
-   float4 bkColor = {0.f, 0.f, 0.f, 0.f};
-   setSceneInfo( 512, 512, 0.f, true, 10000.f, 0.9f, 5, bkColor, false, 0.f, false, 0, 1000, otOpenGL, 0, 0 );
 }
 
 /*

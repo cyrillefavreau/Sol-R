@@ -37,6 +37,7 @@
 
 // Consts
 const int MAX_GPU_COUNT = 32;
+const int NB_MAX_ITERATIONS = 10;
 
 // Project
 #include "CudaDataTypes.h"
@@ -55,7 +56,7 @@ char*        d_textures[MAX_GPU_COUNT];
 float*       d_randoms[MAX_GPU_COUNT];
 float4*      d_postProcessingBuffer[MAX_GPU_COUNT];
 char*        d_bitmap[MAX_GPU_COUNT];
-int*         d_primitivesXYIds[MAX_GPU_COUNT];
+int2*        d_primitivesXYIds[MAX_GPU_COUNT];
 cudaStream_t d_streams[MAX_GPU_COUNT];
 int          d_nbGPUs;
 
@@ -253,7 +254,7 @@ __device__ void mandelbrotSet( const SceneInfo& sceneInfo, const float x, const 
    float  MaxIm		=	MinIm + (MaxRe - MinRe) * H/W;
    float  Re_factor	=	(MaxRe - MinRe) / (W - 1.f);
    double Im_factor	=	(MaxIm - MinIm) / (H - 1.f);
-   float  maxIterations = 20.f+sceneInfo.pathTracingIteration.x;
+   float  maxIterations = NB_MAX_ITERATIONS+sceneInfo.pathTracingIteration.x;
 
    float c_im = MaxIm - y*Im_factor;
    float c_re = MinRe + x*Re_factor;
@@ -1279,7 +1280,7 @@ __device__ float4 primitiveShader(
 				}
 			}
 
-			if( sceneInfo.pathTracingIteration.x > 0 )
+			if( sceneInfo.pathTracingIteration.x > NB_MAX_ITERATIONS )
 			{
 				int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
 				center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
@@ -1489,7 +1490,7 @@ __device__ float4 launchRay(
 	const PostProcessingInfo& postProcessingInfo,
 	float3&          intersection,
 	float&           depthOfField,
-	int&             primitiveXYId)
+	int2&            primitiveXYId)
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
 
@@ -1501,15 +1502,14 @@ __device__ float4 launchRay(
 	Ray    rayOrigin         = ray;
 	float  initialRefraction = 1.f;
 	int    iteration         = 0;
-	primitiveXYId = -1;
+	primitiveXYId.x = -1;
    int currentMaterialId=-2;
 
    // TODO
-   const int nbMaxIterations = 20;
-   float  colorContributions[nbMaxIterations];
-   float4 colors[nbMaxIterations];
-   memset(&colorContributions[0],0,sizeof(float)*nbMaxIterations);
-   memset(&colors[0],0,sizeof(float4)*nbMaxIterations);
+   float  colorContributions[NB_MAX_ITERATIONS];
+   float4 colors[NB_MAX_ITERATIONS];
+   memset(&colorContributions[0],0,sizeof(float)*NB_MAX_ITERATIONS);
+   memset(&colors[0],0,sizeof(float4)*NB_MAX_ITERATIONS);
 
 	float4 recursiveBlinn = { 0.f, 0.f, 0.f, 0.f };
 
@@ -1532,7 +1532,7 @@ __device__ float4 launchRay(
    float4 rBlinn = {0.f,0.f,0.f,0.f};
 
    int currentMaxIteration = sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
-   currentMaxIteration = (currentMaxIteration>nbMaxIterations) ? nbMaxIterations : currentMaxIteration;
+   currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
 	{
       // If no intersection with lamps detected. Now compute intersection with Primitives
@@ -1562,7 +1562,7 @@ __device__ float4 launchRay(
             colorContributions[iteration]=1.f;
 
 				firstIntersection = closestIntersection;
-            primitiveXYId = primitives[closestPrimitive].index.x;
+            primitiveXYId.x = primitives[closestPrimitive].index.x;
 			}
 
          // Photon
@@ -1679,7 +1679,7 @@ __device__ float4 launchRay(
 		iteration++;
 	}
 
-   if( reflectedRays != -1 )
+   if( sceneInfo.pathTracingIteration.x==NB_MAX_ITERATIONS && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
    {
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
@@ -1737,6 +1737,9 @@ __device__ float4 launchRay(
    }
    depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
 
+   // Primitive information
+   primitiveXYId.y = iteration;
+
 	// Depth of field
    intersectionColor -= colorBox;
 	saturateVector( intersectionColor );
@@ -1764,7 +1767,7 @@ __global__ void k_standardRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int*         primitiveXYIds)
+	int2*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -1787,12 +1790,14 @@ __global__ void k_standardRenderer(
    else
 	{
 		// Randomize view for natural depth of field
-		int rindex = index + sceneInfo.pathTracingIteration.x;
-		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
-		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-
+      if( sceneInfo.pathTracingIteration.x >= NB_MAX_ITERATIONS )
+      {
+		   int rindex = index + sceneInfo.pathTracingIteration.x;
+		   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+		   ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		   ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+      }
 	}
    if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
    {
@@ -1831,6 +1836,8 @@ __global__ void k_standardRenderer(
       { -3.f, -5.f },
       { -5.f,  3.f }
    };
+
+   if( sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y && sceneInfo.pathTracingIteration.x>0 && sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS ) return;
 
    float4 color = {0.f,0.f,0.f,0.f};
    if( antialiasingActivated )
@@ -1876,9 +1883,18 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].w = dof;
 	}
 
-   postProcessingBuffer[index].x += color.x;
-   postProcessingBuffer[index].y += color.y;
-   postProcessingBuffer[index].z += color.z;
+   if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
+   {
+      postProcessingBuffer[index].x = color.x;
+      postProcessingBuffer[index].y = color.y;
+      postProcessingBuffer[index].z = color.z;
+   }
+   else
+   {
+      postProcessingBuffer[index].x += color.x;
+      postProcessingBuffer[index].y += color.y;
+      postProcessingBuffer[index].z += color.z;
+   }
 }
 
 /*
@@ -1900,7 +1916,7 @@ __global__ void k_anaglyphRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int*         primitiveXYIds)
+	int2*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -2012,7 +2028,7 @@ __global__ void k_3DVisionRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int*         primitiveXYIds)
+	int2*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -2089,6 +2105,30 @@ __global__ void k_3DVisionRenderer(
 	if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
 }
 
+/*
+________________________________________________________________________________
+
+Post Processing Effect: Default
+________________________________________________________________________________
+*/
+__global__ void k_default(
+	SceneInfo        sceneInfo,
+	PostProcessingInfo PostProcessingInfo,
+	float4*          postProcessingBuffer,
+   int2*            primitiveXYIds,
+	char*            bitmap) 
+{
+	int x = blockDim.x*blockIdx.x + threadIdx.x;
+	int y = blockDim.y*blockIdx.y + threadIdx.y;
+	int index = y*sceneInfo.width.x+x;
+
+   float4 localColor = postProcessingBuffer[index];
+   
+   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+      localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+
+	makeColor( sceneInfo, localColor, bitmap, index ); 
+}
 
 /*
 ________________________________________________________________________________
@@ -2130,7 +2170,10 @@ __global__ void k_depthOfField(
 		}
 	}
 	localColor /= PostProcessingInfo.param3.x;
-	localColor /= (sceneInfo.pathTracingIteration.x+1);
+
+   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+      localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+
 	localColor.w = 1.f;
 
 	makeColor( sceneInfo, localColor, bitmap, index ); 
@@ -2181,7 +2224,10 @@ __global__ void k_ambiantOcclusion(
 	localColor.x *= occ;
 	localColor.y *= occ;
 	localColor.z *= occ;
-	localColor /= (sceneInfo.pathTracingIteration.x+1);
+
+   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+      localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+
 	saturateVector( localColor );
 	localColor.w = 1.f;
 
@@ -2213,30 +2259,11 @@ __global__ void k_cartoon(
 	localColor.x = float(r*PostProcessingInfo.param3.x/255.f);
 	localColor.y = float(g*PostProcessingInfo.param3.x/255.f);
 	localColor.z = float(b*PostProcessingInfo.param3.x/255.f);
-	localColor /= (sceneInfo.pathTracingIteration.x+1);
+
+   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+      localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
 
 	localColor.w = 1.f;
-	makeColor( sceneInfo, localColor, bitmap, index ); 
-}
-
-/*
-________________________________________________________________________________
-
-Post Processing Effect: Default
-________________________________________________________________________________
-*/
-__global__ void k_default(
-	SceneInfo        sceneInfo,
-	PostProcessingInfo PostProcessingInfo,
-	float4*          postProcessingBuffer,
-	char*            bitmap) 
-{
-	int x = blockDim.x*blockIdx.x + threadIdx.x;
-	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
-
-   float4 localColor = postProcessingBuffer[index]/(float)(sceneInfo.pathTracingIteration.x+1.f);
-
 	makeColor( sceneInfo, localColor, bitmap, index ); 
 }
 
@@ -2273,7 +2300,7 @@ extern "C" void initialize_scene(
 	   // Rendering canvas
 	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)/d_nbGPUs));
 	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)/d_nbGPUs));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int)/d_nbGPUs));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int2)/d_nbGPUs));
    }
 #if 1
 	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
@@ -2373,7 +2400,7 @@ ________________________________________________________________________________
 GPU -> CPU data transfers
 ________________________________________________________________________________
 */
-extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo sceneInfo )
+extern "C" void d2h_bitmap( char* bitmap, int2* primitivesXYIds, const SceneInfo sceneInfo )
 {
    int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth/d_nbGPUs;
    int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x/d_nbGPUs;
@@ -2386,7 +2413,7 @@ extern "C" void d2h_bitmap( char* bitmap, int* primitivesXYIds, const SceneInfo 
 
       // Copy results back to CPU
       checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap*sizeof(char), cudaMemcpyDeviceToHost, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds*sizeof(int),   cudaMemcpyDeviceToHost, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds*sizeof(int2),   cudaMemcpyDeviceToHost, d_streams[d] ));
    }
 }
 
@@ -2489,6 +2516,7 @@ extern "C" void cudaRender(
 			   sceneInfo, 
 			   postProcessingInfo, 
 			   d_postProcessingBuffer[d],
+            d_primitivesXYIds[d],
 			   d_bitmap[d] );
 		   break;
 	   }

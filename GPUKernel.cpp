@@ -156,8 +156,8 @@ void GPUKernel::initBuffers()
 	// Randoms
 	int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
 
-	m_hPrimitivesXYIds = new int[size];
-	memset( m_hPrimitivesXYIds,0,size*sizeof(int));
+	m_hPrimitivesXYIds = new int2[size];
+	memset( m_hPrimitivesXYIds,0,size*sizeof(int2));
 
 	m_hRandoms = new float[size];
 	int i;
@@ -503,7 +503,7 @@ unsigned int GPUKernel::getPrimitiveAt( int x, int y )
 	unsigned int returnValue = -1;
 	unsigned int index = y*m_sceneInfo.width.x+x;
 	if( index>=0 && index<static_cast<unsigned int>(m_sceneInfo.width.x*m_sceneInfo.height.x))
-		returnValue = m_hPrimitivesXYIds[index];
+		returnValue = m_hPrimitivesXYIds[index].x;
 	return returnValue;
 }
 
@@ -712,6 +712,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       if( reconstructBoxes )
       {
+   	   LOG_INFO(1,"Constructing acceleration structures" );
          // Bounding boxes
          // Search for best trade-off
          std::map<unsigned int,unsigned int> primitivesPerBox;
@@ -797,6 +798,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             ++itb;
          }
          m_nbActivePrimitives=primitivesIndex;
+
    	   return static_cast<int>(m_boundingBoxes->size());
       }
       else
@@ -809,6 +811,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       LOG_ERROR("Boxes memory not allocated");
    }
+
    return 0;
 }
 
@@ -861,15 +864,16 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          CPUPrimitive& primitive((*m_primitives)[*it]);
          if( primitive.movable && primitive.type != ptCamera )
          {
-            /*
+#if 1
+			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
+#else
             float3 center;
             center.x = (primitive.p0.x + primitive.p1.x + primitive.p2.x) / 3.f;
             center.y = (primitive.p0.y + primitive.p1.y + primitive.p2.y) / 3.f;
             center.z = (primitive.p0.z + primitive.p1.z + primitive.p2.z) / 3.f;
 
 			   rotatePrimitive( primitive, center, cosAngles, sinAngles );
-            */
-			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
+#endif // 0
          } 
          ++it;
 		}

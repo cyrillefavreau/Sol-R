@@ -146,7 +146,17 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
       primitive.materialInfo.y = static_cast<float>(atof( value.c_str() ));
    }
 
+#if 1
    int n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
+#else
+   int n = kernel.addPrimitive( ptSphere );
+   primitive.p0.x = (primitive.p0.x+primitive.p1.x+primitive.p2.x)/3.f;
+   primitive.p0.y = (primitive.p0.y+primitive.p1.y+primitive.p2.y)/3.f;
+   primitive.p0.z = (primitive.p0.z+primitive.p1.z+primitive.p2.z)/3.f;
+   primitive.size.x = 200.f;
+   primitive.size.y = 0.f;
+   primitive.size.z = 0.f;
+#endif // 0
    kernel.setPrimitive(
       n, 
       primitive.p0.x, primitive.p0.y, primitive.p0.z,

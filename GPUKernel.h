@@ -280,7 +280,7 @@ protected:
 	char*        m_hTextures;
 	float3*      m_hDepthOfField;
 	float*	    m_hRandoms;
-   int*         m_hPrimitivesXYIds;
+   int2*        m_hPrimitivesXYIds;
 
 	unsigned int m_nbActivePrimitives;
 	unsigned int m_nbActiveLamps;
