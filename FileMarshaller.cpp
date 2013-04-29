@@ -149,13 +149,39 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
 #if 1
    int n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
 #else
-   int n = kernel.addPrimitive( ptSphere );
-   primitive.p0.x = (primitive.p0.x+primitive.p1.x+primitive.p2.x)/3.f;
-   primitive.p0.y = (primitive.p0.y+primitive.p1.y+primitive.p2.y)/3.f;
-   primitive.p0.z = (primitive.p0.z+primitive.p1.z+primitive.p2.z)/3.f;
-   primitive.size.x = 200.f;
-   primitive.size.y = 0.f;
-   primitive.size.z = 0.f;
+   int n;
+   Material* m=kernel.getMaterial(primitive.materialId.x);
+   //if( m->transparency.x==0.f )
+   {
+      float3 r;
+      float3 p;
+      p.x = (primitive.p0.x+primitive.p1.x+primitive.p2.x)/3.f;
+      p.y = (primitive.p0.y+primitive.p1.y+primitive.p2.y)/3.f;
+      p.z = (primitive.p0.z+primitive.p1.z+primitive.p2.z)/3.f;
+      r.x = p.x-primitive.p1.x;
+      r.y = p.y-primitive.p1.y;
+      r.z = p.z-primitive.p1.z;
+
+      float l = kernel.vectorLength(r); 
+      if( l < 150.f )
+      {
+         n = kernel.addPrimitive( ptSphere );
+         primitive.p0 = p;
+         primitive.size.x = 150.f;
+         primitive.size.y = 0.f;
+         primitive.size.z = 0.f;
+      }
+      else
+      {
+         n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
+      }
+   }
+   /*
+   else
+   {
+      n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
+   }
+   */
 #endif // 0
    kernel.setPrimitive(
       n, 

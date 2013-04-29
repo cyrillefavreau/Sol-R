@@ -37,7 +37,7 @@
 
 // Consts
 const int MAX_GPU_COUNT = 32;
-const int NB_MAX_ITERATIONS = 10;
+const int NB_MAX_ITERATIONS = 5;
 
 // Project
 #include "CudaDataTypes.h"
@@ -1738,10 +1738,18 @@ __device__ float4 launchRay(
    depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
 
    // Primitive information
-   primitiveXYId.y = iteration;
+   primitiveXYId.y = carryon ? 1 : 0; // 1: More wok to do on next iteration
 
 	// Depth of field
    intersectionColor -= colorBox;
+
+#if 0
+   // Display ray depth
+   intersectionColor.x = 0.1f+iteration * 0.1f;
+   intersectionColor.y = 0.1f+iteration * 0.1f;
+   intersectionColor.z = 0.1f+iteration * 0.1f;
+#endif // 0
+
 	saturateVector( intersectionColor );
 	return intersectionColor;
 }
@@ -1772,6 +1780,8 @@ __global__ void k_standardRenderer(
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
+
+   if( sceneInfo.pathTracingIteration.x>0 && sceneInfo.pathTracingIteration.x<NB_MAX_ITERATIONS && primitiveXYIds[index].y==0 ) return;
 
 	Ray ray;
 	ray.origin = origin;
@@ -1836,8 +1846,6 @@ __global__ void k_standardRenderer(
       { -3.f, -5.f },
       { -5.f,  3.f }
    };
-
-   if( sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y && sceneInfo.pathTracingIteration.x>0 && sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS ) return;
 
    float4 color = {0.f,0.f,0.f,0.f};
    if( antialiasingActivated )
