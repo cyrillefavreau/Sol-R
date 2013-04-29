@@ -1783,7 +1783,7 @@ __global__ void k_standardRenderer(
 
    if( sceneInfo.pathTracingIteration.x>0 && sceneInfo.pathTracingIteration.x<NB_MAX_ITERATIONS && primitiveXYIds[index].y==0 ) return;
 
-	Ray ray;
+   Ray ray;
 	ray.origin = origin;
 	ray.direction = direction;
 
