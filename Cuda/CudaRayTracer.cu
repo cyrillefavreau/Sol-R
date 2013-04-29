@@ -37,7 +37,7 @@
 
 // Consts
 const int MAX_GPU_COUNT = 32;
-const int NB_MAX_ITERATIONS = 5;
+const int NB_MAX_ITERATIONS = 10;
 
 // Project
 #include "CudaDataTypes.h"
@@ -1679,7 +1679,7 @@ __device__ float4 launchRay(
 		iteration++;
 	}
 
-   if( sceneInfo.pathTracingIteration.x==NB_MAX_ITERATIONS && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
+   if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS && reflectedRays != -1 ) 
    {
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
