@@ -1809,10 +1809,6 @@ __global__ void k_standardRenderer(
 		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
       }
 	}
-   if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
-   {
-      antialiasingActivated = true;
-   }
 
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
