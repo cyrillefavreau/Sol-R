@@ -50,6 +50,7 @@ struct CPUPrimitive
 	int    type;
 	int    materialId;
 	float2 materialInfo;
+   float3 speed;
 };
 
 struct CPUBoundingBox

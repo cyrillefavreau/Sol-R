@@ -281,7 +281,10 @@ int GPUKernel::addPrimitive( PrimitiveType type )
 	LOG_INFO(3,"GPUKernel::addPrimitive");
    CPUPrimitive primitive;
    memset(&primitive,0,sizeof(CPUPrimitive));
-   primitive.type = type;
+   
+primitive.type = type;
+   primitive.speed.y = -10.f;
+
    (*m_primitives)[static_cast<int>(m_primitives->size())] = primitive;
    LOG_INFO(3,"m_primitives.size() = " << m_primitives->size());
 	return static_cast<int>(m_primitives->size()-1);
@@ -864,15 +867,35 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          CPUPrimitive& primitive((*m_primitives)[*it]);
          if( primitive.movable && primitive.type != ptCamera )
          {
-#if 1
+#if 0
 			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
 #else
-            float3 center;
-            center.x = (primitive.p0.x + primitive.p1.x + primitive.p2.x) / 3.f;
-            center.y = (primitive.p0.y + primitive.p1.y + primitive.p2.y) / 3.f;
-            center.z = (primitive.p0.z + primitive.p1.z + primitive.p2.z) / 3.f;
+            float limit = -2200.f;
+            if( primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit )
+            {
+               // Fall
+               primitive.p0.y += primitive.speed.y;
+               primitive.p1.y += primitive.speed.y;
+               primitive.p2.y += primitive.speed.y;
 
-			   rotatePrimitive( primitive, center, cosAngles, sinAngles );
+               if( primitive.p0.y < (limit+100.f) ) 
+               {
+                  primitive.speed.y = -primitive.speed.y/1.7f;
+                  // Rotate
+                  float3 center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
+                  center = (primitive.p2.y < center.y) ? primitive.p2 : center;
+
+                  /*
+                  center.x = (primitive.p0.x + primitive.p1.x + primitive.p2.x) / 3.f;
+                  center.y = (primitive.p0.y + primitive.p1.y + primitive.p2.y) / 3.f;
+                  center.z = (primitive.p0.z + primitive.p1.z + primitive.p2.z) / 3.f;
+                  */
+
+			         rotatePrimitive( primitive, center, cosAngles, sinAngles );
+
+               }
+               primitive.speed.y -= 2+(rand()%200/100.f);
+            }
 #endif // 0
          } 
          ++it;
