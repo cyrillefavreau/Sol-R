@@ -29,7 +29,7 @@ class RAYTRACINGENGINE_API CudaKernel : public GPUKernel
 {
 public:
 
-   CudaKernel(bool activeLogging, int platform = 0, int device = 0);
+   CudaKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device );
 	~CudaKernel();
 
    virtual void initBuffers();

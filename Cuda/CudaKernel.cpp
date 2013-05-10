@@ -64,8 +64,8 @@ ________________________________________________________________________________
 CudaKernel::CudaKernel
 ________________________________________________________________________________
 */
-CudaKernel::CudaKernel( bool activeLogging, int platform, int device ) 
- : GPUKernel( activeLogging, platform, device ),
+CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device ) 
+ : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox, platform, device ),
    m_sharedMemSize(256),
    m_imageCount(0)
 {

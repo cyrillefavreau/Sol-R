@@ -15,7 +15,6 @@
 #include "Consts.h"
 
 const unsigned int MAX_SOURCE_SIZE = 65535;
-const unsigned int OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES = 250;
 
 float3 min4( const float3 a, const float3 b, const float3 c )
 {
@@ -78,8 +77,9 @@ typedef struct {
 } BITMAPINFOHEADER;
 #endif
 
-GPUKernel::GPUKernel(bool activeLogging, int platform, int device)
- : m_hPrimitives(0), 
+GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device)
+ : m_optimalNbOfPrimmitivesPerBox(optimalNbOfPrimmitivesPerBox),
+   m_hPrimitives(0), 
 	m_hMaterials(0), 
 	m_hTextures(0),
    m_hLamps(0),
@@ -691,7 +691,7 @@ unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& 
 #else
       maxPrimitivePerBox = static_cast<int>(m_primitives->size()/nbActiveBoxes);
 #endif
-      delta = OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES-nbActiveBoxes;
+      delta = m_optimalNbOfPrimmitivesPerBox-nbActiveBoxes;
       //std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(delta) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
    }
    else
@@ -871,16 +871,16 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
 			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
 #else
             float limit = -2200.f;
-            if( primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit )
+            if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
             {
                // Fall
                primitive.p0.y += primitive.speed.y;
                primitive.p1.y += primitive.speed.y;
                primitive.p2.y += primitive.speed.y;
 
-               if( primitive.p0.y < (limit+100.f) ) 
+               if( primitive.p0.y < limit-primitive.size.x ) 
                {
-                  primitive.speed.y = -primitive.speed.y/1.7f;
+                  primitive.speed.y = -primitive.speed.y/1.6f;
                   // Rotate
                   float3 center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
                   center = (primitive.p2.y < center.y) ? primitive.p2 : center;
@@ -892,9 +892,12 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
                   */
 
 			         rotatePrimitive( primitive, center, cosAngles, sinAngles );
-
                }
                primitive.speed.y -= 4+(rand()%400/100.f);
+            }
+            else
+            {
+               primitive.speed.y = 0.f;
             }
 #endif // 0
          } 

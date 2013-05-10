@@ -67,7 +67,7 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel( bool activeLogging, int platform = 0, int device = 0 );
+   GPUKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device );
    virtual ~GPUKernel();
 
    virtual void initBuffers();
@@ -323,6 +323,9 @@ protected:
 	BoxContainer*       m_boundingBoxes;
 	PrimitiveContainer* m_primitives;
 	LampContainer*      m_lamps;
+
+protected:
+   int m_optimalNbOfPrimmitivesPerBox;
 
 	// Kinect declarations
 #ifdef USE_KINECT

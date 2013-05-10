@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef WIN32
+   #define _CRT_SECURE_NO_WARNINGS
 	#ifdef LOGGING
 		#include <ETWLoggingModule.h>
 		#include <ETWResources.h>
