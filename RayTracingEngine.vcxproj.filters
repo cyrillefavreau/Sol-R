@@ -107,5 +107,17 @@
     <None Include="OpenCL\RayTracer.cl">
       <Filter>Source Files\OpenCL</Filter>
     </None>
+    <None Include="Cuda\TextureMapping.cuh">
+      <Filter>Source Files\Cuda</Filter>
+    </None>
+    <None Include="Cuda\GeometryShaders.cuh">
+      <Filter>Source Files\Cuda</Filter>
+    </None>
+    <None Include="Cuda\VectorUtils.cuh">
+      <Filter>Source Files\Cuda</Filter>
+    </None>
+    <None Include="Cuda\GeometryIntersections.cuh">
+      <Filter>Source Files\Cuda</Filter>
+    </None>
   </ItemGroup>
 </Project>

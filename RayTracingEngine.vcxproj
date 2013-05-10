@@ -356,6 +356,18 @@
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </CudaCompile>
+    <None Include="Cuda\GeometryIntersections.cuh">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Cuda\GeometryShaders.cuh">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Cuda\TextureMapping.cuh">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Cuda\VectorUtils.cuh">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="OpenCL\RayTracer.cl">

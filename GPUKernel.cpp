@@ -894,7 +894,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
 			         rotatePrimitive( primitive, center, cosAngles, sinAngles );
 
                }
-               primitive.speed.y -= 2+(rand()%200/100.f);
+               primitive.speed.y -= 4+(rand()%400/100.f);
             }
 #endif // 0
          } 

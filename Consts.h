@@ -37,6 +37,14 @@ const int NB_MAX_TEXTURES   = 40;
 #define TEXTURE_JULIA -3
 #define gColorDepth  3
 
+// Consts
+const int MAX_GPU_COUNT = 32;
+const int NB_MAX_ITERATIONS = 10;
+
+// Globals
+#define M_PI 3.14159265358979323846
+#define EPSILON 10.f
+
 // Textures
 const int gTextureWidth  = 1024;
 const int gTextureHeight = 1024;
