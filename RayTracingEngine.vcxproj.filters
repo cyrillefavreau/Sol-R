@@ -57,9 +57,6 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Logging.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="PDBReader.h">
       <Filter>Source Files\PDB</Filter>
     </ClInclude>
@@ -68,6 +65,9 @@
     </ClInclude>
     <ClInclude Include="OBJReader.h">
       <Filter>Source Files\OBJ</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

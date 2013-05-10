@@ -1,7 +1,28 @@
+/* 
+* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+*/
+
+/*
+* Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+*
+*/
+
 #pragma once
 
 #ifdef WIN32
-   #define _CRT_SECURE_NO_WARNINGS
 	#ifdef LOGGING
 		#include <ETWLoggingModule.h>
 		#include <ETWResources.h>
@@ -11,19 +32,16 @@
 	#include <windows.h>
 #endif // WIN32
 
-#include <ctime>
+#include <time.h>
 
 inline std::string getTimestamp()
 {
-   time_t rawtime;
-   struct tm * timeinfo;
-   char buffer [80];
-
-   time ( &rawtime );
-   timeinfo = localtime( &rawtime );
-
-   strftime (buffer,80,"%Y-%m-%d-%H-%M-%S",timeinfo);
-   return std::string(buffer);
+  char buffer[80] = {'\0'} ;    
+  time_t now = time( &now ) ;
+  struct tm local_time; 
+  localtime_s( &local_time, &now ) ;
+  strftime( buffer, BUFSIZ, "%m/%d/%Y", &local_time ) ;    
+  return std::string(buffer);
 }
 
 #ifdef WIN32
