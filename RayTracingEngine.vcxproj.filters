@@ -28,6 +28,9 @@
     <Filter Include="Source Files\OBJ">
       <UniqueIdentifier>{33b96ccb-ae4e-49be-8c01-9fd255014a52}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Map">
+      <UniqueIdentifier>{5d2cfe1e-3d9e-41a2-a655-5b2ce9cdc5e9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -57,6 +60,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Logging.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="PDBReader.h">
       <Filter>Source Files\PDB</Filter>
     </ClInclude>
@@ -66,8 +72,8 @@
     <ClInclude Include="OBJReader.h">
       <Filter>Source Files\OBJ</Filter>
     </ClInclude>
-    <ClInclude Include="Logging.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="MapReader.h">
+      <Filter>Source Files\Map</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -91,6 +97,9 @@
     </ClCompile>
     <ClCompile Include="OBJReader.cpp">
       <Filter>Source Files\OBJ</Filter>
+    </ClCompile>
+    <ClCompile Include="MapReader.cpp">
+      <Filter>Source Files\Map</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
