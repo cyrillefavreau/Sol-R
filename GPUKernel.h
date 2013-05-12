@@ -97,6 +97,7 @@ public:
    unsigned int getPrimitiveAt( int x, int y );
    void setPrimitiveIsMovable( unsigned int index, bool movable );
 
+   void scalePrimitives( float scale, unsigned int from, unsigned int to );
    void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
@@ -256,6 +257,9 @@ public:
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
 
+   void resetAddingIndex() { m_addingIndex = 0; };
+   void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
+
 public:
 
 	char* loadFromFile( const std::string& filename, size_t& length );
@@ -290,6 +294,9 @@ protected:
 	float3		 m_viewPos;
 	float3		 m_viewDir;
 	float3		 m_angles;
+
+   bool         m_doneWithAdding;
+   int          m_addingIndex;
 
 protected:
 

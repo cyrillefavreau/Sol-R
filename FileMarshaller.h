@@ -34,7 +34,7 @@ public:
 
 public:
 
-   float3 loadFromFile( GPUKernel& kernel, const std::string& filename);
+   float3 loadFromFile( GPUKernel& kernel, const std::string& filename, const float scale);
    void saveToFile  ( GPUKernel& kernel, const std::string& filename);
 
 private:

@@ -152,7 +152,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
 
 // ---------- File marshaller ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename);
-extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename);
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, double scale);
 
 #ifdef USE_KINECT
 // ---------- Kinect ----------

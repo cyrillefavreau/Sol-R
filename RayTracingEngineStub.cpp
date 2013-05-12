@@ -433,10 +433,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename)
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, double scale )
 {
    FileMarshaller fm;
-   fm.loadFromFile( *kernel, filename );
+   fm.loadFromFile( *kernel, filename, static_cast<float>(scale) );
    return kernel->getNbActivePrimitives();
 }
 

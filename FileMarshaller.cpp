@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Consts.h"
 #include "Logging.h"
 #include "FileMarshaller.h"
 
@@ -273,7 +274,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       (material.fastTransparency.x==1));
 }
 
-float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename)
+float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float scale )
 {
    LOG_INFO(1, "Loading 3D scene from " << filename );
 
@@ -316,6 +317,10 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
    returnValue.x = fabs( max.x - min.x );
    returnValue.y = fabs( max.y - min.y );
    returnValue.z = fabs( max.z - min.z );
+
+   float ratio = scale / returnValue.y;
+   kernel.scalePrimitives( ratio, 0, NB_MAX_BOXES );
+
    LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z );
    return returnValue;
 }

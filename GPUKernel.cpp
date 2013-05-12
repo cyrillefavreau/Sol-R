@@ -102,7 +102,9 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 #endif // USE_KINECT
    m_primitivesTransfered(false),
 	m_materialsTransfered(false),
-   m_texturesTransfered(false)
+   m_texturesTransfered(false),
+   m_doneWithAdding(false),
+   m_addingIndex(0)
 {
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
    LOG_INFO(1,"----------++++++++++  GPU Kernel created  ++++++++++----------" );
@@ -279,15 +281,26 @@ void GPUKernel::setCamera(
 int GPUKernel::addPrimitive( PrimitiveType type )
 {
 	LOG_INFO(3,"GPUKernel::addPrimitive");
-   CPUPrimitive primitive;
-   memset(&primitive,0,sizeof(CPUPrimitive));
-   
-primitive.type = type;
-   primitive.speed.y = -10.f;
 
-   (*m_primitives)[static_cast<int>(m_primitives->size())] = primitive;
-   LOG_INFO(3,"m_primitives.size() = " << m_primitives->size());
-	return static_cast<int>(m_primitives->size()-1);
+   int returnValue=-1;
+   if( m_doneWithAdding )
+   {
+      returnValue = m_addingIndex;
+      m_addingIndex++;
+   }
+   else
+   {
+      CPUPrimitive primitive;
+      memset(&primitive,0,sizeof(CPUPrimitive));
+   
+      primitive.type = type;
+      primitive.speed.y = -10.f;
+
+      (*m_primitives)[static_cast<int>(m_primitives->size())] = primitive;
+      LOG_INFO(3,"m_primitives.size() = " << m_primitives->size());
+	   returnValue = static_cast<int>(m_primitives->size()-1);
+   }
+   return returnValue;
 }
 
 CPUPrimitive* GPUKernel::getPrimitive( const unsigned int index )
@@ -330,6 +343,7 @@ void GPUKernel::setPrimitive(
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
+   float scale = 1.f;
    m_primitivesTransfered = false;
    /*
 	LOG_INFO(3,"GPUKernel::setPrimitive( " << 
@@ -342,36 +356,36 @@ void GPUKernel::setPrimitive(
    if( index>=0 && index<m_primitives->size()) 
 	{
       (*m_primitives)[index].movable= true;
-		(*m_primitives)[index].p0.x   = x0;
-		(*m_primitives)[index].p0.y   = y0;
-		(*m_primitives)[index].p0.z   = z0;
-		(*m_primitives)[index].p1.x   = x1;
-		(*m_primitives)[index].p1.y   = y1;
-		(*m_primitives)[index].p1.z   = z1;
-		(*m_primitives)[index].p2.x   = x2;
-		(*m_primitives)[index].p2.y   = y2;
-		(*m_primitives)[index].p2.z   = z2;
-		(*m_primitives)[index].size.x = w;
-		(*m_primitives)[index].size.y = h;
-		(*m_primitives)[index].size.z = d;
+		(*m_primitives)[index].p0.x   = x0*scale;
+		(*m_primitives)[index].p0.y   = y0*scale;
+		(*m_primitives)[index].p0.z   = z0*scale;
+		(*m_primitives)[index].p1.x   = x1*scale;
+		(*m_primitives)[index].p1.y   = y1*scale;
+		(*m_primitives)[index].p1.z   = z1*scale;
+		(*m_primitives)[index].p2.x   = x2*scale;
+		(*m_primitives)[index].p2.y   = y2*scale;
+		(*m_primitives)[index].p2.z   = z2*scale;
+		(*m_primitives)[index].size.x = w*scale;
+		(*m_primitives)[index].size.y = h*scale;
+		(*m_primitives)[index].size.z = d*scale;
 		(*m_primitives)[index].materialId = materialId;
 
 		switch( (*m_primitives)[index].type )
 		{
 		case ptSphere:
          {
-			   (*m_primitives)[index].size.x = w;
-			   (*m_primitives)[index].size.y = w;
-			   (*m_primitives)[index].size.z = w;
+			   (*m_primitives)[index].size.x = w*scale;
+			   (*m_primitives)[index].size.y = w*scale;
+			   (*m_primitives)[index].size.z = w*scale;
 			   (*m_primitives)[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
 			   (*m_primitives)[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 			   break;
          }
 		case ptEllipsoid:
 			{
-		      (*m_primitives)[index].size.x = w;
-		      (*m_primitives)[index].size.y = h;
-		      (*m_primitives)[index].size.z = d;
+		      (*m_primitives)[index].size.x = w*scale;
+		      (*m_primitives)[index].size.y = h*scale;
+		      (*m_primitives)[index].size.z = d*scale;
 			   (*m_primitives)[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
 			   (*m_primitives)[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
             break;
@@ -380,9 +394,9 @@ void GPUKernel::setPrimitive(
 			{
 				// Axis
 				float3 axis;
-				axis.x = x1 - x0;
-				axis.y = y1 - y0;
-				axis.z = z1 - z0;
+				axis.x = x1*scale - x0*scale;
+				axis.y = y1*scale - y0*scale;
+				axis.z = z1*scale - z0*scale;
 				float len = sqrt( axis.x*axis.x + axis.y*axis.y + axis.z*axis.z );
             if( len != 0.f )
             {
@@ -394,9 +408,9 @@ void GPUKernel::setPrimitive(
 				(*m_primitives)[index].n1.y = axis.y;
 				(*m_primitives)[index].n1.z = axis.z;
 
-            (*m_primitives)[index].size.x = w; //(x1 - x0)/2.f;
-            (*m_primitives)[index].size.y = w; //(y1 - y0)/2.f;
-            (*m_primitives)[index].size.z = w; // (z1 - z0)/2.f;
+            (*m_primitives)[index].size.x = w*scale; //(x1 - x0)/2.f;
+            (*m_primitives)[index].size.y = w*scale; //(y1 - y0)/2.f;
+            (*m_primitives)[index].size.z = w*scale; // (z1 - z0)/2.f;
 
 				// Material
 				(*m_primitives)[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
@@ -461,14 +475,14 @@ void GPUKernel::setPrimitive(
 			}
 		}
       //min
-      m_minPos.x = std::min(x0,m_minPos.x);
-      m_minPos.y = std::min(y0,m_minPos.y);
-      m_minPos.z = std::min(z0,m_minPos.z);
+      m_minPos.x = std::min(x0*scale,m_minPos.x);
+      m_minPos.y = std::min(y0*scale,m_minPos.y);
+      m_minPos.z = std::min(z0*scale,m_minPos.z);
              
       // max
-      m_maxPos.x = std::max(x0,m_maxPos.x);
-      m_maxPos.y = std::max(y0,m_maxPos.y);
-      m_maxPos.z = std::max(z0,m_maxPos.z);
+      m_maxPos.x = std::max(x0*scale,m_maxPos.x);
+      m_maxPos.y = std::max(y0*scale,m_maxPos.y);
+      m_maxPos.z = std::max(z0*scale,m_maxPos.z);
    }
 	else
 	{
@@ -689,7 +703,7 @@ unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& 
       }
       //if( primitivesPerBox.size() != 0 ) maxPrimitivePerBox /= static_cast<int>(primitivesPerBox.size());
 #else
-      maxPrimitivePerBox = static_cast<int>(m_primitives->size()/nbActiveBoxes);
+      maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives->size()/nbActiveBoxes) : 0;
 #endif
       delta = m_optimalNbOfPrimmitivesPerBox-nbActiveBoxes;
       //std::cout << "NbMaxPrimitivePerBox[" << boxSize << "], nbBoxes=" << nbActiveBoxes << ", maxPrimitivePerBox=" << maxPrimitivePerBox << ", Ratio=" << abs(delta) << "/" << OPTIMAL_NB_OF_PRIMITIVES_PER_BOXES << std::endl;
@@ -867,7 +881,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          CPUPrimitive& primitive((*m_primitives)[*it]);
          if( primitive.movable && primitive.type != ptCamera )
          {
-#if 0
+#if 1
 			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
 #else
             float limit = -2200.f;
@@ -904,6 +918,36 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          ++it;
 		}
    }
+
+   compactBoxes(false);
+}
+
+void GPUKernel::scalePrimitives( float scale, unsigned int from, unsigned int to )
+{
+	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
+   m_primitivesTransfered = false;
+
+   PrimitiveContainer::iterator it = (*m_primitives).begin();
+   while( it != (*m_primitives).end() )
+	{
+      CPUPrimitive& primitive((*it).second);
+		primitive.p0.x *= scale;
+		primitive.p0.y *= scale;
+		primitive.p0.z *= scale;
+
+      primitive.p1.x *= scale;
+		primitive.p1.y *= scale;
+		primitive.p1.z *= scale;
+
+      primitive.p2.x *= scale;
+		primitive.p2.y *= scale;
+		primitive.p2.z *= scale;
+
+      primitive.size.x *= scale;
+		primitive.size.y *= scale;
+		primitive.size.z *= scale;
+      ++it;
+	}
 
    compactBoxes(false);
 }
