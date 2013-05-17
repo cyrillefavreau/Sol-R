@@ -104,7 +104,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 	m_materialsTransfered(false),
    m_texturesTransfered(false),
    m_doneWithAdding(false),
-   m_addingIndex(0)
+   m_addingIndex(0),
+   m_refresh(true)
 {
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
    LOG_INFO(1,"----------++++++++++  GPU Kernel created  ++++++++++----------" );
@@ -276,6 +277,7 @@ void GPUKernel::setCamera(
 	m_angles.x  = angles.x;
 	m_angles.y  = angles.y;
 	m_angles.z  = angles.z;
+   m_refresh   = true;
 }
 
 int GPUKernel::addPrimitive( PrimitiveType type )
@@ -871,54 +873,56 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
 	sinAngles.y = sin(angles.y);
 	sinAngles.z = sin(angles.z);
 
-   for( BoxContainer::iterator itb = m_boundingBoxes->begin(); itb != m_boundingBoxes->end(); ++itb )
+#pragma omp parallel
+   for( BoxContainer::iterator itb=m_boundingBoxes->begin(); itb!=m_boundingBoxes->end(); ++itb )
    {
-      CPUBoundingBox& box((*itb).second);
-      resetBox(box,false);
-      std::vector<unsigned int>::const_iterator it = box.primitives.begin();
-      while( it != box.primitives.end() )
-		{
-         CPUPrimitive& primitive((*m_primitives)[*it]);
-         if( primitive.movable && primitive.type != ptCamera )
-         {
-#if 1
-			   rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
-#else
-            float limit = -2200.f;
-            if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
-            {
-               // Fall
-               primitive.p0.y += primitive.speed.y;
-               primitive.p1.y += primitive.speed.y;
-               primitive.p2.y += primitive.speed.y;
+      #pragma omp single nowait
+      {
+         CPUBoundingBox& box = (*itb).second;
+         resetBox(box,false);
 
-               if( primitive.p0.y < limit-primitive.size.x ) 
+         for( std::vector<unsigned int>::iterator it=box.primitives.begin(); it!=box.primitives.end(); ++it )
+		   {
+            //#pragma single nowait
+            CPUPrimitive& primitive((*m_primitives)[*it]);
+            if( primitive.movable && primitive.type != ptCamera )
+            {
+#if 0
+               float limit = -2200.f;
+               if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
                {
-                  primitive.speed.y = -primitive.speed.y/1.6f;
-                  // Rotate
-                  float3 center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
-                  center = (primitive.p2.y < center.y) ? primitive.p2 : center;
+                  // Fall
+                  primitive.p0.y += primitive.speed.y;
+                  primitive.p1.y += primitive.speed.y;
+                  primitive.p2.y += primitive.speed.y;
 
-                  /*
-                  center.x = (primitive.p0.x + primitive.p1.x + primitive.p2.x) / 3.f;
-                  center.y = (primitive.p0.y + primitive.p1.y + primitive.p2.y) / 3.f;
-                  center.z = (primitive.p0.z + primitive.p1.z + primitive.p2.z) / 3.f;
-                  */
+                  if( primitive.p0.y < limit-primitive.size.x ) 
+                  {
+                     primitive.speed.y = -primitive.speed.y/1.6f;
+                     // Rotate
+                     float3 center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
+                     center = (primitive.p2.y < center.y) ? primitive.p2 : center;
 
-			         rotatePrimitive( primitive, center, cosAngles, sinAngles );
+
+                     //center.x = (primitive.p0.x + primitive.p1.x + primitive.p2.x) / 3.f;
+                     // center.y = (primitive.p0.y + primitive.p1.y + primitive.p2.y) / 3.f;
+                     //center.z = (primitive.p0.z + primitive.p1.z + primitive.p2.z) / 3.f;
+
+                     rotatePrimitive( primitive, center, cosAngles, sinAngles );
+                  }
+                  primitive.speed.y -= 4+(rand()%400/100.f);
                }
-               primitive.speed.y -= 4+(rand()%400/100.f);
-            }
-            else
-            {
-               primitive.speed.y = 0.f;
-            }
+               else
+               {
+                  primitive.speed.y = 0.f;
+               }
+#else
+               rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
 #endif // 0
-         } 
-         ++it;
-		}
+            }
+         }
+      }
    }
-
    compactBoxes(false);
 }
 
@@ -1294,7 +1298,7 @@ void GPUKernel::setSceneInfo(
 	m_sceneInfo.width.x                = width;
 	m_sceneInfo.height.x               = height;
 	m_sceneInfo.transparentColor.x     = transparentColor;
-	m_sceneInfo.shadowsEnabled.x       = shadowsEnabled;
+	m_sceneInfo.graphicsLevel.x        = shadowsEnabled;
 	m_sceneInfo.viewDistance.x         = viewDistance;
 	m_sceneInfo.shadowIntensity.x      = shadowIntensity;
 	m_sceneInfo.nbRayIterations.x      = nbRayIterations;

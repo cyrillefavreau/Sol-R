@@ -44,7 +44,7 @@ extern "C" void h2d_textures(
 extern "C" void d2h_bitmap( char* bitmap, int2* primitivesXYIds, const SceneInfo sceneInfo );
 
 extern "C" void cudaRender(
-   int4 blockSize, int sharedMemSize,
+   int4 blockSize,
    SceneInfo sceneInfo,
    int4 objects,
    PostProcessingInfo PostProcessingInfo,

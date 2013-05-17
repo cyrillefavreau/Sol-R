@@ -49,7 +49,7 @@ PostProcessingInfo gPostProcessingInfo;
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int width, int height,
-   bool shadowsEnabled, int nbRayIterations, double transparentColor,
+   int graphicsLevel, int nbRayIterations, double transparentColor,
    double viewDistance, double shadowIntensity,
    int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
@@ -58,7 +58,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
 {
    gSceneInfo.width.x                   = width;
    gSceneInfo.height.x                  = height;
-   gSceneInfo.shadowsEnabled.x          = shadowsEnabled;
+   gSceneInfo.graphicsLevel.x           = graphicsLevel;
    gSceneInfo.nbRayIterations.x         = nbRayIterations;
    gSceneInfo.transparentColor.x        = static_cast<float>(transparentColor);
    gSceneInfo.viewDistance.x            = static_cast<float>(viewDistance);

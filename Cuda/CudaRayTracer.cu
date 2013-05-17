@@ -123,8 +123,7 @@ __device__ inline float4 launchRay(
    float reflectedRatio;
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
-
-   int currentMaxIteration = sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
+   int currentMaxIteration = ( sceneInfo.graphicsLevel.x<3 ) ? 1 : sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
 	{
@@ -274,7 +273,7 @@ __device__ inline float4 launchRay(
 		iteration++;
 	}
 
-   if( reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
+   if( sceneInfo.graphicsLevel.x>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
    {
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
@@ -1012,7 +1011,7 @@ Kernel launcher
 ________________________________________________________________________________
 */
 extern "C" void cudaRender(
-	int4 blockSize, int sharedMemSize,
+	int4 blockSize,
 	SceneInfo sceneInfo,
 	int4 objects,
 	PostProcessingInfo postProcessingInfo,
@@ -1026,7 +1025,6 @@ extern "C" void cudaRender(
 
 	dim3 grid((size.x+blockSize.x-1)/blockSize.x,(size.y+blockSize.y-1)/blockSize.y,1);
 	dim3 blocks( blockSize.x,blockSize.y,blockSize.z );
-   sharedMemSize = objects.x*sizeof(BoundingBox);
 
    for( int d=0; d<d_nbGPUs; ++d )
    {
@@ -1036,7 +1034,7 @@ extern "C" void cudaRender(
 	   {
 	   case vtAnaglyph:
 		   {
-			   k_anaglyphRenderer<<<grid,blocks,sharedMemSize,d_streams[d]>>>(
+			   k_anaglyphRenderer<<<grid,blocks,0,d_streams[d]>>>(
 				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y,  d_lamps[d], objects.z, d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
@@ -1044,7 +1042,7 @@ extern "C" void cudaRender(
 		   }
 	   case vt3DVision:
 		   {
-			   k_3DVisionRenderer<<<grid,blocks,sharedMemSize,d_streams[d]>>>(
+			   k_3DVisionRenderer<<<grid,blocks,0,d_streams[d]>>>(
 				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y, d_lamps[d], objects.z, d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
@@ -1052,7 +1050,7 @@ extern "C" void cudaRender(
 		   }
 	   default:
 		   {
-			   k_standardRenderer<<<grid,blocks,sharedMemSize,d_streams[d]>>>(
+			   k_standardRenderer<<<grid,blocks,0,d_streams[d]>>>(
                d*size.y, d_nbGPUs,
 				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y,  d_lamps[d], objects.z, d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo,

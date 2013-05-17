@@ -618,7 +618,7 @@ __device__ inline bool intersectionWithPrimitives(
 			// Intersection with Box
 			if( sceneInfo.renderBoxes.x != 0 ) 
          {
-            colorBox += materials[cptBoxes%NB_MAX_MATERIALS].color/10.f;
+            colorBox += materials[cptBoxes%NB_MAX_MATERIALS].color/20.f;
          }
 
 			// Intersection with primitive within boxes

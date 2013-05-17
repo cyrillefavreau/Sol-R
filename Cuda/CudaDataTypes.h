@@ -44,7 +44,7 @@ struct SceneInfo
 {
    int1    width;
    int1    height;
-   int1    shadowsEnabled;
+   int1    graphicsLevel;    // 1: lambert, 2: Specular, 3: Shadows
    int1    nbRayIterations;
    float1  transparentColor;
    float1  viewDistance;

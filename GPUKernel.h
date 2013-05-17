@@ -316,6 +316,9 @@ protected:
    // Post Processing
    PostProcessingInfo m_postProcessingInfo;
 
+   // Refresh
+   bool m_refresh;
+
 protected:
 
    // activate or deactivate logging

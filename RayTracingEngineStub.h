@@ -35,7 +35,7 @@ typedef char* HANDLE;
 // ---------- Scene ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int width, int height,
-   bool shadowsEnabled, int nbRayIterations, double transparentColor,
+   int graphicsLevel, int nbRayIterations, double transparentColor,
    double viewDistance, double shadowIntensity,
    int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,

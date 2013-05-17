@@ -321,7 +321,6 @@ __device__ float4 primitiveShader(
 	float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
 	// Lamp Impact
-	float lambert      = 0.f;
 	shadowIntensity    = 0.f;
 
 	if( materials[primitive.materialId.x].innerIllumination.x != 0.f || materials[primitive.materialId.x].textureInfo.z == 2 )
@@ -338,104 +337,108 @@ __device__ float4 primitiveShader(
 			intersection, false );
 	}
 
-	color *= materials[primitive.materialId.x].innerIllumination.x;
-	for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
-	{
-		if(lamps[cptLamps] != objectId)
-		{
-			float3 center;
-   		// randomize lamp center
-			float3 size;
-			switch( primitives[lamps[cptLamps]].type.x )
-			{
-			case ptCylinder:
-				{
-					center = (primitives[lamps[cptLamps]].p0 + primitives[lamps[cptLamps]].p1)/ 2.f;
-					size.x = primitives[lamps[cptLamps]].size.y; 
-					size.y = primitives[lamps[cptLamps]].size.y; 
-					size.z = primitives[lamps[cptLamps]].size.y; 
-					break;
-				}
-			default:
-				{
-					center = primitives[lamps[cptLamps]].p0; 
-					size=primitives[lamps[cptLamps]].size; 
-					break;
-				}
-			}
+   if( sceneInfo.graphicsLevel.x>0 )
+   {
+	   color *= materials[primitive.materialId.x].innerIllumination.x;
+	   for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
+	   {
+		   if(lamps[cptLamps] != objectId)
+		   {
+			   float3 center;
+   		   // randomize lamp center
+			   float3 size;
+			   switch( primitives[lamps[cptLamps]].type.x )
+			   {
+			   case ptCylinder:
+				   {
+					   center = (primitives[lamps[cptLamps]].p0 + primitives[lamps[cptLamps]].p1)/ 2.f;
+					   size.x = primitives[lamps[cptLamps]].size.y; 
+					   size.y = primitives[lamps[cptLamps]].size.y; 
+					   size.z = primitives[lamps[cptLamps]].size.y; 
+					   break;
+				   }
+			   default:
+				   {
+					   center = primitives[lamps[cptLamps]].p0; 
+					   size=primitives[lamps[cptLamps]].size; 
+					   break;
+				   }
+			   }
 
-			if( sceneInfo.pathTracingIteration.x > NB_MAX_ITERATIONS )
-			{
-				int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-				center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-			}
+			   if( sceneInfo.pathTracingIteration.x > NB_MAX_ITERATIONS )
+			   {
+				   int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
+				   center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				   center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				   center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+			   }
 
-         float4 shadowColor = {0.f,0.f,0.f,0.f};
-			if( sceneInfo.shadowsEnabled.x && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
-			{
-				shadowIntensity = processShadows(
-					sceneInfo, boundingBoxes, nbActiveBoxes,
-					primitives, materials, textures, 
-					nbActivePrimitives, center, 
-					intersection, lamps[cptLamps], iteration, shadowColor );
-			}
+            float4 shadowColor = {0.f,0.f,0.f,0.f};
+			   if( sceneInfo.graphicsLevel.x>3 && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
+			   {
+				   shadowIntensity = processShadows(
+					   sceneInfo, boundingBoxes, nbActiveBoxes,
+					   primitives, materials, textures, 
+					   nbActivePrimitives, center, 
+					   intersection, lamps[cptLamps], iteration, shadowColor );
+			   }
 
-			Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
-			float3 lightRay = center - intersection;
+            // Lightning intensity decreases with distance
+            if( sceneInfo.graphicsLevel.x>0 )
+            {
+			      Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
+		         float3 lightRay = center - intersection;
+               float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
+               lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
+               lightRay = normalize(lightRay);
 
-         // Lightning intensity decreases with distance
-         float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
-         lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
-				
-         lightRay = normalize(lightRay);
+			      // --------------------------------------------------------------------------------
+			      // Lambert
+			      // --------------------------------------------------------------------------------
+	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+			      lambert = (lambert<0.f) ? 0.f : lambert;
+			      lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
+			      lambert *= (1.f-shadowIntensity);
+               lambert *= lampIntensity;
 
-			// --------------------------------------------------------------------------------
-			// Lambert
-			// --------------------------------------------------------------------------------
-			lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-			lambert = (lambert<0.f) ? 0.f : lambert;
-			lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
-			lambert *= (1.f-shadowIntensity);
-         lambert *= lampIntensity;
+			      // Lighted object, not in the shades
+			      lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
 
-			// Lighted object, not in the shades
-			lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
+			      if( sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x )
+			      {
+				      // --------------------------------------------------------------------------------
+				      // Blinn - Phong
+				      // --------------------------------------------------------------------------------
+				      float3 viewRay = normalize(intersection - origin);
+				      float3 blinnDir = lightRay - viewRay;
+				      float temp = sqrt(dot(blinnDir,blinnDir));
+				      if (temp != 0.f ) 
+				      {
+					      // Specular reflection
+					      blinnDir = (1.f / temp) * blinnDir;
 
-			if( shadowIntensity < sceneInfo.shadowIntensity.x )
-			{
-				// --------------------------------------------------------------------------------
-				// Blinn - Phong
-				// --------------------------------------------------------------------------------
-				float3 viewRay = normalize(intersection - origin);
-				float3 blinnDir = lightRay - viewRay;
-				float temp = sqrt(dot(blinnDir,blinnDir));
-				if (temp != 0.f ) 
-				{
-					// Specular reflection
-					blinnDir = (1.f / temp) * blinnDir;
+					      float blinnTerm = dot(blinnDir,normal);
+					      blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
-					float blinnTerm = dot(blinnDir,normal);
-					blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
+					      blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y);
+					      totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
+				      }
+			      }
+            }
+		   }
 
-					blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y); //*materials[primitive.materialId.x].specular.w
-					totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
-				}
-			}
-		}
-		// Final color
-		float4 intersectionColor = 
-			intersectionShader( sceneInfo, primitive, materials, textures,
-			intersection, false );
+		   // Final color
+		   float4 intersectionColor = 
+			   intersectionShader( sceneInfo, primitive, materials, textures,
+			   intersection, false );
 
-		color += intersectionColor*lampsColor;
-		saturateVector(color);
+		   color += intersectionColor*lampsColor;
+		   saturateVector(color);
 
-		refractionFromColor = intersectionColor; // Refraction depending on color;
-		saturateVector( totalBlinn );
-	}
-
+		   refractionFromColor = intersectionColor; // Refraction depending on color;
+		   saturateVector( totalBlinn );
+	   }
+   }
 	return color;
 }
 

@@ -57,7 +57,7 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
          {
             case  0: sceneInfo.width.x  = static_cast<int>(atoi( value.c_str() )); break;
             case  1: sceneInfo.height.x = static_cast<int>(atoi( value.c_str() )); break;
-            case  2: sceneInfo.shadowsEnabled.x = static_cast<int>(atoi( value.c_str() )); break;
+            case  2: sceneInfo.graphicsLevel.x = static_cast<int>(atoi( value.c_str() )); break;
             case  3: sceneInfo.nbRayIterations.x = static_cast<int>(atoi( value.c_str() )); break;
             case  4: sceneInfo.transparentColor.x = static_cast<float>(atof( value.c_str() )); break;
             case  5: sceneInfo.viewDistance.x = static_cast<float>(atof( value.c_str() )); break;
@@ -339,7 +339,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
       myfile << SCENEINFO << ";" <<
          sceneInfo.width.x << ";" <<
          sceneInfo.height.x << ";" <<
-         sceneInfo.shadowsEnabled.x << ";" <<
+         sceneInfo.graphicsLevel.x << ";" <<
          sceneInfo.nbRayIterations.x << ";" <<
          sceneInfo.transparentColor.x << ";" <<
          sceneInfo.viewDistance.x << ";" <<
