@@ -51,7 +51,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int width, int height,
    int graphicsLevel, int nbRayIterations, double transparentColor,
    double viewDistance, double shadowIntensity,
-   int supportFor3DVision, double width3DVision,
+   int renderingType, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
    bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D)
@@ -68,7 +68,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    gSceneInfo.backgroundColor.y         = static_cast<float>(bgColorG);
    gSceneInfo.backgroundColor.z         = static_cast<float>(bgColorB);
    gSceneInfo.backgroundColor.w         = 0.f;
-   gSceneInfo.supportFor3DVision.x      = supportFor3DVision;
+   gSceneInfo.renderingType.x           = renderingType;
    gSceneInfo.renderBoxes.x             = static_cast<int>(renderBoxes);
    gSceneInfo.pathTracingIteration.x    = pathTracingIteration;
    gSceneInfo.maxPathTracingIterations.x= maxPathTracingIterations;

@@ -5,11 +5,10 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>E:\Deployments\bin</LocalDebuggerWorkingDirectory>
     <ShowAllFiles>false</ShowAllFiles>
-    <LocalDebuggerCommandArguments>
-    </LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>1536 256</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
-    <LocalDebuggerCommand>E:\Deployments\bin\Raytracer_Cuda.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>E:\Deployments\bin\Raytracer_Cuda_d.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>E:\Deployments\bin</LocalDebuggerWorkingDirectory>
     <LocalDebuggerCommandArguments>
@@ -32,7 +31,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
     <LocalDebuggerWorkingDirectory>E:\Deployments\bin</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommand>E:\Deployments\bin\Raytracer_Cuda.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>E:\Deployments\bin\Raytracer_Cuda_Kinect.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>
     </LocalDebuggerCommandArguments>
   </PropertyGroup>

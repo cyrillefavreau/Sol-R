@@ -98,17 +98,43 @@ __c : Center of rotations
 __a : Angles
 ________________________________________________________________________________
 */
-__device__ inline void vectorRotation( float3& vector, const float3 center, const float3 angles )
+__device__ inline void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
 { 
-	float3 result = vector-center; 
-	/* X axis */ 
-	result.y = vector.y*cos(angles.x) - vector.z*sin(angles.x); 
-	result.z = vector.y*sin(angles.x) + vector.z*cos(angles.x); 
-	vector = result+center; 
-	result = vector-center; 
-	/* Y axis */ 
-	result.z = vector.z*cos(angles.y) - vector.x*sin(angles.y); 
-	result.x = vector.z*sin(angles.y) + vector.x*cos(angles.y); 
-	vector = result+center; 
+	float3 cosAngles, sinAngles;
+	
+   cosAngles.x = cos(angles.x);
+	cosAngles.y = cos(angles.y);
+	cosAngles.z = cos(angles.z);
+	
+   sinAngles.x = sin(angles.x);
+	sinAngles.y = sin(angles.y);
+	sinAngles.z = sin(angles.z);
+
+   // Rotate Center
+   float3 vector;
+   vector.x = v.x - rotationCenter.x;
+   vector.y = v.y - rotationCenter.y;
+   vector.z = v.z - rotationCenter.z;
+   float3 result = vector; 
+
+   /* X axis */ 
+   result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 
+   result.z = vector.y*sinAngles.x + vector.z*cosAngles.x; 
+   vector = result; 
+   result = vector; 
+
+   /* Y axis */ 
+   result.z = vector.z*cosAngles.y - vector.x*sinAngles.y; 
+   result.x = vector.z*sinAngles.y + vector.x*cosAngles.y; 
+   vector = result; 
+   result = vector; 
+
+   /* Z axis */ 
+   result.x = vector.x*cosAngles.z - vector.y*sinAngles.z; 
+   result.y = vector.x*sinAngles.z + vector.y*cosAngles.z; 
+
+   v.x = result.x + rotationCenter.x; 
+   v.y = result.y + rotationCenter.y; 
+   v.z = result.z + rotationCenter.z;
 }
 

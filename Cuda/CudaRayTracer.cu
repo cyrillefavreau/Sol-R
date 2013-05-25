@@ -371,7 +371,7 @@ __global__ void k_standardRenderer(
 	ray.origin = origin;
 	ray.direction = direction;
 
-	float3 rotationCenter = {0.f,0.f,0.f};
+   float3 rotationCenter = {0.f,0.f,0.f};
    bool antialiasingActivated = (sceneInfo.misc.w == 2);
    
 	if( sceneInfo.pathTracingIteration.x == 0 )
@@ -494,11 +494,119 @@ __global__ void k_standardRenderer(
 /*
 ________________________________________________________________________________
 
+Standard renderer
+________________________________________________________________________________
+*/
+__global__ void k_fishEyeRenderer(
+   int split_y, int nbGPUs,
+	BoundingBox* BoundingBoxes, int nbActiveBoxes,
+	Primitive* primitives, int nbActivePrimitives,
+	int* lamps, int nbActiveLamps,
+	Material*    materials,
+	char*        textures,
+	float*       randoms,
+	float3       origin,
+	float3       direction,
+	float3       angles,
+	SceneInfo    sceneInfo,
+	PostProcessingInfo postProcessingInfo,
+	float4*      postProcessingBuffer,
+	int2*        primitiveXYIds)
+{
+	int x = blockDim.x*blockIdx.x + threadIdx.x;
+	int y = blockDim.y*blockIdx.y + threadIdx.y;
+	int index = y*sceneInfo.width.x+x;
+
+	Ray ray;
+	ray.origin = origin;
+	ray.direction = direction;
+
+	if( sceneInfo.pathTracingIteration.x == 0 )
+   {
+		postProcessingBuffer[index].x = 0.f;
+		postProcessingBuffer[index].y = 0.f;
+		postProcessingBuffer[index].z = 0.f;
+		postProcessingBuffer[index].w = 0.f;
+   }
+   else
+	{
+		// Randomize view for natural depth of field
+      if( sceneInfo.pathTracingIteration.x >= NB_MAX_ITERATIONS )
+      {
+		   int rindex = index + sceneInfo.pathTracingIteration.x;
+		   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+		   ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		   ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+      }
+	}
+
+	float dof = postProcessingInfo.param1.x;
+	float3 intersection;
+
+
+   // Normal Y axis
+   float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
+   float2 step;
+   step.y=6400.f/(float)sceneInfo.height.x;
+   ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.height.x/2));
+
+   // 360° X axis
+   step.x = 2.f*M_PI/sceneInfo.width.x;
+   step.y = 2.f*M_PI/sceneInfo.height.x;
+
+   float3 fishEyeAngles = {0.f,0.f,0.f};
+   fishEyeAngles.y = angles.y + step.x*(float)x;
+   //fishEyeAngles.x = angles.x + step.y*(float)y;
+
+   float3 rotationCenter = {0.f,0.f,0.f};
+   vectorRotation( ray.direction, ray.origin, fishEyeAngles );
+
+	//vectorRotation( ray.origin,    rotationCenter, angles );
+	//vectorRotation( ray.direction, rotationCenter, angles );
+	
+   if( sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y && sceneInfo.pathTracingIteration.x>0 && sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS ) return;
+
+   float4 color = {0.f,0.f,0.f,0.f};
+   color += launchRay(
+		BoundingBoxes, nbActiveBoxes,
+		primitives, nbActivePrimitives,
+		lamps, nbActiveLamps,
+		materials, textures, 
+		randoms,
+		ray, 
+		sceneInfo, postProcessingInfo,
+		intersection,
+		dof,
+		primitiveXYIds[index]);
+   
+	if( sceneInfo.pathTracingIteration.x == 0 )
+	{
+		postProcessingBuffer[index].w = dof;
+	}
+
+   if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
+   {
+      postProcessingBuffer[index].x = color.x;
+      postProcessingBuffer[index].y = color.y;
+      postProcessingBuffer[index].z = color.z;
+   }
+   else
+   {
+      postProcessingBuffer[index].x += color.x;
+      postProcessingBuffer[index].y += color.y;
+      postProcessingBuffer[index].z += color.z;
+   }
+}
+
+/*
+________________________________________________________________________________
+
 Anaglyph Renderer
 ________________________________________________________________________________
 */
 __global__ void k_anaglyphRenderer(
-	BoundingBox* BoundingBoxes, int nbActiveBoxes,
+	BoundingBox* boundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
 	int* lamps, int nbActiveLamps,
 	Material*    materials,
@@ -548,7 +656,7 @@ __global__ void k_anaglyphRenderer(
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 colorLeft = launchRay(
-		BoundingBoxes, nbActiveBoxes,
+		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -571,7 +679,7 @@ __global__ void k_anaglyphRenderer(
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 	float4 colorRight = launchRay(
-		BoundingBoxes, nbActiveBoxes,
+		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -590,10 +698,19 @@ __global__ void k_anaglyphRenderer(
 	float g2 = colorRight.y;
 	float b2 = colorRight.z;
 
-	postProcessingBuffer[index].x += r1+r2;
-	postProcessingBuffer[index].y += g1+g2;
-	postProcessingBuffer[index].z += b1+b2;
 	if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
+   if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
+   {
+      postProcessingBuffer[index].x = r1+r2;
+      postProcessingBuffer[index].y = g1+g2;
+      postProcessingBuffer[index].z = b1+b2;
+   }
+   else
+   {
+      postProcessingBuffer[index].x += r1+r2;
+      postProcessingBuffer[index].y += g1+g2;
+      postProcessingBuffer[index].z += b1+b2;
+   }
 }
 
 /*
@@ -603,7 +720,7 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 */
 __global__ void k_3DVisionRenderer(
-	BoundingBox* BoundingBoxes, int nbActiveBoxes,
+	BoundingBox* boundingBoxes, int nbActiveBoxes,
 	Primitive*   primitives,    int nbActivePrimitives,
 	int* lamps, int nbActiveLamps,
 	Material*    materials,
@@ -637,8 +754,8 @@ __global__ void k_3DVisionRenderer(
 
    float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
    float2 step;
-   step.x=4.f*ratio*6400.f/(float)sceneInfo.width.x;
-   step.y=4.f*6400.f/(float)sceneInfo.height.x;
+   step.x=ratio*6400.f/(float)sceneInfo.width.x;
+   step.y=6400.f/(float)sceneInfo.height.x;
 
    Ray eyeRay;
 	if( x<halfWidth ) 
@@ -667,15 +784,8 @@ __global__ void k_3DVisionRenderer(
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
-   __shared__ BoundingBox shBoundingBoxes[128];
-   if( threadIdx.x==0 && threadIdx.y==0)
-   {
-      memcpy( shBoundingBoxes, BoundingBoxes, sizeof(BoundingBox)*nbActiveBoxes);
-   }
-   __syncthreads();
-
    float4 color = launchRay(
-		shBoundingBoxes, nbActiveBoxes,
+		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lamps, nbActiveLamps,
 		materials, textures, 
@@ -686,10 +796,19 @@ __global__ void k_3DVisionRenderer(
 		dof,
 		primitiveXYIds[index]);
 
-	postProcessingBuffer[index].x += color.x;
-	postProcessingBuffer[index].y += color.y;
-	postProcessingBuffer[index].z += color.z;
 	if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
+   if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
+   {
+      postProcessingBuffer[index].x = color.x;
+      postProcessingBuffer[index].y = color.y;
+      postProcessingBuffer[index].z = color.z;
+   }
+   else
+   {
+      postProcessingBuffer[index].x += color.x;
+      postProcessingBuffer[index].y += color.y;
+      postProcessingBuffer[index].z += color.z;
+   }
 }
 
 /*
@@ -1030,7 +1149,7 @@ extern "C" void cudaRender(
    {
       checkCudaErrors(cudaSetDevice(d));
 
-	   switch( sceneInfo.supportFor3DVision.x ) 
+	   switch( sceneInfo.renderingType.x ) 
 	   {
 	   case vtAnaglyph:
 		   {
@@ -1043,6 +1162,15 @@ extern "C" void cudaRender(
 	   case vt3DVision:
 		   {
 			   k_3DVisionRenderer<<<grid,blocks,0,d_streams[d]>>>(
+				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y, d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_randoms[d], origin, direction, angles, sceneInfo, 
+				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			   break;
+		   }
+	   case vtFishEye:
+		   {
+			   k_fishEyeRenderer<<<grid,blocks,0,d_streams[d]>>>(
+               d*size.y, d_nbGPUs,
 				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y, d_lamps[d], objects.z, d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);

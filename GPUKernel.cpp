@@ -887,7 +887,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
             CPUPrimitive& primitive((*m_primitives)[*it]);
             if( primitive.movable && primitive.type != ptCamera )
             {
-#if 0
+#if 1
                float limit = -2200.f;
                if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
                {
@@ -1279,12 +1279,12 @@ void GPUKernel::setSceneInfo(
 	int    width,
 	int    height,
 	float  transparentColor,
-	bool   shadowsEnabled,
+	int    shadowsEnabled,
 	float  viewDistance,
 	float  shadowIntensity,
 	int    nbRayIterations,
 	float4 backgroundColor,
-	bool   supportFor3DVision,
+	int    renderingType,
 	float  width3DVision,
 	bool   renderBoxes,
 	int    pathTracingIteration,
@@ -1303,7 +1303,7 @@ void GPUKernel::setSceneInfo(
 	m_sceneInfo.shadowIntensity.x      = shadowIntensity;
 	m_sceneInfo.nbRayIterations.x      = nbRayIterations;
 	m_sceneInfo.backgroundColor        = backgroundColor;
-	m_sceneInfo.supportFor3DVision.x   = supportFor3DVision;
+	m_sceneInfo.renderingType.x        = renderingType;
 	m_sceneInfo.width3DVision.x        = width3DVision;
 	m_sceneInfo.renderBoxes.x          = renderBoxes;
 	m_sceneInfo.pathTracingIteration.x = pathTracingIteration;

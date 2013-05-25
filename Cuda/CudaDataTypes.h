@@ -29,7 +29,8 @@ enum VisionType
 {
    vtStandard = 0,
    vtAnaglyph = 1,
-   vt3DVision = 2
+   vt3DVision = 2,
+   vtFishEye  = 3
 };
 
 enum OutputType
@@ -51,7 +52,7 @@ struct SceneInfo
    float1  shadowIntensity;
    float1  width3DVision;
    float4  backgroundColor;
-   int1    supportFor3DVision;
+   int1    renderingType;   // Anaglyth, 3DVision, Fish Eye, etc.
    int1    renderBoxes;
    int1    pathTracingIteration;
    int1    maxPathTracingIterations;

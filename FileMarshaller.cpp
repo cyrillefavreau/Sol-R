@@ -67,7 +67,7 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
             case  9: sceneInfo.backgroundColor.y = static_cast<float>(atof( value.c_str() )); break;
             case 10: sceneInfo.backgroundColor.z = static_cast<float>(atof( value.c_str() )); break;
             case 11: sceneInfo.backgroundColor.w = static_cast<float>(atof( value.c_str() )); break;
-            case 12: sceneInfo.supportFor3DVision.x = static_cast<int>(atoi( value.c_str() )); break;
+            case 12: sceneInfo.renderingType.x = static_cast<int>(atoi( value.c_str() )); break;
             case 13: sceneInfo.renderBoxes.x = static_cast<int>(atoi( value.c_str() )); break;
             case 14: sceneInfo.pathTracingIteration.x = static_cast<int>(atoi( value.c_str() )); break;
             case 15: sceneInfo.maxPathTracingIterations.x = static_cast<int>(atoi( value.c_str() )); break;
@@ -349,7 +349,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          sceneInfo.backgroundColor.y << ";" <<
          sceneInfo.backgroundColor.z << ";" <<
          sceneInfo.backgroundColor.w << ";" <<
-         sceneInfo.supportFor3DVision.x << ";" <<
+         sceneInfo.renderingType.x << ";" <<
          sceneInfo.renderBoxes.x << ";" <<
          sceneInfo.pathTracingIteration.x << ";" <<
          sceneInfo.maxPathTracingIterations.x << ";" <<
