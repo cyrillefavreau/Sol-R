@@ -226,6 +226,7 @@ public:
    float vectorLength( const float3& vector );
    void normalizeVector( float3& v );
    float3 crossProduct( const float3& b, const float3& c );
+   float dotProduct( const float3& a, const float3& b );
      
    // Bitmap export
    void saveBitmapToFile( const std::string& filename, char* bitmap, const int width, const int height, const int depth );

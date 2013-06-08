@@ -420,8 +420,12 @@ __device__ inline bool planeIntersection(
 				intersection.y = ray.origin.y+x*ray.direction.y/-ray.direction.x;
 				intersection.z = ray.origin.z+x*ray.direction.z/-ray.direction.x;
 				collision = 
-					fabs(intersection.y - primitive.p0.y) < primitive.size.y &&
+               fabs(intersection.y - primitive.p0.y) < primitive.size.y &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
+            if( materials[primitive.materialId.x].innerIllumination.x != 0.f )
+            {
+               collision &= int(fabs(intersection.z))%4000<2000 && int(fabs(intersection.y))%4000<2000;
+            }
 				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}
@@ -434,6 +438,10 @@ __device__ inline bool planeIntersection(
 				collision = 
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
+            if( materials[primitive.materialId.x].innerIllumination.x != 0.f )
+            {
+               collision &= int(fabs(intersection.z))%4000<2000 && int(fabs(intersection.y))%4000<2000;
+            }
 				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
 					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
 			}

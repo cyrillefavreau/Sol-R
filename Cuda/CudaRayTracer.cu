@@ -113,9 +113,11 @@ __device__ inline float4 launchRay(
 	float4 colorBox = {0.f,0.f,0.f,0.f};
 	bool   back = false;
 
+#if 0
    // Photon energy
    float photonDistance = sceneInfo.viewDistance.x;
    float previousTransparency = 1.f;
+#endif // 0
 
    // Reflected rays
    int reflectedRays=-1;
@@ -125,7 +127,7 @@ __device__ inline float4 launchRay(
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( sceneInfo.graphicsLevel.x<3 ) ? 1 : sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
-	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
+	while( iteration<currentMaxIteration && carryon /*&& photonDistance>0.f*/ ) 
 	{
       // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
@@ -157,9 +159,11 @@ __device__ inline float4 launchRay(
             primitiveXYId.x = primitives[closestPrimitive].index.x;
 			}
 
+#if 0
          // Photon
          photonDistance -= length(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
          previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
+#endif // 0
 
 			if( shadowIntensity <= 0.9f ) // No reflection/refraction if in shades
 			{
@@ -312,10 +316,12 @@ __device__ inline float4 launchRay(
 	float len = length(firstIntersection - ray.origin);
    if( materials[primitive.materialId.x].textureInfo.z == 0 )
    {
+#if 0
 	   // --------------------------------------------------
       // Photon energy
 	   // --------------------------------------------------
       intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
+#endif // 0
 
 	   // --------------------------------------------------
 	   // Fog

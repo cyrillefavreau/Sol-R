@@ -34,6 +34,13 @@ float3 max4( const float3 a, const float3 b, const float3 c )
    return r;
 }
 
+<<<<<<< .mine
+ float GPUKernel::dotProduct( const float3& a, const float3& b )
+ {
+   return a.x * b.x + a.y * b.y + a.z * b.z;
+ }
+
+=======
 void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
 { 
 	float3 cosAngles, sinAngles;
@@ -74,6 +81,7 @@ void vectorRotation( float3& v, const float3& rotationCenter, const float3& angl
    v.z = result.z + rotationCenter.z;
 }
 
+>>>>>>> .r760
 // ________________________________________________________________________________
 float GPUKernel::vectorLength( const float3& vector )
 {
@@ -875,7 +883,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
                      // Lights
 		               if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
 		               {
-                        primitive.movable = false;
+                        //primitive.movable = false;
                         //std::cout << "Primitive " << primitivesIndex << " is lamp " << m_nbActiveLamps << std::endl; 
                         m_hLamps[m_nbActiveLamps] = m_nbActivePrimitives;
 			               (*m_lamps)[m_nbActiveLamps] = (*itp);
