@@ -94,7 +94,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
    int platform, 
    int device )
 {
-	kernel = new CudaKernel( activeLogging, 500, platform, device );
+	kernel = new CudaKernel( activeLogging, NB_MAX_BOXES, platform, device );
    if( kernel == NULL ) return -1;
 	kernel->setSceneInfo( gSceneInfo );
    kernel->initBuffers();

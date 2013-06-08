@@ -92,8 +92,6 @@ __device__ void mandelbrotSet( const SceneInfo& sceneInfo, const float x, const 
       Z_re = Z_re2 - Z_im2+c_re;
    }
 
-   //color.x += Z_re/64.f;
-   //color.y += Z_im/64.f;
    color.x = 1.f-color.x*(n/maxIterations);
    color.y = 1.f-color.y*(n/maxIterations);
    color.z = 1.f-color.z*(n/maxIterations);

@@ -318,15 +318,20 @@ __device__ inline float4 launchRay(
       intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
 
 	   // --------------------------------------------------
-	   // Attenation effect (Fog)
+	   // Fog
 	   // --------------------------------------------------
-      float halfDistance = sceneInfo.viewDistance.x*0.75f;
-      if( sceneInfo.misc.z==1 && len>halfDistance)
+      //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
+
+	   // --------------------------------------------------
+	   // Attenation effect
+	   // --------------------------------------------------
+      float D1 = sceneInfo.viewDistance.x*0.95f;
+      if( sceneInfo.misc.z==1 && len>D1)
       {
-	      len = len-halfDistance/(sceneInfo.viewDistance.x-halfDistance);
-	      len = (len>0.f) ? len : 0.f;
-	      len = (len<1.f) ? len : 0.f;
-         intersectionColor = intersectionColor*(1.f-len) + sceneInfo.backgroundColor*len;
+         float D2 = sceneInfo.viewDistance.x*0.05f;
+         float a = len - D1;
+         float b = 1.f-(a/D2);
+         intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
       }
    }
    depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
@@ -544,9 +549,7 @@ __global__ void k_fishEyeRenderer(
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
 
-
    // Normal Y axis
-   float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
    float2 step;
    step.y=6400.f/(float)sceneInfo.height.x;
    ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.height.x/2));
@@ -559,7 +562,6 @@ __global__ void k_fishEyeRenderer(
    fishEyeAngles.y = angles.y + step.x*(float)x;
    //fishEyeAngles.x = angles.x + step.y*(float)y;
 
-   float3 rotationCenter = {0.f,0.f,0.f};
    vectorRotation( ray.direction, ray.origin, fishEyeAngles );
 
 	//vectorRotation( ray.origin,    rotationCenter, angles );

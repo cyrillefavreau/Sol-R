@@ -118,7 +118,7 @@ public:
      
 public:
    
-   void updateBoundingBox( CPUBoundingBox& box );
+   bool updateBoundingBox( CPUBoundingBox& box );
    void resetBoxes( bool resetPrimitives=true );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives=true );
    CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[boxIndex]; };
@@ -251,11 +251,14 @@ public:
 
 public:
 
-	unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes->size()); };
-	unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives->size()); };
+   unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_nbActiveBoxes); };
+   unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_nbActivePrimitives); };
 	unsigned int getNbActiveLamps()      { return m_nbActiveLamps; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
+
+   bool getProgressiveBoxes() { return m_progressiveBoxes; };
+   void setProgressiveBoxes( const bool progressiveBoxes ) { m_progressiveBoxes = progressiveBoxes; };
 
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
@@ -287,6 +290,7 @@ protected:
 	float*	    m_hRandoms;
    int2*        m_hPrimitivesXYIds;
 
+   unsigned int m_nbActiveBoxes;
 	unsigned int m_nbActivePrimitives;
 	unsigned int m_nbActiveLamps;
 	unsigned int m_nbActiveMaterials;
@@ -318,6 +322,10 @@ protected:
 
    // Refresh
    bool m_refresh;
+
+   // Progressive boxes
+   // If true, only transfer visible boxes to the GPU
+   bool m_progressiveBoxes;
 
 protected:
 

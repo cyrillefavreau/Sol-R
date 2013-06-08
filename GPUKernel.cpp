@@ -34,6 +34,46 @@ float3 max4( const float3 a, const float3 b, const float3 c )
    return r;
 }
 
+void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
+{ 
+	float3 cosAngles, sinAngles;
+	
+   cosAngles.x = cos(angles.x);
+	cosAngles.y = cos(angles.y);
+	cosAngles.z = cos(angles.z);
+	
+   sinAngles.x = sin(angles.x);
+	sinAngles.y = sin(angles.y);
+	sinAngles.z = sin(angles.z);
+
+   // Rotate Center
+   float3 vector;
+   vector.x = v.x - rotationCenter.x;
+   vector.y = v.y - rotationCenter.y;
+   vector.z = v.z - rotationCenter.z;
+   float3 result = vector; 
+
+   /* X axis */ 
+   result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 
+   result.z = vector.y*sinAngles.x + vector.z*cosAngles.x; 
+   vector = result; 
+   result = vector; 
+
+   /* Y axis */ 
+   result.z = vector.z*cosAngles.y - vector.x*sinAngles.y; 
+   result.x = vector.z*sinAngles.y + vector.x*cosAngles.y; 
+   vector = result; 
+   result = vector; 
+
+   /* Z axis */ 
+   result.x = vector.x*cosAngles.z - vector.y*sinAngles.z; 
+   result.y = vector.x*sinAngles.z + vector.y*cosAngles.z; 
+
+   v.x = result.x + rotationCenter.x; 
+   v.y = result.y + rotationCenter.y; 
+   v.z = result.z + rotationCenter.z;
+}
+
 // ________________________________________________________________________________
 float GPUKernel::vectorLength( const float3& vector )
 {
@@ -121,6 +161,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 	LOG_INFO(3, "CPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) );
 	LOG_INFO(3, "Textures " << NB_MAX_TEXTURES );
 #endif // 0
+
+   m_progressiveBoxes = true;
 }
 
 
@@ -167,7 +209,8 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%2000-1000)/1000.f;
+		m_hRandoms[i] = (rand()%2000-1000)/10000.f;
+      //m_hRandoms[i] *= (i%100==0) ? 10.f : 1.f;
 	}
 }
 
@@ -526,9 +569,11 @@ unsigned int GPUKernel::getPrimitiveAt( int x, int y )
 	return returnValue;
 }
 
-void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
+bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 {
 	LOG_INFO(3,"GPUKernel::updateBoundingBox()" );
+
+   bool result(false);
 
    // Process box size
 	float3 corner0;
@@ -538,6 +583,7 @@ void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
    while( it != box.primitives.end() )
    {
       CPUPrimitive& primitive = (*m_primitives)[*it];
+      result = (m_hMaterials[primitive.materialId].innerIllumination.x != 0.f );
 	   switch( primitive.type )
 	   {
 	   case ptTriangle: 
@@ -598,6 +644,7 @@ void GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 
       ++it;
    }
+   return result;
 }
 
 void GPUKernel::resetBoxes( bool resetPrimitives )
@@ -757,8 +804,18 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          processBoxes( bestSize, activeBoxes, false );
       }
 
-      unsigned int b(0);
-      unsigned int primitivesIndex(0);
+      // Transform data for ray-tracer
+      float3 viewPos = m_viewPos;
+      if( m_progressiveBoxes )
+      {
+         float3 rotationCenter = {0.f,0.f,0.f};
+         float3 angles = m_angles;
+         angles.x *= -1.f;
+         vectorRotation( viewPos, rotationCenter, angles );
+         m_primitivesTransfered = false;
+      }
+
+      m_nbActiveBoxes = 0;
       m_nbActivePrimitives = 0;
       m_nbActiveLamps = 0;
       if( m_boundingBoxes )
@@ -767,17 +824,34 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          while( itb != m_boundingBoxes->end() )
          {
             CPUBoundingBox& box = (*itb).second;
-            if( box.primitives.size() != 0 && b<NB_MAX_BOXES )
+
+            bool addBox(true);
+            if( m_progressiveBoxes )
+            {
+               // Only consider boxes that are not too far
+               resetBox(box,false);
+               bool containsLight = updateBoundingBox(box);
+
+               float3 v1,v2;
+               v1.x = box.parameters[0].x-viewPos.x;
+               v1.y = box.parameters[0].y-viewPos.y;
+               v1.z = box.parameters[0].z-viewPos.z;
+               v2.x = box.parameters[1].x-viewPos.x;
+               v2.y = box.parameters[1].y-viewPos.y;
+               v2.z = box.parameters[1].z-viewPos.z;
+               float d = std::min(vectorLength(v1),vectorLength(v2));
+
+               addBox = (containsLight || (d<m_sceneInfo.viewDistance.x));
+            }
+
+            if( addBox && (box.primitives.size()!=0) && (m_nbActiveBoxes<NB_MAX_BOXES) )
             {
                // Prepare boxes for GPU
 
-               resetBox(box,false);
-               updateBoundingBox(box);
-
-               m_hBoundingBoxes[b].parameters[0] = box.parameters[0];
-               m_hBoundingBoxes[b].parameters[1] = box.parameters[1];
-               m_hBoundingBoxes[b].startIndex.x  = primitivesIndex;
-               m_hBoundingBoxes[b].nbPrimitives.x= static_cast<int>(box.primitives.size());
+               m_hBoundingBoxes[m_nbActiveBoxes].parameters[0] = box.parameters[0];
+               m_hBoundingBoxes[m_nbActiveBoxes].parameters[1] = box.parameters[1];
+               m_hBoundingBoxes[m_nbActiveBoxes].startIndex.x  = m_nbActivePrimitives;
+               m_hBoundingBoxes[m_nbActiveBoxes].nbPrimitives.x= static_cast<int>(box.primitives.size());
 
                std::vector<unsigned int>::const_iterator itp = box.primitives.begin();
                while( itp != box.primitives.end() )
@@ -786,39 +860,38 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
                   if( *itp < NB_MAX_PRIMITIVES )
                   {
                      CPUPrimitive& primitive = (*m_primitives)[*itp];
-                     m_hPrimitives[primitivesIndex].index.x = *itp;
-                     m_hPrimitives[primitivesIndex].type.x  = primitive.type;
-                     m_hPrimitives[primitivesIndex].p0 = primitive.p0;
-                     m_hPrimitives[primitivesIndex].p1 = primitive.p1;
-                     m_hPrimitives[primitivesIndex].p2 = primitive.p2;
-                     m_hPrimitives[primitivesIndex].n0 = primitive.n0;
-                     m_hPrimitives[primitivesIndex].n1 = primitive.n1;
-                     m_hPrimitives[primitivesIndex].n2 = primitive.n2;
-                     m_hPrimitives[primitivesIndex].size = primitive.size;
-                     m_hPrimitives[primitivesIndex].materialId.x = primitive.materialId;
-                     m_hPrimitives[primitivesIndex].materialInfo = primitive.materialInfo;
+                     m_hPrimitives[m_nbActivePrimitives].index.x = *itp;
+                     m_hPrimitives[m_nbActivePrimitives].type.x  = primitive.type;
+                     m_hPrimitives[m_nbActivePrimitives].p0 = primitive.p0;
+                     m_hPrimitives[m_nbActivePrimitives].p1 = primitive.p1;
+                     m_hPrimitives[m_nbActivePrimitives].p2 = primitive.p2;
+                     m_hPrimitives[m_nbActivePrimitives].n0 = primitive.n0;
+                     m_hPrimitives[m_nbActivePrimitives].n1 = primitive.n1;
+                     m_hPrimitives[m_nbActivePrimitives].n2 = primitive.n2;
+                     m_hPrimitives[m_nbActivePrimitives].size = primitive.size;
+                     m_hPrimitives[m_nbActivePrimitives].materialId.x = primitive.materialId;
+                     m_hPrimitives[m_nbActivePrimitives].materialInfo = primitive.materialInfo;
 
                      // Lights
 		               if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
 		               {
                         primitive.movable = false;
                         //std::cout << "Primitive " << primitivesIndex << " is lamp " << m_nbActiveLamps << std::endl; 
-                        m_hLamps[m_nbActiveLamps] = primitivesIndex;
+                        m_hLamps[m_nbActiveLamps] = m_nbActivePrimitives;
 			               (*m_lamps)[m_nbActiveLamps] = (*itp);
 			               m_nbActiveLamps++;
 			               LOG_INFO(3,"Lamp added (" << m_nbActiveLamps << "/" << NB_MAX_LAMPS << ")" );
 		               }
                   }
                   ++itp;
-                  ++primitivesIndex;
+                  ++m_nbActivePrimitives;
                }
-               ++b;
+               ++m_nbActiveBoxes;
             }
             ++itb;
          }
-         m_nbActivePrimitives=primitivesIndex;
-
-   	   return static_cast<int>(m_boundingBoxes->size());
+   	   //m_nbActiveBoxes = m_boundingBoxes->size();
+   	   return static_cast<int>(m_nbActiveBoxes);
       }
       else
       {
@@ -887,7 +960,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
             CPUPrimitive& primitive((*m_primitives)[*it]);
             if( primitive.movable && primitive.type != ptCamera )
             {
-#if 1
+#if 0
                float limit = -2200.f;
                if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
                {

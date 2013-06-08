@@ -241,10 +241,10 @@ void CudaKernel::render_begin( const float timer )
    if( m_refresh )
    {
 	   // CPU -> GPU Data transfers
-      int nbBoxes = static_cast<int>(m_boundingBoxes->size());
+      int nbBoxes      = m_nbActiveBoxes;
       int nbPrimitives = m_nbActivePrimitives;
-      int nbMaterials = m_nbActiveMaterials+1;
-      int nbLamps = m_nbActiveLamps;
+      int nbMaterials  = m_nbActiveMaterials+1;
+      int nbLamps      = m_nbActiveLamps;
 
       LOG_INFO(3,"Data sizes: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps);
 

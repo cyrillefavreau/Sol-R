@@ -479,6 +479,7 @@ __device__ inline bool planeIntersection(
 		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE )
 		{
 			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection );
+         shadowIntensity = color.w;
 		}
 
 		if( (color.x+color.y+color.z)/3.f >= sceneInfo.transparentColor.x ) 

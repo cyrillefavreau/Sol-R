@@ -215,6 +215,8 @@ __device__ float4 intersectionShader(
 	const bool&      back )
 {
 	float4 colorAtIntersection = materials[primitive.materialId.x].color;
+   colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
+
 	switch( primitive.type.x ) 
 	{
 	case ptCylinder:
@@ -432,7 +434,10 @@ __device__ float4 primitiveShader(
 			   intersectionShader( sceneInfo, primitive, materials, textures,
 			   intersection, false );
 
+         // Light impact on material
 		   color += intersectionColor*lampsColor;
+
+         // Saturate color
 		   saturateVector(color);
 
 		   refractionFromColor = intersectionColor; // Refraction depending on color;
