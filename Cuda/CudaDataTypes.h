@@ -67,6 +67,13 @@ struct Ray
    int4   signs;
 };
 
+struct LightInformation
+{
+   int4   attributes; // x: object ID
+   float4 location;
+   float4 color;
+};
+
 // Enums
 enum PrimitiveType 
 {

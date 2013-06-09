@@ -141,9 +141,9 @@ __device__ float processShadows(
 				float3 normal       = {0.f,0.f,0.f};
 				float  shadowIntensity = 0.f;
 
-				if( (box.startIndex.x+cptPrimitives) != objectId )
+				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
+            if( primitive.index.x != objectId )
 				{
-					Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
 
 					bool hit = false;
 					bool back;
@@ -306,7 +306,7 @@ __device__ float4 primitiveShader(
 	const PostProcessingInfo&   postProcessingInfo,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes, 
 	Primitive* primitives, const int& nbActivePrimitives,
-	int* lamps, const int& nbActiveLamps,
+	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
 	Material* materials, char* textures,
 	float* randoms,
 	const float3& origin,
@@ -342,12 +342,15 @@ __device__ float4 primitiveShader(
    if( sceneInfo.graphicsLevel.x>0 )
    {
 	   color *= materials[primitive.materialId.x].innerIllumination.x;
-	   for( int cptLamps=0; cptLamps<nbActiveLamps; cptLamps++ ) 
+      int activeLamps = nbActiveLamps;
+	   for( int cpt=0; cpt<activeLamps; ++cpt ) 
 	   {
-		   if(lamps[cptLamps] != objectId)
+         int cptLamp = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS && sceneInfo.pathTracingIteration.x%2==0) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
+		   if(lightInformation[cptLamp].attributes.x != objectId)
 		   {
 			   float3 center;
    		   // randomize lamp center
+#if 0
 			   float3 size;
 			   switch( primitives[lamps[cptLamps]].type.x )
 			   {
@@ -367,13 +370,31 @@ __device__ float4 primitiveShader(
 				   }
 			   }
 
-			   if( sceneInfo.pathTracingIteration.x > NB_MAX_ITERATIONS )
+            if( sceneInfo.pathTracingIteration.x > NB_MAX_ITERATIONS )
 			   {
 				   int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
 				   center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 				   center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 				   center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 			   }
+#else
+            center.x = lightInformation[cptLamp].location.x;
+            center.y = lightInformation[cptLamp].location.y;
+            center.z = lightInformation[cptLamp].location.z;
+
+            if( lightInformation[cptLamp].attributes.x != -1 )
+            {
+               Primitive& lamp = primitives[lightInformation[cptLamp].attributes.x];
+
+               if( sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS /*&& sceneInfo.pathTracingIteration.x%2!=0*/ )
+			      {
+				      int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
+                  center.x += materials[lamp.materialId.x].innerIllumination.y*lamp.size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				      center.y += materials[lamp.materialId.x].innerIllumination.y*lamp.size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				      center.z += materials[lamp.materialId.x].innerIllumination.y*lamp.size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+			      }
+            }
+#endif
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
 			   if( sceneInfo.graphicsLevel.x>3 && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
@@ -382,17 +403,18 @@ __device__ float4 primitiveShader(
 					   sceneInfo, boundingBoxes, nbActiveBoxes,
 					   primitives, materials, textures, 
 					   nbActivePrimitives, center, 
-					   intersection, lamps[cptLamps], iteration, shadowColor );
+                  intersection, lightInformation[cptLamp].attributes.x, iteration, shadowColor );
 			   }
 
-            // Lightning intensity decreases with distance
             if( sceneInfo.graphicsLevel.x>0 )
             {
-			      Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
 		         float3 lightRay = center - intersection;
+               lightRay = normalize(lightRay);
+#if 0
+               // Lightning intensity decreases with distance
+			      Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
                float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
                lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
-               lightRay = normalize(lightRay);
 
 			      // --------------------------------------------------------------------------------
 			      // Lambert
@@ -403,8 +425,23 @@ __device__ float4 primitiveShader(
 			      lambert *= (1.f-shadowIntensity);
                lambert *= lampIntensity;
 
-			      // Lighted object, not in the shades
+               // Lighted object, not in the shades
 			      lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
+#else
+			      // --------------------------------------------------------------------------------
+			      // Lambert
+			      // --------------------------------------------------------------------------------
+	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+			      lambert = (lambert<0.f) ? 0.f : lambert;
+			      lambert *= lightInformation[cptLamp].color.w;
+			      lambert *= (1.f-shadowIntensity);
+
+               // Lighted object, not in the shades
+
+			      lampsColor.x += lambert*lightInformation[cptLamp].color.x*lightInformation[cptLamp].color.w - shadowColor.x;
+			      lampsColor.y += lambert*lightInformation[cptLamp].color.y*lightInformation[cptLamp].color.w - shadowColor.y;
+			      lampsColor.z += lambert*lightInformation[cptLamp].color.z*lightInformation[cptLamp].color.w - shadowColor.z;
+#endif
 
 			      if( sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x )
 			      {
@@ -423,7 +460,14 @@ __device__ float4 primitiveShader(
 					      blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
 					      blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y);
+
+#if 0
 					      totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
+#else
+					      totalBlinn.x += lightInformation[cptLamp].color.x * lightInformation[cptLamp].color.w * blinnTerm;
+					      totalBlinn.y += lightInformation[cptLamp].color.y * lightInformation[cptLamp].color.w * blinnTerm;
+					      totalBlinn.z += lightInformation[cptLamp].color.z * lightInformation[cptLamp].color.w * blinnTerm;
+#endif //0
 				      }
 			      }
             }

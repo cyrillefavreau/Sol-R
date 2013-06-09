@@ -36,17 +36,18 @@
 #include "GeometryShaders.cuh"
 
 // Device resources
-Primitive*   d_primitives[MAX_GPU_COUNT];
-BoundingBox* d_boundingBoxes[MAX_GPU_COUNT]; 
-int*         d_lamps[MAX_GPU_COUNT];
-Material*    d_materials[MAX_GPU_COUNT];
-char*        d_textures[MAX_GPU_COUNT];
-float*       d_randoms[MAX_GPU_COUNT];
-float4*      d_postProcessingBuffer[MAX_GPU_COUNT];
-char*        d_bitmap[MAX_GPU_COUNT];
-int2*        d_primitivesXYIds[MAX_GPU_COUNT];
-cudaStream_t d_streams[MAX_GPU_COUNT];
-int          d_nbGPUs;
+Primitive*        d_primitives[MAX_GPU_COUNT];
+BoundingBox*      d_boundingBoxes[MAX_GPU_COUNT]; 
+int*              d_lamps[MAX_GPU_COUNT];
+Material*         d_materials[MAX_GPU_COUNT];
+char*             d_textures[MAX_GPU_COUNT];
+LightInformation* d_lightInformation[MAX_GPU_COUNT];
+float*            d_randoms[MAX_GPU_COUNT];
+float4*           d_postProcessingBuffer[MAX_GPU_COUNT];
+char*             d_bitmap[MAX_GPU_COUNT];
+int2*             d_primitivesXYIds[MAX_GPU_COUNT];
+cudaStream_t      d_streams[MAX_GPU_COUNT];
+int               d_nbGPUs;
 
 /*
 ________________________________________________________________________________
@@ -75,7 +76,7 @@ ________________________________________________________________________________
 __device__ inline float4 launchRay( 
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
-	int* lamps, const int& nbActiveLamps,
+	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
 	Material*  materials, char* textures,
 	float*           randoms,
 	const Ray&       ray, 
@@ -236,7 +237,9 @@ __device__ inline float4 launchRay(
             primitiveShader( 
 				   sceneInfo, postProcessingInfo,
 				   boundingBoxes, nbActiveBoxes, 
-			      primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
+			      primitives, nbActivePrimitives, 
+               lightInformation, lightInformationSize, nbActiveLamps,
+               materials, textures, 
 			      randoms,
 			      rayOrigin.origin, normal, closestPrimitive, closestIntersection, 
 			      iteration, refractionFromColor, shadowIntensity, rBlinn );
@@ -293,7 +296,9 @@ __device__ inline float4 launchRay(
          float4 color = primitiveShader( 
 				sceneInfo, postProcessingInfo,
 				boundingBoxes, nbActiveBoxes, 
-			   primitives, nbActivePrimitives, lamps, nbActiveLamps, materials, textures, 
+			   primitives, nbActivePrimitives, 
+            lightInformation, lightInformationSize, nbActiveLamps, 
+            materials, textures, 
 			   randoms,
 			   reflectedRay.origin, normal, closestPrimitive, closestIntersection, 
 			   reflectedRays, 
@@ -362,8 +367,8 @@ __global__ void k_standardRenderer(
    int split_y, int nbGPUs,
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
-	int* lamps, int nbActiveLamps,
-	Material*    materials,
+   LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
+   Material*    materials,
 	char*        textures,
 	float*       randoms,
 	float3       origin,
@@ -383,7 +388,7 @@ __global__ void k_standardRenderer(
 	ray.direction = direction;
 
    float3 rotationCenter = {0.f,0.f,0.f};
-   bool antialiasingActivated = (sceneInfo.misc.w == 2);
+   bool antialiasingActivated = (sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-2 || sceneInfo.misc.w == 2);
    
 	if( sceneInfo.pathTracingIteration.x == 0 )
    {
@@ -404,10 +409,6 @@ __global__ void k_standardRenderer(
 		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
       }
 	}
-   if( sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-1 )
-   {
-      antialiasingActivated = true;
-   }
 
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
@@ -455,7 +456,7 @@ __global__ void k_standardRenderer(
 	      float4 c = launchRay(
 		      BoundingBoxes, nbActiveBoxes,
 		      primitives, nbActivePrimitives,
-		      lamps, nbActiveLamps,
+            lightInformation, lightInformationSize, nbActiveLamps,
 		      materials, textures, 
 		      randoms,
 		      r, 
@@ -469,7 +470,7 @@ __global__ void k_standardRenderer(
    color += launchRay(
 		BoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
-		lamps, nbActiveLamps,
+      lightInformation, lightInformationSize, nbActiveLamps,
 		materials, textures, 
 		randoms,
 		ray, 
@@ -512,7 +513,7 @@ __global__ void k_fishEyeRenderer(
    int split_y, int nbGPUs,
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
-	int* lamps, int nbActiveLamps,
+   LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
 	Material*    materials,
 	char*        textures,
 	float*       randoms,
@@ -579,7 +580,7 @@ __global__ void k_fishEyeRenderer(
    color += launchRay(
 		BoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
-		lamps, nbActiveLamps,
+		lightInformation, lightInformationSize, nbActiveLamps,
 		materials, textures, 
 		randoms,
 		ray, 
@@ -616,7 +617,7 @@ ________________________________________________________________________________
 __global__ void k_anaglyphRenderer(
 	BoundingBox* boundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
-	int* lamps, int nbActiveLamps,
+   LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
 	Material*    materials,
 	char*        textures,
 	float*       randoms,
@@ -666,7 +667,7 @@ __global__ void k_anaglyphRenderer(
    float4 colorLeft = launchRay(
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
-		lamps, nbActiveLamps,
+		lightInformation, lightInformationSize, nbActiveLamps,
 		materials, textures, 
 		randoms,
 		eyeRay, 
@@ -689,7 +690,7 @@ __global__ void k_anaglyphRenderer(
 	float4 colorRight = launchRay(
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
-		lamps, nbActiveLamps,
+		lightInformation, lightInformationSize, nbActiveLamps,
 		materials, textures, 
 		randoms,
 		eyeRay, 
@@ -730,7 +731,7 @@ ________________________________________________________________________________
 __global__ void k_3DVisionRenderer(
 	BoundingBox* boundingBoxes, int nbActiveBoxes,
 	Primitive*   primitives,    int nbActivePrimitives,
-	int* lamps, int nbActiveLamps,
+   LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
 	Material*    materials,
 	char*        textures,
 	float*       randoms,
@@ -795,7 +796,7 @@ __global__ void k_3DVisionRenderer(
    float4 color = launchRay(
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
-		lamps, nbActiveLamps,
+		lightInformation, lightInformationSize, nbActiveLamps,
 		materials, textures, 
 		randoms,
 		eyeRay, 
@@ -1009,6 +1010,7 @@ extern "C" void initialize_scene(
 	   checkCudaErrors(cudaMalloc( (void**)&d_lamps[d],              NB_MAX_LAMPS*sizeof(int)));
 	   checkCudaErrors(cudaMalloc( (void**)&d_materials[d],          NB_MAX_MATERIALS*sizeof(Material)));
 	   checkCudaErrors(cudaMalloc( (void**)&d_textures[d],           NB_MAX_TEXTURES*gTextureDepth*gTextureWidth*gTextureHeight + gTextureOffset));
+	   checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[d],   gTextureDepth*gTextureWidth*gTextureHeight*sizeof(LightInformation)));
 	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[d],            width*height*sizeof(float)));
 
 	   // Rendering canvas
@@ -1046,6 +1048,7 @@ extern "C" void finalize_scene()
 	   checkCudaErrors(cudaFree( d_lamps[d] ));
 	   checkCudaErrors(cudaFree( d_materials[d] ));
 	   checkCudaErrors(cudaFree( d_textures[d] ));
+	   checkCudaErrors(cudaFree( d_lightInformation[d] ));
 	   checkCudaErrors(cudaFree( d_randoms[d] ));
 	   checkCudaErrors(cudaFree( d_postProcessingBuffer[d] ));
 	   checkCudaErrors(cudaFree( d_bitmap[d] ));
@@ -1093,6 +1096,16 @@ extern "C" void h2d_textures(
    {
       checkCudaErrors(cudaSetDevice(d));
 	   checkCudaErrors(cudaMemcpyAsync( d_textures[d],  textures,  gTextureOffset+nbActiveTextures*sizeof(char)*gTextureSize, cudaMemcpyHostToDevice, d_streams[d] ));
+   }
+}
+
+extern "C" void h2d_lightInformation( 
+	LightInformation* lightInformation , int lightInformationSize)
+{
+   for( int d(0); d<d_nbGPUs; ++d )
+   {
+      checkCudaErrors(cudaSetDevice(d));
+	   checkCudaErrors(cudaMemcpyAsync( d_lightInformation[d],  lightInformation,  lightInformationSize*sizeof(LightInformation), cudaMemcpyHostToDevice, d_streams[d] ));
    }
 }
 
@@ -1162,7 +1175,10 @@ extern "C" void cudaRender(
 	   case vtAnaglyph:
 		   {
 			   k_anaglyphRenderer<<<grid,blocks,0,d_streams[d]>>>(
-				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y,  d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_boundingBoxes[d], objects.x, 
+               d_primitives[d], objects.y,  
+               d_lightInformation[d], objects.w, objects.z,
+               d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
 			   break;
@@ -1170,7 +1186,10 @@ extern "C" void cudaRender(
 	   case vt3DVision:
 		   {
 			   k_3DVisionRenderer<<<grid,blocks,0,d_streams[d]>>>(
-				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y, d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_boundingBoxes[d], objects.x, 
+               d_primitives[d], objects.y,  
+               d_lightInformation[d], objects.w, objects.z,
+               d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
 			   break;
@@ -1179,7 +1198,10 @@ extern "C" void cudaRender(
 		   {
 			   k_fishEyeRenderer<<<grid,blocks,0,d_streams[d]>>>(
                d*size.y, d_nbGPUs,
-				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y, d_lamps[d], objects.z, d_materials[d], d_textures[d], 
+				   d_boundingBoxes[d], objects.x, 
+               d_primitives[d], objects.y,  
+               d_lightInformation[d], objects.w, objects.z,
+               d_materials[d], d_textures[d], 
 				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
 			   break;
@@ -1188,8 +1210,11 @@ extern "C" void cudaRender(
 		   {
 			   k_standardRenderer<<<grid,blocks,0,d_streams[d]>>>(
                d*size.y, d_nbGPUs,
-				   d_boundingBoxes[d], objects.x, d_primitives[d], objects.y,  d_lamps[d], objects.z, d_materials[d], d_textures[d], 
-				   d_randoms[d], origin, direction, angles, sceneInfo,
+				   d_boundingBoxes[d], objects.x, 
+               d_primitives[d], objects.y,  
+               d_lightInformation[d], objects.w, objects.z,
+               d_materials[d], d_textures[d], 
+				   d_randoms[d], origin, direction, angles, sceneInfo, 
 				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
 			   break;
 		   }

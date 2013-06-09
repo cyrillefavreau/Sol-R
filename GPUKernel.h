@@ -183,12 +183,9 @@ public:
 public:
 
 	// ---------- Textures ----------
-	void setTexture(
-		unsigned int index,
-		char* texture );
-
-	int addTexture( 
-		const std::string& filename );
+	void setTexture(unsigned int index, char* texture );
+	int  addTexture( const std::string& filename );
+   void buildLightInformationFromTexture( unsigned int index );
 
 public:
 
@@ -296,6 +293,7 @@ protected:
 	unsigned int m_nbActiveLamps;
 	unsigned int m_nbActiveMaterials;
 	unsigned int m_nbActiveTextures;
+   unsigned int m_lightInformationSize;
 	float3		 m_viewPos;
 	float3		 m_viewDir;
 	float3		 m_angles;
@@ -342,6 +340,7 @@ protected:
 	BoxContainer*       m_boundingBoxes;
 	PrimitiveContainer* m_primitives;
 	LampContainer*      m_lamps;
+   LightInformation*   m_lightInformation;
 
 protected:
    int m_optimalNbOfPrimmitivesPerBox;

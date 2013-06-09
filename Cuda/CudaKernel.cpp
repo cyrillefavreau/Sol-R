@@ -254,6 +254,9 @@ void CudaKernel::render_begin( const float timer )
             m_hBoundingBoxes, nbBoxes, 
             m_hPrimitives, nbPrimitives, 
             m_hLamps, nbLamps );
+
+         h2d_lightInformation( 
+            m_lightInformation, m_lightInformationSize );
          m_primitivesTransfered = true;
       }
 	
@@ -265,11 +268,11 @@ void CudaKernel::render_begin( const float timer )
          LOG_INFO(3, "Transfering " << nbMaterials << " materials");
 		   m_materialsTransfered = true;
 	   }
+
       if( !m_texturesTransfered )
 	   {
-		   h2d_textures( 
-            m_hTextures,  m_nbActiveTextures);
-         LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures");
+         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
+		   h2d_textures( m_hTextures,  m_nbActiveTextures);
 		   m_texturesTransfered = true;
       }
 
@@ -278,7 +281,7 @@ void CudaKernel::render_begin( const float timer )
       objects.x = nbBoxes;
       objects.y = nbPrimitives;
       objects.z = nbLamps;
-      objects.w = 0;
+      objects.w = m_lightInformationSize;
 
 	   cudaRender(
          m_blockSize,

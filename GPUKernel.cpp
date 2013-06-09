@@ -34,13 +34,11 @@ float3 max4( const float3 a, const float3 b, const float3 c )
    return r;
 }
 
-<<<<<<< .mine
  float GPUKernel::dotProduct( const float3& a, const float3& b )
  {
    return a.x * b.x + a.y * b.y + a.z * b.z;
  }
 
-=======
 void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
 { 
 	float3 cosAngles, sinAngles;
@@ -81,7 +79,6 @@ void vectorRotation( float3& v, const float3& rotationCenter, const float3& angl
    v.z = result.z + rotationCenter.z;
 }
 
->>>>>>> .r760
 // ________________________________________________________________________________
 float GPUKernel::vectorLength( const float3& vector )
 {
@@ -138,10 +135,12 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 	m_nbActiveLamps(0),
 	m_nbActiveMaterials(-1),
 	m_nbActiveTextures(0),
+   m_lightInformationSize(0),
 	m_activeLogging(activeLogging),
    m_primitives(nullptr),
    m_boundingBoxes(nullptr),
    m_lamps(nullptr),
+   m_lightInformation(nullptr),
 #if USE_KINECT
 	m_hVideo(0), m_hDepth(0), 
 	m_skeletons(0), m_hNextDepthFrameEvent(0), m_hNextVideoFrameEvent(0), m_hNextSkeletonEvent(0),
@@ -187,9 +186,10 @@ void GPUKernel::initBuffers()
 	LOG_INFO(1,"GPUKernel::initBuffers");
 
    // Setup CPU resources
-   m_primitives    = new PrimitiveContainer;
-   m_boundingBoxes = new BoxContainer;
-   m_lamps         = new LampContainer;
+   m_primitives       = new PrimitiveContainer;
+   m_boundingBoxes    = new BoxContainer;
+   m_lamps            = new LampContainer;
+   m_lightInformation = new LightInformation[ NB_MAX_LAMPS + gTextureWidth*gTextureHeight ];
    if( m_primitives && m_boundingBoxes && m_lamps )
    {
       LOG_INFO(1, "CPU resources successfully initialized" );
@@ -262,6 +262,12 @@ void GPUKernel::cleanup()
       //m_lamps->clear();
       delete m_lamps;
       m_lamps = nullptr;
+   }
+
+   if( m_lightInformation )
+   {
+      delete m_lightInformation;
+      m_lightInformation = nullptr;
    }
 
    if( m_boundingBoxes )
@@ -898,7 +904,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             }
             ++itb;
          }
-   	   //m_nbActiveBoxes = m_boundingBoxes->size();
+         buildLightInformationFromTexture(4);
    	   return static_cast<int>(m_nbActiveBoxes);
       }
       else
@@ -1572,6 +1578,110 @@ int GPUKernel::addTexture( const std::string& filename )
       LOG_ERROR("Texture memory not allocated");
    }
 	return m_nbActiveTextures-1;
+}
+
+void GPUKernel::buildLightInformationFromTexture( unsigned int index )
+{
+   m_lightInformationSize = 0;
+
+   // Light from explicit light sources
+   for( unsigned int i(0); i<m_nbActiveLamps; ++i )
+   {
+      int idx((*m_lamps)[i]);
+      CPUPrimitive& lamp = (*m_primitives)[idx];
+      Material& material = m_hMaterials[lamp.materialId];
+
+      LightInformation lightInformation;
+      lightInformation.attributes.x = idx;
+
+      lightInformation.location.x = lamp.p0.x;
+      lightInformation.location.y = 100.f+lamp.p0.y;
+      lightInformation.location.z = lamp.p0.z;
+      lightInformation.attributes.x = idx;
+
+      lightInformation.color.x = material.color.x;
+      lightInformation.color.y = material.color.y;
+      lightInformation.color.z = material.color.z;
+      lightInformation.color.w = material.innerIllumination.x;
+
+      m_lightInformation[m_lightInformationSize] = lightInformation;
+
+      LOG_INFO(3,
+         "Lamp " << m_lightInformation[m_lightInformationSize].attributes.x << ":" <<
+         m_lightInformation[m_lightInformationSize].location.x << "," <<
+         m_lightInformation[m_lightInformationSize].location.y << "," <<
+         m_lightInformation[m_lightInformationSize].location.z << " " <<
+         m_lightInformation[m_lightInformationSize].color.y << "," <<
+         m_lightInformation[m_lightInformationSize].color.z << " " <<
+         m_lightInformation[m_lightInformationSize].color.w );
+
+      m_lightInformationSize++;
+   }
+   float size = m_sceneInfo.viewDistance.x/3.f;
+
+#if 1
+   for( float x(0.f); x<2.f*M_PI; x+=M_PI/8.f)
+   {
+      LightInformation lightInformation;
+      lightInformation.location.x = 200.f*cos(x);
+      lightInformation.location.y = 200.f*sin(x);
+      lightInformation.location.z = -2000.f;
+      lightInformation.attributes.x = -1;
+      lightInformation.color.x = 1.f; //0.5f+0.5f*cos(x);
+      lightInformation.color.y = 1.f; //0.5f+0.5f*sin(x);
+      lightInformation.color.z = 1.f; //0.5f+0.5f*cos(x+M_PI);
+      lightInformation.color.w = 0.6f;
+      m_lightInformation[m_lightInformationSize] = lightInformation;
+      m_lightInformationSize++;
+   }
+#else
+   // Light from skybox
+   if( index < m_nbActiveTextures )
+   {
+      for( int i(0); i<gTextureWidth*gTextureHeight; i+=gTextureDepth*4)
+      {
+         int Y = i/gTextureHeight;
+         int Z = i%gTextureWidth;
+
+         int  offset = gTextureOffset + (index*gTextureWidth*gTextureHeight*gTextureDepth);
+         unsigned char r = m_hTextures[offset+i];
+         unsigned char g = m_hTextures[offset+i+1];
+         unsigned char b = m_hTextures[offset+i+2];
+         float R = r/255.f;
+         float G = g/255.f;
+         float B = b/255.f;
+
+         if( (R+G+B)>1.f )
+         {
+            float4 lampLocation;
+            lampLocation.x = 10.f*static_cast<float>(-gTextureWidth/2  + Z);
+            lampLocation.y = 10.f*static_cast<float>(-gTextureHeight/2 + Y);
+            lampLocation.z = -10.f*size;
+            lampLocation.w = -1.f;
+            float4 lampInformation;
+            lampInformation.x = R;
+            lampInformation.y = G;
+            lampInformation.z = B;
+            lampInformation.w = 1.f;
+            m_lightInformation[m_lightInformationSize].location    = lampLocation;
+            m_lightInformation[m_lightInformationSize].information = lampInformation;
+
+            LOG_INFO(3,
+               "Lamp " << 
+               m_lightInformation[m_lightInformationSize].location.x << "," <<
+               m_lightInformation[m_lightInformationSize].location.y << "," <<
+               m_lightInformation[m_lightInformationSize].location.z << " " <<
+               m_lightInformation[m_lightInformationSize].information.x << "," <<
+               m_lightInformation[m_lightInformationSize].information.y << "," <<
+               m_lightInformation[m_lightInformationSize].information.z << " " <<
+               m_lightInformation[m_lightInformationSize].information.w );
+
+            m_lightInformationSize++;
+         }
+      }
+   }
+#endif // 0
+   LOG_INFO(3, "Light Information Size = " << m_nbActiveLamps << "/" << m_lightInformationSize );
 }
 
 #ifdef USE_KINECT
