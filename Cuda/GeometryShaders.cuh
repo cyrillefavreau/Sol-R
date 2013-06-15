@@ -139,6 +139,7 @@ __device__ float processShadows(
 			{
 				float3 intersection = {0.f,0.f,0.f};
 				float3 normal       = {0.f,0.f,0.f};
+            float3 areas        = {0.f,0.f,0.f};
 				float  shadowIntensity = 0.f;
 
 				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
@@ -152,7 +153,7 @@ __device__ float processShadows(
 					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); break;
                case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
 					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); break;
-					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
+					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); break;
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
@@ -212,7 +213,7 @@ __device__ float4 intersectionShader(
 	Material*        materials,
 	char*            textures,
 	const float3&    intersection,
-	const bool&      back )
+	const float3&    areas)
 {
 	float4 colorAtIntersection = materials[primitive.materialId.x].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
@@ -279,9 +280,15 @@ __device__ float4 intersectionShader(
 			}
 			break;
 		}
-#if 0
 	case ptTriangle:
-		break;
+      {
+			if( materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE ) 
+			{
+            colorAtIntersection = triangleUVMapping( primitive, materials, textures, intersection, areas );
+			}
+			break;
+      }
+#if 0
 	case ptMagicCarpet:
 		{
 			if( materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE ) 
@@ -312,7 +319,8 @@ __device__ float4 primitiveShader(
 	const float3& origin,
 	const float3& normal, 
 	const int&    objectId, 
-	const float3& intersection, 
+	const float3& intersection,
+   const float3& areas,
 	const int&    iteration,
 	float4&       refractionFromColor,
 	float&        shadowIntensity,
@@ -336,7 +344,7 @@ __device__ float4 primitiveShader(
 		// Sky box returns color with constant lightning
 		return intersectionShader( 
 			sceneInfo, primitive, materials, textures, 
-			intersection, false );
+			intersection, areas );
 	}
 
    if( sceneInfo.graphicsLevel.x>0 )
@@ -476,7 +484,7 @@ __device__ float4 primitiveShader(
 		   // Final color
 		   float4 intersectionColor = 
 			   intersectionShader( sceneInfo, primitive, materials, textures,
-			   intersection, false );
+			   intersection, areas );
 
          // Light impact on material
 		   color += intersectionColor*lampsColor;

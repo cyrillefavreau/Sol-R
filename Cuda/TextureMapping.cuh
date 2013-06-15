@@ -133,6 +133,40 @@ __device__ float4 sphereUVMapping(
 /*
 ________________________________________________________________________________
 
+Triangle texture Mapping
+________________________________________________________________________________
+*/
+__device__ float4 triangleUVMapping( 
+	const Primitive& primitive,
+	Material*        materials,
+	char*            textures,
+	const float3&    intersection,
+   const float3&    areas)
+{
+	float4 result = materials[primitive.materialId.x].color;
+
+	float3 T = (primitive.vt0*areas.x+primitive.vt1*areas.y+primitive.vt2*areas.z)/(areas.x+areas.y+areas.z);
+   int u = T.x*gTextureWidth;
+	int v = T.y*gTextureHeight;
+
+	u = u%gTextureWidth;
+	v = v%gTextureHeight;
+	if( u>=0 && u<gTextureWidth && v>=0 && v<gTextureHeight )
+	{
+		int index = gTextureOffset+(materials[primitive.materialId.x].textureInfo.y*gTextureWidth*gTextureHeight + v*gTextureWidth+u)*gTextureDepth;
+		unsigned char r = textures[index  ];
+		unsigned char g = textures[index+1];
+		unsigned char b = textures[index+2];
+		result.x = r/256.f;
+		result.y = g/256.f;
+		result.z = b/256.f;
+	}
+	return result; 
+}
+
+/*
+________________________________________________________________________________
+
 Cube texture mapping
 ________________________________________________________________________________
 */

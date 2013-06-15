@@ -131,8 +131,21 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
             case 20: primitive.size.y = static_cast<float>(atof( value.c_str() )); break;
             case 21: primitive.size.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 22: primitive.materialId.x = static_cast<int>(atoi( value.c_str() )); break;
+            case 22: primitive.materialId.x   = static_cast<int>(atoi( value.c_str() )); break;
             case 23: primitive.materialInfo.x = static_cast<float>(atof( value.c_str() )); break;
+
+            // Texture coordinates
+            case 24: primitive.vt0.x = static_cast<float>(atof( value.c_str() )); break;
+            case 25: primitive.vt0.y = static_cast<float>(atof( value.c_str() )); break;
+            case 26: primitive.vt0.z = static_cast<float>(atof( value.c_str() )); break;
+
+            case 27: primitive.vt1.x = static_cast<float>(atof( value.c_str() )); break;
+            case 28: primitive.vt1.y = static_cast<float>(atof( value.c_str() )); break;
+            case 29: primitive.vt1.z = static_cast<float>(atof( value.c_str() )); break;
+
+            case 30: primitive.vt2.x = static_cast<float>(atof( value.c_str() )); break;
+            case 31: primitive.vt2.y = static_cast<float>(atof( value.c_str() )); break;
+            case 32: primitive.vt2.z = static_cast<float>(atof( value.c_str() )); break;
          }
          value = "";
          ++i;
@@ -195,6 +208,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
       primitive.materialInfo.y );
 
    kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
+   kernel.setPrimitiveTextureCoordinates( n, primitive.vt0, primitive.vt1, primitive.vt2 );
 
    float3 pmin, pmax;
    pmin.x = std::min(std::min( primitive.p0.x, primitive.p1.x ), primitive.p2.x );
@@ -419,7 +433,16 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
                primitive->size.z << ";" <<
                primitive->materialId << ";" <<
                primitive->materialInfo.x << ";" <<
-               primitive->materialInfo.y << std::endl;
+               primitive->materialInfo.y << ";" << 
+               primitive->vt0.x << ";" <<
+               primitive->vt0.y << ";" <<
+               primitive->vt0.z << ";" <<
+               primitive->vt1.x << ";" <<
+               primitive->vt1.y << ";" <<
+               primitive->vt1.z << ";" <<
+               primitive->vt2.x << ";" <<
+               primitive->vt2.y << ";" <<
+               primitive->vt2.z << std::endl;
          }
       }
       myfile.close();

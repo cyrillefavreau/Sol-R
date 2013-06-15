@@ -51,6 +51,9 @@ struct CPUPrimitive
 	int    materialId;
 	float2 materialInfo;
    float3 speed;
+   float3 vt0; // Texture coordinates
+   float3 vt1; 
+   float3 vt2; 
 };
 
 struct CPUBoundingBox
@@ -107,6 +110,9 @@ public:
 	float3 getPrimitiveCenter( unsigned int index );
 	void getPrimitiveOtherCenter( unsigned int index, float3& otherCenter );
 	void setPrimitiveCenter( unsigned int index, const float3& center );
+
+   // Texture coordinates
+   void setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 );
 
    // Normals
 	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );

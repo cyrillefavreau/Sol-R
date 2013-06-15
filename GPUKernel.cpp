@@ -559,6 +559,26 @@ void GPUKernel::setPrimitiveIsMovable( int unsigned index, bool movable )
 }
 
 
+void GPUKernel::setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 )
+{
+   if( index>=0 && index<m_primitives->size()) 
+	{
+      CPUPrimitive& primitive((*m_primitives)[index]);
+      primitive.vt0 = vt0;
+      primitive.vt1 = vt1;
+      primitive.vt2 = vt2;
+
+      /*
+      std::cout << "(" 
+         << vt0.x << "," << vt0.y << "," << vt0.z << " ; "
+         << vt1.x << "," << vt1.y << "," << vt1.z << " ; "
+         << vt2.x << "," << vt2.y << "," << vt2.z 
+         << ")" << std::endl;
+         */
+   }
+}
+
+
 void GPUKernel::setPrimitiveNormals( int unsigned index, float3 n0, float3 n1, float3 n2 )
 {
    if( index>=0 && index<m_primitives->size()) 
@@ -885,6 +905,9 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
                      m_hPrimitives[m_nbActivePrimitives].size = primitive.size;
                      m_hPrimitives[m_nbActivePrimitives].materialId.x = primitive.materialId;
                      m_hPrimitives[m_nbActivePrimitives].materialInfo = primitive.materialInfo;
+                     m_hPrimitives[m_nbActivePrimitives].vt0 = primitive.vt0;
+                     m_hPrimitives[m_nbActivePrimitives].vt1 = primitive.vt1;
+                     m_hPrimitives[m_nbActivePrimitives].vt2 = primitive.vt2;
 
                      // Lights
 		               if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )

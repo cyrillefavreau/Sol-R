@@ -130,6 +130,7 @@ __device__ inline float4 launchRay(
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 	while( iteration<currentMaxIteration && carryon /*&& photonDistance>0.f*/ ) 
 	{
+      float3 areas = {0.f,0.f,0.f};
       // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
 		{
@@ -141,7 +142,7 @@ __device__ inline float4 launchRay(
 				rayOrigin,
 				iteration,  
 				closestPrimitive, closestIntersection, 
-				normal, colorBox, back, currentMaterialId);
+				normal, areas, colorBox, back, currentMaterialId);
 		}
 
 		if( carryon ) 
@@ -240,8 +241,8 @@ __device__ inline float4 launchRay(
 			      primitives, nbActivePrimitives, 
                lightInformation, lightInformationSize, nbActiveLamps,
                materials, textures, 
-			      randoms,
-			      rayOrigin.origin, normal, closestPrimitive, closestIntersection, 
+               randoms, rayOrigin.origin, normal, 
+               closestPrimitive, closestIntersection, areas, 
 			      iteration, refractionFromColor, shadowIntensity, rBlinn );
 
 			// Contribute to final color
@@ -282,6 +283,7 @@ __device__ inline float4 launchRay(
 
    if( sceneInfo.graphicsLevel.x>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
    {
+      float3 areas = {0.f,0.f,0.f};
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
 			sceneInfo,
@@ -291,16 +293,16 @@ __device__ inline float4 launchRay(
 			reflectedRay,
 			reflectedRays,  
 			closestPrimitive, closestIntersection, 
-			normal, colorBox, back, currentMaterialId) )
+			normal, areas, colorBox, back, currentMaterialId) )
       {
          float4 color = primitiveShader( 
 				sceneInfo, postProcessingInfo,
 				boundingBoxes, nbActiveBoxes, 
 			   primitives, nbActivePrimitives, 
             lightInformation, lightInformationSize, nbActiveLamps, 
-            materials, textures, 
-			   randoms,
-			   reflectedRay.origin, normal, closestPrimitive, closestIntersection, 
+            materials, textures, randoms, 
+            reflectedRay.origin, normal, closestPrimitive, 
+            closestIntersection, areas, 
 			   reflectedRays, 
             refractionFromColor, shadowIntensity, rBlinn );
 

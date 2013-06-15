@@ -77,7 +77,7 @@ int4 readFace( const std::string& face )
    {
       if( face[i] != '/') value += face[i];
 
-      if( face[i] == '/' || i==(face.length()-1) )
+      if( face[i] == '/' /*|| i==(face.length()-1)*/ )
       {
          switch( item )
          {
@@ -89,6 +89,18 @@ int4 readFace( const std::string& face )
          value = "";
       }
    }
+
+   if( value.length() != 0 )
+   {
+      switch( item )
+      {
+         case 0: returnValue.x = abs(atoi(value.c_str())); break;
+         case 1: returnValue.y = abs(atoi(value.c_str())); break;
+         case 2: returnValue.z = abs(atoi(value.c_str())); break;
+      }
+   }
+
+   //std::cout << returnValue.x <<"," << returnValue.y << "," << returnValue.z << std::endl;
    return returnValue;
 }
 
@@ -168,18 +180,18 @@ unsigned int OBJReader::loadMaterialsFromFile(
             case 3: 
             case 5: 
             case 8: 
-               m_materials[id].reflection   = rand()%100/100.f; 
+               //m_materials[id].reflection   = rand()%100/100.f; 
                break;
             case 4: 
             case 7: 
-               m_materials[id].reflection   = rand()%100/100.f; 
-               m_materials[id].transparency = rand()%100/100.f; 
-               m_materials[id].refraction   = 1.01f+rand()%100/100.f; 
+               //m_materials[id].reflection   = rand()%100/100.f; 
+               //m_materials[id].transparency = rand()%100/100.f; 
+               //m_materials[id].refraction   = 1.01f+rand()%100/100.f; 
                break;
             case 6: 
             case 9: 
-               m_materials[id].transparency = rand()%100/100.f; 
-               m_materials[id].refraction   = 1.01f+rand()%100/100.f; 
+               //m_materials[id].transparency = rand()%100/100.f; 
+               //m_materials[id].refraction   = 1.01f+rand()%100/100.f; 
                break;
             }
          }
@@ -216,6 +228,7 @@ float3 OBJReader::loadModelFromFile(
 {
    std::map<int,float3> vertices;
    std::map<int,float3> normals;
+   std::map<int,float3> textureCoordinates;
 
    float3 minPos = { 100000.f, 100000.f, 100000.f };
    float3 maxPos = {-100000.f,-100000.f,-100000.f };
@@ -239,6 +252,7 @@ float3 OBJReader::loadModelFromFile(
 
    int index_vertices(1);
    int index_normals(1);
+   int index_textureCoordinates(1);
    std::ifstream file(modelFilename.c_str());
    if( file.is_open() )
    {
@@ -251,6 +265,7 @@ float3 OBJReader::loadModelFromFile(
          {
             if( line[0] == 'v' )
             {
+               // Vertices
                float3 vertex = {0.f,0.f,0.f};
                std::string value("");
 
@@ -286,11 +301,22 @@ float3 OBJReader::loadModelFromFile(
 
                if( line[1] == 'n' )
                {  
+                  // Normals
                   normals[index_normals] = vertex;
                   ++index_normals;
                }
+               else if( line[1] == 't' )
+               {  
+                  // Texture coordinates
+                  vertex.x = fabs(vertex.x);
+                  vertex.y = fabs(vertex.y);
+                  vertex.z = fabs(vertex.z);
+                  textureCoordinates[index_textureCoordinates] = vertex;
+                  ++index_textureCoordinates;
+               }
                else
                {
+                  // Vertex
                   if( line[1] == ' ' ) 
                   {
                      vertices[index_vertices] = vertex;
@@ -396,6 +422,10 @@ float3 OBJReader::loadModelFromFile(
                   0.f, 0.f, 0.f,
                   material, 1, 1);
 
+               // Texture coordinates
+               kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f].y], textureCoordinates[face[f+1].y], textureCoordinates[face[f+2].y] );
+               
+               // Normals
                if( face[f].z!=0 && face[f+1].z!=0 && face[f+2].z!=0 )
                {
                   kernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
@@ -411,6 +441,8 @@ float3 OBJReader::loadModelFromFile(
                      center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
                      0.f, 0.f, 0.f,
                      material, 1, 1);
+                  // Texture coordinates
+                  kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );
                   if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )
                   {
                      kernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );

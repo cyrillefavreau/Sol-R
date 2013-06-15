@@ -511,6 +511,7 @@ __device__ inline bool triangleIntersection(
 	const Ray&       ray,
 	float3&          intersection,
 	float3&          normal,
+	float3&          areas,
 	float&           shadowIntensity,
 	bool&            back )
 {
@@ -556,18 +557,18 @@ __device__ inline bool triangleIntersection(
    float t = dot(E03,Q)/det;
    if (t < 0) return false;
 
+   // Intersection
    intersection = ray.origin + t*ray.direction;
+
+   // Normal
    normal = triangle.n0;
-   // TODO? if( triangle.n0.w == 0.f )
-   {
-      float3 v0 = triangle.p0 - intersection;
-      float3 v1 = triangle.p1 - intersection;
-      float3 v2 = triangle.p2 - intersection;
-      float a0 = 0.5f*length(crossProduct( v1,v2 ));
-      float a1 = 0.5f*length(crossProduct( v0,v2 ));
-      float a2 = 0.5f*length(crossProduct( v0,v1 ));
-      normal = normalize((triangle.n0*a0 + triangle.n1*a1 + triangle.n2*a2)/(a0+a1+a2));
-   }
+   float3 v0 = triangle.p0 - intersection;
+   float3 v1 = triangle.p1 - intersection;
+   float3 v2 = triangle.p2 - intersection;
+   areas.x = 0.5f*length(crossProduct( v1,v2 ));
+   areas.y = 0.5f*length(crossProduct( v0,v2 ));
+   areas.z = 0.5f*length(crossProduct( v0,v1 ));
+   normal = normalize((triangle.n0*areas.x + triangle.n1*areas.y + triangle.n2*areas.z)/(areas.x+areas.y+areas.z));
 
    float3 dir = normalize(ray.direction);
    float r = dot(dir,normal);
@@ -602,6 +603,7 @@ __device__ inline bool intersectionWithPrimitives(
    int&    closestPrimitive, 
 	float3& closestIntersection,
 	float3& closestNormal,
+   float3& closestAreas,
 	float4& colorBox,
 	bool&   back,
    const int currentMaterialId)
@@ -637,6 +639,7 @@ __device__ inline bool intersectionWithPrimitives(
             Material& material = materials[primitive.materialId.x];
             if( material.fastTransparency.x==0 || (material.fastTransparency.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
             {
+               float3 areas = {0.f,0.f,0.f};
 				   i = false;
 				   switch( primitive.type.x )
 				   {
@@ -659,7 +662,7 @@ __device__ inline bool intersectionWithPrimitives(
                case ptTriangle:
                   {
 						   back = false;
-						   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
+						   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
                      break;
                   }
 				   default: 
@@ -678,6 +681,7 @@ __device__ inline bool intersectionWithPrimitives(
 					   closestPrimitive    = box.startIndex.x+cptPrimitives;
 					   closestIntersection = intersection;
 					   closestNormal       = normal;
+                  closestAreas        = areas;
                   intersections       = true;
 				   }
             }

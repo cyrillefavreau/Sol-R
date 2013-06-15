@@ -124,6 +124,9 @@ struct Primitive
    int1   index;
 	int1   materialId;
 	float2 materialInfo;
+	float3 vt0;
+	float3 vt1;
+	float3 vt2;
 };
 
 // Post processing effect
