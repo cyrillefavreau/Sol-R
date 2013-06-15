@@ -1338,7 +1338,7 @@ int GPUKernel::getMaterialAttributes(
 		refraction = m_hMaterials[index].refraction.x;
 		procedural   = (m_hMaterials[index].textureInfo.x == 1);
 		transparency = m_hMaterials[index].transparency.x;
-		textureId = m_hMaterials[index].textureInfo.x;
+		textureId = m_hMaterials[index].textureInfo.y;
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;

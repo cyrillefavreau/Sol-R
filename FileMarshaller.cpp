@@ -133,19 +133,20 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
 
             case 22: primitive.materialId.x   = static_cast<int>(atoi( value.c_str() )); break;
             case 23: primitive.materialInfo.x = static_cast<float>(atof( value.c_str() )); break;
+            case 24: primitive.materialInfo.y = static_cast<float>(atof( value.c_str() )); break;
 
             // Texture coordinates
-            case 24: primitive.vt0.x = static_cast<float>(atof( value.c_str() )); break;
-            case 25: primitive.vt0.y = static_cast<float>(atof( value.c_str() )); break;
-            case 26: primitive.vt0.z = static_cast<float>(atof( value.c_str() )); break;
+            case 25: primitive.vt0.x = static_cast<float>(atof( value.c_str() )); break;
+            case 26: primitive.vt0.y = static_cast<float>(atof( value.c_str() )); break;
+            case 27: primitive.vt0.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 27: primitive.vt1.x = static_cast<float>(atof( value.c_str() )); break;
-            case 28: primitive.vt1.y = static_cast<float>(atof( value.c_str() )); break;
-            case 29: primitive.vt1.z = static_cast<float>(atof( value.c_str() )); break;
+            case 28: primitive.vt1.x = static_cast<float>(atof( value.c_str() )); break;
+            case 29: primitive.vt1.y = static_cast<float>(atof( value.c_str() )); break;
+            case 30: primitive.vt1.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 30: primitive.vt2.x = static_cast<float>(atof( value.c_str() )); break;
-            case 31: primitive.vt2.y = static_cast<float>(atof( value.c_str() )); break;
-            case 32: primitive.vt2.z = static_cast<float>(atof( value.c_str() )); break;
+            case 31: primitive.vt2.x = static_cast<float>(atof( value.c_str() )); break;
+            case 32: primitive.vt2.y = static_cast<float>(atof( value.c_str() )); break;
+            case 33: primitive.vt2.z = static_cast<float>(atof( value.c_str() )); break;
          }
          value = "";
          ++i;
@@ -260,6 +261,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 16: material.textureInfo.z       = static_cast<int>(atoi( value.c_str() )); break;
             case 17: material.textureInfo.w       = static_cast<int>(atoi( value.c_str() )); break;
             case 18: material.transparency.x      = static_cast<float>(atof( value.c_str() )); break;
+            case 19: material.fastTransparency.x  = static_cast<int>(atoi( value.c_str() )); break;
          }
          value = "";
          ++i;
