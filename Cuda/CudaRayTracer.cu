@@ -26,7 +26,7 @@
 // Cuda
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
-#include <helper_math.h>
+//#include <helper_math.h>
 
 // Project
 #include "../Consts.h"
@@ -167,72 +167,6 @@ __device__ inline float4 launchRay(
          previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
 #endif // 0
 
-			if( shadowIntensity <= 0.9f ) // No reflection/refraction if in shades
-			{
-				// ----------
-				// Refraction
-				// ----------
-
-				if( materials[primitives[closestPrimitive].materialId.x].transparency.x != 0.f ) 
-				{
-#if 0
-					// Replace the normal using the intersection color
-					// r,g,b become x,y,z... What the fuck!!
-					if( materials[primitives[closestPrimitive].materialId.x].textureInfo.y != TEXTURE_NONE) 
-					{
-						normal *= (recursiveColor-0.5f);
-					}
-#endif // 0
-
-					// Back of the object? If so, reset refraction to 1.f (air)
-					float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
-
-					// Actual refraction
-					float3 O_E = normalize(rayOrigin.origin - closestIntersection);
-					vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
-					reflectedTarget = closestIntersection - rayOrigin.direction;
-
-               colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].transparency.x;
-               
-               // Prepare next ray
-					initialRefraction = refraction;
-
-					if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f )
-               {
-						vectorReflection( reflectedRay.direction, O_E, normal );
-						float3 rt = closestIntersection - reflectedRay.direction;
-
-                  reflectedRay.origin    = closestIntersection + rt*0.00001f;
-						reflectedRay.direction = rt;
-                  reflectedRatio = materials[primitives[closestPrimitive].materialId.x].reflection.x;
-						reflectedRays=iteration;
-               }
-				}
-				else
-				{
-					// ----------
-					// Reflection
-					// ----------
-					if( materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f ) 
-					{
-						float3 O_E = rayOrigin.origin - closestIntersection;
-						vectorReflection( rayOrigin.direction, O_E, normal );
-						reflectedTarget = closestIntersection - rayOrigin.direction;
-                  colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].reflection.x;
-					}
-					else 
-					{
-                  colorContributions[iteration] = 1.f;
-						carryon = false;
-					}         
-				}
-			}
-			else 
-			{
-            colorContributions[iteration] = 1.f;
-				carryon = false;
-			}
-
 			// Get object color
          colors[iteration] =
             primitiveShader( 
@@ -245,7 +179,65 @@ __device__ inline float4 launchRay(
                closestPrimitive, closestIntersection, areas, 
 			      iteration, refractionFromColor, shadowIntensity, rBlinn );
 
-			// Contribute to final color
+			// ----------
+			// Refraction
+			// ----------
+
+			if( materials[primitives[closestPrimitive].materialId.x].transparency.x != 0.f ) 
+			{
+			   // Replace the normal using the intersection color
+			   // r,g,b become x,y,z... What the fuck!!
+			   if( materials[primitives[closestPrimitive].materialId.x].textureInfo.y != TEXTURE_NONE) 
+			   {
+				   normal.x *= (colors[iteration].x-0.5f);
+				   normal.y *= (colors[iteration].y-0.5f);
+				   normal.z *= (colors[iteration].z-0.5f);
+			   }
+
+				// Back of the object? If so, reset refraction to 1.f (air)
+				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
+
+				// Actual refraction
+				float3 O_E = normalize(rayOrigin.origin - closestIntersection);
+				vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
+				reflectedTarget = closestIntersection - rayOrigin.direction;
+
+            colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].transparency.x;
+               
+            // Prepare next ray
+				initialRefraction = refraction;
+
+				if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f )
+            {
+					vectorReflection( reflectedRay.direction, O_E, normal );
+					float3 rt = closestIntersection - reflectedRay.direction;
+
+               reflectedRay.origin    = closestIntersection + rt*0.00001f;
+					reflectedRay.direction = rt;
+               reflectedRatio = materials[primitives[closestPrimitive].materialId.x].reflection.x;
+					reflectedRays=iteration;
+            }
+			}
+			else
+			{
+				// ----------
+				// Reflection
+				// ----------
+				if( materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f ) 
+				{
+					float3 O_E = rayOrigin.origin - closestIntersection;
+					vectorReflection( rayOrigin.direction, O_E, normal );
+					reflectedTarget = closestIntersection - rayOrigin.direction;
+               colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].reflection.x;
+				}
+				else 
+				{
+               colorContributions[iteration] = 1.f;
+					carryon = false;
+				}         
+			}
+
+         // Contribute to final color
  			recursiveBlinn += rBlinn;
 
          rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
@@ -993,12 +985,16 @@ ________________________________________________________________________________
 extern "C" void initialize_scene( 
 	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials, int nbTextures )
 {
+#if 0
    // Multi GPU initialization
    checkCudaErrors(cudaGetDeviceCount(&d_nbGPUs));
    if(d_nbGPUs > MAX_GPU_COUNT)
    {
 	   d_nbGPUs = MAX_GPU_COUNT;
    }
+#else
+   d_nbGPUs = 1;
+#endif
    LOG_INFO(1 ,"CUDA-capable device count: " << d_nbGPUs);
 
    for( int d(0); d<d_nbGPUs; ++d )
@@ -1129,7 +1125,7 @@ ________________________________________________________________________________
 GPU -> CPU data transfers
 ________________________________________________________________________________
 */
-extern "C" void d2h_bitmap( char* bitmap, int2* primitivesXYIds, const SceneInfo sceneInfo )
+extern "C" void d2h_bitmap( unsigned char* bitmap, int2* primitivesXYIds, const SceneInfo sceneInfo )
 {
    int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth/d_nbGPUs;
    int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x/d_nbGPUs;

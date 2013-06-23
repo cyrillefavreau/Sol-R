@@ -331,6 +331,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="OpenGL\rtgl.h" />
     <ClInclude Include="PDBReader.h" />
     <ClInclude Include="RayTracingEngineStub.h" />
     <ClInclude Include="resource.h" />
@@ -350,6 +351,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="OpenGL\rtgl.cpp" />
     <ClCompile Include="PDBReader.cpp" />
     <ClCompile Include="RayTracingEngineStub.cpp" />
   </ItemGroup>
@@ -372,6 +374,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Max\ExportOBJ.ms" />
     <None Include="OpenCL\RayTracer.cl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 
+#include "OpenGL/rtgl.h"
 #include "GPUKernel.h"
 #include "Logging.h"
 #include "Consts.h"
@@ -152,7 +153,9 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    m_texturesTransfered(false),
    m_doneWithAdding(false),
    m_addingIndex(0),
-   m_refresh(true)
+   m_refresh(true),
+   m_bitmap(nullptr),
+   m_GLMode(-1)
 {
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
    LOG_INFO(1,"----------++++++++++  GPU Kernel created  ++++++++++----------" );
@@ -220,12 +223,21 @@ void GPUKernel::initBuffers()
 		m_hRandoms[i] = (rand()%2000-1000)/10000.f;
       //m_hRandoms[i] *= (i%100==0) ? 10.f : 1.f;
 	}
+
+   // Bitmap
+   m_bitmap = new unsigned char[m_sceneInfo.width.x*m_sceneInfo.height.x*4];
 }
 
 void GPUKernel::cleanup()
 {
    LOG_INFO(1,"Cleaning up resources");
-	if(m_hBoundingBoxes) 
+   if( m_bitmap )
+   {
+      delete [] m_bitmap;
+      m_bitmap = nullptr;
+   }
+
+   if(m_hBoundingBoxes) 
    {
       delete m_hBoundingBoxes;
       m_hBoundingBoxes = nullptr;
@@ -403,6 +415,7 @@ void GPUKernel::setPrimitive(
 	float materialPaddingX, float materialPaddingY )
 {
    float scale = 1.f;
+   float3 zero = {0.f,0.f,0.f};
    m_primitivesTransfered = false;
    /*
 	LOG_INFO(3,"GPUKernel::setPrimitive( " << 
@@ -427,6 +440,12 @@ void GPUKernel::setPrimitive(
 		(*m_primitives)[index].size.x = w*scale;
 		(*m_primitives)[index].size.y = h*scale;
 		(*m_primitives)[index].size.z = d*scale;
+      (*m_primitives)[index].n0     = zero;
+      (*m_primitives)[index].n1     = zero;
+      (*m_primitives)[index].n2     = zero;
+      (*m_primitives)[index].vt0    = zero;
+      (*m_primitives)[index].vt1    = zero;
+      (*m_primitives)[index].vt2    = zero;
 		(*m_primitives)[index].materialId = materialId;
 
 		switch( (*m_primitives)[index].type )
@@ -812,7 +831,9 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       if( reconstructBoxes )
       {
-   	   LOG_INFO(1,"Constructing acceleration structures" );
+         unsigned int activeBoxes(NB_MAX_BOXES);
+#if 0
+   	   LOG_INFO(3,"Constructing acceleration structures" );
          // Bounding boxes
          // Search for best trade-off
          std::map<unsigned int,unsigned int> primitivesPerBox;
@@ -821,7 +842,6 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          unsigned int bestSize = boxSize;
          unsigned int bestActiveBoxes = 0;
          unsigned int bestRatio = 100000;
-         unsigned int activeBoxes(NB_MAX_BOXES);
          do 
          {
             unsigned int ratio = processBoxes( boxSize, activeBoxes, true );
@@ -834,8 +854,11 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             boxSize--;
          }
          while( boxSize>0 );
-         //std::cout << "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" << std::endl;
+         std::cout << "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" << std::endl;
          processBoxes( bestSize, activeBoxes, false );
+#else
+         processBoxes( 64, activeBoxes, false );
+#endif 0
       }
 
       // Transform data for ray-tracer
@@ -942,6 +965,25 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    }
 
    return 0;
+}
+
+void GPUKernel::resetAll()
+{
+   m_boundingBoxes->clear();
+   m_nbActiveBoxes = 0;
+
+   m_primitives->clear();
+   m_nbActivePrimitives = 0;
+
+   m_lamps->clear();
+   m_nbActiveLamps = 0;
+   m_primitivesTransfered = false;
+
+   m_nbActiveMaterials = -1;
+   m_materialsTransfered = false;
+
+   m_nbActiveTextures = 0;
+   m_texturesTransfered = false;
 }
 
 void GPUKernel::displayBoxesInfo()
@@ -1109,12 +1151,9 @@ void GPUKernel::rotatePrimitive(
          rotateVector( primitive.p2, rotationCenter, cosAngles, sinAngles );
          // Rotate Normals
          rotateVector( primitive.n0, rotationCenter, cosAngles, sinAngles );
-         if( primitive.type == ptTriangle )
-         {
-            rotateVector( primitive.n1, rotationCenter, cosAngles, sinAngles );
-            rotateVector( primitive.n2, rotationCenter, cosAngles, sinAngles );
-         }
-         else
+         rotateVector( primitive.n1, rotationCenter, cosAngles, sinAngles );
+         rotateVector( primitive.n2, rotationCenter, cosAngles, sinAngles );
+         if( primitive.type == ptCylinder )
          {
             // Axis
 				float3 axis;
@@ -1643,6 +1682,21 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    float size = m_sceneInfo.viewDistance.x/3.f;
 
 #if 1
+   for( int i(0); i<100; ++i)
+   {
+      LightInformation lightInformation;
+      lightInformation.location.x = rand()%10000 - 5000.f;
+      lightInformation.location.y = rand()%10000 - 5000.f;
+      lightInformation.location.z = rand()%10000 - 5000.f;
+      lightInformation.attributes.x = -1;
+      lightInformation.color.x = 1.f; //0.5f+0.5f*cos(x);
+      lightInformation.color.y = 1.f; //0.5f+0.5f*sin(x);
+      lightInformation.color.z = 1.f; //0.5f+0.5f*cos(x+M_PI);
+      lightInformation.color.w = 0.6f;
+      m_lightInformation[m_lightInformationSize] = lightInformation;
+      m_lightInformationSize++;
+   }
+   /*
    for( float x(0.f); x<2.f*M_PI; x+=M_PI/8.f)
    {
       LightInformation lightInformation;
@@ -1657,6 +1711,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
+   */
 #else
    // Light from skybox
    if( index < m_nbActiveTextures )
@@ -1829,4 +1884,79 @@ int GPUKernel::getLight( unsigned int index )
       return (*m_lamps)[index];
    }
    return -1;
+}
+
+// OpenGL
+void GPUKernel::setGLMode( const int& glMode )
+{
+   if( glMode == -1 )
+   {
+      switch( m_GLMode )
+      {
+      case GL_TRIANGLES:
+         {
+            int p=-1;
+            // Vertices
+            if( m_vertices.size() == 3 )
+            {
+               p = addPrimitive(ptTriangle);
+               setPrimitive( p,
+                  m_vertices[0].x, m_vertices[0].y, m_vertices[0].z, 
+                  m_vertices[1].x, m_vertices[1].y, m_vertices[1].z, 
+                  m_vertices[2].x, m_vertices[2].y, m_vertices[2].z, 
+                  0.f,0.f,0.f,
+                  0,1,1);
+               LOG_INFO(1, "Triangle created");
+            }
+            else
+            {
+               LOG_ERROR("Incorrect number of vertices to create a triangle" );
+            }
+
+            // Texture coordinates
+            if( p!=-1 && m_textCoords.size() == 3 )
+            {
+               setPrimitiveTextureCoordinates( p, m_textCoords[0], m_textCoords[1], m_textCoords[2] );
+            }
+            else
+            {
+               LOG_ERROR("Incorrect number of normals" );
+            }
+
+            // Normals
+            if( p!=-1 && m_normals.size() == 3 )
+            {
+               setPrimitiveNormals( p, m_normals[0], m_normals[1], m_normals[2] );
+            }
+            else
+            {
+               LOG_ERROR("Incorrect number of normals" );
+            }
+
+         }
+         break;
+      }
+      m_vertices.clear();
+      m_normals.clear();
+      m_textCoords.clear();
+   }
+   m_GLMode = glMode;
+}
+
+void GPUKernel::addVertex( float x, float y, float z)
+{
+   float3 v = {x,y,z};
+   m_vertices.push_back(v);
+}
+
+void GPUKernel::addNormal( float x, float y, float z)
+{
+   float3 v = {x,y,z};
+   m_normals.push_back(v);
+}
+
+void GPUKernel::addTextCoord( float x, float y, float z)
+{
+   float3 v = {x,y,z};
+   m_textCoords.push_back(v);
 }

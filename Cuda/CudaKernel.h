@@ -47,7 +47,7 @@ public:
 public:
 	// ---------- Rendering ----------
 	void render_begin( const float timer );
-   void render_end( char* bitmap);
+   void render_end();
 
 public:
 

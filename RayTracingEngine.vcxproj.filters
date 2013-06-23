@@ -31,6 +31,12 @@
     <Filter Include="Source Files\Map">
       <UniqueIdentifier>{5d2cfe1e-3d9e-41a2-a655-5b2ce9cdc5e9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="OpenGL">
+      <UniqueIdentifier>{afed344e-fa1b-4422-9413-8df4cdfb9f26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Max Scripts">
+      <UniqueIdentifier>{769fd299-c312-405e-badb-c0d71c5e9835}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -75,6 +81,9 @@
     <ClInclude Include="MapReader.h">
       <Filter>Source Files\Map</Filter>
     </ClInclude>
+    <ClInclude Include="OpenGL\rtgl.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -100,6 +109,9 @@
     </ClCompile>
     <ClCompile Include="MapReader.cpp">
       <Filter>Source Files\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL\rtgl.cpp">
+      <Filter>OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +139,9 @@
     </None>
     <None Include="Cuda\GeometryIntersections.cuh">
       <Filter>Source Files\Cuda</Filter>
+    </None>
+    <None Include="Max\ExportOBJ.ms">
+      <Filter>Max Scripts</Filter>
     </None>
   </ItemGroup>
 </Project>

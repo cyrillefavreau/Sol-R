@@ -622,12 +622,12 @@ void OpenCLKernel::render_begin( const float timer )
 	CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDefault, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
 }
   
-void OpenCLKernel::render_end( char* bitmap)
+void OpenCLKernel::render_end()
 {
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
-	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,       CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(char)*gColorDepth, bitmap, 0, NULL, NULL) );
+	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,       CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(char)*gColorDepth, m_bitmap, 0, NULL, NULL) );
 	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitiveIDs, CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(int), m_hPrimitivesXYIds, 0, NULL, NULL) );
    
 	CHECKSTATUS(clFlush(m_hQueue));

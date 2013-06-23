@@ -31,7 +31,7 @@
 // Cuda
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
-#include <helper_math.h>
+//#include <helper_math.h>
 
 /*
 ________________________________________________________________________________

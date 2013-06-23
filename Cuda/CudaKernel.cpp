@@ -22,6 +22,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <GL/freeglut.h>
+
 #include <math.h>
 #include <string.h>
 #include <iostream>
@@ -271,7 +273,7 @@ void CudaKernel::render_begin( const float timer )
 
       if( !m_texturesTransfered )
 	   {
-         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
+         LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
 		   h2d_textures( m_hTextures,  m_nbActiveTextures);
 		   m_texturesTransfered = true;
       }
@@ -294,10 +296,31 @@ void CudaKernel::render_begin( const float timer )
    m_refresh = (m_sceneInfo.pathTracingIteration.x<m_sceneInfo.maxPathTracingIterations.x);
 }
 
-void CudaKernel::render_end( char* bitmap)
+void CudaKernel::render_end()
 {
    // GPU -> CPU Data transfers
-   d2h_bitmap( bitmap, m_hPrimitivesXYIds, m_sceneInfo);
+   d2h_bitmap( m_bitmap, m_hPrimitivesXYIds, m_sceneInfo);
+
+   if( m_sceneInfo.misc.x == 0 )
+   {
+      ::glEnable(GL_TEXTURE_2D);
+      ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+      ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
+      ::glBegin(GL_QUADS);
+      ::glTexCoord2f(1.f, 1.f);
+      ::glVertex3f(-1.f, 1.f, 0.f);
+      ::glTexCoord2f(0.f, 1.f);
+      ::glVertex3f( 1.f, 1.f, 0.f);
+      ::glTexCoord2f(0.f, 0.f);
+      ::glVertex3f( 1.f,-1.f, 0.f);
+      ::glTexCoord2f(1.f, 0.f);
+      ::glVertex3f(-1.f,-1.f, 0.f);
+      ::glEnd();
+      ::glDisable(GL_TEXTURE_2D);
+   }
 }
 
 void CudaKernel::deviceQuery()

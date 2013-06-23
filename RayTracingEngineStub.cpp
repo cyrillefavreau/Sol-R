@@ -41,8 +41,8 @@ typedef OpenCLKernel kernel;
 kernel* kernel = NULL;
 #endif // USE_OPENCL
 
-SceneInfo gSceneInfo;
-PostProcessingInfo gPostProcessingInfo;
+SceneInfo gSceneInfoStub;
+PostProcessingInfo gPostProcessingInfoStub;
 
 // --------------------------------------------------------------------------------
 // Implementation
@@ -56,36 +56,36 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D)
 {
-   gSceneInfo.width.x                   = width;
-   gSceneInfo.height.x                  = height;
-   gSceneInfo.graphicsLevel.x           = graphicsLevel;
-   gSceneInfo.nbRayIterations.x         = nbRayIterations;
-   gSceneInfo.transparentColor.x        = static_cast<float>(transparentColor);
-   gSceneInfo.viewDistance.x            = static_cast<float>(viewDistance);
-   gSceneInfo.shadowIntensity.x         = static_cast<float>(shadowIntensity);
-   gSceneInfo.width3DVision.x           = static_cast<float>(width3DVision);
-   gSceneInfo.backgroundColor.x         = static_cast<float>(bgColorR);
-   gSceneInfo.backgroundColor.y         = static_cast<float>(bgColorG);
-   gSceneInfo.backgroundColor.z         = static_cast<float>(bgColorB);
-   gSceneInfo.backgroundColor.w         = 0.f;
-   gSceneInfo.renderingType.x           = renderingType;
-   gSceneInfo.renderBoxes.x             = static_cast<int>(renderBoxes);
-   gSceneInfo.pathTracingIteration.x    = pathTracingIteration;
-   gSceneInfo.maxPathTracingIterations.x= maxPathTracingIterations;
-   gSceneInfo.misc.x                    = outputType;
-   gSceneInfo.misc.y                    = timer;
-   gSceneInfo.misc.z                    = fogEffect;
-   gSceneInfo.misc.w                    = isometric3D;
+   gSceneInfoStub.width.x                   = width;
+   gSceneInfoStub.height.x                  = height;
+   gSceneInfoStub.graphicsLevel.x           = graphicsLevel;
+   gSceneInfoStub.nbRayIterations.x         = nbRayIterations;
+   gSceneInfoStub.transparentColor.x        = static_cast<float>(transparentColor);
+   gSceneInfoStub.viewDistance.x            = static_cast<float>(viewDistance);
+   gSceneInfoStub.shadowIntensity.x         = static_cast<float>(shadowIntensity);
+   gSceneInfoStub.width3DVision.x           = static_cast<float>(width3DVision);
+   gSceneInfoStub.backgroundColor.x         = static_cast<float>(bgColorR);
+   gSceneInfoStub.backgroundColor.y         = static_cast<float>(bgColorG);
+   gSceneInfoStub.backgroundColor.z         = static_cast<float>(bgColorB);
+   gSceneInfoStub.backgroundColor.w         = 0.f;
+   gSceneInfoStub.renderingType.x           = renderingType;
+   gSceneInfoStub.renderBoxes.x             = static_cast<int>(renderBoxes);
+   gSceneInfoStub.pathTracingIteration.x    = pathTracingIteration;
+   gSceneInfoStub.maxPathTracingIterations.x= maxPathTracingIterations;
+   gSceneInfoStub.misc.x                    = outputType;
+   gSceneInfoStub.misc.y                    = timer;
+   gSceneInfoStub.misc.z                    = fogEffect;
+   gSceneInfoStub.misc.w                    = isometric3D;
    return 0;
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 )
 {
-   gPostProcessingInfo.type.x   = type;
-   gPostProcessingInfo.param1.x = static_cast<float>(param1);
-   gPostProcessingInfo.param2.x = static_cast<float>(param2);
-   gPostProcessingInfo.param3.x = param3;
+   gPostProcessingInfoStub.type.x   = type;
+   gPostProcessingInfoStub.param1.x = static_cast<float>(param1);
+   gPostProcessingInfoStub.param2.x = static_cast<float>(param2);
+   gPostProcessingInfoStub.param3.x = param3;
    return 0;
 }
 
@@ -96,7 +96,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 {
 	kernel = new CudaKernel( activeLogging, NB_MAX_BOXES, platform, device );
    if( kernel == NULL ) return -1;
-	kernel->setSceneInfo( gSceneInfo );
+   gSceneInfoStub.pathTracingIteration.x = 0; 
+	kernel->setSceneInfo( gSceneInfoStub );
    kernel->initBuffers();
    return 0;
 }
@@ -124,12 +125,13 @@ extern "C" RAYTRACINGENGINE_API
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, char* image )
+extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, unsigned char* image )
 {
-	kernel->setSceneInfo( gSceneInfo );
-   kernel->setPostProcessingInfo( gPostProcessingInfo );
+	kernel->setSceneInfo( gSceneInfoStub );
+   kernel->setPostProcessingInfo( gPostProcessingInfoStub );
 	kernel->render_begin( static_cast<float>(timer) );
-   kernel->render_end( image );
+   kernel->render_end();
+   memcpy(image,kernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*3);
    return 0;
 }
 

@@ -50,10 +50,10 @@ struct CPUPrimitive
 	int    type;
 	int    materialId;
 	float2 materialInfo;
-   float3 speed;
    float3 vt0; // Texture coordinates
    float3 vt1; 
    float3 vt2; 
+   float3 speed;
 };
 
 struct CPUBoundingBox
@@ -65,6 +65,7 @@ struct CPUBoundingBox
 typedef std::map<unsigned int,CPUBoundingBox> BoxContainer;
 typedef std::map<unsigned int,CPUPrimitive>   PrimitiveContainer;
 typedef std::map<unsigned int,unsigned int>   LampContainer;
+typedef std::vector<float3> Vertices;
 
 class RAYTRACINGENGINE_API GPUKernel
 {
@@ -80,7 +81,8 @@ public:
 
    // ---------- Rendering ----------
 	virtual void render_begin( const float timer ) = 0;
-   virtual void render_end( char* bitmap) = 0;
+   virtual void render_end() = 0;
+   unsigned char* getBitmap() { return m_bitmap; };
 
 public:
 
@@ -130,6 +132,14 @@ public:
    CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[boxIndex]; };
    int compactBoxes( bool reconstructBoxes=false );
    void displayBoxesInfo();
+
+public:
+
+   // OpenGL
+   void setGLMode( const int& glMode );
+   void addVertex( float x, float y, float z);
+   void addNormal( float x, float y, float z);
+   void addTextCoord( float x, float y, float z);
 
 public:
 
@@ -266,6 +276,7 @@ public:
 
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
+   void resetAll();
 
 public:
 
@@ -306,6 +317,11 @@ protected:
 
    bool         m_doneWithAdding;
    int          m_addingIndex;
+
+protected:
+
+   // Rendering
+   unsigned char* m_bitmap;
 
 protected:
 
@@ -350,6 +366,13 @@ protected:
 
 protected:
    int m_optimalNbOfPrimmitivesPerBox;
+
+protected:
+   // OpenGL
+   int m_GLMode;
+   Vertices m_vertices;
+   Vertices m_normals;
+   Vertices m_textCoords;
 
 	// Kinect declarations
 #ifdef USE_KINECT
