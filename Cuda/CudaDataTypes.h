@@ -69,8 +69,8 @@ struct Ray
 
 struct LightInformation
 {
-   int4   attributes; // x: object ID
-   float4 location;
+   int1   attribute; // x: object ID
+   float3 location;
    float4 color;
 };
 

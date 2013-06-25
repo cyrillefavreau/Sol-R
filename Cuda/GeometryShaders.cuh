@@ -354,7 +354,7 @@ __device__ float4 primitiveShader(
 	   for( int cpt=0; cpt<activeLamps; ++cpt ) 
 	   {
          int cptLamp = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS && sceneInfo.pathTracingIteration.x%2==0) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
-		   if(lightInformation[cptLamp].attributes.x != objectId)
+		   if(lightInformation[cptLamp].attribute.x != objectId)
 		   {
 			   float3 center;
    		   // randomize lamp center
@@ -390,9 +390,9 @@ __device__ float4 primitiveShader(
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
-            if( lightInformation[cptLamp].attributes.x != -1 )
+            if( lightInformation[cptLamp].attribute.x != -1 )
             {
-               Primitive& lamp = primitives[lightInformation[cptLamp].attributes.x];
+               Primitive& lamp = primitives[lightInformation[cptLamp].attribute.x];
 
                if( sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS /*&& sceneInfo.pathTracingIteration.x%2!=0*/ )
 			      {
@@ -411,7 +411,7 @@ __device__ float4 primitiveShader(
 					   sceneInfo, boundingBoxes, nbActiveBoxes,
 					   primitives, materials, textures, 
 					   nbActivePrimitives, center, 
-                  intersection, lightInformation[cptLamp].attributes.x, iteration, shadowColor );
+                  intersection, lightInformation[cptLamp].attribute.x, iteration, shadowColor );
 			   }
 
             if( sceneInfo.graphicsLevel.x>0 )

@@ -59,6 +59,7 @@ __device__ void juliaSet( const SceneInfo& sceneInfo, const float x, const float
    color.x = 1.f-color.x*(n/maxIterations);
    color.y = 1.f-color.y*(n/maxIterations);
    color.z = 1.f-color.z*(n/maxIterations);
+   color.w = 1.f-(n/maxIterations);
 }
 
 __device__ void mandelbrotSet( const SceneInfo& sceneInfo, const float x, const float y, float4& color )
@@ -95,6 +96,7 @@ __device__ void mandelbrotSet( const SceneInfo& sceneInfo, const float x, const 
    color.x = 1.f-color.x*(n/maxIterations);
    color.y = 1.f-color.y*(n/maxIterations);
    color.z = 1.f-color.z*(n/maxIterations);
+   color.w = 1.f-(n/maxIterations);
 }
 
 /*

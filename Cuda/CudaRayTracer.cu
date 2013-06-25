@@ -1157,6 +1157,15 @@ extern "C" void cudaRender(
 	float3 direction, 
 	float3 angles)
 {
+   LOG_INFO(3, "GPU Bounding Box: " << sizeof(BoundingBox));
+   LOG_INFO(3, "GPU Primitive   : " << sizeof(Primitive));
+   LOG_INFO(3, "GPU Material    : " << sizeof(Material));
+
+	LOG_INFO(3, "GPU Boxes              :" << objects.x);
+	LOG_INFO(3, "GPU Primitives         :" << objects.y);
+	LOG_INFO(3, "GPU Lamps              :" << objects.z);
+	LOG_INFO(3, "GPU Light information  :" << objects.w);
+
 	int2 size;
 	size.x = static_cast<int>(sceneInfo.width.x);
 	size.y = static_cast<int>(sceneInfo.height.x) / d_nbGPUs;

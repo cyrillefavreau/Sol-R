@@ -424,6 +424,7 @@ __device__ inline bool planeIntersection(
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
             if( materials[primitive.materialId.x].innerIllumination.x != 0.f )
             {
+               // Chessboard like Lights
                collision &= int(fabs(intersection.z))%4000<2000 && int(fabs(intersection.y))%4000<2000;
             }
 				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
@@ -440,6 +441,7 @@ __device__ inline bool planeIntersection(
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
             if( materials[primitive.materialId.x].innerIllumination.x != 0.f )
             {
+               // Chessboard like Lights
                collision &= int(fabs(intersection.z))%4000<2000 && int(fabs(intersection.y))%4000<2000;
             }
 				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 

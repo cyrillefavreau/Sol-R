@@ -250,7 +250,7 @@ void CudaKernel::render_begin( const int frame, const float timer )
 
       LOG_INFO( 3, "Data sizes [" << frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
 
-      //if( !m_primitivesTransfered )
+      if( !m_primitivesTransfered )
       {
 	      h2d_scene( 
             m_hBoundingBoxes, nbBoxes, 
@@ -285,7 +285,16 @@ void CudaKernel::render_begin( const int frame, const float timer )
       objects.z = nbLamps;
       objects.w = m_lightInformationSize;
 
-	   cudaRender(
+      LOG_INFO(3, "CPU Bounding Box: " << sizeof(BoundingBox));
+      LOG_INFO(3, "CPU Primitive   : " << sizeof(Primitive));
+      LOG_INFO(3, "CPU Material    : " << sizeof(Material));
+
+      LOG_INFO(3, "CPU Boxes              :" << objects.x);
+      LOG_INFO(3, "CPU Primitives         :" << objects.y);
+      LOG_INFO(3, "CPU Lamps              :" << objects.z);
+      LOG_INFO(3, "CPU Light information  :" << objects.w);
+
+      cudaRender(
          m_blockSize,
          m_sceneInfo, objects,
          m_postProcessingInfo,
