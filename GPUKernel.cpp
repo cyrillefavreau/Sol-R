@@ -1049,8 +1049,8 @@ void GPUKernel::rotatePrimitives( const int frame, float3 rotationCenter, float3
             CPUPrimitive& primitive((*m_primitives[frame])[*it]);
             if( primitive.movable && primitive.type != ptCamera )
             {
-#if 0
-               float limit = -2200.f;
+#if 1
+               float limit = -3000.f;
                if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
                {
                   // Fall
