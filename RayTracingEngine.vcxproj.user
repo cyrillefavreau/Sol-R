@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
-    <LocalDebuggerCommand>E:\Deployments\bin\Raytracer_Cuda.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand>E:\Deployments\bin\IMVEditor.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>E:\Deployments\bin</LocalDebuggerWorkingDirectory>
     <ShowAllFiles>false</ShowAllFiles>
-    <LocalDebuggerCommandArguments>1536 256</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>
+    </LocalDebuggerCommandArguments>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
     <LocalDebuggerCommand>E:\Deployments\bin\Raytracer_Cuda_d.exe</LocalDebuggerCommand>

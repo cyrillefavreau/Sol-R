@@ -34,6 +34,7 @@
 #include <map>
 #include <vector>
 
+#include "Consts.h"
 #include "Cuda/CudaDataTypes.h"
 #include "DLL_API.h"
 
@@ -80,58 +81,61 @@ public:
 public:
 
    // ---------- Rendering ----------
-	virtual void render_begin( const float timer ) = 0;
+	virtual void render_begin( const int frame, const float timer ) = 0;
    virtual void render_end() = 0;
    unsigned char* getBitmap() { return m_bitmap; };
 
 public:
 
 	// ---------- Primitives ----------
-	int addPrimitive( PrimitiveType type );
+	int addPrimitive( const int frame, PrimitiveType type );
 	void setPrimitive( 
-		unsigned int index,
+      const int frame, const int& index,
 		float x0, float y0, float z0, float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-		unsigned int index,
+      const int frame, const int& index,
 		float x0, float y0, float z0, float x1, float y1, float z1,
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-		unsigned int index,
+      const int frame, const int& index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
-   unsigned int getPrimitiveAt( int x, int y );
-   void setPrimitiveIsMovable( unsigned int index, bool movable );
+   unsigned int getPrimitiveAt( 
+      int x, int y );
+   void setPrimitiveIsMovable( 
+      const int frame, const int& index,
+      bool movable );
 
-   void scalePrimitives( float scale, unsigned int from, unsigned int to );
-   void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
+   void scalePrimitives( const int frame, float scale, unsigned int from, unsigned int to );
+   void rotatePrimitives( const int frame, float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
 
-	void setPrimitiveMaterial( unsigned int index, int materialId); 
-	int  getPrimitiveMaterial( unsigned int index); 
-	float3 getPrimitiveCenter( unsigned int index );
-	void getPrimitiveOtherCenter( unsigned int index, float3& otherCenter );
-	void setPrimitiveCenter( unsigned int index, const float3& center );
+	void setPrimitiveMaterial( const int frame, unsigned int index, int materialId); 
+	int  getPrimitiveMaterial( const int frame, unsigned int index); 
+	float3 getPrimitiveCenter( const int frame, unsigned int index );
+	void getPrimitiveOtherCenter( const int frame, unsigned int index, float3& otherCenter );
+	void setPrimitiveCenter( const int frame, unsigned int index, const float3& center );
 
    // Texture coordinates
-   void setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 );
+   void setPrimitiveTextureCoordinates( const int frame, unsigned int index, float3 vt0, float3 vt1, float3 vt2 );
 
    // Normals
-	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );
+	void setPrimitiveNormals( const int frame, unsigned int index, float3 n0, float3 n1, float3 n2 );
 
    // Lights
-   int getLight( unsigned int index );
+   int getLight( const int frame, unsigned int index );
 
-   CPUPrimitive* getPrimitive( const unsigned int index );
+   CPUPrimitive* getPrimitive( const int frame, const unsigned int index );
      
 public:
    
-   bool updateBoundingBox( CPUBoundingBox& box );
-   void resetBoxes( bool resetPrimitives=true );
-   void resetBox( CPUBoundingBox& box, bool resetPrimitives=true );
-   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[boxIndex]; };
-   int compactBoxes( bool reconstructBoxes=false );
-   void displayBoxesInfo();
+   bool updateBoundingBox( const int frame, CPUBoundingBox& box );
+   void resetBoxes( const int frame, bool resetPrimitives );
+   void resetBox( CPUBoundingBox& box, bool resetPrimitives );
+   CPUBoundingBox& getBoundingBox( const int frame, const unsigned int boxIndex ) { return (*m_boundingBoxes)[frame][boxIndex]; };
+   int compactBoxes( const int frame, bool reconstructBoxes );
+   void displayBoxesInfo( const int frame );
 
 public:
 
@@ -145,14 +149,14 @@ public:
 
 	// ---------- Complex objects ----------
 	int addCube( 
-      unsigned int boxId,
+      const int frame, 
 		float x, float y, float z, 
 		float radius, 
 		int   materialId, 
 		float materialPaddingX, float materialPaddingY );
 
 	int addRectangle(
-		unsigned int boxId,
+		const int frame, 
 		float x, float y, float z, 
 		float w, float h, float d,
 		int   materialId, 
@@ -201,7 +205,7 @@ public:
 	// ---------- Textures ----------
 	void setTexture(unsigned int index, char* texture );
 	int  addTexture( const std::string& filename );
-   void buildLightInformationFromTexture( unsigned int index );
+   void buildLightInformationFromTexture( const int frame, unsigned int index );
 
 public:
 
@@ -265,9 +269,9 @@ public:
 
 public:
 
-   unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_nbActiveBoxes); };
-   unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_nbActivePrimitives); };
-	unsigned int getNbActiveLamps()      { return m_nbActiveLamps; };
+   unsigned int getNbActiveBoxes(const int frame)      { return static_cast<unsigned int>(m_boundingBoxes[frame]->size()); };
+   unsigned int getNbActivePrimitives(const int frame) { return static_cast<unsigned int>(m_primitives[frame]->size()); };
+	unsigned int getNbActiveLamps(const int frame)      { return m_nbActiveLamps[frame]; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
 
@@ -276,6 +280,7 @@ public:
 
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
+   void resetFrame( const int frame );
    void resetAll();
 
 public:
@@ -289,7 +294,7 @@ public:
 
 protected:
    
-   unsigned int processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
+   unsigned int processBoxes( const int frame, const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
 
    void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
@@ -305,12 +310,12 @@ protected:
 	float*	    m_hRandoms;
    int2*        m_hPrimitivesXYIds;
 
-   unsigned int m_nbActiveBoxes;
-	unsigned int m_nbActivePrimitives;
-	unsigned int m_nbActiveLamps;
-	unsigned int m_nbActiveMaterials;
-	unsigned int m_nbActiveTextures;
-   unsigned int m_lightInformationSize;
+   int m_nbActiveBoxes[NB_MAX_FRAMES];
+	int m_nbActivePrimitives[NB_MAX_FRAMES];
+	int m_nbActiveLamps[NB_MAX_FRAMES];
+	int m_nbActiveMaterials;
+	int m_nbActiveTextures;
+   int m_lightInformationSize;
 	float3		 m_viewPos;
 	float3		 m_viewDir;
 	float3		 m_angles;
@@ -330,8 +335,8 @@ protected:
 	bool	 m_materialsTransfered;
 	bool	 m_texturesTransfered;
    // Scene Size
-   float3 m_minPos;
-   float3 m_maxPos;
+   float3 m_minPos[NB_MAX_FRAMES];
+   float3 m_maxPos[NB_MAX_FRAMES];
 
 protected:
 
@@ -359,9 +364,9 @@ protected:
 protected:
 
    // CPU
-	BoxContainer*       m_boundingBoxes;
-	PrimitiveContainer* m_primitives;
-	LampContainer*      m_lamps;
+	BoxContainer*       m_boundingBoxes[NB_MAX_FRAMES];
+	PrimitiveContainer* m_primitives[NB_MAX_FRAMES];
+	LampContainer*      m_lamps[NB_MAX_FRAMES];
    LightInformation*   m_lightInformation;
 
 protected:

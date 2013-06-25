@@ -52,9 +52,11 @@ public:
       int materialId);
 
    float3 loadModelFromFile( 
+      const int& frame,
       const std::string& filename,
       GPUKernel& cudaKernel,
       const float3& center,
+      const bool autoScale,
       const float& scale, 
       int materialId);
 

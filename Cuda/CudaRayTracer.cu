@@ -382,7 +382,7 @@ __global__ void k_standardRenderer(
 	ray.direction = direction;
 
    float3 rotationCenter = {0.f,0.f,0.f};
-   bool antialiasingActivated = (sceneInfo.pathTracingIteration.x >= sceneInfo.maxPathTracingIterations.x-2 || sceneInfo.misc.w == 2);
+   bool antialiasingActivated = (sceneInfo.misc.w == 2);
    
 	if( sceneInfo.pathTracingIteration.x == 0 )
    {

@@ -145,9 +145,9 @@ float3 MapReader::loadFromFile(
       position.x = jewel.location.x*blockSize.x;
       position.y = jewel.location.y*blockSize.y;
       position.z = jewel.location.z*blockSize.z;
-      int nbPrimitives = kernel.addPrimitive( ptSphere );
+      int nbPrimitives = kernel.addPrimitive( frame, ptSphere );
       kernel.setPrimitive( 
-         nbPrimitives,
+         frame, nbPrimitives,
          position.x + blockSize.x/2.f, position.y + blockSize.x/2.f, position.z + blockSize.x/2.f, 
          blockSize.x/4.f, 0.f, 0.f,
          jewelMaterial, 1, 1);

@@ -220,9 +220,11 @@ unsigned int OBJReader::loadMaterialsFromFile(
 }
 
 float3 OBJReader::loadModelFromFile(
+   const int& frame,
    const std::string& filename,
    GPUKernel& kernel,
    const float3& center,
+   const bool autoScale,
    const float& scale,
    int materialId)
 {
@@ -248,7 +250,7 @@ float3 OBJReader::loadModelFromFile(
    std::string modelFilename(noExtFilename);
    modelFilename += ".obj";
 
-   LOG_INFO( 3, "Loading " << modelFilename.c_str() );
+   LOG_INFO( 3, "Loading " << modelFilename.c_str() << " into frame " << frame );
 
    int index_vertices(1);
    int index_normals(1);
@@ -344,18 +346,23 @@ float3 OBJReader::loadModelFromFile(
    LOG_INFO(3, "Nb Normals : " << normals.size());
    //float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
    //float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
-   float objectScale = scale/(maxPos.y - minPos.y);
 
-   // Center align object
-   float3 objectCenter = {0.f,0.f,0.f};
-   objectCenter.x = (minPos.x+maxPos.x) / 2.f;
-   objectCenter.y = (minPos.y+maxPos.y) / 2.f;
-   objectCenter.z = (minPos.z+maxPos.z) / 2.f;
-   file.close();
-   LOG_INFO(3, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
-   LOG_INFO(3, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
-   LOG_INFO(3, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
-   LOG_INFO(3, "Scale : " << objectScale );
+   float3 objectCenter = center;
+   float objectScale = scale;
+   if( autoScale )
+   {
+      objectScale = scale/(maxPos.y - minPos.y);
+
+      // Center align object
+      objectCenter.x = (minPos.x+maxPos.x) / 2.f;
+      objectCenter.y = (minPos.y+maxPos.y) / 2.f;
+      objectCenter.z = (minPos.z+maxPos.z) / 2.f;
+      file.close();
+      LOG_INFO(3, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
+      LOG_INFO(3, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
+      LOG_INFO(3, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
+      LOG_INFO(3, "Scale : " << objectScale );
+   }
 
    file.open(modelFilename.c_str());
    if( file.is_open() )
@@ -413,9 +420,9 @@ float3 OBJReader::loadModelFromFile(
 
                int f(0);
                //std::cout << "F(" << face[f] << "," << face[f+1] << "," << face[f+2] << ")" << std::endl;
-               unsigned int nbPrimitives = kernel.addPrimitive( ptTriangle );
+               unsigned int nbPrimitives = kernel.addPrimitive( frame, ptTriangle );
                kernel.setPrimitive( 
-                  nbPrimitives,
+                  frame, nbPrimitives,
                   center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
                   center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
                   center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
@@ -423,29 +430,29 @@ float3 OBJReader::loadModelFromFile(
                   material, 1, 1);
 
                // Texture coordinates
-               kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f].y], textureCoordinates[face[f+1].y], textureCoordinates[face[f+2].y] );
+               kernel.setPrimitiveTextureCoordinates( frame, nbPrimitives, textureCoordinates[face[f].y], textureCoordinates[face[f+1].y], textureCoordinates[face[f+2].y] );
                
                // Normals
                if( face[f].z!=0 && face[f+1].z!=0 && face[f+2].z!=0 )
                {
-                  kernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
+                  kernel.setPrimitiveNormals( frame, nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
                }
 
                if( face.size() == 4 )
                {
-                  nbPrimitives = kernel.addPrimitive( ptTriangle );
+                  nbPrimitives = kernel.addPrimitive( frame, ptTriangle );
                   kernel.setPrimitive( 
-                     nbPrimitives, 
+                     frame, nbPrimitives, 
                      center.x+objectScale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+3].x].z),
                      center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
                      center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
                      0.f, 0.f, 0.f,
                      material, 1, 1);
                   // Texture coordinates
-                  kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );
+                  kernel.setPrimitiveTextureCoordinates( frame, nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );
                   if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )
                   {
-                     kernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
+                     kernel.setPrimitiveNormals( frame, nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
                   }
                }
             }
@@ -453,6 +460,7 @@ float3 OBJReader::loadModelFromFile(
       }
       file.close();
    }
+   LOG_INFO(3, "Loaded " << kernel.getNbActivePrimitives(frame) << " primitives");
    float3 objectSize;
    objectSize.x = (maxPos.x - minPos.x)*objectScale;
    objectSize.y = (maxPos.y - minPos.y)*objectScale;

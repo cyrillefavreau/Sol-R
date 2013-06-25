@@ -195,7 +195,7 @@ ________________________________________________________________________________
 Execute GPU GPUKernel
 ________________________________________________________________________________
 */
-void CudaKernel::render_begin( const float timer )
+void CudaKernel::render_begin( const int frame, const float timer )
 {
 #if USE_KINECT
    if( m_kinectEnabled )
@@ -243,14 +243,14 @@ void CudaKernel::render_begin( const float timer )
    if( m_refresh )
    {
 	   // CPU -> GPU Data transfers
-      int nbBoxes      = m_nbActiveBoxes;
-      int nbPrimitives = m_nbActivePrimitives;
+      int nbBoxes      = m_nbActiveBoxes[frame];
+      int nbPrimitives = m_nbActivePrimitives[frame];
+      int nbLamps      = m_nbActiveLamps[frame];
       int nbMaterials  = m_nbActiveMaterials+1;
-      int nbLamps      = m_nbActiveLamps;
 
-      LOG_INFO(3,"Data sizes: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps);
+      LOG_INFO( 3, "Data sizes [" << frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
 
-      if( !m_primitivesTransfered )
+      //if( !m_primitivesTransfered )
       {
 	      h2d_scene( 
             m_hBoundingBoxes, nbBoxes, 
