@@ -54,7 +54,9 @@ struct CPUPrimitive
    float3 vt0; // Texture coordinates
    float3 vt1; 
    float3 vt2; 
-   float3 speed;
+   float3 speed0;
+   float3 speed1;
+   float3 speed2;
 };
 
 struct CPUBoundingBox
@@ -81,61 +83,68 @@ public:
 public:
 
    // ---------- Rendering ----------
-	virtual void render_begin( const int frame, const float timer ) = 0;
+	virtual void render_begin( const float timer ) = 0;
    virtual void render_end() = 0;
    unsigned char* getBitmap() { return m_bitmap; };
 
 public:
 
 	// ---------- Primitives ----------
-	int addPrimitive( const int frame, PrimitiveType type );
+	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
-      const int frame, const int& index,
+      const int& index,
 		float x0, float y0, float z0, float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-      const int frame, const int& index,
+      const int& index,
 		float x0, float y0, float z0, float x1, float y1, float z1,
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
 	void setPrimitive( 
-      const int frame, const int& index,
+      const int& index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
       float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
    unsigned int getPrimitiveAt( 
       int x, int y );
    void setPrimitiveIsMovable( 
-      const int frame, const int& index,
+      const int& index,
       bool movable );
 
-   void scalePrimitives( const int frame, float scale, unsigned int from, unsigned int to );
-   void rotatePrimitives( const int frame, float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
+   // Scaling
+   void scalePrimitives( float scale, unsigned int from, unsigned int to );
+
+   // Rotation
+   void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
 
-	void setPrimitiveMaterial( const int frame, unsigned int index, int materialId); 
-	int  getPrimitiveMaterial( const int frame, unsigned int index); 
-	float3 getPrimitiveCenter( const int frame, unsigned int index );
-	void getPrimitiveOtherCenter( const int frame, unsigned int index, float3& otherCenter );
-	void setPrimitiveCenter( const int frame, unsigned int index, const float3& center );
+   // Morphing
+   void morphPrimitives( bool initialProcessing, unsigned int from, unsigned int to );
+
+   // Material
+	void setPrimitiveMaterial( unsigned int index, int materialId); 
+	int  getPrimitiveMaterial( unsigned int index); 
+	float3 getPrimitiveCenter( unsigned int index );
+	void getPrimitiveOtherCenter( unsigned int index, float3& otherCenter );
+	void setPrimitiveCenter( unsigned int index, const float3& center );
 
    // Texture coordinates
-   void setPrimitiveTextureCoordinates( const int frame, unsigned int index, float3 vt0, float3 vt1, float3 vt2 );
+   void setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 );
 
    // Normals
-	void setPrimitiveNormals( const int frame, unsigned int index, float3 n0, float3 n1, float3 n2 );
+	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );
 
    // Lights
-   int getLight( const int frame, unsigned int index );
+   int getLight( unsigned int index );
 
-   CPUPrimitive* getPrimitive( const int frame, const unsigned int index );
+   CPUPrimitive* getPrimitive( const unsigned int index );
      
 public:
    
-   bool updateBoundingBox( const int frame, CPUBoundingBox& box );
-   void resetBoxes( const int frame, bool resetPrimitives );
+   bool updateBoundingBox( CPUBoundingBox& box );
+   void resetBoxes( bool resetPrimitives );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives );
-   CPUBoundingBox& getBoundingBox( const int frame, const unsigned int boxIndex ) { return (*m_boundingBoxes)[frame][boxIndex]; };
-   int compactBoxes( const int frame, bool reconstructBoxes );
-   void displayBoxesInfo( const int frame );
+   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[m_frame][boxIndex]; };
+   int compactBoxes( bool reconstructBoxes );
+   void displayBoxesInfo(  );
 
 public:
 
@@ -149,14 +158,14 @@ public:
 
 	// ---------- Complex objects ----------
 	int addCube( 
-      const int frame, 
+      
 		float x, float y, float z, 
 		float radius, 
 		int   materialId, 
 		float materialPaddingX, float materialPaddingY );
 
 	int addRectangle(
-		const int frame, 
+		
 		float x, float y, float z, 
 		float w, float h, float d,
 		int   materialId, 
@@ -205,7 +214,7 @@ public:
 	// ---------- Textures ----------
 	void setTexture(unsigned int index, char* texture );
 	int  addTexture( const std::string& filename );
-   void buildLightInformationFromTexture( const int frame, unsigned int index );
+   void buildLightInformationFromTexture( unsigned int index );
 
 public:
 
@@ -269,9 +278,9 @@ public:
 
 public:
 
-   unsigned int getNbActiveBoxes(const int frame)      { return static_cast<unsigned int>(m_boundingBoxes[frame]->size()); };
-   unsigned int getNbActivePrimitives(const int frame) { return static_cast<unsigned int>(m_primitives[frame]->size()); };
-	unsigned int getNbActiveLamps(const int frame)      { return m_nbActiveLamps[frame]; };
+   unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes[m_frame]->size()); };
+   unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives[m_frame]->size()); };
+	unsigned int getNbActiveLamps()      { return m_nbActiveLamps[m_frame]; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
 	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
 
@@ -280,7 +289,7 @@ public:
 
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
-   void resetFrame( const int frame );
+   void resetFrame(  );
    void resetAll();
 
 public:
@@ -292,9 +301,27 @@ public:
 
    std::string getGPUDescription() { return m_gpuDescription; };
 
+
+public:
+   void setNbFrames(const int nbFrames) { m_nbFrames=nbFrames; };
+   void setFrame( const int frame ) { m_frame=frame; };
+   int  getFrame() {return m_frame; };
+   void nextFrame() 
+   {
+      m_frame++; 
+      if(m_frame==m_nbFrames) m_frame=0;
+      compactBoxes(false);
+   };
+   void previousFrame() 
+   { 
+      m_frame--; 
+      if(m_frame<0) m_frame=m_nbFrames-1; 
+      compactBoxes(false);
+   }
+
 protected:
    
-   unsigned int processBoxes( const int frame, const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
+   unsigned int processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
 
    void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
@@ -322,6 +349,11 @@ protected:
 
    bool         m_doneWithAdding;
    int          m_addingIndex;
+
+protected:
+   int    m_frame;
+   int    m_nbFrames;
+   float  m_morph;
 
 protected:
 

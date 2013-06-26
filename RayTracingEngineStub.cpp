@@ -129,7 +129,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, unsigned 
 {
 	kernel->setSceneInfo( gSceneInfoStub );
    kernel->setPostProcessingInfo( gPostProcessingInfoStub );
-	kernel->render_begin( 0, static_cast<float>(timer) );
+	kernel->render_begin( static_cast<float>(timer) );
    kernel->render_end();
    memcpy(image,kernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*3);
    return 0;
@@ -139,7 +139,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, unsigned 
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_AddPrimitive( int type )
 {
-   return kernel->addPrimitive( 0, static_cast<PrimitiveType>(type) );
+   return kernel->addPrimitive( static_cast<PrimitiveType>(type) );
 }
 
 // --------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ extern "C" RAYTRACINGENGINE_API
    double materialPaddingY )
 {
    kernel->setPrimitive(
-      0, index,
+      index,
       static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
       static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
       static_cast<float>(p2_x), static_cast<float>(p2_y), static_cast<float>(p2_z), 
@@ -174,7 +174,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
    double& size_x, double& size_y, double& size_z,
    int& materialId, double& materialPaddingX, double& materialPaddingY )
 {
-   CPUPrimitive* primitive = kernel->getPrimitive(0,index);
+   CPUPrimitive* primitive = kernel->getPrimitive(index);
    if( primitive != NULL )
    {
       p0_x = primitive->p0.x;
@@ -204,7 +204,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y )
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z)
 {
-   float3 center = kernel->getPrimitiveCenter( 0, index );
+   float3 center = kernel->getPrimitiveCenter( index );
    x = static_cast<double>(center.x);
    y = static_cast<double>(center.y);
    z = static_cast<double>(center.z);
@@ -233,7 +233,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
       float3 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz) };
       float3 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az) };
 
-      kernel->rotatePrimitives( 0, rotationCenter, angles, fromBoxId, toBoxId );
+      kernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
    }
    catch( ... )
    {
@@ -245,13 +245,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveMaterial(
    int    index,
    int    materialId)
 {
-   kernel->setPrimitiveMaterial( 0, index,  materialId );
+   kernel->setPrimitiveMaterial( index,  materialId );
    return 0;
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( int index)
 {
-   return kernel->getPrimitiveMaterial( 0, index );
+   return kernel->getPrimitiveMaterial( index );
 }
 
 // --------------------------------------------------------------------------------
@@ -404,8 +404,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
       static_cast<float>(defaultStickSize),
       atomMaterialType, 
       static_cast<float>(scale) );
-   kernel->compactBoxes(0, true);
-   return kernel->getNbActivePrimitives(0);
+   kernel->compactBoxes(true);
+   return kernel->getNbActivePrimitives();
 }
 
 // --------------------------------------------------------------------------------
@@ -418,14 +418,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
    // PDB
 	OBJReader objReader;
 	float3 minPos = objReader.loadModelFromFile(
-      0,
       filename,
       *kernel,
       center,
       true,
       static_cast<float>(scale), 
       materialId );
-   return kernel->getNbActivePrimitives(0);
+   return kernel->getNbActivePrimitives();
 }
 
 // --------------------------------------------------------------------------------
@@ -433,26 +432,26 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
 {
    FileMarshaller fm;
    fm.saveToFile( *kernel, filename );
-   return kernel->getNbActivePrimitives(0);
+   return kernel->getNbActivePrimitives();
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, double scale )
 {
    FileMarshaller fm;
-   fm.loadFromFile( *kernel, filename, 0, static_cast<float>(scale) );
-   return kernel->getNbActivePrimitives(0);
+   fm.loadFromFile( *kernel, filename, static_cast<float>(scale) );
+   return kernel->getNbActivePrimitives();
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update )
 {
-   return kernel->compactBoxes(0, update);
+   return kernel->compactBoxes(update);
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
 {
-   return kernel->getLight(0, index);
+   return kernel->getLight(index);
 }
 

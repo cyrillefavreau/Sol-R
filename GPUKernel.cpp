@@ -288,7 +288,7 @@ void GPUKernel::cleanup()
    {
       if( m_boundingBoxes )
       {
-         //m_boundingBoxes[frame]->clear();
+         //m_boundingBoxes[m_frame]->clear();
          delete m_boundingBoxes[i];
          m_boundingBoxes[i] = nullptr;
       }
@@ -296,7 +296,7 @@ void GPUKernel::cleanup()
 
       if( m_primitives[i] )
       {
-         //m_primitives[frame]->clear();
+         //m_primitives[m_frame]->clear();
          delete m_primitives[i];
          m_primitives[i] = nullptr;
       }
@@ -304,7 +304,7 @@ void GPUKernel::cleanup()
 
       if(m_lamps[i]) 
       {
-         //m_lamps[frame]->clear();
+         //m_lamps[m_frame]->clear();
          delete m_lamps[i];
          m_lamps[i] = nullptr;
       }
@@ -363,7 +363,7 @@ void GPUKernel::setCamera(
    m_refresh   = true;
 }
 
-int GPUKernel::addPrimitive( const int frame, PrimitiveType type )
+int GPUKernel::addPrimitive( PrimitiveType type )
 {
 	LOG_INFO(3,"GPUKernel::addPrimitive");
    int returnValue=-1;
@@ -378,39 +378,37 @@ int GPUKernel::addPrimitive( const int frame, PrimitiveType type )
       memset(&primitive,0,sizeof(CPUPrimitive));
    
       primitive.type = type;
-      primitive.speed.y = -10.f;
+      primitive.speed0.y = -10.f;
 
-      int index = static_cast<int>(m_primitives[frame]->size());
-      (*m_primitives[frame])[index] = primitive;
-      //LOG_INFO(1,"m_primitives.size() = " << m_primitives[frame]->size());
+      int index = static_cast<int>(m_primitives[m_frame]->size());
+      (*m_primitives[m_frame])[index] = primitive;
+      //LOG_INFO(1,"m_primitives.size() = " << m_primitives[m_frame]->size());
 	   returnValue = index;
    }
    return returnValue;
 }
 
-CPUPrimitive* GPUKernel::getPrimitive( const int frame, const unsigned int index )
+CPUPrimitive* GPUKernel::getPrimitive( const unsigned int index )
 {
    CPUPrimitive* returnValue(NULL);
-	if( index>=0 && index<=m_primitives[frame]->size()) 
+	if( index>=0 && index<=m_primitives[m_frame]->size()) 
    {
-      returnValue = &(*m_primitives[frame])[index];
+      returnValue = &(*m_primitives[m_frame])[index];
    }
    return returnValue;
 }
 
 void GPUKernel::setPrimitive( 
-   const int frame,
    const int& index,
 	float x0, float y0, float z0, 
 	float w,  float h,  float d,
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
-	setPrimitive( frame, index, x0, y0, z0, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
+	setPrimitive( index, x0, y0, z0, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
 }
 
 void GPUKernel::setPrimitive( 
-   const int frame, 
    const int& index,
 	float x0, float y0, float z0, 
 	float x1, float y1, float z1, 
@@ -418,11 +416,10 @@ void GPUKernel::setPrimitive(
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
-	setPrimitive( frame, index, x0, y0, z0, x1, y1, z1, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
+	setPrimitive( index, x0, y0, z0, x1, y1, z1, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
 }
 
 void GPUKernel::setPrimitive( 
-   const int frame, 
    const int& index,
 	float x0, float y0, float z0, 
 	float x1, float y1, float z1, 
@@ -442,47 +439,47 @@ void GPUKernel::setPrimitive(
 		"material (" << materialId << "," << materialPaddingX << "," << materialPaddingY << ")"
 		);
       */
-   if( index>=0 && index<=m_primitives[frame]->size()) 
+   if( index>=0 && index<=m_primitives[m_frame]->size()) 
 	{
-      (*m_primitives[frame])[index].movable= true;
-		(*m_primitives[frame])[index].p0.x   = x0*scale;
-		(*m_primitives[frame])[index].p0.y   = y0*scale;
-		(*m_primitives[frame])[index].p0.z   = z0*scale;
-		(*m_primitives[frame])[index].p1.x   = x1*scale;
-		(*m_primitives[frame])[index].p1.y   = y1*scale;
-		(*m_primitives[frame])[index].p1.z   = z1*scale;
-		(*m_primitives[frame])[index].p2.x   = x2*scale;
-		(*m_primitives[frame])[index].p2.y   = y2*scale;
-		(*m_primitives[frame])[index].p2.z   = z2*scale;
-		(*m_primitives[frame])[index].size.x = w*scale;
-		(*m_primitives[frame])[index].size.y = h*scale;
-		(*m_primitives[frame])[index].size.z = d*scale;
-      (*m_primitives[frame])[index].n0     = zero;
-      (*m_primitives[frame])[index].n1     = zero;
-      (*m_primitives[frame])[index].n2     = zero;
-      (*m_primitives[frame])[index].vt0    = zero;
-      (*m_primitives[frame])[index].vt1    = zero;
-      (*m_primitives[frame])[index].vt2    = zero;
-		(*m_primitives[frame])[index].materialId = materialId;
+      (*m_primitives[m_frame])[index].movable= true;
+		(*m_primitives[m_frame])[index].p0.x   = x0*scale;
+		(*m_primitives[m_frame])[index].p0.y   = y0*scale;
+		(*m_primitives[m_frame])[index].p0.z   = z0*scale;
+		(*m_primitives[m_frame])[index].p1.x   = x1*scale;
+		(*m_primitives[m_frame])[index].p1.y   = y1*scale;
+		(*m_primitives[m_frame])[index].p1.z   = z1*scale;
+		(*m_primitives[m_frame])[index].p2.x   = x2*scale;
+		(*m_primitives[m_frame])[index].p2.y   = y2*scale;
+		(*m_primitives[m_frame])[index].p2.z   = z2*scale;
+		(*m_primitives[m_frame])[index].size.x = w*scale;
+		(*m_primitives[m_frame])[index].size.y = h*scale;
+		(*m_primitives[m_frame])[index].size.z = d*scale;
+      (*m_primitives[m_frame])[index].n0     = zero;
+      (*m_primitives[m_frame])[index].n1     = zero;
+      (*m_primitives[m_frame])[index].n2     = zero;
+      (*m_primitives[m_frame])[index].vt0    = zero;
+      (*m_primitives[m_frame])[index].vt1    = zero;
+      (*m_primitives[m_frame])[index].vt2    = zero;
+		(*m_primitives[m_frame])[index].materialId = materialId;
 
-		switch( (*m_primitives[frame])[index].type )
+		switch( (*m_primitives[m_frame])[index].type )
 		{
 		case ptSphere:
          {
-			   (*m_primitives[frame])[index].size.x = w*scale;
-			   (*m_primitives[frame])[index].size.y = w*scale;
-			   (*m_primitives[frame])[index].size.z = w*scale;
-			   (*m_primitives[frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-			   (*m_primitives[frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
+			   (*m_primitives[m_frame])[index].size.x = w*scale;
+			   (*m_primitives[m_frame])[index].size.y = w*scale;
+			   (*m_primitives[m_frame])[index].size.z = w*scale;
+			   (*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
+			   (*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 			   break;
          }
 		case ptEllipsoid:
 			{
-		      (*m_primitives[frame])[index].size.x = w*scale;
-		      (*m_primitives[frame])[index].size.y = h*scale;
-		      (*m_primitives[frame])[index].size.z = d*scale;
-			   (*m_primitives[frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-			   (*m_primitives[frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
+		      (*m_primitives[m_frame])[index].size.x = w*scale;
+		      (*m_primitives[m_frame])[index].size.y = h*scale;
+		      (*m_primitives[m_frame])[index].size.z = d*scale;
+			   (*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
+			   (*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
             break;
          }
 		case ptCylinder:
@@ -499,93 +496,93 @@ void GPUKernel::setPrimitive(
 				   axis.y /= len;
 				   axis.z /= len;
             }
-				(*m_primitives[frame])[index].n1.x = axis.x;
-				(*m_primitives[frame])[index].n1.y = axis.y;
-				(*m_primitives[frame])[index].n1.z = axis.z;
+				(*m_primitives[m_frame])[index].n1.x = axis.x;
+				(*m_primitives[m_frame])[index].n1.y = axis.y;
+				(*m_primitives[m_frame])[index].n1.z = axis.z;
 
-            (*m_primitives[frame])[index].size.x = w*scale; //(x1 - x0)/2.f;
-            (*m_primitives[frame])[index].size.y = w*scale; //(y1 - y0)/2.f;
-            (*m_primitives[frame])[index].size.z = w*scale; // (z1 - z0)/2.f;
+            (*m_primitives[m_frame])[index].size.x = w*scale; //(x1 - x0)/2.f;
+            (*m_primitives[m_frame])[index].size.y = w*scale; //(y1 - y0)/2.f;
+            (*m_primitives[m_frame])[index].size.z = w*scale; // (z1 - z0)/2.f;
 
 				// Material
-				(*m_primitives[frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
+				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
+				(*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 #ifdef USE_KINECT 
 		case ptCamera:
 			{
-				(*m_primitives[frame])[index].n0.x = 0.f;
-				(*m_primitives[frame])[index].n0.y = 0.f;
-				(*m_primitives[frame])[index].n0.z = -1.f;
-				(*m_primitives[frame])[index].materialInfo.x = ( w != 0.f ) ? (gKinectVideoWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[frame])[index].materialInfo.y = ( w != 0.f ) ? (gKinectVideoHeight/h/2)*materialPaddingY : 1.f;
+				(*m_primitives[m_frame])[index].n0.x = 0.f;
+				(*m_primitives[m_frame])[index].n0.y = 0.f;
+				(*m_primitives[m_frame])[index].n0.z = -1.f;
+				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gKinectVideoWidth /w/2)*materialPaddingX : 1.f;
+				(*m_primitives[m_frame])[index].materialInfo.y = ( w != 0.f ) ? (gKinectVideoHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 #endif // USE_KINECT
 		case ptXYPlane:
 			{
-				(*m_primitives[frame])[index].n0.x = 0.f;
-				(*m_primitives[frame])[index].n0.y = 0.f;
-				(*m_primitives[frame])[index].n0.z = 1.f;
-				(*m_primitives[frame])[index].n1 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].n2 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
+				(*m_primitives[m_frame])[index].n0.x = 0.f;
+				(*m_primitives[m_frame])[index].n0.y = 0.f;
+				(*m_primitives[m_frame])[index].n0.z = 1.f;
+				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
+				(*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 		case ptYZPlane:
 			{
-				(*m_primitives[frame])[index].n0.x = 1.f;
-				(*m_primitives[frame])[index].n0.y = 0.f;
-				(*m_primitives[frame])[index].n0.z = 0.f;
-				(*m_primitives[frame])[index].n1 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].n2 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].materialInfo.x = ( d != 0.f ) ? (gTextureWidth /d/2)*materialPaddingX : 1.f;
-				(*m_primitives[frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
+				(*m_primitives[m_frame])[index].n0.x = 1.f;
+				(*m_primitives[m_frame])[index].n0.y = 0.f;
+				(*m_primitives[m_frame])[index].n0.z = 0.f;
+				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].materialInfo.x = ( d != 0.f ) ? (gTextureWidth /d/2)*materialPaddingX : 1.f;
+				(*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 		case ptXZPlane:
 		case ptCheckboard:
 			{
-				(*m_primitives[frame])[index].n0.x = 0.f;
-				(*m_primitives[frame])[index].n0.y = 1.f;
-				(*m_primitives[frame])[index].n0.z = 0.f;
-				(*m_primitives[frame])[index].n1 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].n2 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[frame])[index].materialInfo.y = ( d != 0.f ) ? (gTextureHeight/d/2)*materialPaddingY : 1.f;
+				(*m_primitives[m_frame])[index].n0.x = 0.f;
+				(*m_primitives[m_frame])[index].n0.y = 1.f;
+				(*m_primitives[m_frame])[index].n0.z = 0.f;
+				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
+				(*m_primitives[m_frame])[index].materialInfo.y = ( d != 0.f ) ? (gTextureHeight/d/2)*materialPaddingY : 1.f;
 				break;
 			}
 		case ptTriangle:
 			{
             float3 v0,v1;
-            v0.x = (*m_primitives[frame])[index].p1.x-(*m_primitives[frame])[index].p0.x;
-            v0.y = (*m_primitives[frame])[index].p1.y-(*m_primitives[frame])[index].p0.y;
-            v0.z = (*m_primitives[frame])[index].p1.z-(*m_primitives[frame])[index].p0.z;
+            v0.x = (*m_primitives[m_frame])[index].p1.x-(*m_primitives[m_frame])[index].p0.x;
+            v0.y = (*m_primitives[m_frame])[index].p1.y-(*m_primitives[m_frame])[index].p0.y;
+            v0.z = (*m_primitives[m_frame])[index].p1.z-(*m_primitives[m_frame])[index].p0.z;
             normalizeVector(v0);
             
-            v1.x = (*m_primitives[frame])[index].p2.x-(*m_primitives[frame])[index].p0.x;
-            v1.y = (*m_primitives[frame])[index].p2.y-(*m_primitives[frame])[index].p0.y;
-            v1.z = (*m_primitives[frame])[index].p2.z-(*m_primitives[frame])[index].p0.z;
+            v1.x = (*m_primitives[m_frame])[index].p2.x-(*m_primitives[m_frame])[index].p0.x;
+            v1.y = (*m_primitives[m_frame])[index].p2.y-(*m_primitives[m_frame])[index].p0.y;
+            v1.z = (*m_primitives[m_frame])[index].p2.z-(*m_primitives[m_frame])[index].p0.z;
             normalizeVector(v1);
 
-            (*m_primitives[frame])[index].n0 = crossProduct(v0,v1);
-            normalizeVector((*m_primitives[frame])[index].n0);
-				(*m_primitives[frame])[index].n1 = (*m_primitives[frame])[index].n0;
-				(*m_primitives[frame])[index].n2 = (*m_primitives[frame])[index].n0;
+            (*m_primitives[m_frame])[index].n0 = crossProduct(v0,v1);
+            normalizeVector((*m_primitives[m_frame])[index].n0);
+				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
+				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
 				break;
 			}
 		}
       //min
-      m_minPos[frame].x = std::min(x0*scale,m_minPos[frame].x);
-      m_minPos[frame].y = std::min(y0*scale,m_minPos[frame].y);
-      m_minPos[frame].z = std::min(z0*scale,m_minPos[frame].z);
+      m_minPos[m_frame].x = std::min(x0*scale,m_minPos[m_frame].x);
+      m_minPos[m_frame].y = std::min(y0*scale,m_minPos[m_frame].y);
+      m_minPos[m_frame].z = std::min(z0*scale,m_minPos[m_frame].z);
              
       // max
-      m_maxPos[frame].x = std::max(x0*scale,m_maxPos[frame].x);
-      m_maxPos[frame].y = std::max(y0*scale,m_maxPos[frame].y);
-      m_maxPos[frame].z = std::max(z0*scale,m_maxPos[frame].z);
+      m_maxPos[m_frame].x = std::max(x0*scale,m_maxPos[m_frame].x);
+      m_maxPos[m_frame].y = std::max(y0*scale,m_maxPos[m_frame].y);
+      m_maxPos[m_frame].z = std::max(z0*scale,m_maxPos[m_frame].z);
    }
 	else
 	{
@@ -593,21 +590,21 @@ void GPUKernel::setPrimitive(
 	}
 }
 
-void GPUKernel::setPrimitiveIsMovable( const int frame, const int& index, bool movable )
+void GPUKernel::setPrimitiveIsMovable( const int& index, bool movable )
 {
-   if( index>=0 && index<m_primitives[frame]->size()) 
+   if( index>=0 && index<m_primitives[m_frame]->size()) 
 	{
-      CPUPrimitive& primitive((*m_primitives[frame])[index]);
+      CPUPrimitive& primitive((*m_primitives[m_frame])[index]);
       primitive.movable = movable;
    }
 }
 
 
-void GPUKernel::setPrimitiveTextureCoordinates( const int frame, unsigned int index, float3 vt0, float3 vt1, float3 vt2 )
+void GPUKernel::setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 )
 {
-   if( index>=0 && index<m_primitives[frame]->size()) 
+   if( index>=0 && index<m_primitives[m_frame]->size()) 
 	{
-      CPUPrimitive& primitive((*m_primitives[frame])[index]);
+      CPUPrimitive& primitive((*m_primitives[m_frame])[index]);
       primitive.vt0 = vt0;
       primitive.vt1 = vt1;
       primitive.vt2 = vt2;
@@ -623,11 +620,11 @@ void GPUKernel::setPrimitiveTextureCoordinates( const int frame, unsigned int in
 }
 
 
-void GPUKernel::setPrimitiveNormals( const int frame, int unsigned index, float3 n0, float3 n1, float3 n2 )
+void GPUKernel::setPrimitiveNormals( int unsigned index, float3 n0, float3 n1, float3 n2 )
 {
-   if( index>=0 && index<m_primitives[frame]->size()) 
+   if( index>=0 && index<m_primitives[m_frame]->size()) 
 	{
-      CPUPrimitive& primitive((*m_primitives[frame])[index]);
+      CPUPrimitive& primitive((*m_primitives[m_frame])[index]);
       normalizeVector(n0);
 		primitive.n0 = n0;
       normalizeVector(n1);
@@ -647,7 +644,7 @@ unsigned int GPUKernel::getPrimitiveAt( int x, int y )
 	return returnValue;
 }
 
-bool GPUKernel::updateBoundingBox( const int frame, CPUBoundingBox& box )
+bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 {
 	LOG_INFO(3,"GPUKernel::updateBoundingBox()" );
 
@@ -660,7 +657,7 @@ bool GPUKernel::updateBoundingBox( const int frame, CPUBoundingBox& box )
    std::vector<unsigned int>::const_iterator it = box.primitives.begin();
    while( it != box.primitives.end() )
    {
-      CPUPrimitive& primitive = (*m_primitives[frame])[*it];
+      CPUPrimitive& primitive = (*m_primitives[m_frame])[*it];
       result = (m_hMaterials[primitive.materialId].innerIllumination.x != 0.f );
 	   switch( primitive.type )
 	   {
@@ -725,18 +722,18 @@ bool GPUKernel::updateBoundingBox( const int frame, CPUBoundingBox& box )
    return result;
 }
 
-void GPUKernel::resetBoxes( const int frame, bool resetPrimitives )
+void GPUKernel::resetBoxes( bool resetPrimitives )
 {
    if( resetPrimitives )
    {
-      for( int i(0); i<(m_boundingBoxes[frame])->size(); ++i )
+      for( int i(0); i<(m_boundingBoxes[m_frame])->size(); ++i )
       {
-         resetBox( (*m_boundingBoxes[frame])[i], resetPrimitives );
+         resetBox( (*m_boundingBoxes[m_frame])[i], resetPrimitives );
       }
    }
    else
    {
-      (m_boundingBoxes[frame])->clear();
+      (m_boundingBoxes[m_frame])->clear();
    }
 }
 
@@ -756,12 +753,12 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 	box.parameters[1].z = -m_sceneInfo.viewDistance.x;
 }
 
-unsigned int GPUKernel::processBoxes( const int frame, const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate )
+unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate )
 {
    float3 boxSteps;
-   boxSteps.x = ( m_maxPos[frame].x - m_minPos[frame].x ) / boxSize;
-   boxSteps.y = ( m_maxPos[frame].y - m_minPos[frame].y ) / boxSize;
-   boxSteps.z = ( m_maxPos[frame].z - m_minPos[frame].z ) / boxSize;
+   boxSteps.x = ( m_maxPos[m_frame].x - m_minPos[m_frame].x ) / boxSize;
+   boxSteps.y = ( m_maxPos[m_frame].y - m_minPos[m_frame].y ) / boxSize;
+   boxSteps.z = ( m_maxPos[m_frame].z - m_minPos[m_frame].z ) / boxSize;
 
    boxSteps.x = ( boxSteps.x == 0.f ) ? 1 : boxSteps.x;
    boxSteps.y = ( boxSteps.y == 0.f ) ? 1 : boxSteps.y;
@@ -771,14 +768,14 @@ unsigned int GPUKernel::processBoxes( const int frame, const unsigned int boxSiz
    std::map<unsigned int,unsigned int> primitivesPerBox;
 
    int p(0);
-   std::map<unsigned int,CPUPrimitive>::iterator it = (m_primitives[frame])->begin();
-   while( it != (m_primitives[frame])->end() )
+   std::map<unsigned int,CPUPrimitive>::iterator it = (m_primitives[m_frame])->begin();
+   while( it != (m_primitives[m_frame])->end() )
    {
       CPUPrimitive& primitive((*it).second);
 
-      int X = static_cast<int>(( primitive.p0.x - m_minPos[frame].x ) / boxSteps.x);
-      int Y = static_cast<int>(( primitive.p0.y - m_minPos[frame].y ) / boxSteps.y);
-      int Z = static_cast<int>(( primitive.p0.z - m_minPos[frame].z ) / boxSteps.z);
+      int X = static_cast<int>(( primitive.p0.x - m_minPos[m_frame].x ) / boxSteps.x);
+      int Y = static_cast<int>(( primitive.p0.y - m_minPos[m_frame].y ) / boxSteps.y);
+      int Z = static_cast<int>(( primitive.p0.z - m_minPos[m_frame].z ) / boxSteps.z);
       int B = X*boxSize*boxSize + Y*boxSize + Z;
 
       if( simulate )
@@ -798,14 +795,14 @@ unsigned int GPUKernel::processBoxes( const int frame, const unsigned int boxSiz
       {
          if( primitivesPerBox.find(B) == primitivesPerBox.end() )
          {
-	         (*m_boundingBoxes[frame])[B].parameters[0].x = m_sceneInfo.viewDistance.x;
-	         (*m_boundingBoxes[frame])[B].parameters[0].y = m_sceneInfo.viewDistance.x;
-	         (*m_boundingBoxes[frame])[B].parameters[0].z = m_sceneInfo.viewDistance.x;
-	         (*m_boundingBoxes[frame])[B].parameters[1].x = -m_sceneInfo.viewDistance.x;
-	         (*m_boundingBoxes[frame])[B].parameters[1].y = -m_sceneInfo.viewDistance.x;
-	         (*m_boundingBoxes[frame])[B].parameters[1].z = -m_sceneInfo.viewDistance.x;
+	         (*m_boundingBoxes[m_frame])[B].parameters[0].x = m_sceneInfo.viewDistance.x;
+	         (*m_boundingBoxes[m_frame])[B].parameters[0].y = m_sceneInfo.viewDistance.x;
+	         (*m_boundingBoxes[m_frame])[B].parameters[0].z = m_sceneInfo.viewDistance.x;
+	         (*m_boundingBoxes[m_frame])[B].parameters[1].x = -m_sceneInfo.viewDistance.x;
+	         (*m_boundingBoxes[m_frame])[B].parameters[1].y = -m_sceneInfo.viewDistance.x;
+	         (*m_boundingBoxes[m_frame])[B].parameters[1].z = -m_sceneInfo.viewDistance.x;
          }
-         (*m_boundingBoxes[frame])[B].primitives.push_back(p);
+         (*m_boundingBoxes[m_frame])[B].primitives.push_back(p);
       }
       ++p;
       ++it;
@@ -815,15 +812,15 @@ unsigned int GPUKernel::processBoxes( const int frame, const unsigned int boxSiz
    int delta = 0;
    if( simulate )
    {
-      maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives[frame]->size()/nbActiveBoxes) : 0;
+      maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives[m_frame]->size()/nbActiveBoxes) : 0;
       delta = m_optimalNbOfPrimmitivesPerBox-nbActiveBoxes;
    }
    else
    {
-      BoxContainer::iterator itb = (m_boundingBoxes[frame])->begin();
-      while( itb != (m_boundingBoxes[frame])->end() )
+      BoxContainer::iterator itb = (m_boundingBoxes[m_frame])->begin();
+      while( itb != (m_boundingBoxes[m_frame])->end() )
       {
-         updateBoundingBox(frame,(*itb).second);
+         updateBoundingBox((*itb).second);
          itb++;
       }
    }
@@ -831,9 +828,9 @@ unsigned int GPUKernel::processBoxes( const int frame, const unsigned int boxSiz
    return delta;
 }
 
-int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
+int GPUKernel::compactBoxes( bool reconstructBoxes )
 {
-	LOG_INFO(3,"GPUKernel::compactBoxes (frame " << frame << ")" );
+	LOG_INFO(3,"GPUKernel::compactBoxes (frame " << m_frame << ")" );
    m_primitivesTransfered = false;
 
    if( reconstructBoxes )
@@ -851,7 +848,7 @@ int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
       unsigned int bestRatio = 100000;
       do 
       {
-         unsigned int ratio = processBoxes( frame, boxSize, activeBoxes, true );
+         unsigned int ratio = processBoxes(  boxSize, activeBoxes, true );
          if( ratio < bestRatio ) 
          {
             bestSize = boxSize;
@@ -862,9 +859,9 @@ int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
       }
       while( boxSize>0 );
       LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
-      processBoxes( frame, bestSize, activeBoxes, false );
+      processBoxes(  bestSize, activeBoxes, false );
 #else
-      processBoxes( frame, 64, activeBoxes, false );
+      processBoxes(  64, activeBoxes, false );
 #endif 0
    }
 
@@ -879,13 +876,13 @@ int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
       m_primitivesTransfered = false;
    }
 
-   m_nbActiveBoxes[frame] = 0;
-   m_nbActivePrimitives[frame] = 0;
-   m_nbActiveLamps[frame] = 0;
+   m_nbActiveBoxes[m_frame] = 0;
+   m_nbActivePrimitives[m_frame] = 0;
+   m_nbActiveLamps[m_frame] = 0;
    if( m_boundingBoxes )
    {
-      BoxContainer::iterator itb=(m_boundingBoxes[frame])->begin();
-      while( itb != (m_boundingBoxes[frame])->end() )
+      BoxContainer::iterator itb=(m_boundingBoxes[m_frame])->begin();
+      while( itb != (m_boundingBoxes[m_frame])->end() )
       {
          CPUBoundingBox& box = (*itb).second;
 
@@ -894,7 +891,7 @@ int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
          {
             // Only consider boxes that are not too far
             resetBox(box,false);
-            bool containsLight = updateBoundingBox(frame, box);
+            bool containsLight = updateBoundingBox( box);
 
             float3 v1,v2;
             v1.x = box.parameters[0].x-viewPos.x;
@@ -907,14 +904,14 @@ int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
             //addBox = (containsLight || (d<m_sceneInfo.viewDistance.x));
          }
 
-         if( /*addBox && */(box.primitives.size()!=0) && (m_nbActiveBoxes[frame]<NB_MAX_BOXES) )
+         if( /*addBox && */(box.primitives.size()!=0) && (m_nbActiveBoxes[m_frame]<NB_MAX_BOXES) )
          {
             // Prepare boxes for GPU
 
-            m_hBoundingBoxes[m_nbActiveBoxes[frame]].parameters[0] = box.parameters[0];
-            m_hBoundingBoxes[m_nbActiveBoxes[frame]].parameters[1] = box.parameters[1];
-            m_hBoundingBoxes[m_nbActiveBoxes[frame]].startIndex.x  = m_nbActivePrimitives[frame];
-            m_hBoundingBoxes[m_nbActiveBoxes[frame]].nbPrimitives.x= static_cast<int>(box.primitives.size());
+            m_hBoundingBoxes[m_nbActiveBoxes[m_frame]].parameters[0] = box.parameters[0];
+            m_hBoundingBoxes[m_nbActiveBoxes[m_frame]].parameters[1] = box.parameters[1];
+            m_hBoundingBoxes[m_nbActiveBoxes[m_frame]].startIndex.x  = m_nbActivePrimitives[m_frame];
+            m_hBoundingBoxes[m_nbActiveBoxes[m_frame]].nbPrimitives.x= static_cast<int>(box.primitives.size());
 
             std::vector<unsigned int>::const_iterator itp = box.primitives.begin();
             while( itp != box.primitives.end() )
@@ -922,71 +919,75 @@ int GPUKernel::compactBoxes( const int frame, bool reconstructBoxes )
                // Prepare primitives for GPU
                if( *itp < NB_MAX_PRIMITIVES )
                {
-                  CPUPrimitive& primitive = (*m_primitives[frame])[*itp];
-                  m_hPrimitives[m_nbActivePrimitives[frame]].index.x = *itp;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].type.x  = primitive.type;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].p0 = primitive.p0;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].p1 = primitive.p1;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].p2 = primitive.p2;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].n0 = primitive.n0;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].n1 = primitive.n1;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].n2 = primitive.n2;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].size = primitive.size;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].materialId.x = primitive.materialId;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].materialInfo = primitive.materialInfo;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].vt0 = primitive.vt0;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].vt1 = primitive.vt1;
-                  m_hPrimitives[m_nbActivePrimitives[frame]].vt2 = primitive.vt2;
+                  CPUPrimitive& primitive = (*m_primitives[m_frame])[*itp];
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].index.x = *itp;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].type.x  = primitive.type;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].p0 = primitive.p0;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].p1 = primitive.p1;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].p2 = primitive.p2;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].n0 = primitive.n0;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].n1 = primitive.n1;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].n2 = primitive.n2;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].size = primitive.size;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].materialId.x = primitive.materialId;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].materialInfo = primitive.materialInfo;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].vt0 = primitive.vt0;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].vt1 = primitive.vt1;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].vt2 = primitive.vt2;
 
                   // Lights
                   if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
                   {
-                     m_hLamps[m_nbActiveLamps[frame]] = m_nbActivePrimitives[frame];
-                     (*m_lamps[frame])[m_nbActiveLamps[frame]] = (*itp);
-                     m_nbActiveLamps[frame]++;
-                     LOG_INFO(3,"Lamp added (" << m_nbActiveLamps[frame] << "/" << NB_MAX_LAMPS << ")" );
+                     m_hLamps[m_nbActiveLamps[m_frame]] = m_nbActivePrimitives[m_frame];
+                     (*m_lamps[m_frame])[m_nbActiveLamps[m_frame]] = (*itp);
+                     m_nbActiveLamps[m_frame]++;
+                     LOG_INFO(3,"Lamp added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
                   }
                }
                ++itp;
-               ++(m_nbActivePrimitives[frame]);
+               ++(m_nbActivePrimitives[m_frame]);
             }
-            ++(m_nbActiveBoxes[frame]);
+            ++(m_nbActiveBoxes[m_frame]);
          }
          ++itb;
       }
-      buildLightInformationFromTexture(frame, 4);
-      LOG_INFO( 3, "Compacted " << m_nbActiveBoxes[frame] << " boxes, and " << m_nbActivePrimitives[frame] << " primitives"); 
-      if( m_nbActivePrimitives[frame] != m_primitives[frame]->size() )
+      buildLightInformationFromTexture( 4);
+      LOG_INFO( 3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
+      if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame]->size() )
       {
-         LOG_ERROR("Lost primitives on the way... " << m_nbActivePrimitives[frame] << "!=" << m_primitives[frame]->size() );
+         LOG_ERROR("Lost primitives on the way... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame]->size() );
       }
-      return static_cast<int>(m_nbActiveBoxes[frame]);
+      return static_cast<int>(m_nbActiveBoxes[m_frame]);
    }
    return 0;
 }
 
-void GPUKernel::resetFrame( const int frame )
+void GPUKernel::resetFrame()
 {
-   LOG_INFO(3, "Resetting frame " << frame);
-   m_boundingBoxes[frame]->clear();
-   m_nbActiveBoxes[frame] = 0;
-   LOG_INFO(3, "Nb Boxes: " << m_boundingBoxes[frame]->size());
+   LOG_INFO(3, "Resetting frame " << m_frame);
+   m_boundingBoxes[m_frame]->clear();
+   m_nbActiveBoxes[m_frame] = 0;
+   LOG_INFO(3, "Nb Boxes: " << m_boundingBoxes[m_frame]->size());
 
-   m_primitives[frame]->clear();
-   m_nbActivePrimitives[frame] = 0;
-   LOG_INFO(3, "Nb Primitives: " << m_primitives[frame]->size());
+   m_primitives[m_frame]->clear();
+   m_nbActivePrimitives[m_frame] = 0;
+   LOG_INFO(3, "Nb Primitives: " << m_primitives[m_frame]->size());
 
-   m_lamps[frame]->clear();
-   m_nbActiveLamps[frame] = 0;
-   LOG_INFO(3, "Nb Primitives: " << m_primitives[frame]->size());
+   m_lamps[m_frame]->clear();
+   m_nbActiveLamps[m_frame] = 0;
+   LOG_INFO(3, "Nb Primitives: " << m_primitives[m_frame]->size());
 }
 
 void GPUKernel::resetAll()
 {
+   int oldFrame(m_frame);
    for( int frame(0); frame<NB_MAX_FRAMES; ++frame)
    {
-      resetFrame(frame);
+      m_frame = frame;
+      resetFrame();
    }
+   m_frame=oldFrame;
+
    m_primitivesTransfered = false;
 
    m_nbActiveMaterials = -1;
@@ -996,11 +997,11 @@ void GPUKernel::resetAll()
    m_texturesTransfered = false;
 }
 
-void GPUKernel::displayBoxesInfo( const int frame )
+void GPUKernel::displayBoxesInfo()
 {
-	for( unsigned int i(0); i<=m_boundingBoxes[frame]->size(); ++i )
+	for( unsigned int i(0); i<=m_boundingBoxes[m_frame]->size(); ++i )
 	{
-		CPUBoundingBox& box = (*m_boundingBoxes[frame])[i];
+		CPUBoundingBox& box = (*m_boundingBoxes[m_frame])[i];
 		LOG_INFO( 3, "Box " << i );
 		LOG_INFO( 3, "- # of primitives: " << box.primitives.size() );
 		LOG_INFO( 3, "- Corners 1      : " << box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z );
@@ -1009,7 +1010,7 @@ void GPUKernel::displayBoxesInfo( const int frame )
       std::vector<unsigned int>::const_iterator it = box.primitives.begin();
       while( it != box.primitives.end() )
       {
-         CPUPrimitive& primitive((*m_primitives[frame])[*it]);
+         CPUPrimitive& primitive((*m_primitives[m_frame])[*it]);
 			LOG_INFO( 3, "- - " << 
 				p << ":" << 
 				"type = " << primitive.type << ", " << 
@@ -1021,7 +1022,7 @@ void GPUKernel::displayBoxesInfo( const int frame )
 	}
 }
 
-void GPUKernel::rotatePrimitives( const int frame, float3 rotationCenter, float3 angles, unsigned int from, unsigned int to )
+void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
    m_primitivesTransfered = false;
@@ -1036,7 +1037,7 @@ void GPUKernel::rotatePrimitives( const int frame, float3 rotationCenter, float3
 	sinAngles.z = sin(angles.z);
 
 #pragma omp parallel
-   for( BoxContainer::iterator itb=m_boundingBoxes[frame]->begin(); itb!=m_boundingBoxes[frame]->end(); ++itb )
+   for( BoxContainer::iterator itb=m_boundingBoxes[m_frame]->begin(); itb!=m_boundingBoxes[m_frame]->end(); ++itb )
    {
       #pragma omp single nowait
       {
@@ -1046,21 +1047,21 @@ void GPUKernel::rotatePrimitives( const int frame, float3 rotationCenter, float3
          for( std::vector<unsigned int>::iterator it=box.primitives.begin(); it!=box.primitives.end(); ++it )
 		   {
             //#pragma single nowait
-            CPUPrimitive& primitive((*m_primitives[frame])[*it]);
+            CPUPrimitive& primitive((*m_primitives[m_frame])[*it]);
             if( primitive.movable && primitive.type != ptCamera )
             {
 #if 1
                float limit = -3000.f;
-               if( primitive.speed.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
+               if( primitive.speed0.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
                {
                   // Fall
-                  primitive.p0.y += primitive.speed.y;
-                  primitive.p1.y += primitive.speed.y;
-                  primitive.p2.y += primitive.speed.y;
+                  primitive.p0.y += primitive.speed0.y;
+                  primitive.p1.y += primitive.speed0.y;
+                  primitive.p2.y += primitive.speed0.y;
 
                   if( primitive.p0.y < limit-primitive.size.x ) 
                   {
-                     primitive.speed.y = -primitive.speed.y/1.6f;
+                     primitive.speed0.y = -primitive.speed0.y/1.6f;
                      // Rotate
                      float3 center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
                      center = (primitive.p2.y < center.y) ? primitive.p2 : center;
@@ -1072,11 +1073,11 @@ void GPUKernel::rotatePrimitives( const int frame, float3 rotationCenter, float3
 
                      rotatePrimitive( primitive, center, cosAngles, sinAngles );
                   }
-                  primitive.speed.y -= 4+(rand()%400/100.f);
+                  primitive.speed0.y -= 4+(rand()%400/100.f);
                }
                else
                {
-                  primitive.speed.y = 0.f;
+                  primitive.speed0.y = 0.f;
                }
 #else
                rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
@@ -1085,16 +1086,60 @@ void GPUKernel::rotatePrimitives( const int frame, float3 rotationCenter, float3
          }
       }
    }
-   compactBoxes(frame, false);
+   compactBoxes(false);
 }
 
-void GPUKernel::scalePrimitives( const int frame, float scale, unsigned int from, unsigned int to )
+void GPUKernel::morphPrimitives( bool initialProcessing, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
    m_primitivesTransfered = false;
 
-   PrimitiveContainer::iterator it = (*m_primitives[frame]).begin();
-   while( it != (*m_primitives[frame]).end() )
+   int frame1=0;
+   int frame2=1;
+#pragma omp parallel
+   for( int i(0); i<m_nbActivePrimitives[frame1]; ++i )
+   {
+      CPUPrimitive& primitive1((*m_primitives[frame1])[i]);
+      if( initialProcessing )
+      {
+         CPUPrimitive& primitive2((*m_primitives[frame2])[i]);
+
+         primitive1.speed0.x = (primitive2.p0.x - primitive1.p0.x)/10.f;
+         primitive1.speed0.y = (primitive2.p0.y - primitive1.p0.y)/10.f;
+         primitive1.speed0.z = (primitive2.p0.z - primitive1.p0.z)/10.f;
+
+         primitive1.speed1.x = (primitive2.p1.x - primitive1.p1.x)/10.f;
+         primitive1.speed1.y = (primitive2.p1.y - primitive1.p1.y)/10.f;
+         primitive1.speed1.z = (primitive2.p1.z - primitive1.p1.z)/10.f;
+
+         primitive1.speed2.x = (primitive2.p2.x - primitive1.p2.x)/10.f;
+         primitive1.speed2.y = (primitive2.p2.y - primitive1.p2.y)/10.f;
+         primitive1.speed2.z = (primitive2.p2.z - primitive1.p2.z)/10.f;
+      }
+      else
+      {
+         primitive1.p0.x += primitive1.speed0.x;
+         primitive1.p0.y += primitive1.speed0.y;
+         primitive1.p0.z += primitive1.speed0.z;
+
+         primitive1.p1.x += primitive1.speed1.x;
+         primitive1.p1.y += primitive1.speed1.y;
+         primitive1.p1.z += primitive1.speed1.z;
+
+         primitive1.p2.x += primitive1.speed2.x;
+         primitive1.p2.y += primitive1.speed2.y;
+         primitive1.p2.z += primitive1.speed2.z;
+      }
+   }
+}
+
+void GPUKernel::scalePrimitives( float scale, unsigned int from, unsigned int to )
+{
+	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
+   m_primitivesTransfered = false;
+
+   PrimitiveContainer::iterator it = (*m_primitives[m_frame]).begin();
+   while( it != (*m_primitives[m_frame]).end() )
 	{
       CPUPrimitive& primitive((*it).second);
 		primitive.p0.x *= scale;
@@ -1192,106 +1237,104 @@ void GPUKernel::rotateBox(
 }
 
 float3 GPUKernel::getPrimitiveCenter(
-   const int frame, unsigned int index)
+   unsigned int index)
 {
    float3 center = {0.f,0.f,0.f};
-	if( index>=0 && index<=m_primitives[frame]->size()) 
+	if( index>=0 && index<=m_primitives[m_frame]->size()) 
 	{
-		center.x = (*m_primitives[frame])[index].p0.x;
-		center.y = (*m_primitives[frame])[index].p0.y;
-		center.z = (*m_primitives[frame])[index].p0.z;
+		center.x = (*m_primitives[m_frame])[index].p0.x;
+		center.y = (*m_primitives[m_frame])[index].p0.y;
+		center.z = (*m_primitives[m_frame])[index].p0.z;
 	}
    return center;
 }
 
 void GPUKernel::getPrimitiveOtherCenter(
-	const int frame, unsigned int index, float3& center)
+	unsigned int index, float3& center)
 {
-	if( index>=0 && index<=m_primitives[frame]->size()) 
+	if( index>=0 && index<=m_primitives[m_frame]->size()) 
 	{
-		center = (*m_primitives[frame])[index].p1;
+		center = (*m_primitives[m_frame])[index].p1;
 	}
 }
 
 void GPUKernel::setPrimitiveCenter(
-	const int frame, unsigned int index, const float3& center)
+	unsigned int index, const float3& center)
 {
    m_primitivesTransfered = false;
 
    // TODO, Box needs to be updated
-	if( index>=0 && index<=m_primitives[frame]->size()) 
+	if( index>=0 && index<=m_primitives[m_frame]->size()) 
 	{
-		(*m_primitives[frame])[index].p0.x = center.x;
-		(*m_primitives[frame])[index].p0.y = center.y;
-		(*m_primitives[frame])[index].p0.z = center.z;
+		(*m_primitives[m_frame])[index].p0.x = center.x;
+		(*m_primitives[m_frame])[index].p0.y = center.y;
+		(*m_primitives[m_frame])[index].p0.z = center.z;
 	}
 }
 
 int GPUKernel::addCube( 
-	const int frame,
 	float x, float y, float z, 
 	float radius, 
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
-	LOG_INFO(3,"GPUKernel::addCube(" << frame << ")" );
-	return addRectangle(frame, x,y,z,radius,radius,radius,materialId,materialPaddingX,materialPaddingY);
+	LOG_INFO(3,"GPUKernel::addCube(" << m_frame << ")" );
+	return addRectangle( x,y,z,radius,radius,radius,materialId,materialPaddingX,materialPaddingY);
 }
 
 int GPUKernel::addRectangle( 
-	const int frame, 
 	float x, float y, float z, 
 	float w, float h, float d,
 	int   materialId, 
 	float materialPaddingX, float materialPaddingY )
 {
-	LOG_INFO(3,"GPUKernel::addRectangle(" << frame << ")" );
+	LOG_INFO(3,"GPUKernel::addRectangle(" << m_frame << ")" );
 	int returnValue;
 	// Back
-	returnValue = addPrimitive( frame, ptXYPlane );
-	setPrimitive( frame, returnValue, x, y, z+d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	returnValue = addPrimitive(  ptXYPlane );
+	setPrimitive(  returnValue, x, y, z+d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Front
-	returnValue = addPrimitive( frame, ptXYPlane );
-	setPrimitive( frame, returnValue, x, y, z-d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	returnValue = addPrimitive(  ptXYPlane );
+	setPrimitive(  returnValue, x, y, z-d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Left
-	returnValue = addPrimitive( frame, ptYZPlane );
-	setPrimitive( frame, returnValue, x-w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	returnValue = addPrimitive(  ptYZPlane );
+	setPrimitive(  returnValue, x-w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Right
-	returnValue = addPrimitive( frame, ptYZPlane );
-	setPrimitive( frame, returnValue, x+w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	returnValue = addPrimitive(  ptYZPlane );
+	setPrimitive(  returnValue, x+w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Top
-	returnValue = addPrimitive( frame, ptXZPlane );
-	setPrimitive( frame, returnValue, x, y+h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	returnValue = addPrimitive(  ptXZPlane );
+	setPrimitive(  returnValue, x, y+h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 
 	// Bottom
-	returnValue = addPrimitive( frame, ptXZPlane );
-	setPrimitive( frame, returnValue, x, y-h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	returnValue = addPrimitive(  ptXZPlane );
+	setPrimitive(  returnValue, x, y-h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
 	return returnValue;
 }
 
 void GPUKernel::setPrimitiveMaterial( 
-	const int frame, unsigned int index, 
+	unsigned int index, 
 	int   materialId)
 {
 	LOG_INFO(3,"GPUKernel::setPrimitiveMaterial(" << index << "," << materialId << ")" );
-	if( index>=0 && index<=m_primitives[frame]->size()) 
+	if( index>=0 && index<=m_primitives[m_frame]->size()) 
 	{
-		(*m_primitives[frame])[index].materialId = materialId;
+		(*m_primitives[m_frame])[index].materialId = materialId;
 		// TODO: updateLight( index );
 	}
 }
 
-int GPUKernel::getPrimitiveMaterial( const int frame, unsigned int index )
+int GPUKernel::getPrimitiveMaterial( unsigned int index )
 {
 	LOG_INFO(3,"GPUKernel::getPrimitiveMaterial(" << index << ")" );
 	unsigned int returnValue(-1);
-	if( index>=0 && index<=m_primitives[frame]->size()) 
+	if( index>=0 && index<=m_primitives[m_frame]->size()) 
 	{
-		returnValue = (*m_primitives[frame])[index].materialId;
+		returnValue = (*m_primitives[m_frame])[index].materialId;
 	}
 	return returnValue;
 }
@@ -1650,15 +1693,15 @@ int GPUKernel::addTexture( const std::string& filename )
 	return m_nbActiveTextures-1;
 }
 
-void GPUKernel::buildLightInformationFromTexture( const int frame, unsigned int index )
+void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 {
    m_lightInformationSize = 0;
 
    // Light from explicit light sources
-   for( unsigned int i(0); i<m_nbActiveLamps[frame]; ++i )
+   for( unsigned int i(0); i<m_nbActiveLamps[m_frame]; ++i )
    {
-      int idx((*m_lamps[frame])[i]);
-      CPUPrimitive& lamp = (*m_primitives[frame])[idx];
+      int idx((*m_lamps[m_frame])[i]);
+      CPUPrimitive& lamp = (*m_primitives[m_frame])[idx];
       Material& material = m_hMaterials[lamp.materialId];
 
       LightInformation lightInformation;
@@ -1889,11 +1932,11 @@ void GPUKernel::saveBitmapToFile( const std::string& filename, char* bitmap, con
 	fclose(f);
 };
 
-int GPUKernel::getLight( const int frame, unsigned int index )
+int GPUKernel::getLight( unsigned int index )
 {
-   if( index < m_nbActiveLamps[frame] )
+   if( index < m_nbActiveLamps[m_frame] )
    {
-      return (*m_lamps[frame])[index];
+      return (*m_lamps[m_frame])[index];
    }
    return -1;
 }
@@ -1912,8 +1955,8 @@ void GPUKernel::setGLMode( const int& glMode )
             // Vertices
             if( m_vertices.size() == 3 )
             {
-               p = addPrimitive(frame, ptTriangle);
-               setPrimitive( frame, p,
+               p = addPrimitive( ptTriangle);
+               setPrimitive(  p,
                   m_vertices[0].x, m_vertices[0].y, m_vertices[0].z, 
                   m_vertices[1].x, m_vertices[1].y, m_vertices[1].z, 
                   m_vertices[2].x, m_vertices[2].y, m_vertices[2].z, 
@@ -1929,7 +1972,7 @@ void GPUKernel::setGLMode( const int& glMode )
             // Texture coordinates
             if( p!=-1 && m_textCoords.size() == 3 )
             {
-               setPrimitiveTextureCoordinates( frame, p, m_textCoords[0], m_textCoords[1], m_textCoords[2] );
+               setPrimitiveTextureCoordinates(  p, m_textCoords[0], m_textCoords[1], m_textCoords[2] );
             }
             else
             {
@@ -1939,7 +1982,7 @@ void GPUKernel::setGLMode( const int& glMode )
             // Normals
             if( p!=-1 && m_normals.size() == 3 )
             {
-               setPrimitiveNormals( frame, p, m_normals[0], m_normals[1], m_normals[2] );
+               setPrimitiveNormals(  p, m_normals[0], m_normals[1], m_normals[2] );
             }
             else
             {

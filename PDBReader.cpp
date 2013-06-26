@@ -158,7 +158,7 @@ float4 PDBReader::loadAtomsFromFile(
 {
    int frame(0);
    int chainSelection(rand()%2);
-   cudaKernel.resetBoxes(frame, true);
+   cudaKernel.resetBoxes(true);
 
    float distanceRatio = 2.f; //(geometryType==gtSticks || geometryType==gtAtomsAndSticks) ? 2.f : 1.f;
 
@@ -320,9 +320,9 @@ float4 PDBReader::loadAtomsFromFile(
                      halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
                      halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
                      halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
-                     nb = cudaKernel.addPrimitive( frame, ptCylinder );
+                     nb = cudaKernel.addPrimitive( ptCylinder );
                      cudaKernel.setPrimitive( 
-                        frame, nb,
+                        nb,
                         scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
                         scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
                         scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
@@ -351,9 +351,9 @@ float4 PDBReader::loadAtomsFromFile(
 
          if( addAtom )
          {
-            nb = cudaKernel.addPrimitive( frame, ptSphere );
+            nb = cudaKernel.addPrimitive( ptSphere );
             cudaKernel.setPrimitive( 
-               frame, nb, 
+               nb, 
                scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
                scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
                scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 

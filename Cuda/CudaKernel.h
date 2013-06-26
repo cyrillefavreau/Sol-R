@@ -46,7 +46,7 @@ public:
 
 public:
 	// ---------- Rendering ----------
-	void render_begin( const int frame, const float timer );
+	void render_begin( const float timer );
    void render_end();
 
 public:

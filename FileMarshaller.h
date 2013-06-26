@@ -34,13 +34,13 @@ public:
 
 public:
 
-   float3 loadFromFile( GPUKernel& kernel, const std::string& filename, const int& frame, const float scale);
-   void saveToFile  ( GPUKernel& kernel, const std::string& filename);
+   float3 loadFromFile( GPUKernel& kernel, const std::string& filename, const float scale);
+   void saveToFile    ( GPUKernel& kernel, const std::string& filename);
 
 private:
 
    void readSceneInfo( GPUKernel& kernel, const std::string& line );
-   void readPrimitive( GPUKernel& kernel, const int& frame, const std::string& line, float3& min, float3& max );
+   void readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max );
    void readMaterial ( GPUKernel& kernel, const std::string& line, const int materialId );
 
 };

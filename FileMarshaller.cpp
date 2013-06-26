@@ -87,7 +87,7 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
    kernel.setSceneInfo( sceneInfo );
 }
 
-void FileMarshaller::readPrimitive( GPUKernel& kernel, const int& frame, const std::string& line, float3& min, float3& max )
+void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max )
 {
    Primitive primitive = {0.f};
    std::string value;
@@ -161,9 +161,9 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const int& frame, const s
       primitive.materialInfo.y = static_cast<float>(atof( value.c_str() ));
    }
 
-   int n = kernel.addPrimitive( frame, static_cast<PrimitiveType>(primitive.type.x) );
+   int n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
    kernel.setPrimitive(
-      frame, n, 
+      n, 
       primitive.p0.x, primitive.p0.y, primitive.p0.z,
       primitive.p1.x, primitive.p1.y, primitive.p1.z,
       primitive.p2.x, primitive.p2.y, primitive.p2.z,
@@ -172,8 +172,8 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const int& frame, const s
       primitive.materialInfo.x, 
       primitive.materialInfo.y );
 
-   kernel.setPrimitiveNormals( frame, n, primitive.n0, primitive.n1, primitive.n2 );
-   kernel.setPrimitiveTextureCoordinates( frame, n, primitive.vt0, primitive.vt1, primitive.vt2 );
+   kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
+   kernel.setPrimitiveTextureCoordinates( n, primitive.vt0, primitive.vt1, primitive.vt2 );
 
    float3 pmin, pmax;
    pmin.x = std::min(std::min( primitive.p0.x, primitive.p1.x ), primitive.p2.x );
@@ -254,7 +254,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       (material.fastTransparency.x==1));
 }
 
-float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const int& frame, const float scale )
+float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float scale )
 {
    LOG_INFO(1, "Loading 3D scene from " << filename );
 
@@ -285,21 +285,21 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
          }
          else if( line.find(PRIMITIVE) == 0 )
          {
-            readPrimitive( kernel, frame, line, min, max );
+            readPrimitive( kernel, line, min, max );
          }
       }
    }
    myfile.close();
    LOG_INFO(1, kernel.getNbActiveMaterials()  << " materials" );
-   LOG_INFO(1, kernel.getNbActivePrimitives(frame) << " primitives" );
-   LOG_INFO(1, kernel.getNbActiveLamps(frame)      << " lamps" );
+   LOG_INFO(1, kernel.getNbActivePrimitives() << " primitives" );
+   LOG_INFO(1, kernel.getNbActiveLamps()      << " lamps" );
 
    returnValue.x = fabs( max.x - min.x );
    returnValue.y = fabs( max.y - min.y );
    returnValue.z = fabs( max.z - min.z );
 
    float ratio = scale / returnValue.y;
-   kernel.scalePrimitives( frame, ratio, 0, NB_MAX_BOXES );
+   kernel.scalePrimitives( ratio, 0, NB_MAX_BOXES );
 
    LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z );
    return returnValue;
@@ -366,11 +366,11 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
       }
 
       // Primitives
-      int nbPrimitives = kernel.getNbActivePrimitives(frame);
+      int nbPrimitives = kernel.getNbActivePrimitives();
       LOG_INFO(1,nbPrimitives << " primitives");
       for( int i(0); i<nbPrimitives; ++i )
       {
-         CPUPrimitive* primitive = kernel.getPrimitive(0,i);
+         CPUPrimitive* primitive = kernel.getPrimitive(i);
          Material* m = kernel.getMaterial( primitive->materialId );
          bool isLight = (m != NULL && m->innerIllumination.x!=0.f );
          if( !isLight )
