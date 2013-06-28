@@ -339,6 +339,10 @@ void GPUKernel::cleanup()
 	m_materialsTransfered = false;
    m_primitivesTransfered = false;
    m_texturesTransfered = false;
+
+   // Morphing
+   m_morph = 0.f;
+   m_morphInitialized = false;
 }
 
 /*
@@ -1089,35 +1093,43 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
    compactBoxes(false);
 }
 
-void GPUKernel::morphPrimitives( bool initialProcessing, unsigned int from, unsigned int to )
+void GPUKernel::morphPrimitives( unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
    m_primitivesTransfered = false;
 
    int frame1=0;
    int frame2=1;
-#pragma omp parallel
+//#pragma omp parallel
    for( int i(0); i<m_nbActivePrimitives[frame1]; ++i )
    {
-      CPUPrimitive& primitive1((*m_primitives[frame1])[i]);
-      if( initialProcessing )
+      CPUPrimitive& primitive1((*m_primitives)[frame1][i]);
+      if( !m_morphInitialized )
       {
-         CPUPrimitive& primitive2((*m_primitives[frame2])[i]);
+         CPUPrimitive& primitive2((*m_primitives)[frame2][i]);
 
-         primitive1.speed0.x = (primitive2.p0.x - primitive1.p0.x)/10.f;
-         primitive1.speed0.y = (primitive2.p0.y - primitive1.p0.y)/10.f;
-         primitive1.speed0.z = (primitive2.p0.z - primitive1.p0.z)/10.f;
+         LOG_INFO(3, "1. " << primitive1.p0.x << "," << primitive1.p0.y << "," << primitive1.p0.z );
+         LOG_INFO(3, "2. " << primitive2.p0.x << "," << primitive2.p0.y << "," << primitive2.p0.z );
 
-         primitive1.speed1.x = (primitive2.p1.x - primitive1.p1.x)/10.f;
-         primitive1.speed1.y = (primitive2.p1.y - primitive1.p1.y)/10.f;
-         primitive1.speed1.z = (primitive2.p1.z - primitive1.p1.z)/10.f;
+         primitive1.speed0.x = (primitive2.p0.x - primitive1.p0.x);
+         primitive1.speed0.y = (primitive2.p0.y - primitive1.p0.y);
+         primitive1.speed0.z = (primitive2.p0.z - primitive1.p0.z);
 
-         primitive1.speed2.x = (primitive2.p2.x - primitive1.p2.x)/10.f;
-         primitive1.speed2.y = (primitive2.p2.y - primitive1.p2.y)/10.f;
-         primitive1.speed2.z = (primitive2.p2.z - primitive1.p2.z)/10.f;
+         primitive1.speed1.x = (primitive2.p1.x - primitive1.p1.x);
+         primitive1.speed1.y = (primitive2.p1.y - primitive1.p1.y);
+         primitive1.speed1.z = (primitive2.p1.z - primitive1.p1.z);
+
+         primitive1.speed2.x = (primitive2.p2.x - primitive1.p2.x);
+         primitive1.speed2.y = (primitive2.p2.y - primitive1.p2.y);
+         primitive1.speed2.z = (primitive2.p2.z - primitive1.p2.z);
+
+         m_morphInitialized = true;
       }
       else
       {
+         LOG_INFO(3, "1. " << primitive1.p0.x << "," << primitive1.p0.y << "," << primitive1.p0.z );
+         LOG_INFO(3, "2. " << primitive1.speed0.x << "," << primitive1.speed0.y << "," << primitive1.speed0.z );
+
          primitive1.p0.x += primitive1.speed0.x;
          primitive1.p0.y += primitive1.speed0.y;
          primitive1.p0.z += primitive1.speed0.z;

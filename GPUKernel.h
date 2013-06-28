@@ -117,7 +117,7 @@ public:
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
 
    // Morphing
-   void morphPrimitives( bool initialProcessing, unsigned int from, unsigned int to );
+   void morphPrimitives( unsigned int from, unsigned int to );
 
    // Material
 	void setPrimitiveMaterial( unsigned int index, int materialId); 
@@ -354,6 +354,7 @@ protected:
    int    m_frame;
    int    m_nbFrames;
    float  m_morph;
+   bool   m_morphInitialized;
 
 protected:
 
