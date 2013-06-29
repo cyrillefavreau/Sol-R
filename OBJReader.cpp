@@ -249,8 +249,6 @@ float3 OBJReader::loadModelFromFile(
    std::string modelFilename(noExtFilename);
    modelFilename += ".obj";
 
-   LOG_INFO( 3, "Loading " << modelFilename.c_str() << " into frame " << kernel.getFrame() );
-
    int index_vertices(1);
    int index_normals(1);
    int index_textureCoordinates(1);
@@ -459,10 +457,11 @@ float3 OBJReader::loadModelFromFile(
       }
       file.close();
    }
-   LOG_INFO(3, "Loaded " << kernel.getNbActivePrimitives() << " primitives");
    float3 objectSize;
    objectSize.x = (maxPos.x - minPos.x)*objectScale;
    objectSize.y = (maxPos.y - minPos.y)*objectScale;
    objectSize.z = (maxPos.z - minPos.z)*objectScale;
+   LOG_INFO( 1, "Loading " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
+
    return objectSize;
 }

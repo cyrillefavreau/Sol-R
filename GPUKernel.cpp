@@ -342,7 +342,6 @@ void GPUKernel::cleanup()
 
    // Morphing
    m_morph = 0.f;
-   m_morphInitialized = false;
 }
 
 /*
@@ -380,13 +379,10 @@ int GPUKernel::addPrimitive( PrimitiveType type )
    {
       CPUPrimitive primitive;
       memset(&primitive,0,sizeof(CPUPrimitive));
-   
       primitive.type = type;
-      primitive.speed0.y = -10.f;
-
       int index = static_cast<int>(m_primitives[m_frame]->size());
       (*m_primitives[m_frame])[index] = primitive;
-      //LOG_INFO(1,"m_primitives.size() = " << m_primitives[m_frame]->size());
+      LOG_INFO(3,"m_primitives.size() = " << m_primitives[m_frame]->size());
 	   returnValue = index;
    }
    return returnValue;
@@ -1054,7 +1050,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
             CPUPrimitive& primitive((*m_primitives[m_frame])[*it]);
             if( primitive.movable && primitive.type != ptCamera )
             {
-#if 1
+#if 0
                float limit = -3000.f;
                if( primitive.speed0.y != 0.f && (primitive.p0.y > limit || primitive.p1.y > limit || primitive.p2.y > limit) )
                {
@@ -1090,57 +1086,63 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          }
       }
    }
-   compactBoxes(false);
+   //compactBoxes(false);
 }
 
-void GPUKernel::morphPrimitives( unsigned int from, unsigned int to )
+void GPUKernel::morphPrimitives()
 {
-	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
-   m_primitivesTransfered = false;
-
-   int frame1=0;
-   int frame2=1;
 //#pragma omp parallel
-   for( int i(0); i<m_nbActivePrimitives[frame1]; ++i )
+   for( int frame(1); frame<(m_nbFrames-1); ++frame )
    {
-      CPUPrimitive& primitive1((*m_primitives)[frame1][i]);
-      if( !m_morphInitialized )
+      //#pragma omp single nowait
       {
-         CPUPrimitive& primitive2((*m_primitives)[frame2][i]);
+         setFrame(frame);
+         PrimitiveContainer::iterator it2=m_primitives[m_nbFrames-1]->begin();
+         for( PrimitiveContainer::iterator it1=m_primitives[0]->begin(); it1!=m_primitives[0]->end() && it2!=m_primitives[m_nbFrames-1]->end(); ++it1 )
+         {
+            CPUPrimitive& primitive1((*it1).second);
+            CPUPrimitive& primitive2((*it2).second);
+            float3 p0,p1,p2;
+            float3 n0,n1,n2;
+            float r = static_cast<float>(m_frame)/static_cast<float>(m_nbFrames);
+            p0.x = primitive1.p0.x+r*(primitive2.p0.x - primitive1.p0.x);
+            p0.y = primitive1.p0.y+r*(primitive2.p0.y - primitive1.p0.y);
+            p0.z = primitive1.p0.z+r*(primitive2.p0.z - primitive1.p0.z);
 
-         LOG_INFO(3, "1. " << primitive1.p0.x << "," << primitive1.p0.y << "," << primitive1.p0.z );
-         LOG_INFO(3, "2. " << primitive2.p0.x << "," << primitive2.p0.y << "," << primitive2.p0.z );
+            p1.x = primitive1.p1.x+r*(primitive2.p1.x - primitive1.p1.x);
+            p1.y = primitive1.p1.y+r*(primitive2.p1.y - primitive1.p1.y);
+            p1.z = primitive1.p1.z+r*(primitive2.p1.z - primitive1.p1.z);
 
-         primitive1.speed0.x = (primitive2.p0.x - primitive1.p0.x);
-         primitive1.speed0.y = (primitive2.p0.y - primitive1.p0.y);
-         primitive1.speed0.z = (primitive2.p0.z - primitive1.p0.z);
+            p2.x = primitive1.p2.x+r*(primitive2.p2.x - primitive1.p2.x);
+            p2.y = primitive1.p2.y+r*(primitive2.p2.y - primitive1.p2.y);
+            p2.z = primitive1.p2.z+r*(primitive2.p2.z - primitive1.p2.z);
 
-         primitive1.speed1.x = (primitive2.p1.x - primitive1.p1.x);
-         primitive1.speed1.y = (primitive2.p1.y - primitive1.p1.y);
-         primitive1.speed1.z = (primitive2.p1.z - primitive1.p1.z);
+            n0.x = primitive1.n0.x+r*(primitive2.n0.x - primitive1.n0.x);
+            n0.y = primitive1.n0.y+r*(primitive2.n0.y - primitive1.n0.y);
+            n0.z = primitive1.n0.z+r*(primitive2.n0.z - primitive1.n0.z);
 
-         primitive1.speed2.x = (primitive2.p2.x - primitive1.p2.x);
-         primitive1.speed2.y = (primitive2.p2.y - primitive1.p2.y);
-         primitive1.speed2.z = (primitive2.p2.z - primitive1.p2.z);
+            n1.x = primitive1.n1.x+r*(primitive2.n1.x - primitive1.n1.x);
+            n1.y = primitive1.n1.y+r*(primitive2.n1.y - primitive1.n1.y);
+            n1.z = primitive1.n1.z+r*(primitive2.n1.z - primitive1.n1.z);
 
-         m_morphInitialized = true;
-      }
-      else
-      {
-         LOG_INFO(3, "1. " << primitive1.p0.x << "," << primitive1.p0.y << "," << primitive1.p0.z );
-         LOG_INFO(3, "2. " << primitive1.speed0.x << "," << primitive1.speed0.y << "," << primitive1.speed0.z );
+            n2.x = primitive1.n2.x+r*(primitive2.n2.x - primitive1.n2.x);
+            n2.y = primitive1.n2.y+r*(primitive2.n2.y - primitive1.n2.y);
+            n2.z = primitive1.n2.z+r*(primitive2.n2.z - primitive1.n2.z);
 
-         primitive1.p0.x += primitive1.speed0.x;
-         primitive1.p0.y += primitive1.speed0.y;
-         primitive1.p0.z += primitive1.speed0.z;
+            int i = addPrimitive( PrimitiveType(primitive1.type) );
+            setPrimitive(i, 
+               p0.x, p0.y, p0.z,
+               p1.x, p1.y, p1.z,
+               p2.x, p2.y, p2.z,
+               primitive1.size.x,primitive1.size.y,primitive1.size.z,
+               primitive1.materialId, primitive1.materialInfo.x, primitive1.materialInfo.y );
+            setPrimitiveNormals(i,
+               n0,n1,n2);
 
-         primitive1.p1.x += primitive1.speed1.x;
-         primitive1.p1.y += primitive1.speed1.y;
-         primitive1.p1.z += primitive1.speed1.z;
 
-         primitive1.p2.x += primitive1.speed2.x;
-         primitive1.p2.y += primitive1.speed2.y;
-         primitive1.p2.z += primitive1.speed2.z;
+            ++it2;
+         }
+         compactBoxes(true);
       }
    }
 }
@@ -1417,7 +1419,7 @@ void GPUKernel::setMaterial(
 }
 
 int GPUKernel::getMaterialAttributes( 
-	unsigned int index,
+	int index,
 	float& r, float& g, float& b, float& noise,
 	float& reflection, 
 	float& refraction,
@@ -1710,7 +1712,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    m_lightInformationSize = 0;
 
    // Light from explicit light sources
-   for( unsigned int i(0); i<m_nbActiveLamps[m_frame]; ++i )
+   for( int i(0); i<m_nbActiveLamps[m_frame]; ++i )
    {
       int idx((*m_lamps[m_frame])[i]);
       CPUPrimitive& lamp = (*m_primitives[m_frame])[idx];
@@ -1944,7 +1946,7 @@ void GPUKernel::saveBitmapToFile( const std::string& filename, char* bitmap, con
 	fclose(f);
 };
 
-int GPUKernel::getLight( unsigned int index )
+int GPUKernel::getLight( int index )
 {
    if( index < m_nbActiveLamps[m_frame] )
    {

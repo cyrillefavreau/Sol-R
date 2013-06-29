@@ -117,7 +117,7 @@ public:
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
 
    // Morphing
-   void morphPrimitives( unsigned int from, unsigned int to );
+   void morphPrimitives();
 
    // Material
 	void setPrimitiveMaterial( unsigned int index, int materialId); 
@@ -133,7 +133,7 @@ public:
 	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );
 
    // Lights
-   int getLight( unsigned int index );
+   int getLight( int index );
 
    CPUPrimitive* getPrimitive( const unsigned int index );
      
@@ -189,7 +189,7 @@ public:
       bool  fastTransparency);
 
    int getMaterialAttributes( 
-		unsigned int index,
+		int index,
 		float& r, float& g, float& b, float& noise,
 		float& reflection, 
 		float& refraction,
@@ -309,13 +309,13 @@ public:
    void nextFrame() 
    {
       m_frame++; 
-      if(m_frame==m_nbFrames) m_frame=0;
+      if(m_frame>=m_nbFrames) m_frame=m_nbFrames-1;
       compactBoxes(false);
    };
    void previousFrame() 
    { 
       m_frame--; 
-      if(m_frame<0) m_frame=m_nbFrames-1; 
+      if(m_frame<0) m_frame=0; 
       compactBoxes(false);
    }
 
@@ -354,7 +354,6 @@ protected:
    int    m_frame;
    int    m_nbFrames;
    float  m_morph;
-   bool   m_morphInitialized;
 
 protected:
 
