@@ -1104,6 +1104,7 @@ void GPUKernel::morphPrimitives()
             CPUPrimitive& primitive2((*it2).second);
             float3 p0,p1,p2;
             float3 n0,n1,n2;
+            float3 size;
             float r = static_cast<float>(m_frame)/static_cast<float>(m_nbFrames);
             p0.x = primitive1.p0.x+r*(primitive2.p0.x - primitive1.p0.x);
             p0.y = primitive1.p0.y+r*(primitive2.p0.y - primitive1.p0.y);
@@ -1129,16 +1130,22 @@ void GPUKernel::morphPrimitives()
             n2.y = primitive1.n2.y+r*(primitive2.n2.y - primitive1.n2.y);
             n2.z = primitive1.n2.z+r*(primitive2.n2.z - primitive1.n2.z);
 
+            size.x = primitive1.size.x+r*(primitive2.size.x - primitive1.size.x);
+            size.y = primitive1.size.y+r*(primitive2.size.y - primitive1.size.y);
+            size.z = primitive1.size.z+r*(primitive2.size.z - primitive1.size.z);
+
             int i = addPrimitive( PrimitiveType(primitive1.type) );
             setPrimitive(i, 
                p0.x, p0.y, p0.z,
                p1.x, p1.y, p1.z,
                p2.x, p2.y, p2.z,
-               primitive1.size.x,primitive1.size.y,primitive1.size.z,
+               size.x,size.y,size.z,
                primitive1.materialId, primitive1.materialInfo.x, primitive1.materialInfo.y );
-            setPrimitiveNormals(i,
-               n0,n1,n2);
+            
+            setPrimitiveNormals(i, n0,n1,n2);
+            setPrimitiveTextureCoordinates(i, primitive1.vt0,primitive1.vt1,primitive1.vt2);
 
+            setPrimitiveIsMovable( i, primitive1.movable );
 
             ++it2;
          }
@@ -1765,14 +1772,13 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    }
    */
 
-   /*
    for( float x(0.f); x<2.f*M_PI; x+=M_PI/8.f)
    {
       LightInformation lightInformation;
       lightInformation.location.x = 200.f*cos(x);
       lightInformation.location.y = 200.f*sin(x);
       lightInformation.location.z = -2000.f;
-      lightInformation.attributes.x = -1;
+      lightInformation.attribute.x = -1;
       lightInformation.color.x = 1.f; //0.5f+0.5f*cos(x);
       lightInformation.color.y = 1.f; //0.5f+0.5f*sin(x);
       lightInformation.color.z = 1.f; //0.5f+0.5f*cos(x+M_PI);
@@ -1780,7 +1786,6 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
-   */
 #else
    // Light from skybox
    if( index < m_nbActiveTextures )

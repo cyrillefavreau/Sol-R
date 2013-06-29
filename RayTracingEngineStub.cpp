@@ -423,7 +423,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
       center,
       true,
       static_cast<float>(scale), 
-      materialId );
+      true,
+      materialId,
+      false);
    return kernel->getNbActivePrimitives();
 }
 

@@ -225,11 +225,14 @@ float3 OBJReader::loadModelFromFile(
    const float3& center,
    const bool autoScale,
    const float& scale,
-   int materialId)
+   bool loadMaterials,
+   int materialId,
+   bool allSpheres)
 {
    std::map<int,float3> vertices;
    std::map<int,float3> normals;
    std::map<int,float3> textureCoordinates;
+   std::map<std::string,MaterialMTL> materials;
 
    float3 minPos = { 100000.f, 100000.f, 100000.f };
    float3 maxPos = {-100000.f,-100000.f,-100000.f };
@@ -242,8 +245,10 @@ float3 OBJReader::loadModelFromFile(
    }
 
    // Load materials
-   std::map<std::string,MaterialMTL> materials;
-   loadMaterialsFromFile( noExtFilename, materials, kernel, materialId );
+   if( loadMaterials )
+   {
+      loadMaterialsFromFile( noExtFilename, materials, kernel, materialId );
+   }
 
    // Load model
    std::string modelFilename(noExtFilename);
@@ -361,6 +366,7 @@ float3 OBJReader::loadModelFromFile(
       LOG_INFO(3, "Scale : " << objectScale );
    }
 
+   // Populate ray-tracing engine
    file.open(modelFilename.c_str());
    if( file.is_open() )
    {
@@ -416,15 +422,39 @@ float3 OBJReader::loadModelFromFile(
                }
 
                int f(0);
-               //std::cout << "F(" << face[f] << "," << face[f+1] << "," << face[f+2] << ")" << std::endl;
-               unsigned int nbPrimitives = kernel.addPrimitive( ptTriangle );
-               kernel.setPrimitive( 
-                  nbPrimitives,
-                  center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
-                  center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
-                  center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
-                  0.f, 0.f, 0.f,
-                  material, 1, 1);
+               int nbPrimitives(0);
+               if( allSpheres )
+               {
+                  float3 sphereCenter;
+                  sphereCenter.x = (vertices[face[f].x].x + vertices[face[f+1].x].x + vertices[face[f+2].x].x)/3.f;
+                  sphereCenter.y = (vertices[face[f].x].y + vertices[face[f+1].x].y + vertices[face[f+2].x].y)/3.f;
+                  sphereCenter.z = (vertices[face[f].x].z + vertices[face[f+1].x].z + vertices[face[f+2].x].z)/3.f;
+
+                  float3 sphereRadius;
+                  sphereRadius.x = sphereCenter.x - vertices[face[f].x].x;
+                  sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
+                  sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
+                  
+                  float radius = 100.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
+
+                  nbPrimitives = kernel.addPrimitive( ptSphere );
+                  kernel.setPrimitive( 
+                     nbPrimitives,
+                     center.x+objectScale*(-objectCenter.x+sphereCenter.x),center.y+objectScale*(-objectCenter.y+sphereCenter.y),center.z+objectScale*(-objectCenter.z+sphereCenter.z),
+                     radius, 0.f, 0.f,
+                     material, 1, 1);
+               }
+               else
+               {
+                  nbPrimitives = kernel.addPrimitive( ptTriangle );
+                  kernel.setPrimitive( 
+                     nbPrimitives,
+                     center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
+                     center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
+                     center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
+                     0.f, 0.f, 0.f,
+                     material, 1, 1);
+               }
 
                // Texture coordinates
                kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f].y], textureCoordinates[face[f+1].y], textureCoordinates[face[f+2].y] );
@@ -437,14 +467,38 @@ float3 OBJReader::loadModelFromFile(
 
                if( face.size() == 4 )
                {
-                  nbPrimitives = kernel.addPrimitive( ptTriangle );
-                  kernel.setPrimitive( 
-                     nbPrimitives, 
-                     center.x+objectScale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+3].x].z),
-                     center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
-                     center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
-                     0.f, 0.f, 0.f,
-                     material, 1, 1);
+                  if( allSpheres )
+                  {
+                     float3 sphereCenter;
+                     sphereCenter.x = (vertices[face[f+3].x].x + vertices[face[f+2].x].x + vertices[face[f].x].x)/3.f;
+                     sphereCenter.y = (vertices[face[f+3].x].y + vertices[face[f+2].x].y + vertices[face[f].x].y)/3.f;
+                     sphereCenter.z = (vertices[face[f+3].x].z + vertices[face[f+2].x].z + vertices[face[f].x].z)/3.f;
+
+                     float3 sphereRadius;
+                     sphereRadius.x = sphereCenter.x - vertices[face[f].x].x;
+                     sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
+                     sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
+                  
+                     float radius = 100.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
+
+                     nbPrimitives = kernel.addPrimitive( ptSphere );
+                     kernel.setPrimitive( 
+                        nbPrimitives,
+                        center.x+objectScale*(-objectCenter.x+sphereCenter.x),center.y+objectScale*(-objectCenter.y+sphereCenter.y),center.z+objectScale*(-objectCenter.z+sphereCenter.z),
+                        radius, 0.f, 0.f,
+                        material, 1, 1);
+                  }
+                  else
+                  {
+                     nbPrimitives = kernel.addPrimitive( ptTriangle );
+                     kernel.setPrimitive( 
+                        nbPrimitives, 
+                        center.x+objectScale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+3].x].z),
+                        center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
+                        center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
+                        0.f, 0.f, 0.f,
+                        material, 1, 1);
+                  }
                   // Texture coordinates
                   kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );
                   if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )

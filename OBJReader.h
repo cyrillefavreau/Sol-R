@@ -57,6 +57,8 @@ public:
       const float3& center,
       const bool autoScale,
       const float& scale, 
-      int materialId);
+      bool loadMaterials,
+      int  materialId,
+      bool allSpheres);
 
 };

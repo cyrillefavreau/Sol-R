@@ -304,19 +304,18 @@ public:
 
 public:
    void setNbFrames(const int nbFrames) { m_nbFrames=nbFrames; };
+   int  getNbFrames() { return m_nbFrames; };
    void setFrame( const int frame ) { m_frame=frame; };
    int  getFrame() {return m_frame; };
    void nextFrame() 
    {
       m_frame++; 
       if(m_frame>=m_nbFrames) m_frame=m_nbFrames-1;
-      compactBoxes(false);
    };
    void previousFrame() 
    { 
       m_frame--; 
       if(m_frame<0) m_frame=0; 
-      compactBoxes(false);
    }
 
 protected:
