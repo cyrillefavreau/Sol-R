@@ -26,8 +26,9 @@ const int NB_MAX_BOXES      = 4096;
 const int NB_MAX_PRIMITIVES = 500000;
 const int NB_MAX_LAMPS      = 10;
 const int NB_MAX_MATERIALS  = 130; // Last 30 materials are reserved
-const int NB_MAX_TEXTURES   = 40;
+const int NB_MAX_TEXTURES   = 1000;
 const int NB_MAX_FRAMES     = 1000;
+const int NB_MAX_LIGHTINFORMATIONS = 500;
 
 
 // Constants
@@ -45,12 +46,6 @@ const int NB_MAX_ITERATIONS = 20;
 #define M_PI 3.14159265358979323846
 #define EPSILON 10.f
 
-// Textures
-const int gTextureWidth  = 1024;
-const int gTextureHeight = 1024;
-const int gTextureDepth  = 3;
-const int gTextureSize   = gTextureWidth*gTextureHeight*gTextureDepth;
-
 #ifdef USE_KINECT
 // Kinect
 const int gKinectVideoWidth  = 640;
@@ -62,8 +57,4 @@ const int gKinectDepthWidth  = 320;
 const int gKinectDepthHeight = 240;
 const int gKinectDepth       = 2;
 const int gKinectDepthSize   = gKinectDepthWidth*gKinectDepthHeight*gKinectDepth;
-
-const int gTextureOffset = gKinectVideoSize+gKinectDepthSize;
-#else
-const int gTextureOffset = 0;
 #endif // USE_KINECT

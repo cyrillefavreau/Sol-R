@@ -33,6 +33,7 @@
 const std::string SCENEINFO = "SCENEINFO";
 const std::string PRIMITIVE = "PRIMITIVE";
 const std::string MATERIAL  = "MATERIAL";
+const std::string TEXTURE   = "TEXTURE";
 
 FileMarshaller::FileMarshaller()
 {
@@ -41,6 +42,41 @@ FileMarshaller::FileMarshaller()
 
 FileMarshaller::~FileMarshaller(void)
 {
+}
+
+void FileMarshaller::readTexture( GPUKernel& kernel, const std::string& line )
+{
+   std::string value;
+   size_t i( strlen(TEXTURE.c_str())+1 );
+   int textureId(-1);
+   std::string textureFilename;
+   size_t c(0);
+   while( i<line.length() )
+   {
+      if( line[i] == ';' ) 
+      {
+         switch(c)
+         {
+            case  0: textureId       = static_cast<int>(atoi( value.c_str() )); break;
+            case  1: textureFilename = value; break;
+         }
+         value = "";
+         ++i;
+         c++;
+      }
+      value += line[i];
+      ++i;
+   }
+
+   if( value != "" )
+   {
+      textureFilename = value;
+   }
+
+   if( textureId != -1 )
+   {
+      kernel.loadTextureFromFile(textureId, textureFilename);
+   }
 }
 
 void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
@@ -132,21 +168,19 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
             case 21: primitive.size.z = static_cast<float>(atof( value.c_str() )); break;
 
             case 22: primitive.materialId.x   = static_cast<int>(atoi( value.c_str() )); break;
-            case 23: primitive.materialInfo.x = static_cast<float>(atof( value.c_str() )); break;
-            case 24: primitive.materialInfo.y = static_cast<float>(atof( value.c_str() )); break;
 
             // Texture coordinates
-            case 25: primitive.vt0.x = static_cast<float>(atof( value.c_str() )); break;
-            case 26: primitive.vt0.y = static_cast<float>(atof( value.c_str() )); break;
-            case 27: primitive.vt0.z = static_cast<float>(atof( value.c_str() )); break;
+            case 23: primitive.vt0.x = static_cast<float>(atof( value.c_str() )); break;
+            case 24: primitive.vt0.y = static_cast<float>(atof( value.c_str() )); break;
+            case 25: primitive.vt0.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 28: primitive.vt1.x = static_cast<float>(atof( value.c_str() )); break;
-            case 29: primitive.vt1.y = static_cast<float>(atof( value.c_str() )); break;
-            case 30: primitive.vt1.z = static_cast<float>(atof( value.c_str() )); break;
+            case 26: primitive.vt1.x = static_cast<float>(atof( value.c_str() )); break;
+            case 27: primitive.vt1.y = static_cast<float>(atof( value.c_str() )); break;
+            case 28: primitive.vt1.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 31: primitive.vt2.x = static_cast<float>(atof( value.c_str() )); break;
-            case 32: primitive.vt2.y = static_cast<float>(atof( value.c_str() )); break;
-            case 33: primitive.vt2.z = static_cast<float>(atof( value.c_str() )); break;
+            case 29: primitive.vt2.x = static_cast<float>(atof( value.c_str() )); break;
+            case 30: primitive.vt2.y = static_cast<float>(atof( value.c_str() )); break;
+            case 31: primitive.vt2.z = static_cast<float>(atof( value.c_str() )); break;
          }
          value = "";
          ++i;
@@ -158,7 +192,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
 
    if( value.length() != 0 )
    {
-      primitive.materialInfo.y = static_cast<float>(atof( value.c_str() ));
+      primitive.vt2.z = static_cast<float>(atof( value.c_str() ));
    }
 
    int n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
@@ -168,9 +202,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
       primitive.p1.x, primitive.p1.y, primitive.p1.z,
       primitive.p2.x, primitive.p2.y, primitive.p2.z,
       primitive.size.x, primitive.size.y, primitive.size.z,
-      primitive.materialId.x, 
-      primitive.materialInfo.x, 
-      primitive.materialInfo.y );
+      primitive.materialId.x );
 
    kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
    kernel.setPrimitiveTextureCoordinates( n, primitive.vt0, primitive.vt1, primitive.vt2 );
@@ -220,12 +252,15 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 11: material.specular.y          = static_cast<float>(atof( value.c_str() )); break;
             case 12: material.specular.z          = static_cast<float>(atof( value.c_str() )); break;
             case 13: material.specular.w          = static_cast<float>(atof( value.c_str() )); break;
-            case 14: material.textureInfo.x       = static_cast<int>(atoi( value.c_str() )); break;
-            case 15: material.textureInfo.y       = static_cast<int>(atoi( value.c_str() )); break;
-            case 16: material.textureInfo.z       = static_cast<int>(atoi( value.c_str() )); break;
-            case 17: material.textureInfo.w       = static_cast<int>(atoi( value.c_str() )); break;
+            case 14: material.attributes.x       = static_cast<int>(atoi( value.c_str() )); break;
+            case 15: material.attributes.y       = static_cast<int>(atoi( value.c_str() )); break;
+            case 16: material.attributes.z       = static_cast<int>(atoi( value.c_str() )); break;
+            case 17: material.attributes.w       = static_cast<int>(atoi( value.c_str() )); break;
             case 18: material.transparency.x      = static_cast<float>(atof( value.c_str() )); break;
-            case 19: material.fastTransparency.x  = static_cast<int>(atoi( value.c_str() )); break;
+            case 19: material.textureMapping.x  = static_cast<int>(atoi( value.c_str() )); break;
+            case 20: material.textureMapping.y  = static_cast<int>(atoi( value.c_str() )); break;
+            case 21: material.textureMapping.z  = static_cast<int>(atoi( value.c_str() )); break;
+            case 22: material.textureMapping.w  = static_cast<int>(atoi( value.c_str() )); break;
          }
          value = "";
          ++i;
@@ -237,7 +272,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
 
    if( value.length() != 0 )
    {
-      material.fastTransparency.x = static_cast<int>(atoi( value.c_str() ));
+      material.textureMapping.w = static_cast<int>(atoi( value.c_str() ));
    }
 
    // Force sky and ground textures
@@ -245,13 +280,14 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       materialId,
       material.color.x, material.color.y, material.color.z, material.color.w,
       material.reflection.x, material.refraction.x,
-      (material.textureInfo.x==1), 
-      (material.textureInfo.z==1), material.textureInfo.w, // TODO!!!
-      material.transparency.x, 
-      material.textureInfo.y,
+      (material.attributes.y==1), 
+      (material.attributes.z==1), 
+      material.attributes.w,
+      material.transparency.x,
+      material.textureMapping.z,
       material.specular.x, material.specular.y, material.specular.z,
       material.innerIllumination.x,material.innerIllumination.y,material.innerIllumination.z,
-      (material.fastTransparency.x==1));
+      (material.attributes.x==1));
 }
 
 float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float scale )
@@ -286,6 +322,10 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
          else if( line.find(PRIMITIVE) == 0 )
          {
             readPrimitive( kernel, line, min, max );
+         }
+         else if( line.find(TEXTURE) == 0 )
+         {
+            readTexture( kernel, line );
          }
       }
    }
@@ -337,12 +377,27 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          sceneInfo.misc.x << ";" <<
          sceneInfo.misc.y << std::endl;
 
+      // Textures
+      for( unsigned int i(0); i<=kernel.getNbActiveMaterials()-30; ++i )
+      {
+         Material* material = kernel.getMaterial(i);
+         int textureId = material->textureMapping.z;
+         if( textureId>=0 )
+         {
+            kernel.getTextureFilename(textureId);
+            myfile << TEXTURE << ";" << 
+               textureId << ";" <<
+               kernel.getTextureFilename(material->textureMapping.z) <<
+               std::endl;
+         }
+      }
+
       // Materials
       LOG_INFO(1, kernel.getNbActiveMaterials() << " materials");
       for( unsigned int i(0); i<=kernel.getNbActiveMaterials()-30; ++i )
       {
          Material* material = kernel.getMaterial(i);
-         myfile << "MATERIAL;" <<  
+         myfile << MATERIAL << ";" <<  
             material->color.x << ";" <<
             material->color.y << ";" <<
             material->color.z << ";" <<
@@ -357,12 +412,16 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
             material->specular.y << ";" <<
             material->specular.z << ";" <<
             material->specular.w << ";" <<
-            material->textureInfo.x << ";" <<
-            material->textureInfo.y << ";" <<
-            material->textureInfo.z << ";" <<
-            material->textureInfo.w << ";" <<
+            material->attributes.x << ";" <<
+            material->attributes.y << ";" <<
+            material->attributes.z << ";" <<
+            material->attributes.w << ";" <<
             material->transparency.x << ";" <<
-            material->fastTransparency.x << std::endl;
+            material->textureMapping.x << ";" <<
+            material->textureMapping.y << ";" <<
+            material->textureMapping.z << ";" <<
+            material->textureMapping.w << ";" << 
+            std::endl;
       }
 
       // Primitives
@@ -375,7 +434,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          bool isLight = (m != NULL && m->innerIllumination.x!=0.f );
          if( !isLight )
          {
-            myfile << "PRIMITIVE;" <<  
+            myfile << PRIMITIVE << ";" <<  
                primitive->type << ";" <<
                primitive->p0.x << ";" <<
                primitive->p0.y << ";" <<
@@ -399,8 +458,6 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
                primitive->size.y << ";" <<
                primitive->size.z << ";" <<
                primitive->materialId << ";" <<
-               primitive->materialInfo.x << ";" <<
-               primitive->materialInfo.y << ";" << 
                primitive->vt0.x << ";" <<
                primitive->vt0.y << ";" <<
                primitive->vt0.z << ";" <<

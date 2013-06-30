@@ -99,8 +99,9 @@ struct Material
    float1 reflection;     
 	float1 refraction;
    float1 transparency;
-   int1   fastTransparency;
-	int4   textureInfo;       // x: procedural, y: textureId, z: wireframe, w: wireframeWidth
+   int4   attributes;        // x: fastTransparency, y: procedural, z: wireframe, w: wireframeWidth
+	int4   textureMapping;    // x: width, y:height, z: Texture ID, w: color depth
+   int1   textureOffset;     // x: offset in the texture buffer
 };
 
 struct BoundingBox
@@ -123,11 +124,19 @@ struct Primitive
 	int1   type;
    int1   index;
 	int1   materialId;
-	float2 materialInfo;
 	float3 vt0;
 	float3 vt1;
 	float3 vt2;
 };
+
+struct TextureInformation
+{
+   char* buffer;
+   int   offset;
+   int3  size;
+};
+
+
 
 // Post processing effect
 

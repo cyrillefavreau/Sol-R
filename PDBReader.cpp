@@ -330,7 +330,7 @@ float4 PDBReader::loadAtomsFromFile(
                         scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.y - center.y), 
                         scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.z - center.z),
                         scale*stickradius, 0.f,0.f,
-                        atom.materialId , 1, 1 );
+                        atom.materialId );
                   }
                }
                it2++;
@@ -358,7 +358,7 @@ float4 PDBReader::loadAtomsFromFile(
                scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
                scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
                scale*radius, 0.f, 0.f,
-               atom.materialId, 1, 1 );
+               atom.materialId );
          }
       }
       ++it;

@@ -127,14 +127,12 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
  : m_optimalNbOfPrimmitivesPerBox(optimalNbOfPrimmitivesPerBox),
    m_hPrimitives(0), 
 	m_hMaterials(0), 
-	m_hTextures(0),
    m_hLamps(0),
    m_hBoundingBoxes(0),
 	m_hDepthOfField(0),
    m_hPrimitivesXYIds(0),
 	m_hRandoms(0), 
 	m_nbActiveMaterials(-1),
-	m_nbActiveTextures(0),
    m_lightInformationSize(0),
 	m_activeLogging(activeLogging),
    m_lightInformation(nullptr),
@@ -161,6 +159,11 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    	m_nbActiveBoxes[i]=0;
    	m_nbActivePrimitives[i]=0;
    	m_nbActiveLamps[i]=0;
+   }
+
+   for( int i(0); i<NB_MAX_TEXTURES; ++i)
+   {
+      memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
 
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
@@ -201,7 +204,7 @@ void GPUKernel::initBuffers()
       m_boundingBoxes[i] = new BoxContainer[NB_MAX_FRAMES];
       m_lamps[i]         = new LampContainer[NB_MAX_FRAMES];
    }
-   m_lightInformation = new LightInformation[ NB_MAX_LAMPS + gTextureWidth*gTextureHeight ];
+   m_lightInformation = new LightInformation[ NB_MAX_LIGHTINFORMATIONS ];
    if( m_primitives && m_boundingBoxes && m_lamps )
    {
       LOG_INFO(1, "CPU resources successfully initialized" );
@@ -212,7 +215,6 @@ void GPUKernel::initBuffers()
 	memset(m_hPrimitives,0,NB_MAX_PRIMITIVES*sizeof(Primitive) ); 
 	m_hMaterials = new Material[NB_MAX_MATERIALS+1];
 	memset(m_hMaterials,0,NB_MAX_MATERIALS*sizeof(Material) ); 
-	m_hTextures = new char[gTextureOffset+gTextureSize*NB_MAX_TEXTURES];
 	m_hBoundingBoxes = new BoundingBox[NB_MAX_BOXES];
 	memset(m_hBoundingBoxes,0,NB_MAX_BOXES*sizeof(BoundingBox));
 	m_hLamps = new int[NB_MAX_LAMPS];
@@ -240,6 +242,40 @@ void GPUKernel::initBuffers()
 void GPUKernel::cleanup()
 {
    LOG_INFO(1,"Cleaning up resources");
+   for( int i(0); i<NB_MAX_FRAMES; ++i)
+   {
+      if( m_boundingBoxes[i] )
+      {
+         m_boundingBoxes[i]->clear();
+         //delete m_boundingBoxes[i];
+         //m_boundingBoxes[i] = nullptr;
+      }
+      m_nbActiveBoxes[i] = 0;
+
+      if( m_primitives[i] )
+      {
+         m_primitives[i]->clear();
+         //delete m_primitives[i];
+         //m_primitives[i] = nullptr;
+      }
+      m_nbActivePrimitives[i] = 0;
+
+      if(m_lamps[i]) 
+      {
+         m_lamps[i]->clear();
+         //delete m_lamps[i];
+         //m_lamps[i] = nullptr;
+      }
+      m_nbActiveLamps[i] = 0;
+
+      m_minPos[i].x =  100000.f;
+      m_minPos[i].y =  100000.f;
+      m_minPos[i].z =  100000.f;
+      m_maxPos[i].x = -100000.f;
+      m_maxPos[i].y = -100000.f;
+      m_maxPos[i].z = -100000.f;
+   }
+
    if( m_bitmap )
    {
       delete [] m_bitmap;
@@ -268,10 +304,9 @@ void GPUKernel::cleanup()
       m_hMaterials = nullptr;
    }
 
-	if(m_hTextures)
+   for( int i(0); i<NB_MAX_TEXTURES; ++i)
    {
-      delete m_hTextures;
-      m_hTextures = nullptr;
+      if(m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
    }
 
 	if(m_hDepthOfField) delete m_hDepthOfField;
@@ -284,45 +319,10 @@ void GPUKernel::cleanup()
       m_lightInformation = nullptr;
    }
 
-   for( int i(0); i<NB_MAX_FRAMES; ++i)
-   {
-      if( m_boundingBoxes )
-      {
-         //m_boundingBoxes[m_frame]->clear();
-         delete m_boundingBoxes[i];
-         m_boundingBoxes[i] = nullptr;
-      }
-      m_nbActiveBoxes[i] = 0;
-
-      if( m_primitives[i] )
-      {
-         //m_primitives[m_frame]->clear();
-         delete m_primitives[i];
-         m_primitives[i] = nullptr;
-      }
-      m_nbActivePrimitives[i] = 0;
-
-      if(m_lamps[i]) 
-      {
-         //m_lamps[m_frame]->clear();
-         delete m_lamps[i];
-         m_lamps[i] = nullptr;
-      }
-      m_nbActiveLamps[i] = 0;
-
-      m_minPos[i].x =  100000.f;
-      m_minPos[i].y =  100000.f;
-      m_minPos[i].z =  100000.f;
-      m_maxPos[i].x = -100000.f;
-      m_maxPos[i].y = -100000.f;
-      m_maxPos[i].z = -100000.f;
-   }
-
 	m_hDepthOfField = 0;
 	m_hRandoms = 0;
    m_hPrimitivesXYIds = 0,
 	m_nbActiveMaterials = -1;
-	m_nbActiveTextures = 0;
 #if USE_KINECT
 	m_hVideo = 0;
    m_hDepth = 0;
@@ -402,10 +402,9 @@ void GPUKernel::setPrimitive(
    const int& index,
 	float x0, float y0, float z0, 
 	float w,  float h,  float d,
-	int   materialId, 
-	float materialPaddingX, float materialPaddingY )
+	int   materialId )
 {
-	setPrimitive( index, x0, y0, z0, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
+	setPrimitive( index, x0, y0, z0, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, w, h, d, materialId );
 }
 
 void GPUKernel::setPrimitive( 
@@ -413,10 +412,9 @@ void GPUKernel::setPrimitive(
 	float x0, float y0, float z0, 
 	float x1, float y1, float z1, 
 	float w,  float h,  float d,
-	int   materialId, 
-	float materialPaddingX, float materialPaddingY )
+	int   materialId )
 {
-	setPrimitive( index, x0, y0, z0, x1, y1, z1, 0.f, 0.f, 0.f, w, h, d, materialId, materialPaddingX, materialPaddingY );
+	setPrimitive( index, x0, y0, z0, x1, y1, z1, 0.f, 0.f, 0.f, w, h, d, materialId );
 }
 
 void GPUKernel::setPrimitive( 
@@ -425,8 +423,7 @@ void GPUKernel::setPrimitive(
 	float x1, float y1, float z1, 
 	float x2, float y2, float z2, 
 	float w,  float h,  float d,
-	int   materialId, 
-	float materialPaddingX, float materialPaddingY )
+	int   materialId )
 {
    float scale = 1.f;
    float3 zero = {0.f,0.f,0.f};
@@ -469,8 +466,6 @@ void GPUKernel::setPrimitive(
 			   (*m_primitives[m_frame])[index].size.x = w*scale;
 			   (*m_primitives[m_frame])[index].size.y = w*scale;
 			   (*m_primitives[m_frame])[index].size.z = w*scale;
-			   (*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-			   (*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 			   break;
          }
 		case ptEllipsoid:
@@ -478,8 +473,6 @@ void GPUKernel::setPrimitive(
 		      (*m_primitives[m_frame])[index].size.x = w*scale;
 		      (*m_primitives[m_frame])[index].size.y = h*scale;
 		      (*m_primitives[m_frame])[index].size.z = d*scale;
-			   (*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-			   (*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
             break;
          }
 		case ptCylinder:
@@ -503,10 +496,6 @@ void GPUKernel::setPrimitive(
             (*m_primitives[m_frame])[index].size.x = w*scale; //(x1 - x0)/2.f;
             (*m_primitives[m_frame])[index].size.y = w*scale; //(y1 - y0)/2.f;
             (*m_primitives[m_frame])[index].size.z = w*scale; // (z1 - z0)/2.f;
-
-				// Material
-				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 #ifdef USE_KINECT 
@@ -527,8 +516,6 @@ void GPUKernel::setPrimitive(
 				(*m_primitives[m_frame])[index].n0.z = 1.f;
 				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
 				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
-				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 		case ptYZPlane:
@@ -538,8 +525,6 @@ void GPUKernel::setPrimitive(
 				(*m_primitives[m_frame])[index].n0.z = 0.f;
 				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
 				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
-				(*m_primitives[m_frame])[index].materialInfo.x = ( d != 0.f ) ? (gTextureWidth /d/2)*materialPaddingX : 1.f;
-				(*m_primitives[m_frame])[index].materialInfo.y = ( h != 0.f ) ? (gTextureHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 		case ptXZPlane:
@@ -550,8 +535,6 @@ void GPUKernel::setPrimitive(
 				(*m_primitives[m_frame])[index].n0.z = 0.f;
 				(*m_primitives[m_frame])[index].n1 = (*m_primitives[m_frame])[index].n0;
 				(*m_primitives[m_frame])[index].n2 = (*m_primitives[m_frame])[index].n0;
-				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gTextureWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[m_frame])[index].materialInfo.y = ( d != 0.f ) ? (gTextureHeight/d/2)*materialPaddingY : 1.f;
 				break;
 			}
 		case ptTriangle:
@@ -930,7 +913,6 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].n2 = primitive.n2;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].size = primitive.size;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].materialId.x = primitive.materialId;
-                  m_hPrimitives[m_nbActivePrimitives[m_frame]].materialInfo = primitive.materialInfo;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].vt0 = primitive.vt0;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].vt1 = primitive.vt1;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].vt2 = primitive.vt2;
@@ -993,7 +975,11 @@ void GPUKernel::resetAll()
    m_nbActiveMaterials = -1;
    m_materialsTransfered = false;
 
-   m_nbActiveTextures = 0;
+   for( int i(0); i<NB_MAX_TEXTURES; ++i )
+   {
+      delete [] m_hTextures[i].buffer;
+      m_hTextures[i].buffer = nullptr;
+   }
    m_texturesTransfered = false;
 }
 
@@ -1140,7 +1126,7 @@ void GPUKernel::morphPrimitives()
                p1.x, p1.y, p1.z,
                p2.x, p2.y, p2.z,
                size.x,size.y,size.z,
-               primitive1.materialId, primitive1.materialInfo.x, primitive1.materialInfo.y );
+               primitive1.materialId );
             
             setPrimitiveNormals(i, n0,n1,n2);
             setPrimitiveTextureCoordinates(i, primitive1.vt0,primitive1.vt1,primitive1.vt2);
@@ -1296,44 +1282,42 @@ void GPUKernel::setPrimitiveCenter(
 int GPUKernel::addCube( 
 	float x, float y, float z, 
 	float radius, 
-	int   materialId, 
-	float materialPaddingX, float materialPaddingY )
+	int   materialId )
 {
 	LOG_INFO(3,"GPUKernel::addCube(" << m_frame << ")" );
-	return addRectangle( x,y,z,radius,radius,radius,materialId,materialPaddingX,materialPaddingY);
+	return addRectangle( x,y,z,radius,radius,radius,materialId);
 }
 
 int GPUKernel::addRectangle( 
 	float x, float y, float z, 
 	float w, float h, float d,
-	int   materialId, 
-	float materialPaddingX, float materialPaddingY )
+	int   materialId )
 {
 	LOG_INFO(3,"GPUKernel::addRectangle(" << m_frame << ")" );
 	int returnValue;
 	// Back
 	returnValue = addPrimitive(  ptXYPlane );
-	setPrimitive(  returnValue, x, y, z+d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive(  returnValue, x, y, z+d, w, h, d, materialId ); 
 
 	// Front
 	returnValue = addPrimitive(  ptXYPlane );
-	setPrimitive(  returnValue, x, y, z-d, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive(  returnValue, x, y, z-d, w, h, d, materialId ); 
 
 	// Left
 	returnValue = addPrimitive(  ptYZPlane );
-	setPrimitive(  returnValue, x-w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive(  returnValue, x-w, y, z, w, h, d, materialId ); 
 
 	// Right
 	returnValue = addPrimitive(  ptYZPlane );
-	setPrimitive(  returnValue, x+w, y, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive(  returnValue, x+w, y, z, w, h, d, materialId ); 
 
 	// Top
 	returnValue = addPrimitive(  ptXZPlane );
-	setPrimitive(  returnValue, x, y+h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive(  returnValue, x, y+h, z, w, h, d, materialId ); 
 
 	// Bottom
 	returnValue = addPrimitive(  ptXZPlane );
-	setPrimitive(  returnValue, x, y-h, z, w, h, d, materialId, materialPaddingX, materialPaddingY ); 
+	setPrimitive(  returnValue, x, y-h, z, w, h, d, materialId ); 
 	return returnValue;
 }
 
@@ -1412,11 +1396,27 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].reflection.x  = reflection;
 		m_hMaterials[index].refraction.x  = refraction;
 		m_hMaterials[index].transparency.x= transparency;
-		m_hMaterials[index].textureInfo.x = procedural ? 1 : 0;
-		m_hMaterials[index].textureInfo.y = textureId;
-		m_hMaterials[index].textureInfo.z = wireframe ? ((wireframeWidth == 0 ) ? 1 : 2) : 0;
-		m_hMaterials[index].textureInfo.w = wireframeWidth;
-      m_hMaterials[index].fastTransparency.x = fastTransparency ? 1 : 0;
+      m_hMaterials[index].attributes.x = fastTransparency ? 1 : 0;
+		m_hMaterials[index].attributes.y = procedural ? 1 : 0;
+		m_hMaterials[index].attributes.z = wireframe ? ((wireframeWidth == 0 ) ? 1 : 2) : 0;
+		m_hMaterials[index].attributes.w = wireframeWidth;
+		m_hMaterials[index].textureMapping.z = textureId;
+      if( textureId>=0 && textureId<NB_MAX_TEXTURES )
+      {
+         m_hMaterials[index].textureMapping.x = m_hTextures[textureId].size.x; // Width
+         m_hMaterials[index].textureMapping.y = m_hTextures[textureId].size.y; // Height
+         m_hMaterials[index].textureMapping.w = m_hTextures[textureId].size.z; // Depth
+         m_hMaterials[index].textureOffset.x  = m_hTextures[textureId].offset; // Offset
+      }
+      else
+      {
+         // Computed textures (Mandelbrot, Julia, etc)
+         m_hMaterials[index].textureMapping.x = 512;
+         m_hMaterials[index].textureMapping.y = 512;
+         m_hMaterials[index].textureMapping.w = 3;
+         m_hMaterials[index].textureOffset.x  = 0;
+      }
+
 		m_materialsTransfered = false;
 	}
 	else
@@ -1447,17 +1447,17 @@ int GPUKernel::getMaterialAttributes(
       noise = m_hMaterials[index].color.w;
 		reflection = m_hMaterials[index].reflection.x;
 		refraction = m_hMaterials[index].refraction.x;
-		procedural   = (m_hMaterials[index].textureInfo.x == 1);
+		procedural   = (m_hMaterials[index].attributes.y == 1);
 		transparency = m_hMaterials[index].transparency.x;
-		textureId = m_hMaterials[index].textureInfo.y;
+		textureId = m_hMaterials[index].textureMapping.z;
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;
 		innerIllumination = m_hMaterials[index].innerIllumination.x;
 		illuminationDiffusion = m_hMaterials[index].innerIllumination.y;
 		illuminationPropagation = m_hMaterials[index].innerIllumination.z;
-		wireframe =  (m_hMaterials[index].textureInfo.z == 1);
-		wireframeDepth = m_hMaterials[index].textureInfo.w;
+		wireframe =  (m_hMaterials[index].attributes.z == 1);
+		wireframeDepth = m_hMaterials[index].attributes.w;
 		returnValue = 0;
 	}
 	else
@@ -1482,18 +1482,27 @@ Material* GPUKernel::getMaterial( const int index )
 
 // ---------- Textures ----------
 void GPUKernel::setTexture(
-	unsigned int index,
-	char* texture )
+   const int index,
+	const TextureInformation& textureInfo )
 {
-	LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
-	char* idx = m_hTextures+gTextureOffset+index*gTextureSize;
-	int j(0);
-	for( int i(0); i<gTextureSize; i+=gColorDepth ) {
-		idx[j]   = texture[i+2];
-		idx[j+1] = texture[i+1];
-		idx[j+2] = texture[i];
-		j+=gTextureDepth;
-	}
+   LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
+   if( index<NB_MAX_TEXTURES )
+   {
+      delete [] m_hTextures[index].buffer;
+      int size = textureInfo.size.x*textureInfo.size.y*textureInfo.size.z;
+	   m_hTextures[index].buffer = new char[size];
+      m_hTextures[index].offset = 0;
+	   m_hTextures[index].size.x = textureInfo.size.x;
+	   m_hTextures[index].size.y = textureInfo.size.y;
+	   m_hTextures[index].size.z = textureInfo.size.z;
+	   int j(0);
+      for( int i(0); i<textureInfo.size.x*textureInfo.size.y*textureInfo.size.z; i+=textureInfo.size.z ) {
+         m_hTextures[index].buffer[j]   = textureInfo.buffer[i+2];
+		   m_hTextures[index].buffer[j+1] = textureInfo.buffer[i+1];
+		   m_hTextures[index].buffer[j+2] = textureInfo.buffer[i];
+		   j+=textureInfo.size.z;
+	   }
+   }
 }
 
 void GPUKernel::setSceneInfo(
@@ -1614,104 +1623,114 @@ void GPUKernel::saveToFile( const std::string& filename, const std::string& cont
 }
 
 // ---------- Kinect ----------
-int GPUKernel::addTexture( const std::string& filename )
+int GPUKernel::loadTextureFromFile( const int index, const std::string& filename )
 {
-   if( m_hTextures )
+   m_texturesTransfered = false;
+
+	FILE *filePtr(0); //our file pointer
+	BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
+	BITMAPINFOHEADER bitmapInfoHeader;
+	unsigned int imageIdx=0;  //image index counter
+	char tempRGB;  //our swap variable
+
+	//open filename in read binary mode
+#ifdef WIN32
+	fopen_s(&filePtr, filename.c_str(), "rb");
+#else
+	filePtr = fopen(filename.c_str(), "rb");
+#endif
+	if (filePtr == NULL) 
    {
-      m_texturesTransfered = false;
+      LOG_ERROR( "Failed to load " << filename );
+		return -1;
+	}
 
-	   FILE *filePtr(0); //our file pointer
-	   BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
-	   char *bitmapImage;  //store image data
-	   BITMAPINFOHEADER bitmapInfoHeader;
-	   unsigned int imageIdx=0;  //image index counter
-	   char tempRGB;  //our swap variable
+	//read the bitmap file header
+	size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
 
-	   //open filename in read binary mode
-   #ifdef WIN32
-	   fopen_s(&filePtr, filename.c_str(), "rb");
-   #else
-	   filePtr = fopen(filename.c_str(), "rb");
-   #endif
-	   if (filePtr == NULL) 
-      {
-         LOG_ERROR( "Failed to load " << filename );
-		   return 1;
-	   }
+	//verify that this is a bmp file by check bitmap id
+	if (bitmapFileHeader.bfType !=0x4D42) {
+      LOG_ERROR( "Failed to load " << filename << ", wrong bitmap id" );
+		fclose(filePtr);
+		return -1;
+	}
 
-	   //read the bitmap file header
-	   size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+	//read the bitmap info header
+	status = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER),1,filePtr);
 
-	   //verify that this is a bmp file by check bitmap id
-	   if (bitmapFileHeader.bfType !=0x4D42) {
-         LOG_ERROR( "Failed to load " << filename << ", wrong bitmap id" );
-		   fclose(filePtr);
-		   return 1;
-	   }
+	//move file point to the begging of bitmap data
+	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
-	   //read the bitmap info header
-	   status = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER),1,filePtr);
+   unsigned int bitmapSize = bitmapInfoHeader.biWidth*bitmapInfoHeader.biHeight*bitmapInfoHeader.biBitCount/8;
 
-	   //move file point to the begging of bitmap data
-	   fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
-
-      unsigned int bitmapSize = bitmapInfoHeader.biWidth*bitmapInfoHeader.biHeight*bitmapInfoHeader.biBitCount/8;
-
-	   //allocate enough memory for the bitmap image data
-	   bitmapImage = (char*)malloc(bitmapSize);
-
-	   //verify memory allocation
-	   if (!bitmapImage)
-	   {
-		   free(bitmapImage);
-		   fclose(filePtr);
-         LOG_ERROR( "Failed to load " << filename << ", invalid memory allocation" );
-		   return 1;
-	   }
-
-	   //read in the bitmap image data
-	   status = fread( bitmapImage, bitmapSize, 1, filePtr);
-
-	   //make sure bitmap image data was read
-	   if (bitmapImage == NULL)
-	   {
-		   fclose(filePtr);
-         LOG_ERROR( "Failed to load " << filename << ", bitmap image could not be read" );
-		   return 0;
-	   }
-
-	   //swap the r and b values to get RGB (bitmap is BGR)
-	   for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
-	   {
-		   tempRGB = bitmapImage[imageIdx];
-		   bitmapImage[imageIdx] = bitmapImage[imageIdx + 2];
-		   bitmapImage[imageIdx + 2] = tempRGB;
-	   }
-
-	   //close file and return bitmap image data
-	   fclose(filePtr);
-
-	   char* index = m_hTextures + gTextureOffset + (m_nbActiveTextures*bitmapSize);
-	   memcpy( index, bitmapImage, bitmapSize );
-	   m_nbActiveTextures++;
-
-	   free( bitmapImage );
-      LOG_INFO( 3, "Successfully loaded " << filename  << std::endl <<
-         "biSize         : " << bitmapInfoHeader.biSize << std::endl <<
-         "biWidth        : " << bitmapInfoHeader.biWidth << std::endl <<
-         "biHeight       : " << bitmapInfoHeader.biHeight << std::endl <<
-         "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl <<
-         "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl <<
-         "biCompression  : " << bitmapInfoHeader.biCompression << std::endl <<
-         "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl <<
-         "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
-         "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
+   // Add Texture to CPU Memory
+   if( m_hTextures[index].buffer != nullptr) 
+   { 
+      delete [] m_hTextures[index].buffer;
+      LOG_INFO(1,"Replacing existing texture " << index );
    }
-   else
+   m_hTextures[index].buffer = new char[bitmapSize];
+   m_hTextures[index].offset = 0;
+   m_hTextures[index].size.x = bitmapInfoHeader.biWidth;
+   m_hTextures[index].size.y = bitmapInfoHeader.biHeight;
+   m_hTextures[index].size.z = bitmapInfoHeader.biBitCount/8;
+   m_textureFilenames[index] = filename;
+
+	//verify memory allocation
+	if (!m_hTextures[index].buffer)
+	{
+		free(m_hTextures[index].buffer);
+		fclose(filePtr);
+      LOG_ERROR( "Failed to load " << filename << ", invalid memory allocation" );
+		return -1;
+	}
+
+	//read in the bitmap image data
+	status = fread( m_hTextures[index].buffer, bitmapSize, 1, filePtr);
+
+	//make sure bitmap image data was read
+	if (m_hTextures[index].buffer == NULL)
+	{
+		fclose(filePtr);
+      LOG_ERROR( "Failed to load " << filename << ", bitmap image could not be read" );
+		return -1;
+	}
+
+	//swap the r and b values to get RGB (bitmap is BGR)
+	for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
+	{
+		tempRGB = m_hTextures[index].buffer[imageIdx];
+		m_hTextures[index].buffer[imageIdx]     = m_hTextures[index].buffer[imageIdx+2];
+		m_hTextures[index].buffer[imageIdx + 2] = tempRGB;
+	}
+
+	//close file and return bitmap image data
+	fclose(filePtr);
+
+   LOG_INFO( 3, "[" << index << "] Successfully loaded " << filename  << std::endl <<
+      "biSize         : " << bitmapInfoHeader.biSize << std::endl <<
+      "biWidth        : " << bitmapInfoHeader.biWidth << std::endl <<
+      "biHeight       : " << bitmapInfoHeader.biHeight << std::endl <<
+      "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl <<
+      "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl <<
+      "biCompression  : " << bitmapInfoHeader.biCompression << std::endl <<
+      "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl <<
+      "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
+      "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
+
+   // Reprocess offset
+   int totalSize=0;
+   for( int i(0); i<NB_MAX_TEXTURES; ++i )
    {
-      LOG_ERROR("Texture memory not allocated");
+      m_hTextures[i].offset = totalSize;
+      totalSize += m_hTextures[i].size.x*m_hTextures[i].size.y*m_hTextures[i].size.z;
    }
-	return m_nbActiveTextures-1;
+   LOG_INFO(3, "Texture " << index << " successfully loaded ( offset=" << 
+      m_hTextures[index].offset << ", width="  <<
+      m_hTextures[index].size.x << ", height=" <<
+      m_hTextures[index].size.y << ", depth="  <<
+      m_hTextures[index].size.z )
+   return 0;
 }
 
 void GPUKernel::buildLightInformationFromTexture( unsigned int index )
@@ -1788,7 +1807,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    }
 #else
    // Light from skybox
-   if( index < m_nbActiveTextures )
+   if( index < m_textureIndex )
    {
       for( int i(0); i<gTextureWidth*gTextureHeight; i+=gTextureDepth*4)
       {
@@ -1980,7 +1999,7 @@ void GPUKernel::setGLMode( const int& glMode )
                   m_vertices[1].x, m_vertices[1].y, m_vertices[1].z, 
                   m_vertices[2].x, m_vertices[2].y, m_vertices[2].z, 
                   0.f,0.f,0.f,
-                  0,1,1);
+                  0);
                LOG_INFO(1, "Triangle created");
             }
             else

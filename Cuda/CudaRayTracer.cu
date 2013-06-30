@@ -187,7 +187,7 @@ __device__ inline float4 launchRay(
 			{
 			   // Replace the normal using the intersection color
 			   // r,g,b become x,y,z... What the fuck!!
-			   if( materials[primitives[closestPrimitive].materialId.x].textureInfo.y != TEXTURE_NONE) 
+			   if( materials[primitives[closestPrimitive].materialId.x].textureMapping.z != TEXTURE_NONE) 
 			   {
 				   normal.x *= (colors[iteration].x-0.5f);
 				   normal.y *= (colors[iteration].y-0.5f);
@@ -313,7 +313,7 @@ __device__ inline float4 launchRay(
 
    Primitive& primitive=primitives[closestPrimitive];
 	float len = length(firstIntersection - ray.origin);
-   if( materials[primitive.materialId.x].textureInfo.z == 0 )
+   if( materials[primitive.materialId.x].attributes.z == 0 ) // Wireframe
    {
 #if 0
 	   // --------------------------------------------------
@@ -983,7 +983,7 @@ GPU initialization
 ________________________________________________________________________________
 */
 extern "C" void initialize_scene( 
-	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials, int nbTextures )
+	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials )
 {
 #if 0
    // Multi GPU initialization
@@ -1007,8 +1007,7 @@ extern "C" void initialize_scene(
 	   checkCudaErrors(cudaMalloc( (void**)&d_primitives[d],         NB_MAX_PRIMITIVES*sizeof(Primitive)));
 	   checkCudaErrors(cudaMalloc( (void**)&d_lamps[d],              NB_MAX_LAMPS*sizeof(int)));
 	   checkCudaErrors(cudaMalloc( (void**)&d_materials[d],          NB_MAX_MATERIALS*sizeof(Material)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_textures[d],           NB_MAX_TEXTURES*gTextureDepth*gTextureWidth*gTextureHeight + gTextureOffset));
-	   checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[d],   gTextureDepth*gTextureWidth*gTextureHeight*sizeof(LightInformation)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[d],   NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation)));
 	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[d],            width*height*sizeof(float)));
 
 	   // Rendering canvas
@@ -1088,12 +1087,24 @@ extern "C" void h2d_materials(
 }
 
 extern "C" void h2d_textures( 
-	char*      textures , int nbActiveTextures)
+	const int activeTextures, TextureInformation* textureInfos )
 {
    for( int d(0); d<d_nbGPUs; ++d )
    {
+      int totalSize=0;
+      for( int i(0); i<activeTextures; ++i )
+      {
+         totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
+      }
+	   checkCudaErrors(cudaFree( d_textures[d] ));
+	   checkCudaErrors(cudaMalloc( (void**)&d_textures[d], totalSize*sizeof(char)));
+
       checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[d],  textures,  gTextureOffset+nbActiveTextures*sizeof(char)*gTextureSize, cudaMemcpyHostToDevice, d_streams[d] ));
+      for( int i(0); i<activeTextures; ++i )
+      {
+	      checkCudaErrors(cudaMemcpyAsync( 
+            d_textures[d]+textureInfos[i].offset, textureInfos[i].buffer, textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+      }
    }
 }
 

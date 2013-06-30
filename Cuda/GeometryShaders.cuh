@@ -222,7 +222,7 @@ __device__ float4 intersectionShader(
 	{
 	case ptCylinder:
 		{
-			if(materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE)
+			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
 			{
 				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
 			}
@@ -232,7 +232,7 @@ __device__ float4 intersectionShader(
 	case ptSphere:
    case ptEllipsoid:
 		{
-			if(materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE)
+			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
 			{
 				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
 			}
@@ -240,14 +240,14 @@ __device__ float4 intersectionShader(
 		}
 	case ptCheckboard :
 		{
-			if( materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
 			{
 				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
 			}
 			else 
 			{
-				int x = sceneInfo.viewDistance.x + ((intersection.x - primitive.p0.x)/primitive.size.x*primitive.materialInfo.x);
-				int z = sceneInfo.viewDistance.x + ((intersection.z - primitive.p0.z)/primitive.size.x*primitive.materialInfo.y);
+				int x = sceneInfo.viewDistance.x + ((intersection.x - primitive.p0.x)/primitive.size.x);
+				int z = sceneInfo.viewDistance.x + ((intersection.z - primitive.p0.z)/primitive.size.x);
 				if(x%2==0) 
 				{
 					if (z%2==0) 
@@ -274,7 +274,7 @@ __device__ float4 intersectionShader(
 	case ptXZPlane:
 	case ptCamera:
 		{
-			if( materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
 			{
 				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
 			}
@@ -282,7 +282,7 @@ __device__ float4 intersectionShader(
 		}
 	case ptTriangle:
       {
-			if( materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
 			{
             colorAtIntersection = triangleUVMapping( primitive, materials, textures, intersection, areas );
 			}
@@ -291,7 +291,7 @@ __device__ float4 intersectionShader(
 #if 0
 	case ptMagicCarpet:
 		{
-			if( materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
 			{
 				colorAtIntersection = magicCarpetMapping( primitive, materials, textures, intersection, levels );
 			}
@@ -333,13 +333,13 @@ __device__ float4 primitiveShader(
 	// Lamp Impact
 	shadowIntensity    = 0.f;
 
-	if( materials[primitive.materialId.x].innerIllumination.x != 0.f || materials[primitive.materialId.x].textureInfo.z == 2 )
+	if( materials[primitive.materialId.x].innerIllumination.x != 0.f || materials[primitive.materialId.x].attributes.z == 2 )
    {
       // Wireframe returns constant color
 		return color; 
    }
 
-   if( materials[primitive.materialId.x].textureInfo.z == 1 )
+   if( materials[primitive.materialId.x].attributes.z == 1 )
 	{
 		// Sky box returns color with constant lightning
 		return intersectionShader( 

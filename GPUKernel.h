@@ -50,7 +50,6 @@ struct CPUPrimitive
 	float3 size;
 	int    type;
 	int    materialId;
-	float2 materialInfo;
    float3 vt0; // Texture coordinates
    float3 vt1; 
    float3 vt2; 
@@ -93,15 +92,15 @@ public:
 	int addPrimitive( PrimitiveType type );
 	void setPrimitive( 
       const int& index,
-		float x0, float y0, float z0, float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
+		float x0, float y0, float z0, float w,  float h,  float d, int   materialId );
 	void setPrimitive( 
       const int& index,
 		float x0, float y0, float z0, float x1, float y1, float z1,
-      float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
+      float w,  float h,  float d, int   materialId );
 	void setPrimitive( 
       const int& index,
 		float x0, float y0, float z0, float x1, float y1, float z1, float x2, float y2, float z2, 
-      float w,  float h,  float d, int   materialId, float materialPaddingX, float materialPaddingY );
+      float w,  float h,  float d, int   materialId );
    unsigned int getPrimitiveAt( 
       int x, int y );
    void setPrimitiveIsMovable( 
@@ -158,18 +157,14 @@ public:
 
 	// ---------- Complex objects ----------
 	int addCube( 
-      
 		float x, float y, float z, 
 		float radius, 
-		int   materialId, 
-		float materialPaddingX, float materialPaddingY );
+		int   materialId);
 
 	int addRectangle(
-		
 		float x, float y, float z, 
 		float w, float h, float d,
-		int   materialId, 
-		float materialPaddingX, float materialPaddingY );
+		int   materialId );
 
 public:
 
@@ -212,8 +207,8 @@ public:
 public:
 
 	// ---------- Textures ----------
-	void setTexture(unsigned int index, char* texture );
-	int  addTexture( const std::string& filename );
+	void setTexture( const int index, const TextureInformation& textureInfo );
+	int  loadTextureFromFile( const int index, const std::string& filename );
    void buildLightInformationFromTexture( unsigned int index );
 
 public:
@@ -282,7 +277,7 @@ public:
    unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives[m_frame]->size()); };
 	unsigned int getNbActiveLamps()      { return m_nbActiveLamps[m_frame]; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
-	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
+   std::string  getTextureFilename( const int index ) { return m_textureFilenames[index]; };
 
    bool getProgressiveBoxes() { return m_progressiveBoxes; };
    void setProgressiveBoxes( const bool progressiveBoxes ) { m_progressiveBoxes = progressiveBoxes; };
@@ -331,7 +326,12 @@ protected:
    Primitive*   m_hPrimitives;
 	int*		    m_hLamps;
 	Material*    m_hMaterials;
-	char*        m_hTextures;
+
+   // Textures
+   TextureInformation m_hTextures[NB_MAX_TEXTURES];
+   std::map<int,std::string> m_textureFilenames;
+
+   // Scene
 	float3*      m_hDepthOfField;
 	float*	    m_hRandoms;
    int2*        m_hPrimitivesXYIds;
@@ -340,7 +340,6 @@ protected:
 	int m_nbActivePrimitives[NB_MAX_FRAMES];
 	int m_nbActiveLamps[NB_MAX_FRAMES];
 	int m_nbActiveMaterials;
-	int m_nbActiveTextures;
    int m_lightInformationSize;
 	float3		 m_viewPos;
 	float3		 m_viewDir;

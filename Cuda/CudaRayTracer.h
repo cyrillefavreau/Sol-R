@@ -25,7 +25,7 @@
 #include "CudaDataTypes.h"
 
 extern "C" void initialize_scene( 
-	int width, int height, int nbPrimitives, int nbints, int nbMaterials, int nbTextures );
+	int width, int height, int nbPrimitives, int nbints, int nbMaterials );
 
 extern "C" void finalize_scene();
 
@@ -39,7 +39,7 @@ extern "C" void h2d_materials(
    float*     randoms,   int nbRandoms );
 
 extern "C" void h2d_textures( 
-	char*      textures,  int nbActiveTextures );
+	const int activeTextures, TextureInformation* textureInfos );
 
 extern "C" void h2d_lightInformation( 
 	LightInformation* lightInformation, int lightInformationSize);

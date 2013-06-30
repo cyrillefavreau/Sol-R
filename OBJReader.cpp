@@ -442,7 +442,7 @@ float3 OBJReader::loadModelFromFile(
                      nbPrimitives,
                      center.x+objectScale*(-objectCenter.x+sphereCenter.x),center.y+objectScale*(-objectCenter.y+sphereCenter.y),center.z+objectScale*(-objectCenter.z+sphereCenter.z),
                      radius, 0.f, 0.f,
-                     material, 1, 1);
+                     material);
                }
                else
                {
@@ -453,7 +453,7 @@ float3 OBJReader::loadModelFromFile(
                      center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
                      center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
                      0.f, 0.f, 0.f,
-                     material, 1, 1);
+                     material);
                }
 
                // Texture coordinates
@@ -486,7 +486,7 @@ float3 OBJReader::loadModelFromFile(
                         nbPrimitives,
                         center.x+objectScale*(-objectCenter.x+sphereCenter.x),center.y+objectScale*(-objectCenter.y+sphereCenter.y),center.z+objectScale*(-objectCenter.z+sphereCenter.z),
                         radius, 0.f, 0.f,
-                        material, 1, 1);
+                        material);
                   }
                   else
                   {
@@ -497,7 +497,7 @@ float3 OBJReader::loadModelFromFile(
                         center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
                         center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
                         0.f, 0.f, 0.f,
-                        material, 1, 1);
+                        material);
                   }
                   // Texture coordinates
                   kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );

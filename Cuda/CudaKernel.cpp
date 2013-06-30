@@ -170,7 +170,7 @@ ________________________________________________________________________________
 void CudaKernel::initializeDevice()
 {
    LOG_INFO(1,"CudaKernel::initializeDevice");
-	initialize_scene( m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS, NB_MAX_TEXTURES );
+	initialize_scene( m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS );
 }
 
 void CudaKernel::resetBoxesAndPrimitives()
@@ -273,8 +273,8 @@ void CudaKernel::render_begin( const float timer )
 
       if( !m_texturesTransfered )
 	   {
-         LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
-		   h2d_textures( m_hTextures,  m_nbActiveTextures);
+         LOG_INFO(3, "Transfering textures, and " << m_lightInformationSize << " light information");
+         h2d_textures( NB_MAX_TEXTURES,  m_hTextures );
 		   m_texturesTransfered = true;
       }
 

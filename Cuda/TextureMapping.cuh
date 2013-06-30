@@ -26,10 +26,17 @@
 #include "../Consts.h"
 #include "VectorUtils.cuh"
 
-__device__ void juliaSet( const SceneInfo& sceneInfo, const float x, const float y, float4& color )
+__device__ void juliaSet( 
+	const Primitive& primitive,
+	Material*        materials,
+   const SceneInfo& sceneInfo, 
+   const float x, 
+   const float y, 
+   float4& color )
 {
-   float W = (float)gTextureWidth;
-   float H = (float)gTextureHeight;
+   Material& material=materials[primitive.materialId.x];
+   float W = (float)material.textureMapping.x;
+   float H = (float)material.textureMapping.y;
 
    //pick some values for the constant c, this determines the shape of the Julia Set
    float cRe = -0.7f + 0.4f*sinf(sceneInfo.misc.y/1500.f);
@@ -62,10 +69,17 @@ __device__ void juliaSet( const SceneInfo& sceneInfo, const float x, const float
    color.w = 1.f-(n/maxIterations);
 }
 
-__device__ void mandelbrotSet( const SceneInfo& sceneInfo, const float x, const float y, float4& color )
+__device__ void mandelbrotSet( 
+	const Primitive& primitive,
+	Material*        materials,
+   const SceneInfo& sceneInfo, 
+   const float x, 
+   const float y, 
+   float4& color )
 {
-   float W = (float)gTextureWidth;
-   float H = (float)gTextureHeight;
+   Material& material=materials[primitive.materialId.x];
+   float W = (float)material.textureMapping.x;
+   float H = (float)material.textureMapping.y;
 
    float  MinRe		= -2.f;
    float  MaxRe		=	1.f;
@@ -111,17 +125,18 @@ __device__ float4 sphereUVMapping(
 	char*            textures,
 	const float3&    intersection)
 {
-	float4 result = materials[primitive.materialId.x].color;
+   Material& material=materials[primitive.materialId.x];
+	float4 result = material.color;
 
 	float3 d = normalize(primitive.p0-intersection);
-	int u = primitive.size.x / primitive.materialInfo.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
-	int v = primitive.size.y / primitive.materialInfo.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
+	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
+	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
 
-	u = u%gTextureWidth;
-	v = v%gTextureHeight;
-	if( u>=0 && u<gTextureWidth && v>=0 && v<gTextureHeight )
+	u = u%material.textureMapping.x;
+	v = v%material.textureMapping.y;
+	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
-		int index = gTextureOffset+(materials[primitive.materialId.x].textureInfo.y*gTextureWidth*gTextureHeight + v*gTextureWidth+u)*gTextureDepth;
+		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
 		unsigned char r = textures[index  ];
 		unsigned char g = textures[index+1];
 		unsigned char b = textures[index+2];
@@ -145,17 +160,18 @@ __device__ float4 triangleUVMapping(
 	const float3&    intersection,
    const float3&    areas)
 {
-	float4 result = materials[primitive.materialId.x].color;
+   Material& material=materials[primitive.materialId.x];
+	float4 result = material.color;
 
 	float3 T = (primitive.vt0*areas.x+primitive.vt1*areas.y+primitive.vt2*areas.z)/(areas.x+areas.y+areas.z);
-   int u = T.x*gTextureWidth;
-	int v = T.y*gTextureHeight;
+   int u = T.x*material.textureMapping.x;
+	int v = T.y*material.textureMapping.y;
 
-	u = u%gTextureWidth;
-	v = v%gTextureHeight;
-	if( u>=0 && u<gTextureWidth && v>=0 && v<gTextureHeight )
+	u = u%material.textureMapping.x;
+	v = v%material.textureMapping.y;
+	if( u>=0 && u<material.textureMapping.y && v>=0 && v<material.textureMapping.y )
 	{
-		int index = gTextureOffset+(materials[primitive.materialId.x].textureInfo.y*gTextureWidth*gTextureHeight + v*gTextureWidth+u)*gTextureDepth;
+		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
 		unsigned char r = textures[index  ];
 		unsigned char g = textures[index+1];
 		unsigned char b = textures[index+2];
@@ -179,7 +195,8 @@ __device__ float4 cubeMapping(
 	char*            textures,
 	const float3&    intersection)
 {
-	float4 result = materials[primitive.materialId.x].color;
+   Material& material=materials[primitive.materialId.x];
+	float4 result = material.color;
 
 #ifdef USE_KINECT
 	if( primitive.type.x == ptCamera )
@@ -204,26 +221,26 @@ __device__ float4 cubeMapping(
 	else
 #endif // USE_KINECT
 	{
-		int x = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane) || (primitive.type.x == ptXYPlane))  ? 
-			gTextureOffset+(intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x :
-		gTextureOffset+(intersection.z-primitive.p0.z+primitive.size.z)*primitive.materialInfo.x;
+		int u = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane) || (primitive.type.x == ptXYPlane))  ? 
+			(intersection.x-primitive.p0.x+primitive.size.x):
+		(intersection.z-primitive.p0.z+primitive.size.z);
 
-		int y = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane)) ? 
-			gTextureOffset+(intersection.z+primitive.p0.z+primitive.size.z)*primitive.materialInfo.y :
-		gTextureOffset+(intersection.y-primitive.p0.y+primitive.size.y)*primitive.materialInfo.y;
+		int v = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane)) ? 
+			(intersection.z+primitive.p0.z+primitive.size.z) :
+		(intersection.y-primitive.p0.y+primitive.size.y);
 
-		x = x%gTextureWidth;
-		y = y%gTextureHeight;
+		u = u%material.textureMapping.x;
+		v = v%material.textureMapping.y;
 
-		if( x>=0 && x<gTextureWidth && y>=0 && y<gTextureHeight )
+		if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.x )
 		{
-         switch( materials[primitive.materialId.x].textureInfo.y )
+         switch( material.textureMapping.z )
          {
-         case TEXTURE_MANDELBROT: mandelbrotSet( sceneInfo, x, y, result ); break;
-         case TEXTURE_JULIA: juliaSet( sceneInfo, x, y, result ); break;
+         case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, result ); break;
+         case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;
          default:
             {
-			      int index = gTextureOffset+(materials[primitive.materialId.x].textureInfo.y*gTextureWidth*gTextureHeight + y*gTextureWidth+x)*gTextureDepth;
+         		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
 			      unsigned char r = textures[index];
 			      unsigned char g = textures[index+1];
 			      unsigned char b = textures[index+2];
@@ -254,8 +271,8 @@ __device__ float3 magicCarpetMapping(
 	float     timer)
 {
 	float3 result = materials[primitive.materialId.x].color;
-	int x = gTextureOffset+(intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x*5.f;
-	int y = gTextureOffset+(intersection.z+timer-primitive.p0.z+primitive.size.y)*primitive.materialInfo.y*50.f;
+	int x = (intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x*5.f;
+	int y = (intersection.z+timer-primitive.p0.z+primitive.size.y)*primitive.materialInfo.y*50.f;
 
 	x = x%gTextureWidth;
 	y = y%gTextureHeight;
@@ -294,8 +311,8 @@ __device__ float3 magicCylinderMapping(
 {
 	float3 result = materials[primitive.materialId.x].color;
 
-	int x = gTextureOffset+(intersection.x-      primitive.p0.x+primitive.size.x)*primitive.materialInfo.x*5.f;
-	int y = gTextureOffset+(intersection.z+timer-primitive.p0.z+primitive.size.y)*primitive.materialInfo.y*50.f;
+	int x = (intersection.x-      primitive.p0.x+primitive.size.x)*primitive.materialInfo.x*5.f;
+	int y = (intersection.z+timer-primitive.p0.z+primitive.size.y)*primitive.materialInfo.y*50.f;
 
 	x = x%gTextureWidth;
 	y = y%gTextureHeight;
@@ -322,7 +339,7 @@ __device__ bool wireFrameMapping( float x, float y, int width, const Primitive& 
 {
 	int X = abs(x);
 	int Y = abs(y);
-	int A = primitive.materialInfo.x;
-	int B = primitive.materialInfo.y;
+	int A = 100; // TODO
+	int B = 100; // TODO
 	return ( X%A<=width ) || ( Y%B<=width );
 }

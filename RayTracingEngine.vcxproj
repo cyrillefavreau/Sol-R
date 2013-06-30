@@ -324,6 +324,7 @@
     <ClInclude Include="Logging.h" />
     <ClInclude Include="MapReader.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="OBJReader.h" />
     <ClInclude Include="OpenCL\OpenCLKernel.h">
@@ -346,6 +347,7 @@
     <ClCompile Include="GPUKernel.cpp" />
     <ClCompile Include="MapReader.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="OBJReader.cpp" />
     <ClCompile Include="OpenCL\OpenCLKernel.cpp">
@@ -363,6 +365,9 @@
     <CudaCompile Include="Cuda\CudaRayTracer.cu">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
+      <HostDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">false</HostDebugInfo>
+      <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</FastMath>
+      <Defines Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">WIN32</Defines>
     </CudaCompile>
     <None Include="Cuda\GeometryIntersections.cuh">
       <FileType>Document</FileType>

@@ -95,10 +95,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
    int device )
 {
 	kernel = new CudaKernel( activeLogging, NB_MAX_BOXES, platform, device );
-   if( kernel == NULL ) return -1;
+   if( kernel == nullptr ) return -1;
    gSceneInfoStub.pathTracingIteration.x = 0; 
 	kernel->setSceneInfo( gSceneInfoStub );
    kernel->initBuffers();
+   kernel->setFrame(0);
    return 0;
 }
 
@@ -106,8 +107,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_FinalizeKernel()
 {
-   if( kernel ) delete kernel;
-   kernel = 0;
+   if( kernel ) 
+   {
+      delete kernel;
+      kernel = nullptr;
+   }
    return 0;   
 }
 
@@ -150,9 +154,7 @@ extern "C" RAYTRACINGENGINE_API
    double p1_x, double p1_y, double p1_z, 
    double p2_x, double p2_y, double p2_z, 
    double size_x, double size_y, double size_z,
-   int    materialId, 
-   double materialPaddingX, 
-   double materialPaddingY )
+   int    materialId )
 {
    kernel->setPrimitive(
       index,
@@ -160,9 +162,7 @@ extern "C" RAYTRACINGENGINE_API
       static_cast<float>(p1_x), static_cast<float>(p1_y), static_cast<float>(p1_z), 
       static_cast<float>(p2_x), static_cast<float>(p2_y), static_cast<float>(p2_z), 
       static_cast<float>(size_x), static_cast<float>(size_y), static_cast<float>(size_z), 
-      materialId, 
-      static_cast<float>(materialPaddingX), 
-      static_cast<float>(materialPaddingY));
+      materialId);
    return 0;
 }
 
@@ -172,7 +172,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
    double& p1_x, double& p1_y, double& p1_z, 
    double& p2_x, double& p2_y, double& p2_z, 
    double& size_x, double& size_y, double& size_z,
-   int& materialId, double& materialPaddingX, double& materialPaddingY )
+   int& materialId )
 {
    CPUPrimitive* primitive = kernel->getPrimitive(index);
    if( primitive != NULL )
@@ -190,8 +190,6 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
       size_y = primitive->size.y;
       size_z = primitive->size.z;
       materialId = primitive->materialId;
-      materialPaddingX = primitive->materialInfo.x;
-      materialPaddingY = primitive->materialInfo.y;
       return 0;
    }
    return -1;
@@ -281,17 +279,20 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_AddTexture( char* filename )
+extern "C" RAYTRACINGENGINE_API int RayTracer_LoadTextureFromFile( int index, char* filename )
 {
-   return kernel->addTexture( filename );
+   return kernel->loadTextureFromFile( index, filename );
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture )
 {
+   /* TODO
+   CPUTextureInformation texInfo;
    kernel->setTexture( 
       index, 
       static_cast<char*>(texture) );
+   */
    return 0;
 }
 

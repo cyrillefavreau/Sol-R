@@ -204,7 +204,7 @@ __device__ inline bool sphereIntersection(
 	// TO REMOVE - For Charts only
 	//if( intersection.y < sphere.p0.y ) return false;
 
-	if( materials[sphere.materialId.x].textureInfo.x == 0) 
+	if( materials[sphere.materialId.x].attributes.y == 0) 
 	{
 		// Compute normal vector
 		normal = intersection-sphere.p0;
@@ -320,7 +320,7 @@ __device__ inline bool cylinderIntersection(
 			// Cylinder length
 			if( scale1 < EPSILON || scale2 > EPSILON ) return false;
 
-			if( materials[cylinder.materialId.x].textureInfo.x == 1) 
+			if( materials[cylinder.materialId.x].attributes.y == 1) 
 			{
 				// Procedural texture
 				float3 newCenter;
@@ -394,8 +394,8 @@ __device__ inline bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
-				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
-					collision &= wireFrameMapping(intersection.x, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
+				if( materials[primitive.materialId.x].attributes.z == 2 )  // Wireframe
+					collision &= wireFrameMapping(intersection.x, intersection.z, materials[primitive.materialId.x].attributes.w, primitive );
 			}
 			if( !collision && reverted*ray.direction.y>0.f && reverted*ray.origin.y<reverted*primitive.p0.y) 
 			{
@@ -406,8 +406,8 @@ __device__ inline bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.z - primitive.p0.z) < primitive.size.z;
-				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
-					collision &= wireFrameMapping(intersection.x, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
+				if( materials[primitive.materialId.x].attributes.z == 2 ) // Wireframe
+					collision &= wireFrameMapping(intersection.x, intersection.z, materials[primitive.materialId.x].attributes.w, primitive );
 			}
 			break;
 		}
@@ -427,8 +427,8 @@ __device__ inline bool planeIntersection(
                // Chessboard like Lights
                collision &= int(fabs(intersection.z))%4000<2000 && int(fabs(intersection.y))%4000<2000;
             }
-				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
-					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
+				if( materials[primitive.materialId.x].attributes.z == 2 ) // Wireframe
+					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].attributes.w, primitive );
 			}
 			if( !collision && reverted*ray.direction.x>0.f && reverted*ray.origin.x<reverted*primitive.p0.x ) 
 			{
@@ -444,8 +444,8 @@ __device__ inline bool planeIntersection(
                // Chessboard like Lights
                collision &= int(fabs(intersection.z))%4000<2000 && int(fabs(intersection.y))%4000<2000;
             }
-				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
-					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].textureInfo.w, primitive );
+				if( materials[primitive.materialId.x].attributes.z == 2 ) // Wireframe
+					collision &= wireFrameMapping(intersection.y, intersection.z, materials[primitive.materialId.x].attributes.w, primitive );
 			}
 			break;
 		}
@@ -461,8 +461,8 @@ __device__ inline bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y;
-				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
-					collision &= wireFrameMapping(intersection.x, intersection.y, materials[primitive.materialId.x].textureInfo.w, primitive );
+				if( materials[primitive.materialId.x].attributes.z == 2 ) // Wireframe
+					collision &= wireFrameMapping(intersection.x, intersection.y, materials[primitive.materialId.x].attributes.w, primitive );
 			}
 			if( !collision && reverted*ray.direction.z>0.f && reverted*ray.origin.z<reverted*primitive.p0.z )
 			{
@@ -473,8 +473,8 @@ __device__ inline bool planeIntersection(
 				collision = 
 					fabs(intersection.x - primitive.p0.x) < primitive.size.x &&
 					fabs(intersection.y - primitive.p0.y) < primitive.size.y;
-				if( materials[primitive.materialId.x].textureInfo.z == 2 ) 
-					collision &= wireFrameMapping(intersection.x, intersection.y, materials[primitive.materialId.x].textureInfo.w, primitive );
+				if( materials[primitive.materialId.x].attributes.z == 2 ) // Wireframe
+					collision &= wireFrameMapping(intersection.x, intersection.y, materials[primitive.materialId.x].attributes.w, primitive );
 			}
 			break;
 		}
@@ -486,7 +486,7 @@ __device__ inline bool planeIntersection(
 		shadowIntensity = 1.f; //sceneInfo.shadowIntensity.x*(1.f-materials[primitive.materialId.x].transparency.x);
 
 		float4 color = materials[primitive.materialId.x].color;
-		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureInfo.y != TEXTURE_NONE )
+		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE )
 		{
 			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection );
          shadowIntensity = color.w;
@@ -639,7 +639,7 @@ __device__ inline bool intersectionWithPrimitives(
 			{ 
 				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
             Material& material = materials[primitive.materialId.x];
-            if( material.fastTransparency.x==0 || (material.fastTransparency.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
+            if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
             {
                float3 areas = {0.f,0.f,0.f};
 				   i = false;
