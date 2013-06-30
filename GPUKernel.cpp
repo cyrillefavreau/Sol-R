@@ -1411,8 +1411,8 @@ void GPUKernel::setMaterial(
       else
       {
          // Computed textures (Mandelbrot, Julia, etc)
-         m_hMaterials[index].textureMapping.x = 512;
-         m_hMaterials[index].textureMapping.y = 512;
+         m_hMaterials[index].textureMapping.x = 10000;
+         m_hMaterials[index].textureMapping.y = 10000;
          m_hMaterials[index].textureMapping.w = 3;
          m_hMaterials[index].textureOffset.x  = 0;
       }

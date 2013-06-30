@@ -1102,8 +1102,11 @@ extern "C" void h2d_textures(
       checkCudaErrors(cudaSetDevice(d));
       for( int i(0); i<activeTextures; ++i )
       {
-	      checkCudaErrors(cudaMemcpyAsync( 
-            d_textures[d]+textureInfos[i].offset, textureInfos[i].buffer, textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+         if( textureInfos[i].buffer != nullptr )
+         {
+            int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
+	         checkCudaErrors(cudaMemcpyAsync( d_textures[d]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+         }
       }
    }
 }
