@@ -1014,6 +1014,8 @@ extern "C" void initialize_scene(
 	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)/d_nbGPUs));
 	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)/d_nbGPUs));
 	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int2)/d_nbGPUs));
+
+      d_textures[d] = nullptr;
    }
 #if 1
 	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
@@ -1096,7 +1098,10 @@ extern "C" void h2d_textures(
       {
          totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
       }
-	   checkCudaErrors(cudaFree( d_textures[d] ));
+      if( d_textures[d] )
+      {
+	      checkCudaErrors(cudaFree( d_textures[d] ));
+      }
 	   checkCudaErrors(cudaMalloc( (void**)&d_textures[d], totalSize*sizeof(char)));
 
       checkCudaErrors(cudaSetDevice(d));

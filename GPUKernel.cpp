@@ -242,6 +242,7 @@ void GPUKernel::initBuffers()
 void GPUKernel::cleanup()
 {
    LOG_INFO(1,"Cleaning up resources");
+
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
       if( m_boundingBoxes[i] )
@@ -276,53 +277,35 @@ void GPUKernel::cleanup()
       m_maxPos[i].z = -100000.f;
    }
 
-   if( m_bitmap )
-   {
-      delete [] m_bitmap;
-      m_bitmap = nullptr;
-   }
-
-   if(m_hBoundingBoxes) 
-   {
-      delete m_hBoundingBoxes;
-      m_hBoundingBoxes = nullptr;
-   }
-	if(m_hPrimitives) 
-   {
-      delete m_hPrimitives;
-      m_hPrimitives = nullptr;
-   }
-	if(m_hLamps)
-   {
-      delete m_hLamps;
-      m_hLamps = nullptr;
-   }
-
-	if(m_hMaterials)
-   {
-      delete m_hMaterials;
-      m_hMaterials = nullptr;
-   }
-
    for( int i(0); i<NB_MAX_TEXTURES; ++i)
    {
       if(m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
    }
+   
+   m_vertices.clear();
+   m_normals.clear();
+   m_textCoords.clear();
 
+   if( m_hRandoms ) delete m_hRandoms;
+   if( m_bitmap ) delete [] m_bitmap;
+   if(m_hBoundingBoxes) delete m_hBoundingBoxes;
+	if(m_hPrimitives) delete m_hPrimitives;
+	if(m_hLamps) delete m_hLamps;
+   if(m_hMaterials) delete m_hMaterials;
 	if(m_hDepthOfField) delete m_hDepthOfField;
-	if(m_hRandoms) delete m_hRandoms;
 	if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
+   if(m_lightInformation ) delete m_lightInformation;
 
-   if( m_lightInformation )
-   {
-      delete m_lightInformation;
-      m_lightInformation = nullptr;
-   }
-
-	m_hDepthOfField = 0;
+   m_hDepthOfField = 0;
 	m_hRandoms = 0;
    m_hPrimitivesXYIds = 0,
 	m_nbActiveMaterials = -1;
+	m_materialsTransfered = false;
+   m_primitivesTransfered = false;
+   m_texturesTransfered = false;
+
+   // Morphing
+   m_morph = 0.f;
 #if USE_KINECT
 	m_hVideo = 0;
    m_hDepth = 0;
@@ -336,12 +319,7 @@ void GPUKernel::cleanup()
    m_skeletonsLamp = -1;
    m_skeletonIndex = -1;
 #endif // USE_KINECT
-	m_materialsTransfered = false;
-   m_primitivesTransfered = false;
-   m_texturesTransfered = false;
 
-   // Morphing
-   m_morph = 0.f;
 }
 
 /*
