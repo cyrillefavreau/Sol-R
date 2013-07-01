@@ -165,26 +165,17 @@ __device__ float processShadows(
 						float l = length(O_I);
 						if( l>EPSILON && l<length(O_L) )
 						{
-                     float ratio = 0.f;
+                     float ratio = shadowIntensity*sceneInfo.shadowIntensity.x;
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
                      {
                         O_L=normalize(O_L);
                         float a=fabs(dot(O_L,normal));
                         float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-0.8f*materials[primitive.materialId.x].transparency.x);
-                        ratio = r*a*shadowIntensity*sceneInfo.shadowIntensity.x;
+                        ratio *= r*a;
                         // Shadow color
                         color.x  += ratio*(0.3f-0.3f*materials[primitive.materialId.x].color.x);
                         color.y  += ratio*(0.3f-0.3f*materials[primitive.materialId.x].color.y);
                         color.z  += ratio*(0.3f-0.3f*materials[primitive.materialId.x].color.z);
-                     }
-                     else
-                     {
-                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-materials[primitive.materialId.x].transparency.x);
-                        ratio = r*shadowIntensity*sceneInfo.shadowIntensity.x;
-                        // Shadow color
-                        color.x  += ratio;
-                        color.y  += ratio;
-                        color.z  += ratio;
                      }
                      result += ratio;
                   }
@@ -351,10 +342,11 @@ __device__ float4 primitiveShader(
    {
 	   color *= materials[primitive.materialId.x].innerIllumination.x;
       int activeLamps = nbActiveLamps;
-	   for( int cpt=0; cpt<activeLamps; ++cpt ) 
+	   for( int cpt=0; cpt<=activeLamps; ++cpt ) 
 	   {
-         int cptLamp = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS && sceneInfo.pathTracingIteration.x%2==0) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
-		   if(lightInformation[cptLamp].attribute.x != objectId)
+         //int cptLamp = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS && sceneInfo.pathTracingIteration.x%2==0) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
+         int cptLamp = (cpt==activeLamps) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
+         if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   float3 center;
    		   // randomize lamp center

@@ -2,10 +2,10 @@
 #include <windows.h>
 #else
 #include <string.h>
-#include <math.h>
 #include <stdlib.h>
 #include <algorithm>
 #endif
+#include <math.h>
 
 #include <iostream>
 #include <vector>
@@ -900,10 +900,10 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             while( itp != box.primitives.end() )
             {
                // Prepare primitives for GPU
-               if( *itp < NB_MAX_PRIMITIVES )
+               if( (*itp) < NB_MAX_PRIMITIVES )
                {
                   CPUPrimitive& primitive = (*m_primitives[m_frame])[*itp];
-                  m_hPrimitives[m_nbActivePrimitives[m_frame]].index.x = *itp;
+                  m_hPrimitives[m_nbActivePrimitives[m_frame]].index.x = (*itp);
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].type.x  = primitive.type;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].p0 = primitive.p0;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].p1 = primitive.p1;
@@ -1748,10 +1748,9 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       lightInformation.attribute.x = idx;
 
       lightInformation.location.x = lamp.p0.x;
-      lightInformation.location.y = 100.f+lamp.p0.y;
+      lightInformation.location.y = lamp.p0.y;
       lightInformation.location.z = lamp.p0.z;
-      lightInformation.attribute.x = idx;
-
+      
       lightInformation.color.x = material.color.x;
       lightInformation.color.y = material.color.y;
       lightInformation.color.z = material.color.z;
@@ -1773,24 +1772,25 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    }
    float size = m_sceneInfo.viewDistance.x/3.f;
 
-#if 1
-   /*
+   float pi = static_cast<float>(M_PI);
+#if 0
+   float x = 0.f;
    for( int i(0); i<m_sceneInfo.maxPathTracingIterations.x/10; ++i)
    {
       LightInformation lightInformation;
       lightInformation.location.x = rand()%10000 - 5000.f;
       lightInformation.location.y = rand()%10000 - 5000.f;
       lightInformation.location.z = rand()%10000 - 5000.f;
-      lightInformation.attributes.x = -1;
-      lightInformation.color.x = 1.f; //0.5f+0.5f*cos(x);
-      lightInformation.color.y = 1.f; //0.5f+0.5f*sin(x);
-      lightInformation.color.z = 1.f; //0.5f+0.5f*cos(x+M_PI);
-      lightInformation.color.w = 0.6f;
+      lightInformation.attribute.x = -1;
+      lightInformation.color.x = 0.5f+0.5f*cos(x);
+      lightInformation.color.y = 0.5f+0.5f*sin(x);
+      lightInformation.color.z = 0.5f+0.5f*cos(x+pi);
+      lightInformation.color.w = 0.2f;
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
+	  x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
    }
-   */
-
+#else
    for( float x(0.f); x<2.f*M_PI; x+=M_PI/8.f)
    {
       LightInformation lightInformation;
@@ -1798,14 +1798,15 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       lightInformation.location.y = 200.f*sin(x);
       lightInformation.location.z = -2000.f;
       lightInformation.attribute.x = -1;
-      lightInformation.color.x = 1.f; //0.5f+0.5f*cos(x);
-      lightInformation.color.y = 1.f; //0.5f+0.5f*sin(x);
-      lightInformation.color.z = 1.f; //0.5f+0.5f*cos(x+M_PI);
-      lightInformation.color.w = 0.6f;
+      lightInformation.color.x = 0.5f+0.5f*cos(x);
+      lightInformation.color.y = 0.5f+0.5f*sin(x);
+      lightInformation.color.z = 0.5f+0.5f*cos(x+pi);
+      lightInformation.color.w = 0.2f;
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
-#else
+
+   /*
    // Light from skybox
    if( index < m_textureIndex )
    {
@@ -1851,6 +1852,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
          }
       }
    }
+   */
 #endif // 0
    LOG_INFO(3, "Light Information Size = " << m_nbActiveLamps << "/" << m_lightInformationSize );
 }

@@ -985,7 +985,7 @@ ________________________________________________________________________________
 extern "C" void initialize_scene( 
 	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials )
 {
-#if 0
+#if 1
    // Multi GPU initialization
    checkCudaErrors(cudaGetDeviceCount(&d_nbGPUs));
    if(d_nbGPUs > MAX_GPU_COUNT)
