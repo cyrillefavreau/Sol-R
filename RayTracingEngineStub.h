@@ -47,6 +47,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, int platform, int device );
 extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel();
+extern "C" RAYTRACINGENGINE_API int RayTracer_ResetKernel();
 
 // ---------- Camera ----------
 extern "C" RAYTRACINGENGINE_API void RayTracer_SetCamera( 

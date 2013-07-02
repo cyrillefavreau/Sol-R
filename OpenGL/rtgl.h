@@ -415,7 +415,7 @@ namespace RayTracer
 #define GL_ALL_ATTRIB_BITS                0xFFFFFFFF
 
    void RAYTRACINGENGINE_API glBegin( GLint );
-   void RAYTRACINGENGINE_API glEnd();
+   int  RAYTRACINGENGINE_API glEnd();
    void RAYTRACINGENGINE_API glEnable (GLenum cap);
    void RAYTRACINGENGINE_API glDisable (GLenum cap);
    void RAYTRACINGENGINE_API glClear (GLbitfield mask);

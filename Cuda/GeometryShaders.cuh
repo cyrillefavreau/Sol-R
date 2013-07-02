@@ -275,7 +275,7 @@ __device__ float4 intersectionShader(
       {
 			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
 			{
-            colorAtIntersection = triangleUVMapping( primitive, materials, textures, intersection, areas );
+            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
 			}
 			break;
       }

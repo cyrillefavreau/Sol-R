@@ -19,10 +19,10 @@ void RayTracer::glBegin( GLint mode )
    RayTracer::gKernel->setGLMode(mode);
 }
 
-void RayTracer::glEnd()
+int RayTracer::glEnd()
 {
    //::glEnd();
-   RayTracer::gKernel->setGLMode(-1);
+   return RayTracer::gKernel->setGLMode(-1);
 }
 
 void RayTracer::glEnable (GLenum cap)

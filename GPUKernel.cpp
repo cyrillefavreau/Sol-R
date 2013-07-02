@@ -1389,8 +1389,8 @@ void GPUKernel::setMaterial(
       else
       {
          // Computed textures (Mandelbrot, Julia, etc)
-         m_hMaterials[index].textureMapping.x = 10000;
-         m_hMaterials[index].textureMapping.y = 10000;
+         m_hMaterials[index].textureMapping.x = 40000;
+         m_hMaterials[index].textureMapping.y = 40000;
          m_hMaterials[index].textureMapping.w = 3;
          m_hMaterials[index].textureOffset.x  = 0;
       }
@@ -1960,8 +1960,9 @@ int GPUKernel::getLight( int index )
 }
 
 // OpenGL
-void GPUKernel::setGLMode( const int& glMode )
+int GPUKernel::setGLMode( const int& glMode )
 {
+   int p=-1;
    int frame(0);
    if( glMode == -1 )
    {
@@ -1969,7 +1970,6 @@ void GPUKernel::setGLMode( const int& glMode )
       {
       case GL_TRIANGLES:
          {
-            int p=-1;
             // Vertices
             if( m_vertices.size() == 3 )
             {
@@ -2015,6 +2015,7 @@ void GPUKernel::setGLMode( const int& glMode )
       m_textCoords.clear();
    }
    m_GLMode = glMode;
+   return p;
 }
 
 void GPUKernel::addVertex( float x, float y, float z)

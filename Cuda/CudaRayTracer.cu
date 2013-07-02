@@ -328,7 +328,7 @@ __device__ inline float4 launchRay(
       //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
 
 	   // --------------------------------------------------
-	   // Attenation effect
+	   // Background color
 	   // --------------------------------------------------
       float D1 = sceneInfo.viewDistance.x*0.95f;
       if( sceneInfo.misc.z==1 && len>D1)
@@ -336,7 +336,7 @@ __device__ inline float4 launchRay(
          float D2 = sceneInfo.viewDistance.x*0.05f;
          float a = len - D1;
          float b = 1.f-(a/D2);
-         intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
+         intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b/2.f);
       }
    }
    depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;

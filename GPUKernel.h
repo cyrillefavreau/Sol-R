@@ -148,7 +148,7 @@ public:
 public:
 
    // OpenGL
-   void setGLMode( const int& glMode );
+   int  setGLMode( const int& glMode );
    void addVertex( float x, float y, float z);
    void addNormal( float x, float y, float z);
    void addTextCoord( float x, float y, float z);

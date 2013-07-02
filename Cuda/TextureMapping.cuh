@@ -154,6 +154,7 @@ Triangle texture Mapping
 ________________________________________________________________________________
 */
 __device__ float4 triangleUVMapping( 
+   const SceneInfo& sceneInfo,
 	const Primitive& primitive,
 	Material*        materials,
 	char*            textures,
@@ -171,13 +172,21 @@ __device__ float4 triangleUVMapping(
 	v = v%material.textureMapping.y;
 	if( u>=0 && u<material.textureMapping.y && v>=0 && v<material.textureMapping.y )
 	{
-		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-		unsigned char r = textures[index  ];
-		unsigned char g = textures[index+1];
-		unsigned char b = textures[index+2];
-		result.x = r/256.f;
-		result.y = g/256.f;
-		result.z = b/256.f;
+      switch( material.textureMapping.z )
+      {
+      case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, result ); break;
+      case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;
+      default:
+         {
+		      int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
+		      unsigned char r = textures[index  ];
+		      unsigned char g = textures[index+1];
+		      unsigned char b = textures[index+2];
+		      result.x = r/256.f;
+		      result.y = g/256.f;
+		      result.z = b/256.f;
+         }
+      }
 	}
 	return result; 
 }
