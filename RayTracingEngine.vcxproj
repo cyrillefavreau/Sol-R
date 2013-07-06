@@ -343,6 +343,7 @@
     <ClInclude Include="PDBReader.h" />
     <ClInclude Include="RayTracingEngineStub.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="tgad.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -368,6 +369,7 @@
     <ClCompile Include="OpenGL\rtgl.cpp" />
     <ClCompile Include="PDBReader.cpp" />
     <ClCompile Include="RayTracingEngineStub.cpp" />
+    <ClCompile Include="tgad.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Cuda\CudaRayTracer.cu">

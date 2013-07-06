@@ -40,6 +40,9 @@
     <Filter Include="Source Files\Jpeg">
       <UniqueIdentifier>{cbcbaa83-eef8-487a-bf08-929dff93f88e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\TGA">
+      <UniqueIdentifier>{2f25fd87-2ab7-4572-bb77-46722e249b66}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -96,6 +99,9 @@
     <ClInclude Include="jpgd.h">
       <Filter>Source Files\Jpeg</Filter>
     </ClInclude>
+    <ClInclude Include="tgad.h">
+      <Filter>Source Files\TGA</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -133,6 +139,9 @@
     </ClCompile>
     <ClCompile Include="jpgd.cpp">
       <Filter>Source Files\Jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="tgad.cpp">
+      <Filter>Source Files\TGA</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

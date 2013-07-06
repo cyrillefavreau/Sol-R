@@ -1694,6 +1694,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 	  x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
    }
 #else
+   /*
    for( float x(0.f); x<2.f*M_PI; x+=M_PI/8.f)
    {
       LightInformation lightInformation;
@@ -1708,6 +1709,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
+   */
 
    /*
    // Light from skybox

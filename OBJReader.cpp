@@ -140,10 +140,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   0.f,m.reflection,m.refraction, false, false, 0,
                   m.transparency, m.textureId,
-                  m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
+                  m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 10.f, 10000.f,
                   false );
-               LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Texture ID= " << m.textureId );
@@ -223,10 +223,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Kd.x,m.Kd.y,m.Kd.z,
             0.f,m.reflection,m.refraction, false, false, 0,
             m.transparency, m.textureId,
-            m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
+            m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
             ", Texture ID= " << m.textureId );
@@ -316,9 +316,13 @@ float3 OBJReader::loadModelFromFile(
                   ++i;
                }
 
-               if( item != 4 )
+               if( value.length() != 0 )
                {
-                  vertex.z = -static_cast<float>(atof(value.c_str()));
+                  switch( item )
+                  {
+                  case 2: vertex.y =  static_cast<float>(atof(value.c_str())); break;
+                  case 3: vertex.z = -static_cast<float>(atof(value.c_str())); break;
+                  }
                }
 
                if( line[1] == 'n' )

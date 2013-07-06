@@ -5,6 +5,7 @@
 #include "ImageLoader.h"
 
 #include "jpgd.h"
+#include "tgad.h"
 
 ImageLoader::ImageLoader(void)
 {
@@ -109,7 +110,7 @@ bool ImageLoader::loadBMP24(const int index, const std::string& filename, Textur
 
    processOffset( textureInformations );
 
-   LOG_INFO(1, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
+   LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
       textureInformations[index].size.x << "," <<
       textureInformations[index].size.y << ","  <<
       textureInformations[index].size.z << ")" );
@@ -129,7 +130,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
 
       processOffset( textureInformations );
 
-      LOG_INFO(1, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
+      LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
          textureInformations[index].size.x << "," <<
          textureInformations[index].size.y << ","  <<
          textureInformations[index].size.z << ")" );
@@ -141,6 +142,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
 
 bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames)
 {
+#if 0
    TGAFILE tgaFile;
 
    FILE* filePtr;
@@ -214,10 +216,18 @@ bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureI
       textureInformations[index].buffer[imageIdx + 2] = colorSwap;
    }
    fclose(filePtr);
+#else
+   Texture texture;
+   LoadTGA(&texture, const_cast<char*>(filename.c_str()));
+   textureInformations[index].buffer = texture.imageData;
+   textureInformations[index].size.x = texture.width;
+   textureInformations[index].size.y = texture.height;
+   textureInformations[index].size.z = texture.bpp/8;
+#endif
 
    processOffset( textureInformations );
 
-   LOG_INFO(1, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
+   LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
       textureInformations[index].size.x << "," <<
       textureInformations[index].size.y << ","  <<
       textureInformations[index].size.z << ")" );
