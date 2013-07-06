@@ -208,7 +208,7 @@ public:
 
 	// ---------- Textures ----------
 	void setTexture( const int index, const TextureInformation& textureInfo );
-	int  loadTextureFromFile( const int index, const std::string& filename );
+	bool loadTextureFromFile( const int index, const std::string& filename );
    void buildLightInformationFromTexture( unsigned int index );
 
 public:
@@ -277,6 +277,7 @@ public:
    unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives[m_frame]->size()); };
 	unsigned int getNbActiveLamps()      { return m_nbActiveLamps[m_frame]; };
 	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
+	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
    std::string  getTextureFilename( const int index ) { return m_textureFilenames[index]; };
 
    bool getProgressiveBoxes() { return m_progressiveBoxes; };
@@ -340,6 +341,7 @@ protected:
 	int m_nbActivePrimitives[NB_MAX_FRAMES];
 	int m_nbActiveLamps[NB_MAX_FRAMES];
 	int m_nbActiveMaterials;
+   int m_nbActiveTextures;
    int m_lightInformationSize;
 	float3		 m_viewPos;
 	float3		 m_viewDir;

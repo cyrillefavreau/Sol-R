@@ -228,7 +228,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NOMINMAX;USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <OpenMPSupport>true</OpenMPSupport>
@@ -323,6 +323,9 @@
     <ClInclude Include="DLL_API.h" />
     <ClInclude Include="FileMarshaller.h" />
     <ClInclude Include="GPUKernel.h" />
+    <ClInclude Include="ImageLoader.h" />
+    <ClInclude Include="jpgd.h" />
+    <ClInclude Include="jpge.h" />
     <ClInclude Include="Logging.h" />
     <ClInclude Include="MapReader.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
@@ -347,6 +350,9 @@
     </ClCompile>
     <ClCompile Include="FileMarshaller.cpp" />
     <ClCompile Include="GPUKernel.cpp" />
+    <ClCompile Include="ImageLoader.cpp" />
+    <ClCompile Include="jpgd.cpp" />
+    <ClCompile Include="jpge.cpp" />
     <ClCompile Include="MapReader.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>

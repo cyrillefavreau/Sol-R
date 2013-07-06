@@ -14,6 +14,7 @@
 #include "GPUKernel.h"
 #include "Logging.h"
 #include "Consts.h"
+#include "ImageLoader.h"
 
 const unsigned int MAX_SOURCE_SIZE = 65535;
 
@@ -133,6 +134,7 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    m_hPrimitivesXYIds(0),
 	m_hRandoms(0), 
 	m_nbActiveMaterials(-1),
+   m_nbActiveTextures(0),
    m_lightInformationSize(0),
 	m_activeLogging(activeLogging),
    m_lightInformation(nullptr),
@@ -300,6 +302,7 @@ void GPUKernel::cleanup()
 	m_hRandoms = 0;
    m_hPrimitivesXYIds = 0,
 	m_nbActiveMaterials = -1;
+   m_nbActiveTextures = 0;
 	m_materialsTransfered = false;
    m_primitivesTransfered = false;
    m_texturesTransfered = false;
@@ -951,6 +954,7 @@ void GPUKernel::resetAll()
    m_primitivesTransfered = false;
 
    m_nbActiveMaterials = -1;
+   m_nbActiveTextures = 0;
    m_materialsTransfered = false;
 
    for( int i(0); i<NB_MAX_TEXTURES; ++i )
@@ -1464,11 +1468,11 @@ void GPUKernel::setTexture(
 	const TextureInformation& textureInfo )
 {
    LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
-   if( index<NB_MAX_TEXTURES )
+   if( index<m_nbActiveTextures )
    {
       delete [] m_hTextures[index].buffer;
       int size = textureInfo.size.x*textureInfo.size.y*textureInfo.size.z;
-	   m_hTextures[index].buffer = new char[size];
+	   m_hTextures[index].buffer = new unsigned char[size];
       m_hTextures[index].offset = 0;
 	   m_hTextures[index].size.x = textureInfo.size.x;
 	   m_hTextures[index].size.y = textureInfo.size.y;
@@ -1601,114 +1605,35 @@ void GPUKernel::saveToFile( const std::string& filename, const std::string& cont
 }
 
 // ---------- Kinect ----------
-int GPUKernel::loadTextureFromFile( const int index, const std::string& filename )
+bool GPUKernel::loadTextureFromFile( const int index, const std::string& filename )
 {
-   m_texturesTransfered = false;
+   bool result(false);
 
-	FILE *filePtr(0); //our file pointer
-	BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
-	BITMAPINFOHEADER bitmapInfoHeader;
-	unsigned int imageIdx=0;  //image index counter
-	char tempRGB;  //our swap variable
-
-	//open filename in read binary mode
-#ifdef WIN32
-	fopen_s(&filePtr, filename.c_str(), "rb");
-#else
-	filePtr = fopen(filename.c_str(), "rb");
-#endif
-	if (filePtr == NULL) 
+   if( filename.length() != 0 )
    {
-      LOG_ERROR( "Failed to load " << filename );
-		return -1;
-	}
+      m_texturesTransfered = false;
+      ImageLoader imageLoader;
+      if( filename.find(".bmp") != -1 )
+      {
+         result = imageLoader.loadBMP24( index, filename, m_hTextures, m_textureFilenames );
+      }
+      else if ( filename.find(".jpg") != -1 )
+      {
+         result = imageLoader.loadJPEG( index, filename, m_hTextures, m_textureFilenames );
+      }
+      else if ( filename.find(".tga") != -1 )
+      {
+         result = imageLoader.loadTGA( index, filename, m_hTextures, m_textureFilenames );
+      }
 
-	//read the bitmap file header
-	size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+      if( !result )
+      {
+         LOG_ERROR("Failed to load " << filename );
+      }
 
-	//verify that this is a bmp file by check bitmap id
-	if (bitmapFileHeader.bfType !=0x4D42) {
-      LOG_ERROR( "Failed to load " << filename << ", wrong bitmap id" );
-		fclose(filePtr);
-		return -1;
-	}
-
-	//read the bitmap info header
-	status = fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER),1,filePtr);
-
-	//move file point to the begging of bitmap data
-	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
-
-   unsigned int bitmapSize = bitmapInfoHeader.biWidth*bitmapInfoHeader.biHeight*bitmapInfoHeader.biBitCount/8;
-
-   // Add Texture to CPU Memory
-   if( m_hTextures[index].buffer != nullptr) 
-   { 
-      delete [] m_hTextures[index].buffer;
-      LOG_INFO(1,"Replacing existing texture " << index );
+      m_nbActiveTextures += result ? 1 : 0;
    }
-   m_hTextures[index].buffer = new char[bitmapSize];
-   m_hTextures[index].offset = 0;
-   m_hTextures[index].size.x = bitmapInfoHeader.biWidth;
-   m_hTextures[index].size.y = bitmapInfoHeader.biHeight;
-   m_hTextures[index].size.z = bitmapInfoHeader.biBitCount/8;
-   m_textureFilenames[index] = filename;
-
-	//verify memory allocation
-	if (!m_hTextures[index].buffer)
-	{
-		free(m_hTextures[index].buffer);
-		fclose(filePtr);
-      LOG_ERROR( "Failed to load " << filename << ", invalid memory allocation" );
-		return -1;
-	}
-
-	//read in the bitmap image data
-	status = fread( m_hTextures[index].buffer, bitmapSize, 1, filePtr);
-
-	//make sure bitmap image data was read
-	if (m_hTextures[index].buffer == NULL)
-	{
-		fclose(filePtr);
-      LOG_ERROR( "Failed to load " << filename << ", bitmap image could not be read" );
-		return -1;
-	}
-
-	//swap the r and b values to get RGB (bitmap is BGR)
-	for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
-	{
-		tempRGB = m_hTextures[index].buffer[imageIdx];
-		m_hTextures[index].buffer[imageIdx]     = m_hTextures[index].buffer[imageIdx+2];
-		m_hTextures[index].buffer[imageIdx + 2] = tempRGB;
-	}
-
-	//close file and return bitmap image data
-	fclose(filePtr);
-
-   LOG_INFO( 3, "[" << index << "] Successfully loaded " << filename  << std::endl <<
-      "biSize         : " << bitmapInfoHeader.biSize << std::endl <<
-      "biWidth        : " << bitmapInfoHeader.biWidth << std::endl <<
-      "biHeight       : " << bitmapInfoHeader.biHeight << std::endl <<
-      "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl <<
-      "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl <<
-      "biCompression  : " << bitmapInfoHeader.biCompression << std::endl <<
-      "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl <<
-      "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
-      "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
-
-   // Reprocess offset
-   int totalSize=0;
-   for( int i(0); i<NB_MAX_TEXTURES; ++i )
-   {
-      m_hTextures[i].offset = totalSize;
-      totalSize += m_hTextures[i].size.x*m_hTextures[i].size.y*m_hTextures[i].size.z;
-   }
-   LOG_INFO(3, "Texture " << index << " successfully loaded ( offset=" << 
-      m_hTextures[index].offset << ", width="  <<
-      m_hTextures[index].size.x << ", height=" <<
-      m_hTextures[index].size.y << ", depth="  <<
-      m_hTextures[index].size.z )
-   return 0;
+   return result;
 }
 
 void GPUKernel::buildLightInformationFromTexture( unsigned int index )

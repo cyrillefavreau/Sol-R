@@ -37,6 +37,9 @@
     <Filter Include="Max Scripts">
       <UniqueIdentifier>{769fd299-c312-405e-badb-c0d71c5e9835}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Jpeg">
+      <UniqueIdentifier>{cbcbaa83-eef8-487a-bf08-929dff93f88e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -84,6 +87,15 @@
     <ClInclude Include="OpenGL\rtgl.h">
       <Filter>OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="jpge.h">
+      <Filter>Source Files\Jpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLoader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="jpgd.h">
+      <Filter>Source Files\Jpeg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -112,6 +124,15 @@
     </ClCompile>
     <ClCompile Include="OpenGL\rtgl.cpp">
       <Filter>OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="jpge.cpp">
+      <Filter>Source Files\Jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jpgd.cpp">
+      <Filter>Source Files\Jpeg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

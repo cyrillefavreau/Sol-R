@@ -131,7 +131,7 @@ struct Primitive
 
 struct TextureInformation
 {
-   char* buffer;
+   unsigned char* buffer;
    int   offset;
    int3  size;
 };

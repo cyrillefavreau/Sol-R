@@ -170,7 +170,7 @@ __device__ float4 triangleUVMapping(
 
 	u = u%material.textureMapping.x;
 	v = v%material.textureMapping.y;
-	if( u>=0 && u<material.textureMapping.y && v>=0 && v<material.textureMapping.y )
+	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
       switch( material.textureMapping.z )
       {

@@ -113,7 +113,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
    std::string materialsFilename(filename);
    materialsFilename += ".mtl";
 
-   std::string id;
+   std::string id("");
    std::ifstream file(materialsFilename);
    if( file.is_open() )
    {
@@ -139,20 +139,19 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   0.f,m.reflection,m.refraction, false, false, 0,
-                  m.transparency, TEXTURE_NONE,
+                  m.transparency, m.textureId,
                   m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
                   0.f, 10.f, 10000.f,
                   false );
-               /*
-               std::cout << "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
-                  std::endl;
-               */
+                  ", Texture ID= " << m.textureId );
             }
             id = line.substr(7);
             MaterialMTL material;
             memset( &material, 0, sizeof(MaterialMTL));
+            m_materials[id].textureId = -1;
             m_materials[id] = material;
          }
 
@@ -168,6 +167,24 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(3);
             m_materials[id].Ks = readfloat3(line);
+         }
+
+         if( line.find("map_Kd") == 0 )
+         {
+            line = line.substr(7);
+            std::string folder(filename);
+            size_t backSlashPos = filename.rfind('/');
+            if( backSlashPos != -1 )
+            {
+               folder = filename.substr(0, backSlashPos);
+            }
+            folder += '/';
+            folder += line;
+            int idx = kernel.getNbActiveTextures();
+            if( kernel.loadTextureFromFile(idx, folder) )
+            {
+               m_materials[id].textureId = idx;
+            }
          }
 
          if( line.find("d") == 0 || line.find("Tr") == 0 )
@@ -205,13 +222,14 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
             0.f,m.reflection,m.refraction, false, false, 0,
-            m.transparency, TEXTURE_NONE,
+            m.transparency, m.textureId,
             m.Ks.x, 200.f, 0.f, // m.Ks.y,m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
-            "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " );
+            "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
+            ", Texture ID= " << m.textureId );
       }
 
       file.close();
