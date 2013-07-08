@@ -35,6 +35,9 @@
 #include "GeometryIntersections.cuh"
 #include "GeometryShaders.cuh"
 
+#define PHOTON_ENERGY
+#define GRADIANT_BACKGROUND
+
 // Device resources
 Primitive*        d_primitives[MAX_GPU_COUNT];
 BoundingBox*      d_boundingBoxes[MAX_GPU_COUNT]; 
@@ -114,11 +117,11 @@ __device__ inline float4 launchRay(
 	float4 colorBox = {0.f,0.f,0.f,0.f};
 	bool   back = false;
 
-#if 0
+#ifdef PHOTON_ENERGY
    // Photon energy
    float photonDistance = sceneInfo.viewDistance.x;
    float previousTransparency = 1.f;
-#endif // 0
+#endif // PHOTON_ENERGY
 
    // Reflected rays
    int reflectedRays=-1;
@@ -161,11 +164,11 @@ __device__ inline float4 launchRay(
             primitiveXYId.x = primitives[closestPrimitive].index.x;
 			}
 
-#if 0
+#ifdef PHOTON_ENERGY
          // Photon
          photonDistance -= length(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
          previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
-#endif // 0
+#endif // PHOTON_ENERGY
 
 			// Get object color
          colors[iteration] =
@@ -258,16 +261,16 @@ __device__ inline float4 launchRay(
 		}
 		else
 		{
-#if 1
+#ifdef GRADIANT_BACKGROUND
          // Background
          float3 normal = {0.f, 1.f, 0.f };
          float3 dir = normalize(rayOrigin.direction-rayOrigin.origin);
-         float angle = 2.f*fabs(dot( normal, dir));
+         float angle = 0.5f*fabs(dot( normal, dir));
          angle = (angle>1.f) ? 1.f: angle;
 			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
 #else
 			colors[iteration] = sceneInfo.backgroundColor;
-#endif // 0
+#endif // GRADIANT_BACKGROUND
 			colorContributions[iteration] = 1.f;
 		}
 		iteration++;
@@ -315,12 +318,12 @@ __device__ inline float4 launchRay(
 	float len = length(firstIntersection - ray.origin);
    if( materials[primitive.materialId.x].attributes.z == 0 ) // Wireframe
    {
-#if 0
+#ifdef PHOTON_ENERGY
 	   // --------------------------------------------------
       // Photon energy
 	   // --------------------------------------------------
       intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
-#endif // 0
+#endif // PHOTON_ENERGY
 
 	   // --------------------------------------------------
 	   // Fog
@@ -336,7 +339,7 @@ __device__ inline float4 launchRay(
          float D2 = sceneInfo.viewDistance.x*0.05f;
          float a = len - D1;
          float b = 1.f-(a/D2);
-         intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b/2.f);
+         intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
       }
    }
    depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;

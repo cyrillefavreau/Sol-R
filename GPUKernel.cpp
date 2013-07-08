@@ -717,7 +717,7 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 	box.parameters[1].z = -m_sceneInfo.viewDistance.x;
 }
 
-unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate )
+int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate )
 {
    float3 boxSteps;
    boxSteps.x = ( m_maxPos[m_frame].x - m_minPos[m_frame].x ) / boxSize;
@@ -737,9 +737,16 @@ unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& 
    {
       CPUPrimitive& primitive((*it).second);
 
-      int X = static_cast<int>(( primitive.p0.x - m_minPos[m_frame].x ) / boxSteps.x);
-      int Y = static_cast<int>(( primitive.p0.y - m_minPos[m_frame].y ) / boxSteps.y);
-      int Z = static_cast<int>(( primitive.p0.z - m_minPos[m_frame].z ) / boxSteps.z);
+      float3 center=primitive.p0;
+      /*
+      center.x = (primitive.p0.x+primitive.p1.x+primitive.p2.x)/3.f;
+      center.y = (primitive.p0.y+primitive.p1.y+primitive.p2.y)/3.f;
+      center.z = (primitive.p0.z+primitive.p1.z+primitive.p2.z)/3.f;
+      */
+
+      int X = static_cast<int>(( center.x - m_minPos[m_frame].x ) / boxSteps.x);
+      int Y = static_cast<int>(( center.y - m_minPos[m_frame].y ) / boxSteps.y);
+      int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
       int B = X*boxSize*boxSize + Y*boxSize + Z;
 
       if( simulate )
@@ -777,7 +784,9 @@ unsigned int GPUKernel::processBoxes( const unsigned int boxSize, unsigned int& 
    if( simulate )
    {
       maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives[m_frame]->size()/nbActiveBoxes) : 0;
-      delta = m_optimalNbOfPrimmitivesPerBox-nbActiveBoxes;
+      //delta = abs(m_optimalNbOfPrimmitivesPerBox-maxPrimitivePerBox);
+      delta = abs(m_optimalNbOfPrimmitivesPerBox-nbActiveBoxes);
+      LOG_INFO(3, "[" << boxSize << "/" << delta << "] Avg : " << maxPrimitivePerBox << " for " << nbActiveBoxes << " active boxes (" << m_primitives[m_frame]->size() << " primitives) - " << m_optimalNbOfPrimmitivesPerBox );
    }
    else
    {
@@ -799,30 +808,30 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 
    if( reconstructBoxes )
    {
-      unsigned int activeBoxes(NB_MAX_BOXES);
+      int activeBoxes(NB_MAX_BOXES);
 #if 1
       LOG_INFO(3,"Constructing acceleration structures" );
       // Bounding boxes
       // Search for best trade-off
       std::map<unsigned int,unsigned int> primitivesPerBox;
-      unsigned int maxPrimitivePerBox(0);
-      unsigned int boxSize = 64;
-      unsigned int bestSize = boxSize;
-      unsigned int bestActiveBoxes = 0;
-      unsigned int bestRatio = 100000;
+      int maxPrimitivePerBox(0);
+      int boxSize = 1024;
+      int bestSize = boxSize;
+      int bestActiveBoxes = 0;
+      int bestRatio = 10000; 
       do 
       {
-         unsigned int ratio = processBoxes(  boxSize, activeBoxes, true );
+         int ratio = processBoxes(  boxSize, activeBoxes, true );
          if( ratio < bestRatio ) 
          {
             bestSize = boxSize;
             bestRatio = ratio;
             bestActiveBoxes = activeBoxes;
          }
-         boxSize--;
+         boxSize/=2;
       }
-      while( boxSize>0 );
-      LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
+      while( boxSize>=2 );
+      LOG_INFO(1, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
       processBoxes(  bestSize, activeBoxes, false );
 #else
       processBoxes(  64, activeBoxes, false );
@@ -1054,7 +1063,6 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
          }
       }
    }
-   //compactBoxes(false);
 }
 
 void GPUKernel::morphPrimitives()
@@ -1907,7 +1915,7 @@ int GPUKernel::setGLMode( const int& glMode )
                   m_vertices[2].x, m_vertices[2].y, m_vertices[2].z, 
                   0.f,0.f,0.f,
                   0);
-               LOG_INFO(1, "Triangle created");
+               LOG_INFO(3, "Triangle created");
             }
             else
             {

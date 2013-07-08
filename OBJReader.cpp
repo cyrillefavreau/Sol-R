@@ -535,7 +535,10 @@ float3 OBJReader::loadModelFromFile(
    objectSize.x = (maxPos.x - minPos.x)*objectScale;
    objectSize.y = (maxPos.y - minPos.y)*objectScale;
    objectSize.z = (maxPos.z - minPos.z)*objectScale;
+   
    LOG_INFO( 1, "Loading " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
+
+   kernel.setNbMaxPrimitivePerBox( 2*static_cast<int>(sqrt(static_cast<float>(kernel.getNbActivePrimitives()))));
 
    return objectSize;
 }

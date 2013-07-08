@@ -99,7 +99,6 @@ __device__ inline bool ellipsoidIntersection(
 {
 	// Shadow intensity
 	shadowIntensity = 1.f;
-	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[ellipsoid.materialId.x].transparency.x);
 
    // solve the equation sphere-ray to find the intersections
 	float3 O_C = ray.origin-ellipsoid.p0;
@@ -164,7 +163,6 @@ __device__ inline bool sphereIntersection(
 	const SceneInfo& sceneInfo,
 	const Primitive& sphere, 
 	Material*  materials, 
-	char*      textures, 
 	const Ray& ray, 
 	float3&    intersection,
 	float3&    normal,
@@ -223,9 +221,7 @@ __device__ inline bool sphereIntersection(
 
    // Shadow management
    r = dot(dir,normal);
-	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
-   shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-   //shadowIntensity *= sceneInfo.shadowIntensity.x;
+	shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
 
 #if EXTENDED_FEATURES
 	// Power textures
@@ -249,7 +245,6 @@ __device__ inline bool cylinderIntersection(
 	const SceneInfo& sceneInfo,
 	const Primitive& cylinder,
 	Material*  materials, 
-	char*      textures,
 	const Ray& ray,
 	float3&    intersection,
 	float3&    normal,
@@ -335,9 +330,7 @@ __device__ inline bool cylinderIntersection(
          // Shadow management
          dir = normalize(dir);
          float r = dot(dir,normal);
-	      //shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
          shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-         //shadowIntensity *= sceneInfo.shadowIntensity.x;
          return true;
 		}
 	}
@@ -578,14 +571,10 @@ __device__ inline bool triangleIntersection(
    if( r>0.f )
    {
       normal *= -1.f;
-      //back = true;
    }
 
    // Shadow management
    shadowIntensity = 1.f;
-	//shadowIntensity = sceneInfo.shadowIntensity.x*(1.f-materials[triangle.materialId.x].transparency.x);
-   //shadowIntensity = (materials[triangle.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-   //shadowIntensity *= sceneInfo.shadowIntensity.x;
    return true;
 }
 
@@ -648,12 +637,12 @@ __device__ inline bool intersectionWithPrimitives(
 				   case ptEnvironment :
                case ptSphere:
                   {
-						   i = sphereIntersection  ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); 
+						   i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
 						   break;
 					   }
 				   case ptCylinder: 
 					   {
-						   i = cylinderIntersection( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); 
+						   i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
 						   break;
 					   }
                case ptEllipsoid:

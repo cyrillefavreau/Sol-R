@@ -150,9 +150,9 @@ __device__ float processShadows(
 					bool back;
 					switch(primitive.type.x)
 					{
-					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); break;
+					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
                case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
-					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, back ); break;
+					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
 					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); break;
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
@@ -420,7 +420,9 @@ __device__ float4 primitiveShader(
 			      // Lambert
 			      // --------------------------------------------------------------------------------
 	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-			      lambert = (lambert<0.f) ? 0.f : lambert;
+               // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
+               // depends on the transparency rate.
+               lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : lambert;
 			      lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
 			      lambert *= (1.f-shadowIntensity);
                lambert *= lampIntensity;
@@ -432,7 +434,9 @@ __device__ float4 primitiveShader(
 			      // Lambert
 			      // --------------------------------------------------------------------------------
 	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-			      lambert = (lambert<0.f) ? 0.f : lambert;
+               // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
+               // depends on the transparency rate.
+               lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : lambert;
 			      lambert *= lightInformation[cptLamp].color.w;
 			      lambert *= (1.f-shadowIntensity);
 

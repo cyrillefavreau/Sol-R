@@ -272,7 +272,7 @@ public:
 #endif // USE_KINECT
 
 public:
-
+   void setNbMaxPrimitivePerBox( const int nbMaxPrimitivePerBox ) { m_optimalNbOfPrimmitivesPerBox = nbMaxPrimitivePerBox; };
    unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes[m_frame]->size()); };
    unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives[m_frame]->size()); };
 	unsigned int getNbActiveLamps()      { return m_nbActiveLamps[m_frame]; };
@@ -316,7 +316,7 @@ public:
 
 protected:
    
-   unsigned int processBoxes( const unsigned int boxSize, unsigned int& nbActiveBoxes, bool simulate );
+   int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
 
    void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
