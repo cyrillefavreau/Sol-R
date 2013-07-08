@@ -143,7 +143,7 @@ __device__ float processShadows(
 				float  shadowIntensity = 0.f;
 
 				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
-            if( primitive.index.x != objectId )
+            if( primitive.index.x!=objectId && materials[primitive.materialId.x].attributes.x==0)
 				{
 
 					bool hit = false;

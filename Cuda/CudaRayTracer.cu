@@ -35,7 +35,7 @@
 #include "GeometryIntersections.cuh"
 #include "GeometryShaders.cuh"
 
-#define PHOTON_ENERGY
+//#define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND
 
 // Device resources
