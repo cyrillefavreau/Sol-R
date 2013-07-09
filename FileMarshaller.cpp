@@ -387,11 +387,11 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          int textureId = material->textureMapping.z;
          if( textureId>=0 )
          {
-            kernel.getTextureFilename(textureId);
-            myfile << TEXTURE << ";" << 
-               textureId << ";" <<
-               kernel.getTextureFilename(material->textureMapping.z) <<
-               std::endl;
+            std::string filename(kernel.getTextureFilename(textureId));
+            if( filename.length() != 0 )
+            {
+               myfile << TEXTURE << ";" << textureId << ";" << filename << std::endl;
+            }
          }
       }
 

@@ -81,6 +81,7 @@ __device__ inline bool boxIntersection(
    return ( (tmin < t1) && (tmax > t0) );
 }
 
+#ifdef EXTENDED_GEOMETRY
 /*
 ________________________________________________________________________________
 
@@ -492,6 +493,7 @@ __device__ inline bool planeIntersection(
 	}
 	return collision;
 }
+#endif // EXTENDED_GEOMETRY
 
 /*
 ________________________________________________________________________________
@@ -631,6 +633,7 @@ __device__ inline bool intersectionWithPrimitives(
             if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
             {
                float3 areas = {0.f,0.f,0.f};
+#ifdef EXTENDED_GEOMETRY
 				   i = false;
 				   switch( primitive.type.x )
 				   {
@@ -663,6 +666,10 @@ __device__ inline bool intersectionWithPrimitives(
 						   break;
 					   }
 				   }
+#else
+					back = false;
+					i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
+#endif // EXTENDED_GEOMETRY
 
 				   float distance = length(intersection-r.origin);
 				   if( i && distance>EPSILON && distance<minDistance ) 

@@ -22,6 +22,15 @@
 
 #pragma once
 
+// Defines
+#define PHOTON_ENERGY
+#define GRADIANT_BACKGROUND
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+
+// Consts
+const int MAX_GPU_COUNT = 32;
+const int NB_MAX_ITERATIONS = 20;
+
 const int NB_MAX_BOXES      = 4096;
 const int NB_MAX_PRIMITIVES = 1000000;
 const int NB_MAX_LAMPS      = 10;
@@ -37,10 +46,6 @@ const int NB_MAX_LIGHTINFORMATIONS = 500;
 #define TEXTURE_MANDELBROT -2
 #define TEXTURE_JULIA -3
 #define gColorDepth  3
-
-// Consts
-const int MAX_GPU_COUNT = 32;
-const int NB_MAX_ITERATIONS = 20;
 
 // Globals
 #define M_PI 3.14159265358979323846

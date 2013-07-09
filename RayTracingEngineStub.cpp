@@ -313,6 +313,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE text
    return 0;
 }
 
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures( int& nbTextures )
+{
+   return NB_MAX_TEXTURES;// gKernel->getNbActiveTextures();
+}
+
 // ---------- Materials ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddMaterial()
 {
@@ -370,7 +375,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& out_transparency,
    int&    out_textureId,
    double& out_specValue, double& out_specPower, double& out_specCoef,
-   double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation)
+   double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation,
+   int&    out_fastTransparency)
 {
    float color_r,color_g,color_b, noise, reflection, refraction, transparency;
    float specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation;
@@ -378,11 +384,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    bool  wireframe;
    int   wireframeDepth;
    int   textureId;
+   bool  fastTransparency;
    int returnValue = gKernel->getMaterialAttributes(
       in_index, 
       color_r, color_g, color_b,
       noise, reflection, refraction, procedural, wireframe, wireframeDepth, transparency, 
-      textureId, specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation );
+      textureId, specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation, fastTransparency );
 
    out_color_r = static_cast<double>(color_r);
    out_color_g = static_cast<double>(color_g);
@@ -401,6 +408,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    out_innerIllumination = static_cast<double>(innerIllumination);
    out_illuminationDiffusion = static_cast<double>(illuminationDiffusion);
    out_illuminationPropagation = static_cast<double>(illuminationPropagation);
+   out_fastTransparency = fastTransparency ? 1 : 0;
    return returnValue;
 }
 

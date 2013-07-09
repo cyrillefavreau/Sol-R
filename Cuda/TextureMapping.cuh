@@ -116,40 +116,6 @@ __device__ void mandelbrotSet(
 /*
 ________________________________________________________________________________
 
-Sphere texture Mapping
-________________________________________________________________________________
-*/
-__device__ float4 sphereUVMapping( 
-	const Primitive& primitive,
-	Material*        materials,
-	char*            textures,
-	const float3&    intersection)
-{
-   Material& material=materials[primitive.materialId.x];
-	float4 result = material.color;
-
-	float3 d = normalize(primitive.p0-intersection);
-	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
-	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
-
-	u = u%material.textureMapping.x;
-	v = v%material.textureMapping.y;
-	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
-	{
-		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-		unsigned char r = textures[index  ];
-		unsigned char g = textures[index+1];
-		unsigned char b = textures[index+2];
-		result.x = r/256.f;
-		result.y = g/256.f;
-		result.z = b/256.f;
-	}
-	return result; 
-}
-
-/*
-________________________________________________________________________________
-
 Triangle texture Mapping
 ________________________________________________________________________________
 */
@@ -187,6 +153,41 @@ __device__ float4 triangleUVMapping(
 		      result.z = b/256.f;
          }
       }
+	}
+	return result; 
+}
+
+#ifdef EXTENDED_GEOMETRY
+/*
+________________________________________________________________________________
+
+Sphere texture Mapping
+________________________________________________________________________________
+*/
+__device__ float4 sphereUVMapping( 
+	const Primitive& primitive,
+	Material*        materials,
+	char*            textures,
+	const float3&    intersection)
+{
+   Material& material=materials[primitive.materialId.x];
+	float4 result = material.color;
+
+	float3 d = normalize(primitive.p0-intersection);
+	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
+	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
+
+	u = u%material.textureMapping.x;
+	v = v%material.textureMapping.y;
+	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
+	{
+		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
+		unsigned char r = textures[index  ];
+		unsigned char g = textures[index+1];
+		unsigned char b = textures[index+2];
+		result.x = r/256.f;
+		result.y = g/256.f;
+		result.z = b/256.f;
 	}
 	return result; 
 }
@@ -263,86 +264,7 @@ __device__ float4 cubeMapping(
 	}
 	return result;
 }
-
-#if 0
-/*
-________________________________________________________________________________
-
-Magic Carpet texture mapping
-________________________________________________________________________________
-*/
-__device__ float3 magicCarpetMapping( 
-	Primitive primitive, 
-	Material* materials,
-	char*     textures,
-	float3    intersection,
-	int*      levels,
-	float     timer)
-{
-	float3 result = materials[primitive.materialId.x].color;
-	int x = (intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x*5.f;
-	int y = (intersection.z+timer-primitive.p0.z+primitive.size.y)*primitive.materialInfo.y*50.f;
-
-	x = x%gTextureWidth;
-	y = y%gTextureHeight;
-
-	if( x>=0 && x<gTextureWidth && y>=0 && y<gTextureHeight )
-	{
-		// Level management
-		int tid_x = (intersection.x-primitive.p0.x+primitive.size.x      )/(primitive.size.x/2.5f);
-		int tid_y = (intersection.z-primitive.p0.z+primitive.size.y+timer)/(primitive.size.y/25.f);
-		int tid = tid_x+tid_y*5;
-		tid = tid%5000;
-		int index = (levels[tid]*gTextureWidth*gTextureHeight + y*gTextureWidth+x)*gTextureDepth;
-		unsigned char r = textures[index];
-		unsigned char g = textures[index+1];
-		unsigned char b = textures[index+2];
-		result.x = r/256.f;
-		result.y = g/256.f;
-		result.z = b/256.f;
-	}
-	return result;
-}
-
-/*
-________________________________________________________________________________
-
-Magic Cylinder texture mapping
-________________________________________________________________________________
-*/
-__device__ float3 magicCylinderMapping( 
-	Primitive primitive, 
-	Material* materials,
-	char*     textures,
-	float3    intersection,
-	int*      levels,
-	float     timer)
-{
-	float3 result = materials[primitive.materialId.x].color;
-
-	int x = (intersection.x-      primitive.p0.x+primitive.size.x)*primitive.materialInfo.x*5.f;
-	int y = (intersection.z+timer-primitive.p0.z+primitive.size.y)*primitive.materialInfo.y*50.f;
-
-	x = x%gTextureWidth;
-	y = y%gTextureHeight;
-
-	if( x>=0 && x<gTextureWidth && y>=0 && y<gTextureHeight )
-	{
-		int tid_x = (intersection.x-primitive.p0.x+primitive.size.x      )/(primitive.size.x/2.5f);
-		int tid_y = (intersection.z-primitive.p0.z+primitive.size.y+timer)/(primitive.size.y/25.f);
-		int tid = tid_x+tid_y*5;
-		tid = tid%5000;
-		int index = (levels[tid]*gTextureWidth*gTextureHeight + y*gTextureWidth+x)*gTextureDepth;
-		unsigned char r = textures[index  ];
-		unsigned char g = textures[index+1];
-		unsigned char b = textures[index+2];
-		result.x = r/256.f;
-		result.y = g/256.f;
-		result.z = b/256.f;
-	}
-	return result;
-}
-#endif // 0
+#endif // EXTENDED_GEOMETRY
 
 __device__ bool wireFrameMapping( float x, float y, int width, const Primitive& primitive )
 {

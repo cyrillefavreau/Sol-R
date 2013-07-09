@@ -124,7 +124,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& transparency,
    int&    textureId,
    double& specValue, double& specPower, double& specCoef,
-   double& innerIllumination, double& illuminationDiffusion, double& illuminationPropagation);
+   double& innerIllumination, double& illuminationDiffusion, double& illuminationPropagation,
+   int&    fastTransparency);
 
 // Boxes
 extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update );
@@ -135,6 +136,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index );
 // ---------- Textures ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadTextureFromFile( int index, char* filename );
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture );
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures( int& nbTextures );
 
 // ---------- Molecules ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule( 

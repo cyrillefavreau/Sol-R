@@ -146,8 +146,9 @@ __device__ float processShadows(
             if( primitive.index.x!=objectId && materials[primitive.materialId.x].attributes.x==0)
 				{
 
-					bool hit = false;
 					bool back;
+#ifdef EXTENDED_GEOMETRY
+					bool hit = false;
 					switch(primitive.type.x)
 					{
 					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
@@ -157,8 +158,11 @@ __device__ float processShadows(
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
-
 					if( hit )
+#else
+               if( triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ))
+#endif
+
 					{
 						float3 O_I = intersection-r.origin;
 						float3 O_L = r.direction;
@@ -209,6 +213,7 @@ __device__ float4 intersectionShader(
 	float4 colorAtIntersection = materials[primitive.materialId.x].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
 
+#ifdef EXTENDED_GEOMETRY
 	switch( primitive.type.x ) 
 	{
 	case ptCylinder:
@@ -279,17 +284,13 @@ __device__ float4 intersectionShader(
 			}
 			break;
       }
-#if 0
-	case ptMagicCarpet:
-		{
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
-			{
-				colorAtIntersection = magicCarpetMapping( primitive, materials, textures, intersection, levels );
-			}
-			break;
-		}
-#endif // 0
+   }
+#else
+	if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+	{
+      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
 	}
+#endif // EXTENDED_GEOMETRY
 	return colorAtIntersection;
 }
 

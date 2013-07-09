@@ -194,7 +194,8 @@ public:
 		float& transparency,
 		int&   textureId,
 		float& specValue, float& specPower, float& specCoef,
-      float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation );
+      float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
+      bool& fastTransparency);
 
    Material* getMaterial( const int index );
 

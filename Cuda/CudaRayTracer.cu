@@ -26,7 +26,6 @@
 // Cuda
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
-//#include <helper_math.h>
 
 // Project
 #include "../Consts.h"
@@ -34,9 +33,6 @@
 #include "VectorUtils.cuh"
 #include "GeometryIntersections.cuh"
 #include "GeometryShaders.cuh"
-
-#define PHOTON_ENERGY
-#define GRADIANT_BACKGROUND
 
 // Device resources
 Primitive*        d_primitives[MAX_GPU_COUNT];
