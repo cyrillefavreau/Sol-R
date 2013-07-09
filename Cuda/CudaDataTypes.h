@@ -145,7 +145,7 @@ enum PostProcessingType
    ppe_none,
    ppe_depthOfField,
    ppe_ambientOcclusion,
-   ppe_cartoon
+   ppe_enlightment
 };
 
 struct PostProcessingInfo

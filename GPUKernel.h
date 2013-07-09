@@ -333,9 +333,8 @@ protected:
    std::map<int,std::string> m_textureFilenames;
 
    // Scene
-	float3*      m_hDepthOfField;
 	float*	    m_hRandoms;
-   int2*        m_hPrimitivesXYIds;
+   int4*        m_hPrimitivesXYIds;
 
    int m_nbActiveBoxes[NB_MAX_FRAMES];
 	int m_nbActivePrimitives[NB_MAX_FRAMES];

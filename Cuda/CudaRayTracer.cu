@@ -35,7 +35,7 @@
 #include "GeometryIntersections.cuh"
 #include "GeometryShaders.cuh"
 
-//#define PHOTON_ENERGY
+#define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND
 
 // Device resources
@@ -48,7 +48,7 @@ LightInformation* d_lightInformation[MAX_GPU_COUNT];
 float*            d_randoms[MAX_GPU_COUNT];
 float4*           d_postProcessingBuffer[MAX_GPU_COUNT];
 char*             d_bitmap[MAX_GPU_COUNT];
-int2*             d_primitivesXYIds[MAX_GPU_COUNT];
+int4*             d_primitivesXYIds[MAX_GPU_COUNT];
 cudaStream_t      d_streams[MAX_GPU_COUNT];
 int               d_nbGPUs;
 
@@ -87,7 +87,7 @@ __device__ inline float4 launchRay(
 	const PostProcessingInfo& postProcessingInfo,
 	float3&          intersection,
 	float&           depthOfField,
-	int2&            primitiveXYId)
+	int4&            primitiveXYId)
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
 
@@ -100,6 +100,7 @@ __device__ inline float4 launchRay(
 	float  initialRefraction = 1.f;
 	int    iteration         = 0;
 	primitiveXYId.x = -1;
+   primitiveXYId.z = 0;
    int currentMaterialId=-2;
 
    // TODO
@@ -161,7 +162,12 @@ __device__ inline float4 launchRay(
             colorContributions[iteration]=1.f;
 
 				firstIntersection = closestIntersection;
+            
+            // Primitive ID for current pixel
             primitiveXYId.x = primitives[closestPrimitive].index.x;
+
+            // Primitive illumination
+            primitiveXYId.z = 255*materials[currentMaterialId].innerIllumination.x;
 			}
 
 #ifdef PHOTON_ENERGY
@@ -374,7 +380,7 @@ __global__ void k_standardRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int2*        primitiveXYIds)
+	int4*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -520,7 +526,7 @@ __global__ void k_fishEyeRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int2*        primitiveXYIds)
+	int4*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -624,7 +630,7 @@ __global__ void k_anaglyphRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int2*        primitiveXYIds)
+	int4*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -738,7 +744,7 @@ __global__ void k_3DVisionRenderer(
 	SceneInfo    sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	float4*      postProcessingBuffer,
-	int2*        primitiveXYIds)
+	int4*        primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
@@ -827,7 +833,7 @@ __global__ void k_default(
 	SceneInfo        sceneInfo,
 	PostProcessingInfo PostProcessingInfo,
 	float4*          postProcessingBuffer,
-   int2*            primitiveXYIds,
+   int4*            primitiveXYIds,
 	char*            bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
@@ -952,30 +958,40 @@ ________________________________________________________________________________
 Post Processing Effect: Cartoon
 ________________________________________________________________________________
 */
-__global__ void k_cartoon(
-	SceneInfo        sceneInfo,
+__global__ void k_enlightment(
+	SceneInfo          sceneInfo,
 	PostProcessingInfo PostProcessingInfo,
-	float4*          postProcessingBuffer,
-	float*           randoms,
-	char*            bitmap) 
+   int4*              primitiveXYIds,
+	float4*            postProcessingBuffer,
+	float*             randoms,
+	char*              bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
-	float4 localColor = postProcessingBuffer[index];
+	int    wh = sceneInfo.width.x*sceneInfo.height.x;
 
-	int r = localColor.x*255/PostProcessingInfo.param3.x;
-	int g = localColor.y*255/PostProcessingInfo.param3.x;
-	int b = localColor.z*255/PostProcessingInfo.param3.x;
+   int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
-	localColor.x = float(r*PostProcessingInfo.param3.x/255.f);
-	localColor.y = float(g*PostProcessingInfo.param3.x/255.f);
-	localColor.z = float(b*PostProcessingInfo.param3.x/255.f);
-
-   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
-      localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+   float4 localColor = {0.f,0.f,0.f};
+	for( int i=0; i<PostProcessingInfo.param3.x; ++i )
+	{
+		int ix = (i+sceneInfo.pathTracingIteration.x)%wh;
+		int iy = (i+sceneInfo.width.x)%wh;
+		int xx = x+randoms[ix]*PostProcessingInfo.param2.x/10.f;
+		int yy = y+randoms[iy]*PostProcessingInfo.param2.x/10.f;
+		localColor += postProcessingBuffer[index];
+		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+		{
+			int localIndex = yy*sceneInfo.width.x+xx;
+			localColor += ( localIndex>=0 && localIndex<wh ) ? div*primitiveXYIds[localIndex].z/255 : 0.f;
+      }
+	}
+	localColor /= PostProcessingInfo.param3.x;
+   localColor /= div;
 
 	localColor.w = 1.f;
+
 	makeColor( sceneInfo, localColor, bitmap, index ); 
 }
 
@@ -1016,7 +1032,7 @@ extern "C" void initialize_scene(
 	   // Rendering canvas
 	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)/d_nbGPUs));
 	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)/d_nbGPUs));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int2)/d_nbGPUs));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int4)/d_nbGPUs));
 
       d_textures[d] = nullptr;
    }
@@ -1147,10 +1163,10 @@ ________________________________________________________________________________
 GPU -> CPU data transfers
 ________________________________________________________________________________
 */
-extern "C" void d2h_bitmap( unsigned char* bitmap, int2* primitivesXYIds, const SceneInfo sceneInfo )
+extern "C" void d2h_bitmap( unsigned char* bitmap, int4* primitivesXYIds, const SceneInfo sceneInfo )
 {
-   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth/d_nbGPUs;
-   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x/d_nbGPUs;
+   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/d_nbGPUs;
+   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(int2)/d_nbGPUs;
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
@@ -1159,8 +1175,8 @@ extern "C" void d2h_bitmap( unsigned char* bitmap, int2* primitivesXYIds, const 
       checkCudaErrors(cudaStreamSynchronize(d_streams[d]));
 
       // Copy results back to CPU
-      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap*sizeof(char), cudaMemcpyDeviceToHost, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds*sizeof(int2),   cudaMemcpyDeviceToHost, d_streams[d] ));
+      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap, cudaMemcpyDeviceToHost, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds,   cudaMemcpyDeviceToHost, d_streams[d] ));
    }
 }
 
@@ -1279,10 +1295,11 @@ extern "C" void cudaRender(
 			   d_randoms[d], 
 			   d_bitmap[d] );
 		   break;
-	   case ppe_cartoon:
-		   k_cartoon<<<grid,blocks,0,d_streams[d]>>>(
+	   case ppe_enlightment:
+		   k_enlightment<<<grid,blocks,0,d_streams[d]>>>(
 			   sceneInfo, 
 			   postProcessingInfo, 
+            d_primitivesXYIds[d],
 			   d_postProcessingBuffer[d],
 			   d_randoms[d], 
 			   d_bitmap[d] );

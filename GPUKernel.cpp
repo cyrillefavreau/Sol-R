@@ -130,8 +130,7 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 	m_hMaterials(0), 
    m_hLamps(0),
    m_hBoundingBoxes(0),
-	m_hDepthOfField(0),
-   m_hPrimitivesXYIds(0),
+	m_hPrimitivesXYIds(0),
 	m_hRandoms(0), 
 	m_nbActiveMaterials(-1),
    m_nbActiveTextures(0),
@@ -225,7 +224,7 @@ void GPUKernel::initBuffers()
 	// Randoms
 	int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
 
-	m_hPrimitivesXYIds = new int2[size];
+	m_hPrimitivesXYIds = new int4[size];
 	memset( m_hPrimitivesXYIds,0,size*sizeof(int2));
 
 	m_hRandoms = new float[size];
@@ -233,7 +232,7 @@ void GPUKernel::initBuffers()
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
-		m_hRandoms[i] = (rand()%2000-1000)/10000.f;
+		m_hRandoms[i] = (rand()%2000-1000)/100000.f;
       //m_hRandoms[i] *= (i%100==0) ? 10.f : 1.f;
 	}
 
@@ -294,11 +293,9 @@ void GPUKernel::cleanup()
 	if(m_hPrimitives) delete m_hPrimitives;
 	if(m_hLamps) delete m_hLamps;
    if(m_hMaterials) delete m_hMaterials;
-	if(m_hDepthOfField) delete m_hDepthOfField;
 	if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
    if(m_lightInformation ) delete m_lightInformation;
 
-   m_hDepthOfField = 0;
 	m_hRandoms = 0;
    m_hPrimitivesXYIds = 0,
 	m_nbActiveMaterials = -1;
