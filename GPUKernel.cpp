@@ -1928,7 +1928,7 @@ int GPUKernel::setGLMode( const int& glMode )
             }
             else
             {
-               LOG_ERROR("Incorrect number of normals" );
+               LOG_ERROR("Incorrect number of texture coordinates" );
             }
 
             // Normals

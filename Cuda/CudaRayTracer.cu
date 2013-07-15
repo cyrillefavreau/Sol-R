@@ -168,7 +168,7 @@ __device__ inline float4 launchRay(
 
 #ifdef PHOTON_ENERGY
          // Photon
-         photonDistance -= length(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
+         photonDistance -= length(closestIntersection-rayOrigin.origin) * (5.f-previousTransparency);
          previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
 #endif // PHOTON_ENERGY
 
