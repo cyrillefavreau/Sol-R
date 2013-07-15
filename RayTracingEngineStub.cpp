@@ -33,6 +33,9 @@
 #if USE_CUDA
 #include "Cuda/CudaKernel.h"
 CudaKernel* gKernel = nullptr;
+#else
+#include "CPUKernel.h"
+CPUKernel* gKernel = nullptr;
 #endif // USE_OPENCL
 
 #if USE_OPENCL
@@ -96,7 +99,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 {
    if( gKernel == nullptr )
    {
+#ifdef USE_CUDA
 	   gKernel = new CudaKernel( activeLogging, NB_MAX_BOXES, platform, device );
+#else
+	   gKernel = new CPUKernel( activeLogging, NB_MAX_BOXES, platform, device );
+#endif // USE_CUDA
       gSceneInfoStub.pathTracingIteration.x = 0; 
 	   gKernel->setSceneInfo( gSceneInfoStub );
       gKernel->initBuffers();

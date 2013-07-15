@@ -2,7 +2,7 @@
 
 #include "GPUKernel.h"
 
-class CPUKernel : public GPUKernel
+class RAYTRACINGENGINE_API CPUKernel : public GPUKernel
 {
 public:
    CPUKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device );

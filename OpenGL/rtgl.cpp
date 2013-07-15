@@ -2,8 +2,11 @@
 
 #include <GL/freeglut.h>
 
-#include "../CPUKernel.h"
+#ifdef USE_CUDA
 #include "../Cuda/CudaKernel.h"
+#else
+#include "../CPUKernel.h"
+#endif // USE_CUDA
 
 GPUKernel* RayTracer::gKernel = nullptr;
 
@@ -136,8 +139,11 @@ void RayTracer::glutInitWindowSize( int width, int height )
    gPostProcessingInfo.param3.x = 200;
 
    // Kernel
+#ifdef USE_CUDA
    gKernel = new CudaKernel(0, 480, 0, 0);
-   //gKernel = new CPUKernel(0, 480, 0, 0);
+#else
+   gKernel = new CPUKernel(0, 480, 0, 0);
+#endif // USE_CUDA
    gSceneInfo.pathTracingIteration.x = 0; 
    gKernel->setSceneInfo( gSceneInfo );
    gKernel->initBuffers();
