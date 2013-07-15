@@ -311,6 +311,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Consts.h" />
+    <ClInclude Include="CPUKernel.h" />
     <ClInclude Include="Cuda\CudaDataTypes.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -346,6 +347,7 @@
     <ClInclude Include="tgad.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CPUKernel.cpp" />
     <ClCompile Include="Cuda\CudaKernel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
     </ClCompile>

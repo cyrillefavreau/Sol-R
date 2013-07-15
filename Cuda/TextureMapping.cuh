@@ -177,8 +177,8 @@ __device__ float4 sphereUVMapping(
 	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
 	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
 
-	u = u%material.textureMapping.x;
-	v = v%material.textureMapping.y;
+   if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
+   if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
 	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
 		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
@@ -239,8 +239,8 @@ __device__ float4 cubeMapping(
 			(intersection.z+primitive.p0.z+primitive.size.z) :
 		(intersection.y-primitive.p0.y+primitive.size.y);
 
-		u = u%material.textureMapping.x;
-		v = v%material.textureMapping.y;
+      if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
+      if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
 
 		if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.x )
 		{

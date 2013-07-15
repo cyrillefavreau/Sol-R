@@ -23,7 +23,7 @@
 #pragma once
 
 // Defines
-#define PHOTON_ENERGY
+// #define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND
 #define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 

@@ -43,6 +43,9 @@
     <Filter Include="Source Files\TGA">
       <UniqueIdentifier>{2f25fd87-2ab7-4572-bb77-46722e249b66}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\CPU">
+      <UniqueIdentifier>{4f022407-245a-436f-8fd0-585891099857}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -102,6 +105,9 @@
     <ClInclude Include="tgad.h">
       <Filter>Source Files\TGA</Filter>
     </ClInclude>
+    <ClInclude Include="CPUKernel.h">
+      <Filter>Source Files\CPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -142,6 +148,9 @@
     </ClCompile>
     <ClCompile Include="tgad.cpp">
       <Filter>Source Files\TGA</Filter>
+    </ClCompile>
+    <ClCompile Include="CPUKernel.cpp">
+      <Filter>Source Files\CPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

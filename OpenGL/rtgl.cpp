@@ -1,10 +1,11 @@
 #include "rtgl.h"
 
-#include "../Cuda/CudaKernel.h"
-
 #include <GL/freeglut.h>
 
-CudaKernel* RayTracer::gKernel = nullptr;
+#include "../CPUKernel.h"
+#include "../Cuda/CudaKernel.h"
+
+GPUKernel* RayTracer::gKernel = nullptr;
 
 SceneInfo gSceneInfo;
 PostProcessingInfo gPostProcessingInfo;
@@ -134,7 +135,9 @@ void RayTracer::glutInitWindowSize( int width, int height )
    gPostProcessingInfo.param2.x = 1000.f;
    gPostProcessingInfo.param3.x = 200;
 
+   // Kernel
    gKernel = new CudaKernel(0, 480, 0, 0);
+   //gKernel = new CPUKernel(0, 480, 0, 0);
    gSceneInfo.pathTracingIteration.x = 0; 
    gKernel->setSceneInfo( gSceneInfo );
    gKernel->initBuffers();

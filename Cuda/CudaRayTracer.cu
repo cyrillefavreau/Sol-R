@@ -128,7 +128,11 @@ __device__ inline float4 launchRay(
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( sceneInfo.graphicsLevel.x<3 ) ? 1 : sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
-	while( iteration<currentMaxIteration && carryon /*&& photonDistance>0.f*/ ) 
+#ifdef PHOTON_ENERGY
+	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
+#else
+	while( iteration<currentMaxIteration && carryon ) 
+#endif // PHOTON_ENERGY
 	{
       float3 areas = {0.f,0.f,0.f};
       // If no intersection with lamps detected. Now compute intersection with Primitives
