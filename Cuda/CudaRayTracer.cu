@@ -166,9 +166,9 @@ __device__ inline float4 launchRay(
             // Primitive ID for current pixel
             primitiveXYId.x = primitives[closestPrimitive].index.x;
 
-            // Primitive illumination
-            primitiveXYId.z = 255*materials[currentMaterialId].innerIllumination.x;
 			}
+         // Primitive illumination
+         primitiveXYId.z += 255*materials[currentMaterialId].innerIllumination.x;
 
 #ifdef PHOTON_ENERGY
          // Photon
@@ -976,10 +976,10 @@ __global__ void k_enlightment(
    float4 localColor = {0.f,0.f,0.f};
 	for( int i=0; i<PostProcessingInfo.param3.x; ++i )
 	{
-		int ix = (i+sceneInfo.pathTracingIteration.x)%wh;
-		int iy = (i+sceneInfo.width.x)%wh;
-		int xx = x+randoms[ix]*PostProcessingInfo.param2.x/10.f;
-		int yy = y+randoms[iy]*PostProcessingInfo.param2.x/10.f;
+		int ix = (i+sceneInfo.misc.y+sceneInfo.pathTracingIteration.x)%wh;
+		int iy = (i+sceneInfo.misc.y+sceneInfo.width.x)%wh;
+		int xx = x+randoms[ix]*PostProcessingInfo.param2.x;
+		int yy = y+randoms[iy]*PostProcessingInfo.param2.x;
 		localColor += postProcessingBuffer[index];
 		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
 		{

@@ -61,8 +61,8 @@ struct Connection
 };
 
 const int NB_ELEMENTS = 70;
-const float DEFAULT_ATOM_DISTANCE = 80.f;
-const float DEFAULT_STICK_DISTANCE = 1.65f;
+const float DEFAULT_ATOM_DISTANCE = 30.f;
+const float DEFAULT_STICK_DISTANCE = 1.67f;
 const Element elements[NB_ELEMENTS] =
 {
 	{ "C"  , 67.f,  1 },
@@ -219,7 +219,7 @@ float4 PDBReader::loadAtomsFromFile(
 				}
 
 				// Backbone
-				atom.isBackbone = (geometryType==gtBackbone && atomCode.length()==1);
+            atom.isBackbone = (geometryType==gtBackbone || geometryType==gtIsoSurface || atomCode.length()==1);
 
 				// Material
 				atom.materialId = 1;
@@ -288,6 +288,8 @@ float4 PDBReader::loadAtomsFromFile(
 
 	scale = (scale/std::max( maxPos.x - minPos.x, std::max( maxPos.y - minPos.y, maxPos.z - minPos.z )));
 
+   float atomDistance(DEFAULT_ATOM_DISTANCE);
+
 	std::map<int,Atom>::iterator it = atoms.begin();
 	while( it != atoms.end() )
 	{
@@ -295,11 +297,32 @@ float4 PDBReader::loadAtomsFromFile(
 		if( atom.processed<2 )
 		{
 			int nb;
-			float radius = atom.position.w;
-			float stickradius = defaultStickSize;
 
-			if( geometryType ==gtSticks || geometryType ==gtAtoms || geometryType==gtBackbone || 
-			  ( geometryType==gtAtomsAndSticks && atom.chainId%2 == 1) ) 
+         float radius(atom.position.w);
+			float stickRadius(atom.position.w);
+         switch( geometryType )
+         {
+            case gtFixedSizeAtoms:
+               radius = defaultAtomSize;
+               break;
+            case gtSticks:
+               radius      = defaultStickSize;
+               stickRadius = defaultStickSize;
+               break;
+            case gtAtomsAndSticks:
+               radius      = atom.position.w/2.f;
+               stickRadius = defaultStickSize/2.f;
+               break;
+            case gtBackbone:
+               radius      = defaultStickSize;
+               stickRadius = defaultStickSize;
+               break;
+            case gtIsoSurface:
+               radius      = atom.position.w;
+               break;
+         }
+
+         if( geometryType==gtSticks || geometryType==gtAtomsAndSticks || geometryType==gtBackbone ) 
 			{
 				std::map<int,Atom>::iterator it2 = atoms.begin();
 				while( it2 != atoms.end() )
@@ -316,68 +339,68 @@ float4 PDBReader::loadAtomsFromFile(
 						float stickDistance = (geometryType==gtBackbone && atom2.isBackbone) ? DEFAULT_STICK_DISTANCE*2.f : DEFAULT_STICK_DISTANCE;
 						if( distance < stickDistance )
 						{
-							stickradius = (geometryType==gtBackbone && !atom.isBackbone) ? defaultStickSize*0.2f : defaultStickSize; 
+							//stickradius = (geometryType==gtBackbone && !atom.isBackbone) ? defaultStickSize*0.2f : defaultStickSize; 
+                     //stickradius /= 5.f;
 
 							float4 halfCenter;
 							halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
 							halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
 							halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
 
-                     // Enveloppe
-                     if( atom.chainId%2==0 )
-                     {
-							   nb = cudaKernel.addPrimitive( ptSphere );
-							   cudaKernel.setPrimitive( 
-								   nb,
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.x - center.x), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.y - center.y), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.z - center.z),
-								   scale*distance*1000.f, 0.f,0.f,
-								   10 );
-                     }
-
                      // Sticks
-                     if( geometryType ==gtSticks )
-                     {
-                        nb = cudaKernel.addPrimitive( ptCylinder );
-							   cudaKernel.setPrimitive( 
-								   nb,
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.x - center.x), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.y - center.y), 
-								   scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(halfCenter.z - center.z),
-								   scale*stickradius, 0.f,0.f,
-								   atom.materialId );
-                     }
+                     nb = cudaKernel.addPrimitive( ptCylinder );
+							cudaKernel.setPrimitive( 
+								nb,
+								scale*distanceRatio*atomDistance*(atom.position.x - center.x), 
+								scale*distanceRatio*atomDistance*(atom.position.y - center.y), 
+								scale*distanceRatio*atomDistance*(atom.position.z - center.z), 
+								scale*distanceRatio*atomDistance*(halfCenter.x - center.x), 
+								scale*distanceRatio*atomDistance*(halfCenter.y - center.y), 
+								scale*distanceRatio*atomDistance*(halfCenter.z - center.z),
+								scale*stickRadius, 0.f,0.f,
+                        (geometryType==gtSticks) ? atom.materialId : 11 );
 						}
 					}
 					it2++;
 				}
 				//radius = stickradius;
-				radius *= 4.f;
+				//radius *= 4.f;
 			}
 			else
 			{
-				radius *= 4.f; 
+				//radius *= 4.f; 
 			}
 
 			bool addAtom(true);
 
+         /*
 			if( useModels && (atom.chainId%2==chainSelection) )
 			{
 				addAtom = false;
 			}
+         */
 
 			if( addAtom )
 			{
+            // Enveloppe
+            if( geometryType==gtIsoSurface && atom.isBackbone && atom.chainId%2==0 )
+            {
+					nb = cudaKernel.addPrimitive( ptSphere );
+					cudaKernel.setPrimitive( 
+						nb,
+					   scale*distanceRatio*atomDistance*(atom.position.x - center.x), 
+					   scale*distanceRatio*atomDistance*(atom.position.y - center.y), 
+					   scale*distanceRatio*atomDistance*(atom.position.z - center.z), 
+					   scale*radius*5.f, 0.f, 0.f,
+						10 );
+            }
+
 				nb = cudaKernel.addPrimitive( ptSphere );
 				cudaKernel.setPrimitive( 
 					nb, 
-					scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.x - center.x), 
-					scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.y - center.y), 
-					scale*distanceRatio*DEFAULT_ATOM_DISTANCE*(atom.position.z - center.z), 
+					scale*distanceRatio*atomDistance*(atom.position.x - center.x), 
+					scale*distanceRatio*atomDistance*(atom.position.y - center.y), 
+					scale*distanceRatio*atomDistance*(atom.position.z - center.z), 
 					scale*radius, 0.f, 0.f,
 					atom.materialId );
 			}

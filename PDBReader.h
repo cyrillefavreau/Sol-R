@@ -31,7 +31,8 @@ enum GeometryType
    gtFixedSizeAtoms  = 1,
    gtSticks          = 2,
    gtAtomsAndSticks  = 3,
-   gtBackbone        = 4
+   gtBackbone        = 4,
+   gtIsoSurface      = 5
 };
 
 class RAYTRACINGENGINE_API PDBReader
