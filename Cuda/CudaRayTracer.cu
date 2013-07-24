@@ -167,8 +167,6 @@ __device__ inline float4 launchRay(
             primitiveXYId.x = primitives[closestPrimitive].index.x;
 
 			}
-         // Primitive illumination
-         primitiveXYId.z += 255*materials[currentMaterialId].innerIllumination.x;
 
 #ifdef PHOTON_ENERGY
          // Photon
@@ -188,7 +186,12 @@ __device__ inline float4 launchRay(
                closestPrimitive, closestIntersection, areas, 
 			      iteration, refractionFromColor, shadowIntensity, rBlinn );
 
-			// ----------
+         // Primitive illumination
+         float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
+         primitiveXYId.z += 255*materials[currentMaterialId].innerIllumination.x;
+         primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
+
+         // ----------
 			// Refraction
 			// ----------
 
@@ -1004,7 +1007,7 @@ ________________________________________________________________________________
 extern "C" void initialize_scene( 
 	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials )
 {
-#if 1
+#if MULTI_GPU
    // Multi GPU initialization
    checkCudaErrors(cudaGetDeviceCount(&d_nbGPUs));
    if(d_nbGPUs > MAX_GPU_COUNT)
@@ -1072,6 +1075,7 @@ extern "C" void finalize_scene()
 	   checkCudaErrors(cudaFree( d_bitmap[d] ));
 	   checkCudaErrors(cudaFree( d_primitivesXYIds[d] ));
       checkCudaErrors(cudaStreamDestroy(d_streams[d]));
+      cudaDeviceReset();
    }
 }
 
@@ -1211,9 +1215,9 @@ extern "C" void cudaRender(
 	dim3 grid((size.x+blockSize.x-1)/blockSize.x,(size.y+blockSize.y-1)/blockSize.y,1);
 	dim3 blocks( blockSize.x,blockSize.y,blockSize.z );
 
-   for( int d=0; d<d_nbGPUs; ++d )
+   for( int d(0); d<d_nbGPUs; ++d )
    {
-      checkCudaErrors(cudaSetDevice(d));
+      checkCudaErrors(cudaSetDevice(0));
 
 	   switch( sceneInfo.renderingType.x ) 
 	   {

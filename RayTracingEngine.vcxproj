@@ -440,6 +440,7 @@
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</FastMath>
       <Defines Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">WIN32</Defines>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">compute_13,sm_13</CodeGeneration>
     </CudaCompile>
     <None Include="Cuda\GeometryIntersections.cuh">
       <FileType>Document</FileType>

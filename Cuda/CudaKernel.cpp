@@ -408,7 +408,7 @@ void CudaKernel::deviceQuery()
       LOG_INFO(1,"     < " << sComputeMode[deviceProp.computeMode] << " >");
       LOG_INFO(1,"--------------------------------------------------------------------------------" );
 
-      m_blockSize.x = 8;
+      m_blockSize.x = 16;
       m_blockSize.y = 8;
       m_blockSize.z = 1;
 
