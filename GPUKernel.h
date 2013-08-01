@@ -315,11 +315,13 @@ public:
       if(m_frame<0) m_frame=0; 
    }
 
+public:
+
+   void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
+
 protected:
    
    int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
-
-   void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
 protected:
  

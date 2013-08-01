@@ -47,6 +47,7 @@ extern "C" void h2d_lightInformation(
 extern "C" void d2h_bitmap( unsigned char* bitmap, int4* primitivesXYIds, const SceneInfo sceneInfo );
 
 extern "C" void cudaRender(
+   int2 occupancyParameters,
    int4 blockSize,
    SceneInfo sceneInfo,
    int4 objects,

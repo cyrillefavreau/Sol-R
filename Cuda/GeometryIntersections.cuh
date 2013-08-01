@@ -524,13 +524,11 @@ __device__ inline bool triangleIntersection(
    
    float3 T = ray.origin-triangle.p0;
    float a = dot(T,P)/det;
-   if (a < 0.f) return false;
-   if (a > 1.f) return false;
+   if (a < 0.f || a > 1.f) return false;
 
    float3 Q = crossProduct(T,E01);
    float b = dot(ray.direction,Q)/det;
-   if (b < 0.f) return false;
-   if (b > 1.f) return false;
+   if (b < 0.f || b > 1.f) return false;
 
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T′.

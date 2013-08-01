@@ -601,7 +601,9 @@ unsigned int GPUKernel::getPrimitiveAt( int x, int y )
 	unsigned int returnValue = -1;
 	unsigned int index = y*m_sceneInfo.width.x+x;
 	if( index>=0 && index<static_cast<unsigned int>(m_sceneInfo.width.x*m_sceneInfo.height.x))
+   {
 		returnValue = m_hPrimitivesXYIds[index].x;
+   }
 	return returnValue;
 }
 

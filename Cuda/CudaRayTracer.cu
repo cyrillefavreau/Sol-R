@@ -45,7 +45,7 @@ float*            d_randoms[MAX_GPU_COUNT];
 float4*           d_postProcessingBuffer[MAX_GPU_COUNT];
 char*             d_bitmap[MAX_GPU_COUNT];
 int4*             d_primitivesXYIds[MAX_GPU_COUNT];
-cudaStream_t      d_streams[MAX_GPU_COUNT];
+cudaStream_t      d_streams[MAX_GPU_COUNT][MAX_STREAM_COUNT];
 int               d_nbGPUs;
 
 /*
@@ -370,7 +370,7 @@ Standard renderer
 ________________________________________________________________________________
 */
 __global__ void k_standardRenderer(
-   int split_y, int nbGPUs,
+   int split_y,
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
@@ -387,13 +387,13 @@ __global__ void k_standardRenderer(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = (y+split_y)*sceneInfo.width.x+x;
 
 	Ray ray;
 	ray.origin = origin;
 	ray.direction = direction;
 
-   float3 rotationCenter = {0.f,0.f,0.f};
+   float3 rotationCenter = origin; // {0.f,0.f,0.f};
    bool antialiasingActivated = (sceneInfo.misc.w == 2);
    
 	if( sceneInfo.pathTracingIteration.x == 0 )
@@ -516,7 +516,7 @@ Standard renderer
 ________________________________________________________________________________
 */
 __global__ void k_fishEyeRenderer(
-   int split_y, int nbGPUs,
+   int split_y, 
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
@@ -639,7 +639,7 @@ __global__ void k_anaglyphRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-	float3 rotationCenter = {0.f,0.f,0.f};
+	float3 rotationCenter = origin; // {0.f,0.f,0.f};
 
 	if( sceneInfo.pathTracingIteration.x == 0 )
 	{
@@ -667,7 +667,7 @@ __global__ void k_anaglyphRenderer(
 	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 	eyeRay.direction.z = direction.z;
 
-	vectorRotation( eyeRay.origin, rotationCenter, angles );
+	//vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 colorLeft = launchRay(
@@ -691,9 +691,10 @@ __global__ void k_anaglyphRenderer(
 	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 	eyeRay.direction.z = direction.z;
 
-	vectorRotation( eyeRay.origin, rotationCenter, angles );
+	//vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
-	float4 colorRight = launchRay(
+	
+   float4 colorRight = launchRay(
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lightInformation, lightInformationSize, nbActiveLamps,
@@ -753,7 +754,7 @@ __global__ void k_3DVisionRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-	float3 rotationCenter = {0.f,0.f,0.f};
+	float3 rotationCenter = origin; // {0.f,0.f,0.f};
 
 	if( sceneInfo.pathTracingIteration.x == 0 )
 	{
@@ -796,7 +797,7 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.direction.z = direction.z;
 	}
 
-	vectorRotation( eyeRay.origin, rotationCenter, angles );
+	//vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 color = launchRay(
@@ -1022,7 +1023,10 @@ extern "C" void initialize_scene(
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
-      checkCudaErrors(cudaStreamCreate(&d_streams[d]));
+      for( int s(0); s<MAX_STREAM_COUNT; ++s )
+      {
+         checkCudaErrors(cudaStreamCreate(&d_streams[d][s]));
+      }
 
       // Scene resources
 	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[d],      NB_MAX_BOXES*sizeof(BoundingBox)));
@@ -1074,7 +1078,10 @@ extern "C" void finalize_scene()
 	   checkCudaErrors(cudaFree( d_postProcessingBuffer[d] ));
 	   checkCudaErrors(cudaFree( d_bitmap[d] ));
 	   checkCudaErrors(cudaFree( d_primitivesXYIds[d] ));
-      checkCudaErrors(cudaStreamDestroy(d_streams[d]));
+      for( int s(0); s<MAX_STREAM_COUNT; ++s )
+      {
+         checkCudaErrors(cudaStreamDestroy(d_streams[d][s]));
+      }
       cudaDeviceReset();
    }
 }
@@ -1093,9 +1100,9 @@ extern "C" void h2d_scene(
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[d],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_primitives[d],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_lamps[d],              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[d],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[d][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_primitives[d],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[d][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_lamps[d],              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice, d_streams[d][0] ));
    }
 }
 
@@ -1106,8 +1113,8 @@ extern "C" void h2d_materials(
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_materials[d], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_randoms[d],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_materials[d], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[d][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_randoms[d],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[d][0] ));
    }
 }
 
@@ -1133,7 +1140,7 @@ extern "C" void h2d_textures(
          if( textureInfos[i].buffer != nullptr )
          {
             int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
-	         checkCudaErrors(cudaMemcpyAsync( d_textures[d]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+	         checkCudaErrors(cudaMemcpyAsync( d_textures[d]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d][0] ));
          }
       }
    }
@@ -1145,7 +1152,7 @@ extern "C" void h2d_lightInformation(
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_lightInformation[d],  lightInformation,  lightInformationSize*sizeof(LightInformation), cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_lightInformation[d],  lightInformation,  lightInformationSize*sizeof(LightInformation), cudaMemcpyHostToDevice, d_streams[d][0] ));
    }
 }
 
@@ -1155,8 +1162,8 @@ extern "C" void h2d_kinect(
 {
    for( int d(0); d<d_nbGPUs; ++d )
    {
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[d], kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[d]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[d], kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[d]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d][0] ));
    }
 }
 #endif // USE_KINECT
@@ -1170,17 +1177,20 @@ ________________________________________________________________________________
 extern "C" void d2h_bitmap( unsigned char* bitmap, int4* primitivesXYIds, const SceneInfo sceneInfo )
 {
    int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/d_nbGPUs;
-   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(int2)/d_nbGPUs;
+   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(int4)/d_nbGPUs;
    for( int d(0); d<d_nbGPUs; ++d )
    {
       checkCudaErrors(cudaSetDevice(d));
       
       // Synchronize stream
-      checkCudaErrors(cudaStreamSynchronize(d_streams[d]));
+      for( int s(0); s<MAX_STREAM_COUNT; ++s )
+      {
+         checkCudaErrors(cudaStreamSynchronize(d_streams[d][s]));
+      }
 
       // Copy results back to CPU
-      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap, cudaMemcpyDeviceToHost, d_streams[d] ));
-	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds,   cudaMemcpyDeviceToHost, d_streams[d] ));
+      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap, cudaMemcpyDeviceToHost, d_streams[d][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds,  cudaMemcpyDeviceToHost, d_streams[d][0] ));
    }
 }
 
@@ -1191,6 +1201,7 @@ Kernel launcher
 ________________________________________________________________________________
 */
 extern "C" void cudaRender(
+   int2 occupancyParameters,
 	int4 blockSize,
 	SceneInfo sceneInfo,
 	int4 objects,
@@ -1210,63 +1221,74 @@ extern "C" void cudaRender(
 
 	int2 size;
 	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x) / d_nbGPUs;
+	size.y = static_cast<int>(sceneInfo.height.x) / (occupancyParameters.x*occupancyParameters.y);
 
-	dim3 grid((size.x+blockSize.x-1)/blockSize.x,(size.y+blockSize.y-1)/blockSize.y,1);
-	dim3 blocks( blockSize.x,blockSize.y,blockSize.z );
+   dim3 grid;
+   grid.x = (size.x+blockSize.x-1)/blockSize.x;
+   grid.y = (size.y+blockSize.y-1)/blockSize.y;
+   grid.z = 1;
+	
+   dim3 blocks;
+   blocks.x = blockSize.x;
+   blocks.y = blockSize.y;
+   blocks.z = blockSize.z;
 
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int d(0); d<occupancyParameters.x; ++d )
    {
-      checkCudaErrors(cudaSetDevice(0));
+      checkCudaErrors(cudaSetDevice(d));
 
-	   switch( sceneInfo.renderingType.x ) 
-	   {
-	   case vtAnaglyph:
-		   {
-			   k_anaglyphRenderer<<<grid,blocks,0,d_streams[d]>>>(
-				   d_boundingBoxes[d], objects.x, 
-               d_primitives[d], objects.y,  
-               d_lightInformation[d], objects.w, objects.z,
-               d_materials[d], d_textures[d], 
-				   d_randoms[d], origin, direction, angles, sceneInfo, 
-				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
-			   break;
-		   }
-	   case vt3DVision:
-		   {
-			   k_3DVisionRenderer<<<grid,blocks,0,d_streams[d]>>>(
-				   d_boundingBoxes[d], objects.x, 
-               d_primitives[d], objects.y,  
-               d_lightInformation[d], objects.w, objects.z,
-               d_materials[d], d_textures[d], 
-				   d_randoms[d], origin, direction, angles, sceneInfo, 
-				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
-			   break;
-		   }
-	   case vtFishEye:
-		   {
-			   k_fishEyeRenderer<<<grid,blocks,0,d_streams[d]>>>(
-               d*size.y, d_nbGPUs,
-				   d_boundingBoxes[d], objects.x, 
-               d_primitives[d], objects.y,  
-               d_lightInformation[d], objects.w, objects.z,
-               d_materials[d], d_textures[d], 
-				   d_randoms[d], origin, direction, angles, sceneInfo, 
-				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
-			   break;
-		   }
-	   default:
-		   {
-			   k_standardRenderer<<<grid,blocks,0,d_streams[d]>>>(
-               d*size.y, d_nbGPUs,
-				   d_boundingBoxes[d], objects.x, 
-               d_primitives[d], objects.y,  
-               d_lightInformation[d], objects.w, objects.z,
-               d_materials[d], d_textures[d], 
-				   d_randoms[d], origin, direction, angles, sceneInfo, 
-				   postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
-			   break;
-		   }
+      for( int s(0); s<occupancyParameters.y; ++s )
+      {
+	      switch( sceneInfo.renderingType.x ) 
+	      {
+	      case vtAnaglyph:
+		      {
+			      k_anaglyphRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
+				      d_boundingBoxes[d], objects.x, 
+                  d_primitives[d], objects.y,  
+                  d_lightInformation[d], objects.w, objects.z,
+                  d_materials[d], d_textures[d], 
+				      d_randoms[d], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			      break;
+		      }
+	      case vt3DVision:
+		      {
+			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
+				      d_boundingBoxes[d], objects.x, 
+                  d_primitives[d], objects.y,  
+                  d_lightInformation[d], objects.w, objects.z,
+                  d_materials[d], d_textures[d], 
+				      d_randoms[d], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			      break;
+		      }
+	      case vtFishEye:
+		      {
+			      k_fishEyeRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
+                  d*s*size.y,
+				      d_boundingBoxes[d], objects.x, 
+                  d_primitives[d], objects.y,  
+                  d_lightInformation[d], objects.w, objects.z,
+                  d_materials[d], d_textures[d], 
+				      d_randoms[d], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			      break;
+		      }
+	      default:
+		      {
+			      k_standardRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
+                  s*size.y,
+				      d_boundingBoxes[d], objects.x, 
+                  d_primitives[d], objects.y,  
+                  d_lightInformation[d], objects.w, objects.z,
+                  d_materials[d], d_textures[d], 
+				      d_randoms[d], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+			      break;
+		      }
+         }
+         
 	   }
 
 	   cudaThreadSynchronize();
@@ -1280,42 +1302,57 @@ extern "C" void cudaRender(
 		   LOG_ERROR("nbActivePrimitives :" << objects.y);
 		   LOG_ERROR("nbActiveLamps :" << objects.z);
 	   }
-
-	   switch( postProcessingInfo.type.x )
-	   {
-	   case ppe_depthOfField:
-		   k_depthOfField<<<grid,blocks,0,d_streams[d]>>>(
-			   sceneInfo, 
-			   postProcessingInfo, 
-			   d_postProcessingBuffer[d],
-			   d_randoms[d], 
-			   d_bitmap[d] );
-		   break;
-	   case ppe_ambientOcclusion:
-		   k_ambiantOcclusion<<<grid,blocks,0,d_streams[d]>>>(
-			   sceneInfo, 
-			   postProcessingInfo, 
-			   d_postProcessingBuffer[d],
-			   d_randoms[d], 
-			   d_bitmap[d] );
-		   break;
-	   case ppe_enlightment:
-		   k_enlightment<<<grid,blocks,0,d_streams[d]>>>(
-			   sceneInfo, 
-			   postProcessingInfo, 
-            d_primitivesXYIds[d],
-			   d_postProcessingBuffer[d],
-			   d_randoms[d], 
-			   d_bitmap[d] );
-		   break;
-	   default:
-		   k_default<<<grid,blocks,0,d_streams[d]>>>(
-			   sceneInfo, 
-			   postProcessingInfo, 
-			   d_postProcessingBuffer[d],
-            d_primitivesXYIds[d],
-			   d_bitmap[d] );
-		   break;
-	   }
    }
+
+	size.x = static_cast<int>(sceneInfo.width.x);
+	size.y = static_cast<int>(sceneInfo.height.x);
+
+	grid.x = (size.x+blockSize.x-1)/blockSize.x;
+   grid.y = (size.y+blockSize.y-1)/blockSize.y;
+   grid.z = 1;
+	
+   blocks.x = blockSize.x;
+   blocks.y = blockSize.y;
+   blocks.z = blockSize.z;
+
+   //
+   // Post processing
+   //
+   int d(0);
+	switch( postProcessingInfo.type.x )
+	{
+	case ppe_depthOfField:
+		k_depthOfField<<<grid,blocks,0,d_streams[d][0]>>>(
+			sceneInfo, 
+			postProcessingInfo, 
+			d_postProcessingBuffer[d],
+			d_randoms[d], 
+			d_bitmap[d] );
+		break;
+	case ppe_ambientOcclusion:
+		k_ambiantOcclusion<<<grid,blocks,0,d_streams[d][0]>>>(
+			sceneInfo, 
+			postProcessingInfo, 
+			d_postProcessingBuffer[d],
+			d_randoms[d], 
+			d_bitmap[d] );
+		break;
+	case ppe_enlightment:
+		k_enlightment<<<grid,blocks,0,d_streams[d][0]>>>(
+			sceneInfo, 
+			postProcessingInfo, 
+         d_primitivesXYIds[d],
+			d_postProcessingBuffer[d],
+			d_randoms[d], 
+			d_bitmap[d] );
+		break;
+	default:
+      k_default<<<grid,blocks,0,d_streams[d][0]>>>(
+			sceneInfo, 
+			postProcessingInfo, 
+			d_postProcessingBuffer[d],
+         d_primitivesXYIds[d],
+			d_bitmap[d] );
+		break;
+	}
 }

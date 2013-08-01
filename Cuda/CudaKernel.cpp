@@ -294,7 +294,12 @@ void CudaKernel::render_begin( const float timer )
       LOG_INFO(3, "CPU Lamps              :" << objects.z);
       LOG_INFO(3, "CPU Light information  :" << objects.w);
 
+      int2 occupancyParameters;
+      occupancyParameters.x = 1; // GPUs
+      occupancyParameters.y = 1; // Streams
+
       cudaRender(
+         occupancyParameters,
          m_blockSize,
          m_sceneInfo, objects,
          m_postProcessingInfo,
