@@ -72,10 +72,13 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_imageCount(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
-   m_blockSize.x = 0;
-   m_blockSize.y = 0;
-   m_blockSize.z = 0;
+   m_blockSize.x = 12;
+   m_blockSize.y = 12;
+   m_blockSize.z = 1;
    m_blockSize.w = 0;
+
+   m_occupancyParameters.x = 2; // GPUs
+   m_occupancyParameters.y = 1; // Streams
 
    m_gpuDescription = "CUDA device";
 
@@ -170,7 +173,7 @@ ________________________________________________________________________________
 void CudaKernel::initializeDevice()
 {
    LOG_INFO(1,"CudaKernel::initializeDevice");
-	initialize_scene( m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS );
+	initialize_scene( m_occupancyParameters, m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS );
 }
 
 void CudaKernel::resetBoxesAndPrimitives()
@@ -186,7 +189,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::releaseDevice()
 {
-	finalize_scene();
+	finalize_scene( m_occupancyParameters );
 }
 
 /*
@@ -197,6 +200,49 @@ ________________________________________________________________________________
 */
 void CudaKernel::render_begin( const float timer )
 {
+   if( m_refresh )
+   {
+	   // CPU -> GPU Data transfers
+      int nbBoxes      = m_nbActiveBoxes[m_frame];
+      int nbPrimitives = m_nbActivePrimitives[m_frame];
+      int nbLamps      = m_nbActiveLamps[m_frame];
+      int nbMaterials  = m_nbActiveMaterials+1;
+
+      LOG_INFO( 3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
+
+      if( !m_primitivesTransfered )
+      {
+	      h2d_scene( 
+            m_occupancyParameters,
+            m_hBoundingBoxes, nbBoxes, 
+            m_hPrimitives, nbPrimitives, 
+            m_hLamps, nbLamps );
+
+         h2d_lightInformation( 
+            m_occupancyParameters,
+            m_lightInformation, m_lightInformationSize );
+         m_primitivesTransfered = true;
+      }
+	
+      if( !m_materialsTransfered )
+	   {
+		   h2d_materials( 
+            m_occupancyParameters,
+            m_hMaterials, nbMaterials, 
+            m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
+         LOG_INFO(3, "Transfering " << nbMaterials << " materials");
+		   m_materialsTransfered = true;
+	   }
+
+      if( !m_texturesTransfered )
+	   {
+         LOG_INFO(3, "Transfering textures, and " << m_lightInformationSize << " light information");
+         h2d_textures( 
+            m_occupancyParameters,
+            NB_MAX_TEXTURES,  m_hTextures );
+		   m_texturesTransfered = true;
+      }
+
 #if USE_KINECT
    if( m_kinectEnabled )
    {
@@ -236,47 +282,9 @@ void CudaKernel::render_begin( const float timer )
 	   NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
 
       // copy kinect data to GPU
-      h2d_kinect( m_hVideo, m_hDepth );
+      // h2d_kinect( m_hVideo, m_hDepth );
    }
 #endif // USE_KINECT
-
-   if( m_refresh )
-   {
-	   // CPU -> GPU Data transfers
-      int nbBoxes      = m_nbActiveBoxes[m_frame];
-      int nbPrimitives = m_nbActivePrimitives[m_frame];
-      int nbLamps      = m_nbActiveLamps[m_frame];
-      int nbMaterials  = m_nbActiveMaterials+1;
-
-      LOG_INFO( 3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
-
-      if( !m_primitivesTransfered )
-      {
-	      h2d_scene( 
-            m_hBoundingBoxes, nbBoxes, 
-            m_hPrimitives, nbPrimitives, 
-            m_hLamps, nbLamps );
-
-         h2d_lightInformation( 
-            m_lightInformation, m_lightInformationSize );
-         m_primitivesTransfered = true;
-      }
-	
-      if( !m_materialsTransfered )
-	   {
-		   h2d_materials( 
-            m_hMaterials, nbMaterials, 
-            m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
-         LOG_INFO(3, "Transfering " << nbMaterials << " materials");
-		   m_materialsTransfered = true;
-	   }
-
-      if( !m_texturesTransfered )
-	   {
-         LOG_INFO(3, "Transfering textures, and " << m_lightInformationSize << " light information");
-         h2d_textures( NB_MAX_TEXTURES,  m_hTextures );
-		   m_texturesTransfered = true;
-      }
 
       // Kernel execution
       int4 objects;
@@ -294,12 +302,8 @@ void CudaKernel::render_begin( const float timer )
       LOG_INFO(3, "CPU Lamps              :" << objects.z);
       LOG_INFO(3, "CPU Light information  :" << objects.w);
 
-      int2 occupancyParameters;
-      occupancyParameters.x = 1; // GPUs
-      occupancyParameters.y = 1; // Streams
-
       cudaRender(
-         occupancyParameters,
+         m_occupancyParameters,
          m_blockSize,
          m_sceneInfo, objects,
          m_postProcessingInfo,
@@ -313,7 +317,7 @@ void CudaKernel::render_begin( const float timer )
 void CudaKernel::render_end()
 {
    // GPU -> CPU Data transfers
-   d2h_bitmap( m_bitmap, m_hPrimitivesXYIds, m_sceneInfo);
+   d2h_bitmap( m_occupancyParameters, m_bitmap, m_hPrimitivesXYIds, m_sceneInfo);
 
    if( m_sceneInfo.misc.x == 0 )
    {
@@ -335,6 +339,7 @@ void CudaKernel::render_end()
       ::glEnd();
       ::glDisable(GL_TEXTURE_2D);
    }
+   //std::cout << ".";
 }
 
 void CudaKernel::deviceQuery()
@@ -393,7 +398,7 @@ void CudaKernel::deviceQuery()
       LOG_INFO(1,"  Run time limit on kernels:                     " << (deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
       LOG_INFO(1,"  Integrated GPU sharing Host Memory:            " << (deviceProp.integrated ? "Yes" : "No"));
       LOG_INFO(1,"  Support host page-locked memory mapping:       " << (deviceProp.canMapHostMemory ? "Yes" : "No"));
-      LOG_INFO(1,"  Concurrent GPUKernel execution:                   " << (deviceProp.concurrentKernels ? "Yes" : "No"));
+      LOG_INFO(1,"  Concurrent GPUKernel execution:                " << (deviceProp.concurrentKernels ? "Yes" : "No"));
       LOG_INFO(1,"  Alignment requirement for Surfaces:            " << (deviceProp.surfaceAlignment ? "Yes" : "No"));
       LOG_INFO(1,"  Device has ECC support enabled:                " << (deviceProp.ECCEnabled ? "Yes" : "No"));
       LOG_INFO(1,"  Device is using TCC driver mode:               " << (deviceProp.tccDriver ? "Yes" : "No"));
@@ -412,11 +417,6 @@ void CudaKernel::deviceQuery()
       LOG_INFO(1,"  Compute Mode:");
       LOG_INFO(1,"     < " << sComputeMode[deviceProp.computeMode] << " >");
       LOG_INFO(1,"--------------------------------------------------------------------------------" );
-
-      m_blockSize.x = 16;
-      m_blockSize.y = 8;
-      m_blockSize.z = 1;
-
    }
 
    // exe and CUDA driver name

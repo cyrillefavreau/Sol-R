@@ -46,7 +46,6 @@ float4*           d_postProcessingBuffer[MAX_GPU_COUNT];
 char*             d_bitmap[MAX_GPU_COUNT];
 int4*             d_primitivesXYIds[MAX_GPU_COUNT];
 cudaStream_t      d_streams[MAX_GPU_COUNT][MAX_STREAM_COUNT];
-int               d_nbGPUs;
 
 /*
 ________________________________________________________________________________
@@ -370,7 +369,8 @@ Standard renderer
 ________________________________________________________________________________
 */
 __global__ void k_standardRenderer(
-   int split_y,
+   int          device_split,
+   int          stream_split,
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
@@ -387,13 +387,18 @@ __global__ void k_standardRenderer(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = (y+split_y)*sceneInfo.width.x+x;
+	int index = (stream_split+y)*sceneInfo.width.x+x;
 
 	Ray ray;
 	ray.origin = origin;
 	ray.direction = direction;
 
-   float3 rotationCenter = origin; // {0.f,0.f,0.f};
+#ifdef USE_OCULUS
+   float3 rotationCenter = origin;
+#else
+   float3 rotationCenter = {0.f,0.f,0.f};
+#endif // USE_OCULUS
+
    bool antialiasingActivated = (sceneInfo.misc.w == 2);
    
 	if( sceneInfo.pathTracingIteration.x == 0 )
@@ -423,7 +428,7 @@ __global__ void k_standardRenderer(
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
       ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.width.x/2));
-	   ray.direction.y = -ray.origin.z*0.001f*(float)(split_y+y - (sceneInfo.height.x/2));
+	   ray.direction.y = -ray.origin.z*0.001f*(float)(device_split+stream_split+y - (sceneInfo.height.x/2));
 	   ray.origin.x = ray.direction.x;
 	   ray.origin.y = ray.direction.y;
    }
@@ -434,7 +439,7 @@ __global__ void k_standardRenderer(
       step.x=ratio*6400.f/(float)sceneInfo.width.x;
       step.y=6400.f/(float)sceneInfo.height.x;
       ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
-      ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.height.x/2));
+      ray.direction.y = ray.direction.y + step.y*(float)(device_split+stream_split+y - (sceneInfo.height.x/2));
    }
 
 	vectorRotation( ray.origin, rotationCenter, angles );
@@ -639,7 +644,11 @@ __global__ void k_anaglyphRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-	float3 rotationCenter = origin; // {0.f,0.f,0.f};
+#ifdef USE_OCULUS
+   float3 rotationCenter = origin;
+#else
+   float3 rotationCenter = {0.f,0.f,0.f};
+#endif // USE_OCULUS
 
 	if( sceneInfo.pathTracingIteration.x == 0 )
 	{
@@ -754,7 +763,11 @@ __global__ void k_3DVisionRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-	float3 rotationCenter = origin; // {0.f,0.f,0.f};
+#ifdef USE_OCULUS
+   float3 rotationCenter = origin;
+#else
+   float3 rotationCenter = {0.f,0.f,0.f};
+#endif // USE_OCULUS
 
 	if( sceneInfo.pathTracingIteration.x == 0 )
 	{
@@ -834,20 +847,28 @@ Post Processing Effect: Default
 ________________________________________________________________________________
 */
 __global__ void k_default(
-	SceneInfo        sceneInfo,
+	SceneInfo          sceneInfo,
 	PostProcessingInfo PostProcessingInfo,
-	float4*          postProcessingBuffer,
-   int4*            primitiveXYIds,
-	char*            bitmap) 
+	float4*            postProcessingBuffer,
+	char*              bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
+#if 1
    float4 localColor = postProcessingBuffer[index];
-   
    if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+   {
       localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+   }
+#else
+   float4 localColor;
+   localColor.x = float(index)/float(sceneInfo.width.x*sceneInfo.height.x);
+   localColor.y = 0.f;
+   localColor.z = 0.f;
+   localColor.w = 0.f;
+#endif // 0
 
 	makeColor( sceneInfo, localColor, bitmap, index ); 
 }
@@ -859,20 +880,20 @@ Post Processing Effect: Depth of field
 ________________________________________________________________________________
 */
 __global__ void k_depthOfField(
-	SceneInfo        sceneInfo,
-	PostProcessingInfo PostProcessingInfo,
-	float4*          postProcessingBuffer,
-	float*           randoms,
-	char*            bitmap) 
+	SceneInfo          sceneInfo,
+	PostProcessingInfo postProcessingInfo,
+	float4*            postProcessingBuffer,
+	float*             randoms,
+	char*              bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
-	float  depth = PostProcessingInfo.param2.x*postProcessingBuffer[index].w;
+	float  depth = postProcessingInfo.param2.x*postProcessingBuffer[index].w;
 	int    wh = sceneInfo.width.x*sceneInfo.height.x;
 
    float4 localColor = {0.f,0.f,0.f};
-	for( int i=0; i<PostProcessingInfo.param3.x; ++i )
+	for( int i=0; i<postProcessingInfo.param3.x; ++i )
 	{
 		int ix = i%wh;
 		int iy = (i+sceneInfo.width.x)%wh;
@@ -891,7 +912,7 @@ __global__ void k_depthOfField(
 			localColor += postProcessingBuffer[index];
 		}
 	}
-	localColor /= PostProcessingInfo.param3.x;
+	localColor /= postProcessingInfo.param3.x;
 
    if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
       localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
@@ -1006,44 +1027,55 @@ GPU initialization
 ________________________________________________________________________________
 */
 extern "C" void initialize_scene( 
-	int width, int height, int nbPrimitives, int nbLamps, int nbMaterials )
+   int2& occupancyParameters,
+	int   width, 
+   int   height, 
+   int   nbPrimitives, 
+   int   nbLamps, 
+   int   nbMaterials )
 {
-#if MULTI_GPU
    // Multi GPU initialization
-   checkCudaErrors(cudaGetDeviceCount(&d_nbGPUs));
-   if(d_nbGPUs > MAX_GPU_COUNT)
+   int nbGPUs;
+   checkCudaErrors(cudaGetDeviceCount(&nbGPUs));
+   if(nbGPUs > MAX_GPU_COUNT)
    {
-	   d_nbGPUs = MAX_GPU_COUNT;
+	   nbGPUs = MAX_GPU_COUNT;
    }
-#else
-   d_nbGPUs = 1;
-#endif
-   LOG_INFO(1 ,"CUDA-capable device count: " << d_nbGPUs);
-
-   for( int d(0); d<d_nbGPUs; ++d )
+   if( occupancyParameters.x > nbGPUs )
    {
-      checkCudaErrors(cudaSetDevice(d));
-      for( int s(0); s<MAX_STREAM_COUNT; ++s )
+      LOG_INFO(1 ,"You asked for " << occupancyParameters.x << " CUDA-capable devices, but only " << nbGPUs << " are available");
+      occupancyParameters.x = nbGPUs;
+   }
+   else
+   {
+      LOG_INFO(1 ,"CUDA-capable device count: " << occupancyParameters.x);
+   }
+
+   for( int device(0); device<occupancyParameters.x; ++device )
+   {
+      checkCudaErrors(cudaSetDevice(device));
+      for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
-         checkCudaErrors(cudaStreamCreate(&d_streams[d][s]));
+         checkCudaErrors(cudaStreamCreate(&d_streams[device][stream]));
       }
+      LOG_INFO(1, "Created " << occupancyParameters.y << " streams on device " << device );
 
       // Scene resources
-	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[d],      NB_MAX_BOXES*sizeof(BoundingBox)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitives[d],         NB_MAX_PRIMITIVES*sizeof(Primitive)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_lamps[d],              NB_MAX_LAMPS*sizeof(int)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_materials[d],          NB_MAX_MATERIALS*sizeof(Material)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[d],   NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[d],            width*height*sizeof(float)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[device],      NB_MAX_BOXES*sizeof(BoundingBox)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitives[device],         NB_MAX_PRIMITIVES*sizeof(Primitive)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_lamps[device],              NB_MAX_LAMPS*sizeof(int)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_materials[device],          NB_MAX_MATERIALS*sizeof(Material)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[device],   NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[device],            width*height*sizeof(float)));
 
 	   // Rendering canvas
-	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[d],  width*height*sizeof(float4)/d_nbGPUs));
-	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[d],                width*height*gColorDepth*sizeof(char)/d_nbGPUs));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[d],       width*height*sizeof(int4)/d_nbGPUs));
+      int imageSize = width*height/occupancyParameters.x;
+	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], imageSize*sizeof(float4)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device],               imageSize*gColorDepth*sizeof(char)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device],      imageSize*sizeof(int4)));
 
-      d_textures[d] = nullptr;
+      d_textures[device] = nullptr;
    }
-#if 1
 	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
 	LOG_INFO( 3, "GPU: Ray               : " << sizeof(Ray) );
 	LOG_INFO( 3, "GPU: PrimitiveType     : " << sizeof(PrimitiveType) );
@@ -1053,7 +1085,6 @@ extern "C" void initialize_scene(
 	LOG_INFO( 3, "GPU: PostProcessingType: " << sizeof(PostProcessingType) );
 	LOG_INFO( 3, "GPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) );
 	LOG_INFO( 3, "Textures " << NB_MAX_TEXTURES );
-#endif // 0
 }
 
 /*
@@ -1062,25 +1093,25 @@ ________________________________________________________________________________
 GPU finalization
 ________________________________________________________________________________
 */
-extern "C" void finalize_scene()
+extern "C" void finalize_scene( int2 occupancyParameters )
 {
    LOG_INFO(1 ,"Releasing device resources");
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-      checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaFree( d_boundingBoxes[d] ));
-	   checkCudaErrors(cudaFree( d_primitives[d] ));
-	   checkCudaErrors(cudaFree( d_lamps[d] ));
-	   checkCudaErrors(cudaFree( d_materials[d] ));
-	   checkCudaErrors(cudaFree( d_textures[d] ));
-	   checkCudaErrors(cudaFree( d_lightInformation[d] ));
-	   checkCudaErrors(cudaFree( d_randoms[d] ));
-	   checkCudaErrors(cudaFree( d_postProcessingBuffer[d] ));
-	   checkCudaErrors(cudaFree( d_bitmap[d] ));
-	   checkCudaErrors(cudaFree( d_primitivesXYIds[d] ));
-      for( int s(0); s<MAX_STREAM_COUNT; ++s )
+      checkCudaErrors(cudaSetDevice(device));
+	   checkCudaErrors(cudaFree( d_boundingBoxes[device] ));
+	   checkCudaErrors(cudaFree( d_primitives[device] ));
+	   checkCudaErrors(cudaFree( d_lamps[device] ));
+	   checkCudaErrors(cudaFree( d_materials[device] ));
+	   checkCudaErrors(cudaFree( d_textures[device] ));
+	   checkCudaErrors(cudaFree( d_lightInformation[device] ));
+	   checkCudaErrors(cudaFree( d_randoms[device] ));
+	   checkCudaErrors(cudaFree( d_postProcessingBuffer[device] ));
+	   checkCudaErrors(cudaFree( d_bitmap[device] ));
+	   checkCudaErrors(cudaFree( d_primitivesXYIds[device] ));
+      for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
-         checkCudaErrors(cudaStreamDestroy(d_streams[d][s]));
+         checkCudaErrors(cudaStreamDestroy(d_streams[device][stream]));
       }
       cudaDeviceReset();
    }
@@ -1093,77 +1124,93 @@ CPU -> GPU data transfers
 ________________________________________________________________________________
 */
 extern "C" void h2d_scene( 
-	BoundingBox* boundingBoxes, int nbActiveBoxes,
+   int2 occupancyParameters,
+   BoundingBox* boundingBoxes, int nbActiveBoxes,
 	Primitive*  primitives, int nbPrimitives,
 	int* lamps, int nbLamps )
 {
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-      checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[d],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[d][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_primitives[d],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[d][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_lamps[d],              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice, d_streams[d][0] ));
+      checkCudaErrors(cudaSetDevice(device));
+	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[device],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_primitives[device],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_lamps[device],              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 
 extern "C" void h2d_materials( 
+   int2 occupancyParameters,
 	Material*  materials, int nbActiveMaterials,
 	float*     randoms,   int nbRandoms)
 {
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-      checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_materials[d], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[d][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_randoms[d],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[d][0] ));
+      checkCudaErrors(cudaSetDevice(device));
+	   checkCudaErrors(cudaMemcpyAsync( d_materials[device], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_randoms[device],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 
 extern "C" void h2d_textures( 
-	const int activeTextures, TextureInformation* textureInfos )
+   int2 occupancyParameters,
+	const int activeTextures, 
+   TextureInformation* textureInfos )
 {
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-      int totalSize=0;
+      int totalSize;
+      int offset;
+#ifdef USE_KINECT
+      totalSize = gKinectVideoSize+gKinectDepthSize;
+      offset    = gKinectVideoSize+gKinectDepthSize;
+#else
+      totalSize = 0;
+      offset = 0;
+#endif // USE_KINECT
       for( int i(0); i<activeTextures; ++i )
       {
          totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
       }
-      if( d_textures[d] )
+      if( d_textures[device] )
       {
-	      checkCudaErrors(cudaFree( d_textures[d] ));
+	      checkCudaErrors(cudaFree( d_textures[device] ));
       }
-	   checkCudaErrors(cudaMalloc( (void**)&d_textures[d], totalSize*sizeof(char)));
+	   checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize*sizeof(char)));
 
-      checkCudaErrors(cudaSetDevice(d));
+      checkCudaErrors(cudaSetDevice(device));
       for( int i(0); i<activeTextures; ++i )
       {
          if( textureInfos[i].buffer != nullptr )
          {
             int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
-	         checkCudaErrors(cudaMemcpyAsync( d_textures[d]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d][0] ));
+	         checkCudaErrors(cudaMemcpyAsync( d_textures[device]+offset+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
          }
       }
    }
 }
 
 extern "C" void h2d_lightInformation( 
-	LightInformation* lightInformation , int lightInformationSize)
+   int2              occupancyParameters,
+   LightInformation* lightInformation , 
+   int               lightInformationSize)
 {
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-      checkCudaErrors(cudaSetDevice(d));
-	   checkCudaErrors(cudaMemcpyAsync( d_lightInformation[d],  lightInformation,  lightInformationSize*sizeof(LightInformation), cudaMemcpyHostToDevice, d_streams[d][0] ));
+      checkCudaErrors(cudaSetDevice(device));
+	   checkCudaErrors(cudaMemcpyAsync( d_lightInformation[device],  lightInformation,  lightInformationSize*sizeof(LightInformation), cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
-	char* kinectVideo, char* kinectDepth )
+   int2  occupancyParameters,
+	char* kinectVideo, 
+   char* kinectDepth )
 {
-   for( int d(0); d<d_nbGPUs; ++d )
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[d], kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[d]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[d][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[device],                  kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[device]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 #endif // USE_KINECT
@@ -1174,23 +1221,30 @@ ________________________________________________________________________________
 GPU -> CPU data transfers
 ________________________________________________________________________________
 */
-extern "C" void d2h_bitmap( unsigned char* bitmap, int4* primitivesXYIds, const SceneInfo sceneInfo )
+extern "C" void d2h_bitmap( 
+   int2            occupancyParameters,
+   unsigned char*  bitmap, 
+   int4*           primitivesXYIds, 
+   const SceneInfo sceneInfo )
 {
-   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/d_nbGPUs;
-   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(int4)/d_nbGPUs;
-   for( int d(0); d<d_nbGPUs; ++d )
+   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/occupancyParameters.x;
+   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(int4)/occupancyParameters.x;
+   for( int device(0); device<occupancyParameters.x; ++device )
    {
-      checkCudaErrors(cudaSetDevice(d));
+      checkCudaErrors(cudaSetDevice(device));
       
-      // Synchronize stream
-      for( int s(0); s<MAX_STREAM_COUNT; ++s )
-      {
-         checkCudaErrors(cudaStreamSynchronize(d_streams[d][s]));
-      }
+      // Copy results back to host
+      LOG_INFO(3, "Device " << device << "/" << occupancyParameters.x );
+      LOG_INFO(3, "Copy results back to host: " << device*offsetBitmap << ", " << device*offsetXYIds );
+      checkCudaErrors(cudaMemcpy( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost ));
+	   //checkCudaErrors(cudaMemcpy( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost ));
 
-      // Copy results back to CPU
-      checkCudaErrors(cudaMemcpyAsync( bitmap+d*offsetBitmap,         d_bitmap[d],          offsetBitmap, cudaMemcpyDeviceToHost, d_streams[d][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+d*offsetXYIds, d_primitivesXYIds[d], offsetXYIds,  cudaMemcpyDeviceToHost, d_streams[d][0] ));
+      // Synchronize stream
+      for( int stream(0); stream<occupancyParameters.y; ++stream )
+      {
+         LOG_INFO(3, "Synchronizing stream " << stream << "/" << occupancyParameters.y << " on device " << device << "/" << occupancyParameters.x );
+         checkCudaErrors(cudaStreamSynchronize(d_streams[device][stream]));
+      }
    }
 }
 
@@ -1233,81 +1287,96 @@ extern "C" void cudaRender(
    blocks.y = blockSize.y;
    blocks.z = blockSize.z;
 
-   for( int d(0); d<occupancyParameters.x; ++d )
-   {
-      checkCudaErrors(cudaSetDevice(d));
+   std::string step("Initialization");
 
-      for( int s(0); s<occupancyParameters.y; ++s )
+   for( int device(0); device<occupancyParameters.x; ++device )
+   {
+      checkCudaErrors(cudaSetDevice(device));
+
+      for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
 	      switch( sceneInfo.renderingType.x ) 
 	      {
 	      case vtAnaglyph:
 		      {
-			      k_anaglyphRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
-				      d_boundingBoxes[d], objects.x, 
-                  d_primitives[d], objects.y,  
-                  d_lightInformation[d], objects.w, objects.z,
-                  d_materials[d], d_textures[d], 
-				      d_randoms[d], origin, direction, angles, sceneInfo, 
-				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+               step = "vtAnaglyph";
+			      k_anaglyphRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+				      d_boundingBoxes[device], objects.x, 
+                  d_primitives[device], objects.y,  
+                  d_lightInformation[device], objects.w, objects.z,
+                  d_materials[device], d_textures[device], 
+				      d_randoms[device], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
 			      break;
 		      }
 	      case vt3DVision:
 		      {
-			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
-				      d_boundingBoxes[d], objects.x, 
-                  d_primitives[d], objects.y,  
-                  d_lightInformation[d], objects.w, objects.z,
-                  d_materials[d], d_textures[d], 
-				      d_randoms[d], origin, direction, angles, sceneInfo, 
-				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+               step = "vt3DVision";
+			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+				      d_boundingBoxes[device], objects.x, 
+                  d_primitives[device], objects.y,  
+                  d_lightInformation[device], objects.w, objects.z,
+                  d_materials[device], d_textures[device], 
+				      d_randoms[device], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
 			      break;
 		      }
 	      case vtFishEye:
 		      {
-			      k_fishEyeRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
-                  d*s*size.y,
-				      d_boundingBoxes[d], objects.x, 
-                  d_primitives[d], objects.y,  
-                  d_lightInformation[d], objects.w, objects.z,
-                  d_materials[d], d_textures[d], 
-				      d_randoms[d], origin, direction, angles, sceneInfo, 
-				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+               step = "vtFishEye";
+			      k_fishEyeRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  device*stream*size.y,
+				      d_boundingBoxes[device], objects.x, 
+                  d_primitives[device], objects.y,  
+                  d_lightInformation[device], objects.w, objects.z,
+                  d_materials[device], d_textures[device], 
+				      d_randoms[device], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
 			      break;
 		      }
 	      default:
 		      {
-			      k_standardRenderer<<<grid,blocks,0,d_streams[d][s]>>>(
-                  s*size.y,
-				      d_boundingBoxes[d], objects.x, 
-                  d_primitives[d], objects.y,  
-                  d_lightInformation[d], objects.w, objects.z,
-                  d_materials[d], d_textures[d], 
-				      d_randoms[d], origin, direction, angles, sceneInfo, 
-				      postProcessingInfo, d_postProcessingBuffer[d], d_primitivesXYIds[d]);
+               step = "k_standardRenderer";
+			      k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  device*(sceneInfo.height.x/occupancyParameters.x),
+                  stream*size.y,
+				      d_boundingBoxes[device], objects.x, 
+                  d_primitives[device], objects.y,  
+                  d_lightInformation[device], objects.w, objects.z,
+                  d_materials[device], d_textures[device], 
+				      d_randoms[device], origin, direction, angles, sceneInfo, 
+				      postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
 			      break;
 		      }
          }
-         
+	      cudaError_t status = cudaGetLastError();
+	      if(status != cudaSuccess) 
+	      {
+		      LOG_ERROR("********************************************************************************");
+            LOG_ERROR("Error code : [" << status << "] " << cudaGetErrorString(status));
+		      LOG_ERROR("Step       : " << step);
+		      LOG_ERROR("Device     : " << device);
+		      LOG_ERROR("Stream     : " << stream);
+		      LOG_ERROR("Image size : " << size.x << ", " << size.y);
+		      LOG_ERROR("Grid size  : " << grid.x << ", " << grid.y << ", " << grid.z);
+		      LOG_ERROR("Block size : " << blocks.x << ", " << blocks.y << ", " << blocks.z);
+		      LOG_ERROR("Boxes      : " << objects.x);
+		      LOG_ERROR("Primitives : " << objects.y);
+		      LOG_ERROR("Lamps      : " << objects.z);
+		      LOG_ERROR("********************************************************************************");
+	      }
 	   }
-
-	   cudaThreadSynchronize();
-	   cudaError_t status = cudaGetLastError();
-	   if(status != cudaSuccess) 
-	   {
-		   LOG_ERROR("ERROR: (" << status << ") " << cudaGetErrorString(status));
-		   LOG_ERROR("INFO: Size(" << size.x << ", " << size.y << ")");
-		   LOG_ERROR("INFO: Grid(" << grid.x << ", " << grid.y << ", " << grid.z <<")");
-		   LOG_ERROR("nbActiveBoxes :" << objects.x);
-		   LOG_ERROR("nbActivePrimitives :" << objects.y);
-		   LOG_ERROR("nbActiveLamps :" << objects.z);
-	   }
+      //step = "cudaThreadSynchronize";
+	   //checkCudaErrors(cudaThreadSynchronize());
    }
 
+   // --------------------------------------------------------------------------------
+   // Post processing on device 0, stream 0
+   // --------------------------------------------------------------------------------
 	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x);
+	size.y = static_cast<int>(sceneInfo.height.x) / occupancyParameters.x;
 
-	grid.x = (size.x+blockSize.x-1)/blockSize.x;
+   grid.x = (size.x+blockSize.x-1)/blockSize.x;
    grid.y = (size.y+blockSize.y-1)/blockSize.y;
    grid.z = 1;
 	
@@ -1315,44 +1384,65 @@ extern "C" void cudaRender(
    blocks.y = blockSize.y;
    blocks.z = blockSize.z;
 
-   //
-   // Post processing
-   //
-   int d(0);
-	switch( postProcessingInfo.type.x )
-	{
-	case ppe_depthOfField:
-		k_depthOfField<<<grid,blocks,0,d_streams[d][0]>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer[d],
-			d_randoms[d], 
-			d_bitmap[d] );
-		break;
-	case ppe_ambientOcclusion:
-		k_ambiantOcclusion<<<grid,blocks,0,d_streams[d][0]>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer[d],
-			d_randoms[d], 
-			d_bitmap[d] );
-		break;
-	case ppe_enlightment:
-		k_enlightment<<<grid,blocks,0,d_streams[d][0]>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-         d_primitivesXYIds[d],
-			d_postProcessingBuffer[d],
-			d_randoms[d], 
-			d_bitmap[d] );
-		break;
-	default:
-      k_default<<<grid,blocks,0,d_streams[d][0]>>>(
-			sceneInfo, 
-			postProcessingInfo, 
-			d_postProcessingBuffer[d],
-         d_primitivesXYIds[d],
-			d_bitmap[d] );
-		break;
-	}
+   for( int device(0); device<occupancyParameters.x; ++device )
+   {
+      checkCudaErrors(cudaSetDevice(device));
+
+	   switch( postProcessingInfo.type.x )
+	   {
+	   case ppe_depthOfField:
+         step = "ppe_depthOfField";
+		   k_depthOfField<<<grid,blocks,0,d_streams[device][0]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[device],
+			   d_randoms[device], 
+			   d_bitmap[device] );
+		   break;
+	   case ppe_ambientOcclusion:
+         step = "ppe_ambientOcclusion";
+		   k_ambiantOcclusion<<<grid,blocks,0,d_streams[device][0]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[device],
+			   d_randoms[device], 
+			   d_bitmap[device] );
+		   break;
+	   case ppe_enlightment:
+         step = "ppe_enlightment";
+		   k_enlightment<<<grid,blocks,0,d_streams[device][0]>>>(
+			   sceneInfo, 
+			   postProcessingInfo, 
+            d_primitivesXYIds[device],
+			   d_postProcessingBuffer[device],
+			   d_randoms[device], 
+			   d_bitmap[device] );
+		   break;
+	   default:
+         step = "k_default";
+         k_default<<<grid,blocks,0,d_streams[device][0]>>>(
+            sceneInfo,
+			   postProcessingInfo, 
+			   d_postProcessingBuffer[device],
+			   d_bitmap[device] );
+		   break;
+	   }
+
+      cudaError_t status = cudaGetLastError();
+	   if(status != cudaSuccess) 
+	   {
+		   LOG_ERROR("********************************************************************************");
+         LOG_ERROR("Error code : [" << status << "] " << cudaGetErrorString(status));
+		   LOG_ERROR("Step       : " << step);
+		   LOG_ERROR("Device     : " << device);
+		   LOG_ERROR("Stream     : " << 0);
+		   LOG_ERROR("Image size : " << size.x << ", " << size.y);
+		   LOG_ERROR("Grid size  : " << grid.x << ", " << grid.y << ", " << grid.z);
+		   LOG_ERROR("Block size : " << blocks.x << ", " << blocks.y << ", " << blocks.z);
+		   LOG_ERROR("Boxes      : " << objects.x);
+		   LOG_ERROR("Primitives : " << objects.y);
+		   LOG_ERROR("Lamps      : " << objects.z);
+		   LOG_ERROR("********************************************************************************");
+	   }
+   }
 }

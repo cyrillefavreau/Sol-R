@@ -25,26 +25,47 @@
 #include "CudaDataTypes.h"
 
 extern "C" void initialize_scene( 
-	int width, int height, int nbPrimitives, int nbints, int nbMaterials );
+   int2& occupancyParameters,
+	int   width, 
+   int   height, 
+   int   nbPrimitives, 
+   int   nbLamps, 
+   int   nbMaterials );
 
-extern "C" void finalize_scene();
+extern "C" void finalize_scene(
+   int2         occupancyParameters);
 
 extern "C" void h2d_scene(
-   BoundingBox* boundingBoxes, int nbActiveBoxes,
-	Primitive* primitives, int nbPrimitives,
-	int* ints, int nbints );
+   int2         occupancyParameters,
+   BoundingBox* boundingBoxes, 
+   int          nbActiveBoxes,
+	Primitive*   primitives, 
+   int          nbPrimitives,
+	int*         ints, 
+   int          nbints );
 
 extern "C" void h2d_materials( 
-	Material*  materials, int nbActiveMaterials,
-   float*     randoms,   int nbRandoms );
+   int2       occupancyParameters,
+	Material*  materials, 
+   int        nbActiveMaterials,
+   float*     randoms,   
+   int        nbRandoms );
 
 extern "C" void h2d_textures( 
-	const int activeTextures, TextureInformation* textureInfos );
+   int2                occupancyParameters,
+	const int           activeTextures, 
+   TextureInformation* textureInfos );
 
 extern "C" void h2d_lightInformation( 
-	LightInformation* lightInformation, int lightInformationSize);
+   int2              occupancyParameters,
+	LightInformation* lightInformation, 
+   int               lightInformationSize);
 
-extern "C" void d2h_bitmap( unsigned char* bitmap, int4* primitivesXYIds, const SceneInfo sceneInfo );
+extern "C" void d2h_bitmap( 
+   int2 occupancyParameters,
+   unsigned char* bitmap, 
+   int4* primitivesXYIds, 
+   const SceneInfo sceneInfo );
 
 extern "C" void cudaRender(
    int2 occupancyParameters,

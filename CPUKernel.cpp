@@ -379,8 +379,8 @@ float4 CPUKernel::cubeMapping(
 #ifdef USE_KINECT
    if( primitive.type.x == ptCamera )
    {
-      int x = (intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x;
-      int y = gKinectVideoHeight - (intersection.y-primitive.p0.y+primitive.size.y)*primitive.materialInfo.y;
+      int x = (intersection.x-primitive.p0.x+primitive.size.x)*material.textureMapping.x;
+      int y = gKinectVideoHeight - (intersection.y-primitive.p0.y+primitive.size.y)*material.textureMapping.y;
 
       x = (x+gKinectVideoWidth)%gKinectVideoWidth;
       y = (y+gKinectVideoHeight)%gKinectVideoHeight;
@@ -388,9 +388,9 @@ float4 CPUKernel::cubeMapping(
       if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
       {
          int index = (y*gKinectVideoWidth+x)*gKinectVideo;
-         unsigned char r = m_hTextures[index+2];
-         unsigned char g = m_hTextures[index+1];
-         unsigned char b = m_hTextures[index+0];
+         unsigned char r = m_hTextures[material.textureMapping.z].buffer[index+2];
+         unsigned char g = m_hTextures[material.textureMapping.z].buffer[index+1];
+         unsigned char b = m_hTextures[material.textureMapping.z].buffer[index  ];
          result.x = r/256.f;
          result.y = g/256.f;
          result.z = b/256.f;

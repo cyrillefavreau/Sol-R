@@ -59,6 +59,7 @@ private:
    // Runtime kernel execution parameters
    int4 m_blockSize;
    int  m_sharedMemSize;
+   int2 m_occupancyParameters; // GPUs & streams
 
 private:
 

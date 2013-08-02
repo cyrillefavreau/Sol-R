@@ -145,12 +145,12 @@ float3 MapReader::loadFromFile(
       position.x = jewel.location.x*blockSize.x;
       position.y = jewel.location.y*blockSize.y;
       position.z = jewel.location.z*blockSize.z;
-      int nbPrimitives = kernel.addPrimitive( frame, ptSphere );
-      kernel.setPrimitive( 
-         frame, nbPrimitives,
+      int nbPrimitives = kernel.addPrimitive( ptSphere );
+      kernel.setPrimitive(
+         nbPrimitives,
          position.x + blockSize.x/2.f, position.y + blockSize.x/2.f, position.z + blockSize.x/2.f, 
          blockSize.x/4.f, 0.f, 0.f,
-         jewelMaterial, 1, 1);
+         jewelMaterial);
       ++itj;
    }
 
@@ -215,7 +215,7 @@ float3 MapReader::loadFromFile(
          dimension.x, position.y,  position.z, 
          dimension.x, dimension.y, position.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
       nbPrimitives = kernel.addPrimitive( ptTriangle );
       kernel.setPrimitive( 
          nbPrimitives,
@@ -223,7 +223,7 @@ float3 MapReader::loadFromFile(
          position.x , dimension.y, position.z, 
          position.x,  position.y,  position.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
 
       // Back
       nbPrimitives = kernel.addPrimitive( ptTriangle );
@@ -233,7 +233,7 @@ float3 MapReader::loadFromFile(
          dimension.x, position.y,  dimension.z, 
          dimension.x, dimension.y, dimension.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
       nbPrimitives = kernel.addPrimitive( ptTriangle );
       kernel.setPrimitive( 
          nbPrimitives,
@@ -241,7 +241,7 @@ float3 MapReader::loadFromFile(
          position.x , dimension.y, dimension.z, 
          position.x,  position.y,  dimension.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
 
       // Left
       nbPrimitives = kernel.addPrimitive( ptTriangle );
@@ -251,7 +251,7 @@ float3 MapReader::loadFromFile(
          position.x, position.y,  dimension.z, 
          position.x, dimension.y, dimension.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
       nbPrimitives = kernel.addPrimitive( ptTriangle );
       kernel.setPrimitive( 
          nbPrimitives,
@@ -259,7 +259,7 @@ float3 MapReader::loadFromFile(
          position.x, dimension.y, position.z, 
          position.x, position.y,  position.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
 
       // Right
       nbPrimitives = kernel.addPrimitive( ptTriangle );
@@ -269,7 +269,7 @@ float3 MapReader::loadFromFile(
          dimension.x, position.y,  dimension.z, 
          dimension.x, dimension.y, dimension.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
       nbPrimitives = kernel.addPrimitive( ptTriangle );
       kernel.setPrimitive( 
          nbPrimitives,
@@ -277,7 +277,7 @@ float3 MapReader::loadFromFile(
          dimension.x, dimension.y, position.z, 
          dimension.x, position.y,  position.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
 
       // Top
       nbPrimitives = kernel.addPrimitive( ptTriangle );
@@ -287,7 +287,7 @@ float3 MapReader::loadFromFile(
          dimension.x, dimension.y, position.z, 
          dimension.x, dimension.y, dimension.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
       nbPrimitives = kernel.addPrimitive( ptTriangle );
       kernel.setPrimitive( 
          nbPrimitives,
@@ -295,7 +295,7 @@ float3 MapReader::loadFromFile(
          position.x,  dimension.y, dimension.z, 
          position.x,  dimension.y, position.z, 
          0.f, 0.f, 0.f,
-         blockMaterial, 1, 1);
+         blockMaterial);
 
 #else
       // Blocks

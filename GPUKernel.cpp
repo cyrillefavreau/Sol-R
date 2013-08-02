@@ -225,7 +225,7 @@ void GPUKernel::initBuffers()
 	int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
 
 	m_hPrimitivesXYIds = new int4[size];
-	memset( m_hPrimitivesXYIds,0,size*sizeof(int2));
+	memset( m_hPrimitivesXYIds,0,size*sizeof(int4));
 
 	m_hRandoms = new float[size];
 	int i;
@@ -482,8 +482,6 @@ void GPUKernel::setPrimitive(
 				(*m_primitives[m_frame])[index].n0.x = 0.f;
 				(*m_primitives[m_frame])[index].n0.y = 0.f;
 				(*m_primitives[m_frame])[index].n0.z = -1.f;
-				(*m_primitives[m_frame])[index].materialInfo.x = ( w != 0.f ) ? (gKinectVideoWidth /w/2)*materialPaddingX : 1.f;
-				(*m_primitives[m_frame])[index].materialInfo.y = ( w != 0.f ) ? (gKinectVideoHeight/h/2)*materialPaddingY : 1.f;
 				break;
 			}
 #endif // USE_KINECT

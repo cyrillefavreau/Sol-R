@@ -211,8 +211,8 @@ __device__ float4 cubeMapping(
 #ifdef USE_KINECT
 	if( primitive.type.x == ptCamera )
 	{
-		int x = (intersection.x-primitive.p0.x+primitive.size.x)*primitive.materialInfo.x;
-		int y = gKinectVideoHeight - (intersection.y-primitive.p0.y+primitive.size.y)*primitive.materialInfo.y;
+		int x = (intersection.x-primitive.p0.x+primitive.size.x)*material.textureMapping.x;
+		int y = gKinectVideoHeight - (intersection.y-primitive.p0.y+primitive.size.y)*material.textureMapping.y;
 
 		x = (x+gKinectVideoWidth)%gKinectVideoWidth;
 		y = (y+gKinectVideoHeight)%gKinectVideoHeight;

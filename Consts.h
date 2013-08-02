@@ -29,7 +29,7 @@
 
 // Consts
 const int MAX_GPU_COUNT     = 32;
-const int MAX_STREAM_COUNT  =  8;
+const int MAX_STREAM_COUNT  = 32;
 const int NB_MAX_ITERATIONS = 20;
 
 const int NB_MAX_BOXES      = 4096;
