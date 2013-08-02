@@ -93,37 +93,6 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
 		&GPU_CudaRAYTRACERMODULE_EVENT_ERROR);
 #endif // NDEBUG
 
-#if USE_KINECT
-	// Initialize Kinect
-   std::cout << "----------------------------" << std::endl;
-   std::cout << "                         O  " << std::endl;
-   std::cout << "                       --+--" << std::endl;
-   std::cout << "                         |  " << std::endl;
-   std::cout << "Kinect initialization   / \\" << std::endl;
-	HRESULT err=NuiInitialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
-   m_kinectEnabled = (err==S_OK);
-
-   if( m_kinectEnabled )
-   {
-	   m_hNextDepthFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
-	   m_hNextVideoFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
-	   m_hNextSkeletonEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
-
-	   m_skeletons = CreateEvent( NULL, TRUE, FALSE, NULL );			 
-	   NuiSkeletonTrackingEnable( m_skeletons, NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT );
-
-	   NuiImageStreamOpen( NUI_IMAGE_TYPE_COLOR,                  NUI_IMAGE_RESOLUTION_640x480, 0, 2, m_hNextVideoFrameEvent, &m_pVideoStreamHandle );
-	   NuiImageStreamOpen( NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX, NUI_IMAGE_RESOLUTION_320x240, 0, 2, m_hNextDepthFrameEvent, &m_pDepthStreamHandle );
-
-	   NuiCameraElevationSetAngle( 0 );
-      std::cout << "    SUCCESS" << std::endl;
-   }
-   else
-   {
-      std::cout << "*** FAILED  ***" << std::endl;
-   }
-   std::cout << "----------------------------" << std::endl;
-#endif // USE_KINECT
 }
 
 /*
@@ -137,17 +106,6 @@ CudaKernel::~CudaKernel()
    LOG_INFO(3,"CudaKernel::~CudaKernel");
    // Clean up
    releaseDevice();
-
-#if USE_KINECT
-   if( m_kinectEnabled ) 
-   {
-      CloseHandle(m_skeletons);
-      CloseHandle(m_hNextDepthFrameEvent); 
-      CloseHandle(m_hNextVideoFrameEvent); 
-      CloseHandle(m_hNextSkeletonEvent);
-      NuiShutdown();
-   }
-#endif // USE_KINECT
 }
 
 void CudaKernel::initBuffers() 
@@ -234,15 +192,6 @@ void CudaKernel::render_begin( const float timer )
 		   m_materialsTransfered = true;
 	   }
 
-      if( !m_texturesTransfered )
-	   {
-         LOG_INFO(3, "Transfering textures, and " << m_lightInformationSize << " light information");
-         h2d_textures( 
-            m_occupancyParameters,
-            NB_MAX_TEXTURES,  m_hTextures );
-		   m_texturesTransfered = true;
-      }
-
 #if USE_KINECT
    if( m_kinectEnabled )
    {
@@ -257,7 +206,7 @@ void CudaKernel::render_begin( const float timer )
 		   pTexture->LockRect( 0, &LockedRect, NULL, 0 ) ; 
 		   if( LockedRect.Pitch != 0 ) 
 		   {
-			   m_hVideo = (char*) LockedRect.pBits;
+			   m_hVideo = (unsigned char*)LockedRect.pBits;
 		   }
 	   }
 
@@ -274,17 +223,35 @@ void CudaKernel::render_begin( const float timer )
 			   pTexture->LockRect( 0, &LockedRectDepth, NULL, 0 ) ; 
 			   if( LockedRectDepth.Pitch != 0 ) 
 			   {
-				   m_hDepth = (char*) LockedRectDepth.pBits;
+				   m_hDepth = (unsigned char*)LockedRectDepth.pBits;
 			   }
 		   }
 	   }
 	   NuiImageStreamReleaseFrame( m_pVideoStreamHandle, pImageFrame ); 
 	   NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
 
-      // copy kinect data to GPU
-      // h2d_kinect( m_hVideo, m_hDepth );
+      m_hTextures[0].buffer = m_hVideo;
+      m_hTextures[1].buffer = m_hDepth;
    }
 #endif // USE_KINECT
+
+      if( !m_texturesTransfered )
+	   {
+         LOG_INFO(3, "Transfering textures, and " << m_lightInformationSize << " light information");
+         h2d_textures( 
+            m_occupancyParameters,
+            NB_MAX_TEXTURES,  m_hTextures );
+		      m_texturesTransfered = true;
+      }
+
+#ifdef USE_KINECT
+      // copy kinect data to GPU
+      h2d_kinect(
+         m_occupancyParameters,
+         m_hVideo,
+         m_hDepth );
+#endif // USE_KINECT
+
 
       // Kernel execution
       int4 objects;
@@ -339,7 +306,6 @@ void CudaKernel::render_end()
       ::glEnd();
       ::glDisable(GL_TEXTURE_2D);
    }
-   //std::cout << ".";
 }
 
 void CudaKernel::deviceQuery()

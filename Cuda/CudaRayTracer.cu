@@ -1158,15 +1158,7 @@ extern "C" void h2d_textures(
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
-      int totalSize;
-      int offset;
-#ifdef USE_KINECT
-      totalSize = gKinectVideoSize+gKinectDepthSize;
-      offset    = gKinectVideoSize+gKinectDepthSize;
-#else
-      totalSize = 0;
-      offset = 0;
-#endif // USE_KINECT
+      int totalSize(0);
       for( int i(0); i<activeTextures; ++i )
       {
          totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
@@ -1183,7 +1175,7 @@ extern "C" void h2d_textures(
          if( textureInfos[i].buffer != nullptr )
          {
             int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
-	         checkCudaErrors(cudaMemcpyAsync( d_textures[device]+offset+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	         checkCudaErrors(cudaMemcpyAsync( d_textures[device]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
          }
       }
    }
@@ -1204,8 +1196,8 @@ extern "C" void h2d_lightInformation(
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
    int2  occupancyParameters,
-	char* kinectVideo, 
-   char* kinectDepth )
+	unsigned char* kinectVideo, 
+   unsigned char* kinectDepth )
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {

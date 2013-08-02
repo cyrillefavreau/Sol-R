@@ -183,12 +183,55 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 #endif // 0
 
    m_progressiveBoxes = true;
+
+#if USE_KINECT
+	// Initialize Kinect
+   LOG_INFO(1, "----------------------------" );
+   LOG_INFO(1, "                         O  " );
+   LOG_INFO(1, "                       --+--" );
+   LOG_INFO(1, "                         |  " );
+   LOG_INFO(1, "Kinect initialization   / \\" );
+	HRESULT err=NuiInitialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
+   m_kinectEnabled = (err==S_OK);
+
+   if( m_kinectEnabled )
+   {
+	   m_hNextDepthFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
+	   m_hNextVideoFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
+	   m_hNextSkeletonEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
+
+	   m_skeletons = CreateEvent( NULL, TRUE, FALSE, NULL );			 
+	   NuiSkeletonTrackingEnable( m_skeletons, NUI_SKELETON_TRACKING_FLAG_ENABLE_SEATED_SUPPORT );
+
+	   NuiImageStreamOpen( NUI_IMAGE_TYPE_COLOR,                  NUI_IMAGE_RESOLUTION_640x480, 0, 2, m_hNextVideoFrameEvent, &m_pVideoStreamHandle );
+	   NuiImageStreamOpen( NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX, NUI_IMAGE_RESOLUTION_320x240, 0, 2, m_hNextDepthFrameEvent, &m_pDepthStreamHandle );
+
+	   NuiCameraElevationSetAngle( 0 );
+   }
+   else
+   {
+      LOG_ERROR("    FAILED" );
+   }
+   LOG_INFO(1, "----------------------------" );
+#endif // USE_KINECT
 }
 
 
 GPUKernel::~GPUKernel()
 {
 	LOG_INFO(3,"GPUKernel::~GPUKernel");
+
+#if USE_KINECT
+   if( m_kinectEnabled ) 
+   {
+      CloseHandle(m_skeletons);
+      CloseHandle(m_hNextDepthFrameEvent); 
+      CloseHandle(m_hNextVideoFrameEvent); 
+      CloseHandle(m_hNextSkeletonEvent);
+      NuiShutdown();
+   }
+#endif // USE_KINECT
+
    cleanup();
    LOG_INFO(1,"----------++++++++++ GPU Kernel Destroyed ++++++++++----------" );
    LOG_INFO(1,"" );
@@ -280,7 +323,11 @@ void GPUKernel::cleanup()
 
    for( int i(0); i<NB_MAX_TEXTURES; ++i)
    {
+#ifdef USE_KINECT
+      if(i>1 && m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
+#else
       if(m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
+#endif // USE_KINECT
    }
    
    m_vertices.clear();
@@ -960,15 +1007,22 @@ void GPUKernel::resetAll()
    m_primitivesTransfered = false;
 
    m_nbActiveMaterials = -1;
-   m_nbActiveTextures = 0;
    m_materialsTransfered = false;
 
    for( int i(0); i<NB_MAX_TEXTURES; ++i )
    {
-      delete [] m_hTextures[i].buffer;
+#ifdef USE_KINECT
+      if( i>1 && m_hTextures[i].buffer ) delete [] m_hTextures[i].buffer;
+#else
+      if( m_hTextures[i].buffer ) delete [] m_hTextures[i].buffer;
+#endif USE_KINECT
       m_hTextures[i].buffer = nullptr;
    }
+   m_nbActiveTextures = 0;
    m_texturesTransfered = false;
+#ifdef USE_KINECT
+   initializeKinectTextures();
+#endif // USE_KINECT
 }
 
 void GPUKernel::displayBoxesInfo()
@@ -1770,6 +1824,22 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 }
 
 #ifdef USE_KINECT
+void GPUKernel::initializeKinectTextures()
+{
+   LOG_INFO(1, "Initializing Kinect textures" );
+   m_hTextures[0].offset = 0;
+   m_hTextures[0].size.x = gKinectVideoWidth;
+   m_hTextures[0].size.y = gKinectVideoHeight;
+   m_hTextures[0].size.z = gKinectVideo;
+
+   m_hTextures[1].offset = gKinectVideoSize;
+   m_hTextures[1].size.x = gKinectDepthWidth;
+   m_hTextures[1].size.y = gKinectDepthHeight;
+   m_hTextures[1].size.z = gKinectDepth;
+
+   m_nbActiveTextures = 2;
+}
+
 int GPUKernel::updateSkeletons( 
 	unsigned int primitiveIndex, 
 	float3 skeletonPosition, 

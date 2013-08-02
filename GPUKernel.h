@@ -257,6 +257,7 @@ public:
 #ifdef USE_KINECT
 public:
 	// ---------- Kinect ----------
+   void initializeKinectTextures();
 
 	int updateSkeletons( 
       unsigned int primitiveIndex,
@@ -268,8 +269,8 @@ public:
 		float feet_radius,  int feet_materialId);
 
 	bool getSkeletonPosition( int index, float3& position );
-   char* getDepthBitmap() { return m_hDepth; }
-   char* getVideoBitmap() { return m_hVideo; }
+   unsigned char* getDepthBitmap() { return m_hDepth; }
+   unsigned char* getVideoBitmap() { return m_hVideo; }
 #endif // USE_KINECT
 
 public:
@@ -429,8 +430,8 @@ protected:
 	int               m_skeletonsBody;
 	int               m_skeletonsLamp;
 
-   char* m_hVideo;
-   char* m_hDepth;
+   unsigned char* m_hVideo;
+   unsigned char* m_hDepth;
 
 #endif // USE_KINECT
 };

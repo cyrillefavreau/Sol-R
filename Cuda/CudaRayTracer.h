@@ -78,5 +78,8 @@ extern "C" void cudaRender(
    float3 angles);
 
 #ifdef USE_KINECT
-extern "C" void h2d_kinect( char* video, char* depth );
+extern "C" void h2d_kinect( 
+   int2 occupancyParameters,
+   unsigned char* video, 
+   unsigned char* depth );
 #endif // USE_KINECT
