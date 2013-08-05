@@ -150,7 +150,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    m_addingIndex(0),
    m_refresh(true),
    m_bitmap(nullptr),
-   m_GLMode(-1)
+   m_GLMode(-1),
+   m_distortion(0.1f)
 {
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
@@ -160,11 +161,6 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    	m_nbActiveBoxes[i]=0;
    	m_nbActivePrimitives[i]=0;
    	m_nbActiveLamps[i]=0;
-   }
-
-   for( int i(0); i<NB_MAX_TEXTURES; ++i)
-   {
-      memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
 
 	LOG_INFO(3,"GPUKernel::GPUKernel (Log is " << (activeLogging ? "" : "de") << "activated" );
@@ -252,6 +248,12 @@ void GPUKernel::initBuffers()
    if( m_primitives && m_boundingBoxes && m_lamps )
    {
       LOG_INFO(1, "CPU resources successfully initialized" );
+   }
+
+   // Textures
+   for( int i(0); i<NB_MAX_TEXTURES; ++i )
+   {
+      memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
 
 	// Setup GPU resources
@@ -996,6 +998,8 @@ void GPUKernel::resetFrame()
 
 void GPUKernel::resetAll()
 {
+	LOG_INFO(1,"Resetting frames" );
+
    int oldFrame(m_frame);
    for( int frame(0); frame<NB_MAX_FRAMES; ++frame)
    {
@@ -1003,9 +1007,9 @@ void GPUKernel::resetAll()
       resetFrame();
    }
    m_frame=oldFrame;
-
    m_primitivesTransfered = false;
 
+	LOG_INFO(1,"Resetting textures and materials" );
    m_nbActiveMaterials = -1;
    m_materialsTransfered = false;
 
@@ -1016,7 +1020,7 @@ void GPUKernel::resetAll()
 #else
       if( m_hTextures[i].buffer ) delete [] m_hTextures[i].buffer;
 #endif USE_KINECT
-      m_hTextures[i].buffer = nullptr;
+      memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
    m_nbActiveTextures = 0;
    m_texturesTransfered = false;

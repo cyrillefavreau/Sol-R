@@ -290,6 +290,8 @@ public:
    void resetFrame(  );
    void resetAll();
 
+   void setDistortion( const float distortion ) { m_distortion = distortion; };
+
 public:
 
 	char* loadFromFile( const std::string& filename, size_t& length );
@@ -352,6 +354,10 @@ protected:
 
    bool         m_doneWithAdding;
    int          m_addingIndex;
+
+   // Distortion (Oculus)
+   float m_distortion;
+
 
 protected:
    int    m_frame;

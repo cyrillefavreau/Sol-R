@@ -151,7 +151,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             id = line.substr(7);
             MaterialMTL material;
             memset( &material, 0, sizeof(MaterialMTL));
-            m_materials[id].textureId = -1;
+            m_materials[id].textureId = MATERIAL_NONE;
             m_materials[id] = material;
          }
 
@@ -181,6 +181,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             folder += '/';
             folder += line;
             int idx = kernel.getNbActiveTextures();
+            LOG_INFO(1, "Loading texture " << folder );
             if( kernel.loadTextureFromFile(idx, folder) )
             {
                m_materials[id].textureId = idx;
@@ -191,26 +192,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
          {
             // Specular values
             line = line.substr(2);
-            int d=atoi(line.c_str());
-            switch(d)
-            {
-            case 3: 
-            case 5: 
-            case 8: 
-               //m_materials[id].reflection   = rand()%100/100.f; 
-               break;
-            case 4: 
-            case 7: 
-               //m_materials[id].reflection   = rand()%100/100.f; 
-               //m_materials[id].transparency = rand()%100/100.f; 
-               //m_materials[id].refraction   = 1.01f+rand()%100/100.f; 
-               break;
-            case 6: 
-            case 9: 
-               //m_materials[id].transparency = rand()%100/100.f; 
-               //m_materials[id].refraction   = 1.01f+rand()%100/100.f; 
-               break;
-            }
+            float d=atof(line.c_str());
+            m_materials[id].reflection   = 1.f; 
+            m_materials[id].transparency = d; 
+            m_materials[id].refraction   = 1.66; 
          }
       }
 

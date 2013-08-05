@@ -794,7 +794,7 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 );
+		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 ) + sceneInfo.width3DVision.x;
 		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 		eyeRay.direction.z = direction.z;
 	}
@@ -805,12 +805,12 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) - halfWidth/2);
+		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) - halfWidth/2) - sceneInfo.width3DVision.x;
 		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 		eyeRay.direction.z = direction.z;
 	}
 
-	//vectorRotation( eyeRay.origin, rotationCenter, angles );
+	vectorRotation( eyeRay.origin,    rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 color = launchRay(
@@ -1229,7 +1229,7 @@ extern "C" void d2h_bitmap(
       LOG_INFO(3, "Device " << device << "/" << occupancyParameters.x );
       LOG_INFO(3, "Copy results back to host: " << device*offsetBitmap << ", " << device*offsetXYIds );
       checkCudaErrors(cudaMemcpy( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost ));
-	   //checkCudaErrors(cudaMemcpy( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost ));
+	   // ***** ***** ***** checkCudaErrors(cudaMemcpy( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost ));
 
       // Synchronize stream
       for( int stream(0); stream<occupancyParameters.y; ++stream )

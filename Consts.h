@@ -50,7 +50,7 @@ const int NB_MAX_LIGHTINFORMATIONS = 500;
 
 // Globals
 #define M_PI 3.14159265358979323846
-#define EPSILON 10.f
+#define EPSILON 1.f
 
 #ifdef USE_KINECT
 // Kinect
