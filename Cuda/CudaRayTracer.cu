@@ -389,6 +389,8 @@ __global__ void k_standardRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = (stream_split+y)*sceneInfo.width.x+x;
 
+   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
+
 	Ray ray;
 	ray.origin = origin;
 	ray.direction = direction;
@@ -540,7 +542,9 @@ __global__ void k_fishEyeRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-	Ray ray;
+   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
+
+   Ray ray;
 	ray.origin = origin;
 	ray.direction = direction;
 
@@ -643,6 +647,8 @@ __global__ void k_anaglyphRenderer(
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
+
+   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
 
 #ifdef USE_OCULUS
    float3 rotationCenter = origin;
@@ -762,6 +768,8 @@ __global__ void k_3DVisionRenderer(
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
+
+   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
 
 #ifdef USE_OCULUS
    float3 rotationCenter = origin;
