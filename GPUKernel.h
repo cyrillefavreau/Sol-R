@@ -1,24 +1,24 @@
 /* 
- * Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * aint with this program.  If not, see <http://www.gnu.org/licenses/>. 
- */
+* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+*/
 
 /*
- * Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
- *
- */
+* Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+*
+*/
 
 #pragma once
 
@@ -66,7 +66,7 @@ struct CPUBoundingBox
 
 typedef std::map<unsigned int,CPUBoundingBox> BoxContainer;
 typedef std::map<unsigned int,CPUPrimitive>   PrimitiveContainer;
-typedef std::map<unsigned int,unsigned int>   LampContainer;
+typedef std::map<unsigned int,Lamp>           LampContainer;
 typedef std::vector<float3> Vertices;
 
 class RAYTRACINGENGINE_API GPUKernel
@@ -84,7 +84,7 @@ public:
    // ---------- Rendering ----------
 	virtual void render_begin( const float timer ) = 0;
    virtual void render_end() = 0;
-   unsigned char* getBitmap() { return m_bitmap; };
+   BitmapBuffer* getBitmap() { return m_bitmap; };
 
 public:
 
@@ -251,7 +251,7 @@ public:
    float dotProduct( const float3& a, const float3& b );
      
    // Bitmap export
-   void saveBitmapToFile( const std::string& filename, char* bitmap, const int width, const int height, const int depth );
+   void saveBitmapToFile( const std::string& filename, BitmapBuffer* bitmap, const int width, const int height, const int depth );
 
 
 #ifdef USE_KINECT
@@ -269,8 +269,8 @@ public:
 		float feet_radius,  int feet_materialId);
 
 	bool getSkeletonPosition( int index, float3& position );
-   unsigned char* getDepthBitmap() { return m_hDepth; }
-   unsigned char* getVideoBitmap() { return m_hVideo; }
+   BitmapBuffer* getDepthBitmap() { return m_hDepth; }
+   BitmapBuffer* getVideoBitmap() { return m_hVideo; }
 #endif // USE_KINECT
 
 public:
@@ -339,8 +339,8 @@ protected:
    std::map<int,std::string> m_textureFilenames;
 
    // Scene
-	float*	    m_hRandoms;
-   int4*        m_hPrimitivesXYIds;
+	RandomBuffer*	       m_hRandoms;
+   PrimitiveXYIdBuffer*  m_hPrimitivesXYIds;
 
    int m_nbActiveBoxes[NB_MAX_FRAMES];
 	int m_nbActivePrimitives[NB_MAX_FRAMES];
@@ -358,7 +358,6 @@ protected:
    // Distortion (Oculus)
    float m_distortion;
 
-
 protected:
    int    m_frame;
    int    m_nbFrames;
@@ -367,7 +366,7 @@ protected:
 protected:
 
    // Rendering
-   unsigned char* m_bitmap;
+   BitmapBuffer* m_bitmap;
 
 protected:
 
@@ -436,8 +435,8 @@ protected:
 	int               m_skeletonsBody;
 	int               m_skeletonsLamp;
 
-   unsigned char* m_hVideo;
-   unsigned char* m_hDepth;
+   BitmapBuffer* m_hVideo;
+   BitmapBuffer* m_hDepth;
 
 #endif // USE_KINECT
 };

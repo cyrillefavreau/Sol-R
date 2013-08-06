@@ -347,13 +347,13 @@ ________________________________________________________________________________
 __device__ inline bool planeIntersection( 
 	const SceneInfo& sceneInfo,
 	const Primitive& primitive,
-	Material* materials,
-	char*     textures,
-	const Ray&      ray, 
-	float3&   intersection,
-	float3&   normal,
-	float&    shadowIntensity,
-	bool      reverse
+	Material*        materials,
+	BitmapBuffer*    textures,
+	const Ray&       ray, 
+	float3&          intersection,
+	float3&          normal,
+	float&           shadowIntensity,
+	bool             reverse
 	)
 { 
 	bool collision = false;
@@ -588,7 +588,7 @@ __device__ inline bool intersectionWithPrimitives(
 	const SceneInfo& sceneInfo,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
-	Material* materials, char* textures,
+	Material* materials, BitmapBuffer* textures,
 	const Ray& ray, 
 	const int& iteration,
    int&    closestPrimitive, 

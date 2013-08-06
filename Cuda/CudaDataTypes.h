@@ -24,6 +24,12 @@
 
 #include <vector_types.h>
 
+typedef int4          PrimitiveXYIdBuffer;
+typedef float4        PostProcessingBuffer;
+typedef unsigned char BitmapBuffer;
+typedef float         RandomBuffer;
+typedef int           Lamp;
+
 // 3D vision type
 enum VisionType
 {

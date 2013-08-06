@@ -37,7 +37,7 @@ const int NB_MAX_PRIMITIVES = 1000000;
 const int NB_MAX_LAMPS      = 10;
 const int NB_MAX_MATERIALS  = 130; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 1000;
-const int NB_MAX_FRAMES     = 1000;
+const int NB_MAX_FRAMES     = 1;
 const int NB_MAX_LIGHTINFORMATIONS = 500;
 
 
@@ -49,7 +49,7 @@ const int NB_MAX_LIGHTINFORMATIONS = 500;
 #define gColorDepth  3
 
 // Globals
-#define M_PI 3.14159265358979323846
+#define PI 3.14159265358979323846f
 #define EPSILON 1.f
 
 #ifdef USE_KINECT

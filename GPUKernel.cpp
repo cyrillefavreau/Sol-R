@@ -1,3 +1,25 @@
+/* 
+* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+*
+* This library is free software; you can redistribute it and/or
+* modify it under the terms of the GNU Library General Public
+* License as published by the Free Software Foundation; either
+* version 2 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+* Library General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+*/
+
+/*
+* Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+*
+*/
+
 #ifdef WIN32
 #include <windows.h>
 #else
@@ -126,12 +148,12 @@ typedef struct {
 
 GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device)
  : m_optimalNbOfPrimmitivesPerBox(optimalNbOfPrimmitivesPerBox),
-   m_hPrimitives(0), 
-	m_hMaterials(0), 
-   m_hLamps(0),
-   m_hBoundingBoxes(0),
-	m_hPrimitivesXYIds(0),
-	m_hRandoms(0), 
+   m_hPrimitives(nullptr), 
+	m_hMaterials(nullptr), 
+   m_hLamps(nullptr),
+   m_hBoundingBoxes(nullptr),
+	m_hPrimitivesXYIds(nullptr),
+	m_hRandoms(nullptr), 
 	m_nbActiveMaterials(-1),
    m_nbActiveTextures(0),
    m_lightInformationSize(0),
@@ -244,11 +266,6 @@ void GPUKernel::initBuffers()
       m_boundingBoxes[i] = new BoxContainer[NB_MAX_FRAMES];
       m_lamps[i]         = new LampContainer[NB_MAX_FRAMES];
    }
-   m_lightInformation = new LightInformation[ NB_MAX_LIGHTINFORMATIONS ];
-   if( m_primitives && m_boundingBoxes && m_lamps )
-   {
-      LOG_INFO(1, "CPU resources successfully initialized" );
-   }
 
    // Textures
    for( int i(0); i<NB_MAX_TEXTURES; ++i )
@@ -256,33 +273,34 @@ void GPUKernel::initBuffers()
       memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
 
-	// Setup GPU resources
+   m_lightInformation = new LightInformation[ NB_MAX_LIGHTINFORMATIONS ];
+
+   // Primitive IDs
+   int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
+   m_hPrimitivesXYIds = new PrimitiveXYIdBuffer[size];
+   LOG_INFO(1, m_hPrimitivesXYIds << "->" << m_hPrimitivesXYIds+size*sizeof(PrimitiveXYIdBuffer));
+   memset(m_hPrimitivesXYIds,0,size*sizeof(PrimitiveXYIdBuffer));
+
 	m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];
 	memset(m_hPrimitives,0,NB_MAX_PRIMITIVES*sizeof(Primitive) ); 
 	m_hMaterials = new Material[NB_MAX_MATERIALS+1];
 	memset(m_hMaterials,0,NB_MAX_MATERIALS*sizeof(Material) ); 
 	m_hBoundingBoxes = new BoundingBox[NB_MAX_BOXES];
 	memset(m_hBoundingBoxes,0,NB_MAX_BOXES*sizeof(BoundingBox));
-	m_hLamps = new int[NB_MAX_LAMPS];
-	memset(m_hLamps,0,NB_MAX_LAMPS*sizeof(int));
+	m_hLamps = new Lamp[NB_MAX_LAMPS];
+	memset(m_hLamps,0,NB_MAX_LAMPS*sizeof(Lamp));
 
-	// Randoms
-	int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
-
-	m_hPrimitivesXYIds = new int4[size];
-	memset( m_hPrimitivesXYIds,0,size*sizeof(int4));
-
-	m_hRandoms = new float[size];
+   // Randoms
+	m_hRandoms = new RandomBuffer[size];
 	int i;
 #pragma omp parallel for
 	for( i=0; i<size; ++i)
 	{
 		m_hRandoms[i] = (rand()%2000-1000)/100000.f;
-      //m_hRandoms[i] *= (i%100==0) ? 10.f : 1.f;
 	}
 
    // Bitmap
-   m_bitmap = new unsigned char[m_sceneInfo.width.x*m_sceneInfo.height.x*4];
+   m_bitmap = new BitmapBuffer[m_sceneInfo.width.x*m_sceneInfo.height.x*gColorDepth];
 }
 
 void GPUKernel::cleanup()
@@ -291,28 +309,13 @@ void GPUKernel::cleanup()
 
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
-      if( m_boundingBoxes[i] )
-      {
-         m_boundingBoxes[i]->clear();
-         //delete m_boundingBoxes[i];
-         //m_boundingBoxes[i] = nullptr;
-      }
+      if( m_boundingBoxes[i] ) m_boundingBoxes[i]->clear();
       m_nbActiveBoxes[i] = 0;
 
-      if( m_primitives[i] )
-      {
-         m_primitives[i]->clear();
-         //delete m_primitives[i];
-         //m_primitives[i] = nullptr;
-      }
+      if( m_primitives[i] ) m_primitives[i]->clear();
       m_nbActivePrimitives[i] = 0;
 
-      if(m_lamps[i]) 
-      {
-         m_lamps[i]->clear();
-         //delete m_lamps[i];
-         //m_lamps[i] = nullptr;
-      }
+      if(m_lamps[i]) m_lamps[i]->clear();
       m_nbActiveLamps[i] = 0;
 
       m_minPos[i].x =  100000.f;
@@ -330,23 +333,22 @@ void GPUKernel::cleanup()
 #else
       if(m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
 #endif // USE_KINECT
+      m_hTextures[i].buffer = nullptr;
    }
    
    m_vertices.clear();
    m_normals.clear();
    m_textCoords.clear();
 
-   if( m_hRandoms ) delete m_hRandoms;
-   if( m_bitmap ) delete [] m_bitmap;
-   if(m_hBoundingBoxes) delete m_hBoundingBoxes;
-	if(m_hPrimitives) delete m_hPrimitives;
-	if(m_hLamps) delete m_hLamps;
-   if(m_hMaterials) delete m_hMaterials;
-	if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
-   if(m_lightInformation ) delete m_lightInformation;
+   if( m_hRandoms ) delete m_hRandoms; m_hRandoms = nullptr;
+   if( m_bitmap ) delete [] m_bitmap; m_bitmap = nullptr;
+   if(m_hBoundingBoxes) delete m_hBoundingBoxes; m_hBoundingBoxes = nullptr;
+	if(m_hPrimitives) delete m_hPrimitives; m_hPrimitives = nullptr;
+	if(m_hLamps) delete m_hLamps; m_hLamps = nullptr;
+   if(m_hMaterials) delete m_hMaterials; m_hMaterials = nullptr;
+	if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds; m_hPrimitivesXYIds = nullptr;
+   if(m_lightInformation) delete m_lightInformation; m_lightInformation = nullptr;
 
-	m_hRandoms = 0;
-   m_hPrimitivesXYIds = 0,
 	m_nbActiveMaterials = -1;
    m_nbActiveTextures = 0;
 	m_materialsTransfered = false;
@@ -1740,7 +1742,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    }
    float size = m_sceneInfo.viewDistance.x/3.f;
 
-   float pi = static_cast<float>(M_PI);
+   float pi = static_cast<float>(PI);
 #if 0
    float x = 0.f;
    for( int i(0); i<m_sceneInfo.maxPathTracingIterations.x/10; ++i)
@@ -1920,7 +1922,7 @@ bool GPUKernel::getSkeletonPosition( int index, float3& position )
 
 #endif // USE_KINECT
 
-void GPUKernel::saveBitmapToFile( const std::string& filename, char* bitmap, const int width, const int height, const int depth )
+void GPUKernel::saveBitmapToFile( const std::string& filename, BitmapBuffer* bitmap, const int width, const int height, const int depth )
 {
 	FILE *f;
 

@@ -25,61 +25,60 @@
 #include "CudaDataTypes.h"
 
 extern "C" void initialize_scene( 
-   int2& occupancyParameters,
-	int   width, 
-   int   height, 
-   int   nbPrimitives, 
-   int   nbLamps, 
-   int   nbMaterials );
+   int2&           occupancyParameters,
+   const SceneInfo sceneInfo,
+   const int       nbPrimitives, 
+   const int       nbLamps, 
+   const int       nbMaterials );
 
 extern "C" void finalize_scene(
-   int2         occupancyParameters);
+   const int2   occupancyParameters );
 
 extern "C" void h2d_scene(
-   int2         occupancyParameters,
+   const int2   occupancyParameters,
    BoundingBox* boundingBoxes, 
-   int          nbActiveBoxes,
+   const int    nbActiveBoxes,
 	Primitive*   primitives, 
-   int          nbPrimitives,
-	int*         ints, 
-   int          nbints );
+   const int    nbPrimitives,
+	Lamp*        lamps, 
+   const int    nbLamps );
 
 extern "C" void h2d_materials( 
-   int2       occupancyParameters,
-	Material*  materials, 
-   int        nbActiveMaterials,
-   float*     randoms,   
-   int        nbRandoms );
+   const int2    occupancyParameters,
+	Material*     materials, 
+   const int     nbActiveMaterials,
+   RandomBuffer* randoms,   
+   const int     nbRandoms );
 
 extern "C" void h2d_textures( 
-   int2                occupancyParameters,
+   const int2          occupancyParameters,
 	const int           activeTextures, 
    TextureInformation* textureInfos );
 
 extern "C" void h2d_lightInformation( 
-   int2              occupancyParameters,
+   const int2        occupancyParameters,
 	LightInformation* lightInformation, 
    int               lightInformationSize);
 
 extern "C" void d2h_bitmap( 
-   int2 occupancyParameters,
-   unsigned char* bitmap, 
-   int4* primitivesXYIds, 
-   const SceneInfo sceneInfo );
+   const int2           occupancyParameters,
+   const SceneInfo      sceneInfo,
+   BitmapBuffer*        bitmap, 
+   PrimitiveXYIdBuffer* primitivesXYIds);
 
 extern "C" void cudaRender(
-   int2 occupancyParameters,
-   int4 blockSize,
-   SceneInfo sceneInfo,
-   int4 objects,
-   PostProcessingInfo PostProcessingInfo,
-   float3 origin, 
-   float3 direction, 
-   float3 angles);
+   const int2               occupancyParameters,
+   const int4               blockSize,
+   const SceneInfo          sceneInfo,
+   const int4               objects,
+   const PostProcessingInfo PostProcessingInfo,
+   const float3             origin, 
+   const float3             direction, 
+   const float3             angles);
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
-   int2 occupancyParameters,
-   unsigned char* video, 
-   unsigned char* depth );
+   const int2    occupancyParameters,
+   BitmapBuffer* video, 
+   BitmapBuffer* depth );
 #endif // USE_KINECT

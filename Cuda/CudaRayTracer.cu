@@ -35,17 +35,17 @@
 #include "GeometryShaders.cuh"
 
 // Device resources
-Primitive*        d_primitives[MAX_GPU_COUNT];
-BoundingBox*      d_boundingBoxes[MAX_GPU_COUNT]; 
-int*              d_lamps[MAX_GPU_COUNT];
-Material*         d_materials[MAX_GPU_COUNT];
-char*             d_textures[MAX_GPU_COUNT];
-LightInformation* d_lightInformation[MAX_GPU_COUNT];
-float*            d_randoms[MAX_GPU_COUNT];
-float4*           d_postProcessingBuffer[MAX_GPU_COUNT];
-char*             d_bitmap[MAX_GPU_COUNT];
-int4*             d_primitivesXYIds[MAX_GPU_COUNT];
-cudaStream_t      d_streams[MAX_GPU_COUNT][MAX_STREAM_COUNT];
+Primitive*            d_primitives[MAX_GPU_COUNT];
+BoundingBox*          d_boundingBoxes[MAX_GPU_COUNT]; 
+Lamp*                 d_lamps[MAX_GPU_COUNT];
+Material*             d_materials[MAX_GPU_COUNT];
+BitmapBuffer*         d_textures[MAX_GPU_COUNT];
+LightInformation*     d_lightInformation[MAX_GPU_COUNT];
+RandomBuffer*         d_randoms[MAX_GPU_COUNT];
+PostProcessingBuffer* d_postProcessingBuffer[MAX_GPU_COUNT];
+BitmapBuffer*         d_bitmap[MAX_GPU_COUNT];
+PrimitiveXYIdBuffer*  d_primitivesXYIds[MAX_GPU_COUNT];
+cudaStream_t          d_streams[MAX_GPU_COUNT][MAX_STREAM_COUNT];
 
 /*
 ________________________________________________________________________________
@@ -75,14 +75,14 @@ __device__ inline float4 launchRay(
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
 	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
-	Material*  materials, char* textures,
-	float*           randoms,
+	Material*  materials, BitmapBuffer* textures,
+	RandomBuffer*    randoms,
 	const Ray&       ray, 
 	const SceneInfo& sceneInfo,
 	const PostProcessingInfo& postProcessingInfo,
 	float3&          intersection,
 	float&           depthOfField,
-	int4&            primitiveXYId)
+	PrimitiveXYIdBuffer& primitiveXYId)
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
 
@@ -369,27 +369,29 @@ Standard renderer
 ________________________________________________________________________________
 */
 __global__ void k_standardRenderer(
+   const int2   occupancyParameters,
    int          device_split,
    int          stream_split,
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
 	Primitive* primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
    Material*    materials,
-	char*        textures,
-	float*       randoms,
-	float3       origin,
-	float3       direction,
-	float3       angles,
-	SceneInfo    sceneInfo,
+	BitmapBuffer* textures,
+	RandomBuffer* randoms,
+	float3        origin,
+	float3        direction,
+	float3        angles,
+	SceneInfo     sceneInfo,
 	PostProcessingInfo postProcessingInfo,
-	float4*      postProcessingBuffer,
-	int4*        primitiveXYIds)
+	PostProcessingBuffer* postProcessingBuffer,
+	PrimitiveXYIdBuffer*  primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = (stream_split+y)*sceneInfo.width.x+x;
 
-   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
 
 	Ray ray;
 	ray.origin = origin;
@@ -523,26 +525,28 @@ Standard renderer
 ________________________________________________________________________________
 */
 __global__ void k_fishEyeRenderer(
-   int split_y, 
+   const int2   occupancyParameters,
+   int          split_y, 
 	BoundingBox* BoundingBoxes, int nbActiveBoxes,
-	Primitive* primitives, int nbActivePrimitives,
+	Primitive*   primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
-	Material*    materials,
-	char*        textures,
-	float*       randoms,
-	float3       origin,
-	float3       direction,
-	float3       angles,
-	SceneInfo    sceneInfo,
-	PostProcessingInfo postProcessingInfo,
-	float4*      postProcessingBuffer,
-	int4*        primitiveXYIds)
+	Material*     materials,
+	BitmapBuffer* textures,
+	RandomBuffer* randoms,
+	float3        origin,
+	float3        direction,
+	float3        angles,
+	SceneInfo     sceneInfo,
+	PostProcessingInfo    postProcessingInfo,
+	PostProcessingBuffer* postProcessingBuffer,
+	PrimitiveXYIdBuffer*  primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
 
    Ray ray;
 	ray.origin = origin;
@@ -577,8 +581,8 @@ __global__ void k_fishEyeRenderer(
    ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.height.x/2));
 
    // 360° X axis
-   step.x = 2.f*M_PI/sceneInfo.width.x;
-   step.y = 2.f*M_PI/sceneInfo.height.x;
+   step.x = 2.f*PI/sceneInfo.width.x;
+   step.y = 2.f*PI/sceneInfo.height.x;
 
    float3 fishEyeAngles = {0.f,0.f,0.f};
    fishEyeAngles.y = angles.y + step.x*(float)x;
@@ -630,25 +634,30 @@ Anaglyph Renderer
 ________________________________________________________________________________
 */
 __global__ void k_anaglyphRenderer(
-	BoundingBox* boundingBoxes, int nbActiveBoxes,
-	Primitive* primitives, int nbActivePrimitives,
+   const int2    occupancyParameters,
+	BoundingBox*  boundingBoxes, int nbActiveBoxes,
+	Primitive*    primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
-	Material*    materials,
-	char*        textures,
-	float*       randoms,
-	float3       origin,
-	float3       direction,
-	float3       angles,
-	SceneInfo    sceneInfo,
+	Material*     materials,
+	BitmapBuffer* textures,
+	RandomBuffer* randoms,
+	float3        origin,
+	float3        direction,
+	float3        angles,
+	SceneInfo     sceneInfo,
 	PostProcessingInfo postProcessingInfo,
-	float4*      postProcessingBuffer,
-	int4*        primitiveXYIds)
+	PostProcessingBuffer* postProcessingBuffer,
+	PrimitiveXYIdBuffer*  primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+
+   float focus = primitiveXYIds[sceneInfo.width.x*sceneInfo.height.x/2].x - origin.z;
+   float eyeSeparation = sceneInfo.width3DVision.x*(focus/direction.z);
 
 #ifdef USE_OCULUS
    float3 rotationCenter = origin;
@@ -674,7 +683,7 @@ __global__ void k_anaglyphRenderer(
    step.y=4.f*6400.f/(float)sceneInfo.height.x;
 
    // Left eye
-	eyeRay.origin.x = origin.x + sceneInfo.width3DVision.x;
+	eyeRay.origin.x = origin.x + eyeSeparation;
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
@@ -698,7 +707,7 @@ __global__ void k_anaglyphRenderer(
 		primitiveXYIds[index]);
 
 	// Right eye
-	eyeRay.origin.x = origin.x - sceneInfo.width3DVision.x;
+	eyeRay.origin.x = origin.x - eyeSeparation;
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
@@ -751,25 +760,30 @@ ________________________________________________________________________________
 ________________________________________________________________________________
 */
 __global__ void k_3DVisionRenderer(
-	BoundingBox* boundingBoxes, int nbActiveBoxes,
-	Primitive*   primitives,    int nbActivePrimitives,
+   const int2    occupancyParameters,
+	BoundingBox*  boundingBoxes, int nbActiveBoxes,
+	Primitive*    primitives,    int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
-	Material*    materials,
-	char*        textures,
-	float*       randoms,
-	float3       origin,
-	float3       direction,
-	float3       angles,
-	SceneInfo    sceneInfo,
-	PostProcessingInfo postProcessingInfo,
-	float4*      postProcessingBuffer,
-	int4*        primitiveXYIds)
+	Material*     materials,
+	BitmapBuffer* textures,
+	RandomBuffer* randoms,
+	float3        origin,
+	float3        direction,
+	float3        angles,
+	SceneInfo     sceneInfo,
+	PostProcessingInfo    postProcessingInfo,
+	PostProcessingBuffer* postProcessingBuffer,
+	PrimitiveXYIdBuffer*  primitiveXYIds)
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
 
-   if( index>sceneInfo.width.x*sceneInfo.height.x ) return;
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+
+   float focus = primitiveXYIds[sceneInfo.width.x*sceneInfo.height.x/2].x - origin.z;
+   float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
 #ifdef USE_OCULUS
    float3 rotationCenter = origin;
@@ -798,7 +812,7 @@ __global__ void k_3DVisionRenderer(
 	if( x<halfWidth ) 
 	{
 		// Left eye
-		eyeRay.origin.x = origin.x + sceneInfo.width3DVision.x;
+		eyeRay.origin.x = origin.x + eyeSeparation;
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
@@ -809,7 +823,7 @@ __global__ void k_3DVisionRenderer(
 	else
 	{
 		// Right eye
-		eyeRay.origin.x = origin.x - sceneInfo.width3DVision.x;
+		eyeRay.origin.x = origin.x - eyeSeparation;
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
@@ -855,14 +869,18 @@ Post Processing Effect: Default
 ________________________________________________________________________________
 */
 __global__ void k_default(
-	SceneInfo          sceneInfo,
-	PostProcessingInfo PostProcessingInfo,
-	float4*            postProcessingBuffer,
-	char*              bitmap) 
+   const int2            occupancyParameters,
+	SceneInfo             sceneInfo,
+	PostProcessingInfo    PostProcessingInfo,
+	PostProcessingBuffer* postProcessingBuffer,
+	BitmapBuffer*         bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
+
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
 
 #if 1
    float4 localColor = postProcessingBuffer[index];
@@ -888,16 +906,21 @@ Post Processing Effect: Depth of field
 ________________________________________________________________________________
 */
 __global__ void k_depthOfField(
-	SceneInfo          sceneInfo,
-	PostProcessingInfo postProcessingInfo,
-	float4*            postProcessingBuffer,
-	float*             randoms,
-	char*              bitmap) 
+   const int2            occupancyParameters,
+	SceneInfo             sceneInfo,
+	PostProcessingInfo    postProcessingInfo,
+	PostProcessingBuffer* postProcessingBuffer,
+	RandomBuffer*         randoms,
+	BitmapBuffer*         bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
-	float  depth = postProcessingInfo.param2.x*postProcessingBuffer[index].w;
+
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   
+   float  depth = postProcessingInfo.param2.x*postProcessingBuffer[index].w;
 	int    wh = sceneInfo.width.x*sceneInfo.height.x;
 
    float4 localColor = {0.f,0.f,0.f};
@@ -937,16 +960,21 @@ Post Processing Effect: Ambiant Occlusion
 ________________________________________________________________________________
 */
 __global__ void k_ambiantOcclusion(
-	SceneInfo        sceneInfo,
-	PostProcessingInfo postProcessingInfo,
-	float4*          postProcessingBuffer,
-	float*           randoms,
-	char*            bitmap) 
+   const int2            occupancyParameters,
+	SceneInfo             sceneInfo,
+	PostProcessingInfo    postProcessingInfo,
+	PostProcessingBuffer* postProcessingBuffer,
+	RandomBuffer*         randoms,
+	BitmapBuffer*         bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
-	float occ = 0.f;
+
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+
+   float occ = 0.f;
 	float4 localColor = postProcessingBuffer[index];
 	float  depth = localColor.w;
 
@@ -992,27 +1020,32 @@ Post Processing Effect: Cartoon
 ________________________________________________________________________________
 */
 __global__ void k_enlightment(
-	SceneInfo          sceneInfo,
-	PostProcessingInfo PostProcessingInfo,
-   int4*              primitiveXYIds,
-	float4*            postProcessingBuffer,
-	float*             randoms,
-	char*              bitmap) 
+   const int2            occupancyParameters,
+	SceneInfo             sceneInfo,
+	PostProcessingInfo    postProcessingInfo,
+   PrimitiveXYIdBuffer*  primitiveXYIds,
+	PostProcessingBuffer* postProcessingBuffer,
+	RandomBuffer*         randoms,
+	BitmapBuffer*         bitmap) 
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = y*sceneInfo.width.x+x;
-	int    wh = sceneInfo.width.x*sceneInfo.height.x;
+
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   
+   int    wh = sceneInfo.width.x*sceneInfo.height.x;
 
    int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
    float4 localColor = {0.f,0.f,0.f};
-	for( int i=0; i<PostProcessingInfo.param3.x; ++i )
+	for( int i=0; i<postProcessingInfo.param3.x; ++i )
 	{
 		int ix = (i+sceneInfo.misc.y+sceneInfo.pathTracingIteration.x)%wh;
 		int iy = (i+sceneInfo.misc.y+sceneInfo.width.x)%wh;
-		int xx = x+randoms[ix]*PostProcessingInfo.param2.x;
-		int yy = y+randoms[iy]*PostProcessingInfo.param2.x;
+		int xx = x+randoms[ix]*postProcessingInfo.param2.x;
+		int yy = y+randoms[iy]*postProcessingInfo.param2.x;
 		localColor += postProcessingBuffer[index];
 		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
 		{
@@ -1020,7 +1053,7 @@ __global__ void k_enlightment(
 			localColor += ( localIndex>=0 && localIndex<wh ) ? div*primitiveXYIds[localIndex].z/255 : 0.f;
       }
 	}
-	localColor /= PostProcessingInfo.param3.x;
+	localColor /= postProcessingInfo.param3.x;
    localColor /= div;
 
 	localColor.w = 1.f;
@@ -1035,12 +1068,11 @@ GPU initialization
 ________________________________________________________________________________
 */
 extern "C" void initialize_scene( 
-   int2& occupancyParameters,
-	int   width, 
-   int   height, 
-   int   nbPrimitives, 
-   int   nbLamps, 
-   int   nbMaterials )
+   int2&            occupancyParameters,
+	const SceneInfo& sceneInfo,
+   const int        nbPrimitives, 
+   const int        nbLamps, 
+   const int        nbMaterials )
 {
    // Multi GPU initialization
    int nbGPUs;
@@ -1061,6 +1093,7 @@ extern "C" void initialize_scene(
 
    for( int device(0); device<occupancyParameters.x; ++device )
    {
+      int totalMemoryAllocation(0);
       checkCudaErrors(cudaSetDevice(device));
       for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
@@ -1069,20 +1102,54 @@ extern "C" void initialize_scene(
       LOG_INFO(1, "Created " << occupancyParameters.y << " streams on device " << device );
 
       // Scene resources
-	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[device],      NB_MAX_BOXES*sizeof(BoundingBox)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitives[device],         NB_MAX_PRIMITIVES*sizeof(Primitive)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_lamps[device],              NB_MAX_LAMPS*sizeof(int)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_materials[device],          NB_MAX_MATERIALS*sizeof(Material)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[device],   NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_randoms[device],            width*height*sizeof(float)));
+      int size(NB_MAX_BOXES*sizeof(BoundingBox));
+	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[device], size));
+      LOG_INFO( 1, "d_boundingBoxes: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+      size=NB_MAX_PRIMITIVES*sizeof(Primitive);
+      checkCudaErrors(cudaMalloc( (void**)&d_primitives[device], size));
+      LOG_INFO( 1, "d_primitives: " << size << " bytes" );
+      totalMemoryAllocation += size;
+	   
+      size=NB_MAX_LAMPS*sizeof(Lamp);
+      checkCudaErrors(cudaMalloc( (void**)&d_lamps[device], size));
+      LOG_INFO( 1, "d_lamps: " << size << " bytes" );
+      totalMemoryAllocation += size;
+	   
+      size=NB_MAX_MATERIALS*sizeof(Material);
+      checkCudaErrors(cudaMalloc( (void**)&d_materials[device], size));
+      LOG_INFO( 1, "d_materials: " << size << " bytes" );
+      totalMemoryAllocation += size;
+	   
+      size=NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation);
+      checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[device], size));
+      LOG_INFO( 1, "d_lightInformation: " << size << " bytes" );
+      totalMemoryAllocation += size;
+	   
+      size=sceneInfo.width.x*sceneInfo.height.x*sizeof(RandomBuffer);
+      checkCudaErrors(cudaMalloc( (void**)&d_randoms[device], size));
+      LOG_INFO( 1, "d_randoms: " << size << " bytes" );
+      totalMemoryAllocation += size;
 
 	   // Rendering canvas
-      int imageSize = width*height/occupancyParameters.x;
-	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], imageSize*sizeof(float4)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device],               imageSize*gColorDepth*sizeof(char)));
-	   checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device],      imageSize*sizeof(int4)));
+      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PostProcessingBuffer)/occupancyParameters.x;
+	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], size));
+      LOG_INFO( 1, "d_postProcessingBuffer: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+      size = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
+	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device], size));
+      LOG_INFO( 1, "d_bitmap: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
+      checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device], size));
+      LOG_INFO( 1, "d_primitivesXYIds: " << size << " bytes" );
+      totalMemoryAllocation += size;
 
       d_textures[device] = nullptr;
+      LOG_INFO( 1, "Total GPU memory allocated on device " << device << ": " << totalMemoryAllocation << " bytes" );
    }
 	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
 	LOG_INFO( 3, "GPU: Ray               : " << sizeof(Ray) );
@@ -1101,7 +1168,8 @@ ________________________________________________________________________________
 GPU finalization
 ________________________________________________________________________________
 */
-extern "C" void finalize_scene( int2 occupancyParameters )
+extern "C" void finalize_scene( 
+   const int2 occupancyParameters )
 {
    LOG_INFO(1 ,"Releasing device resources");
    for( int device(0); device<occupancyParameters.x; ++device )
@@ -1132,24 +1200,29 @@ CPU -> GPU data transfers
 ________________________________________________________________________________
 */
 extern "C" void h2d_scene( 
-   int2 occupancyParameters,
-   BoundingBox* boundingBoxes, int nbActiveBoxes,
-	Primitive*  primitives, int nbPrimitives,
-	int* lamps, int nbLamps )
+   const int2   occupancyParameters,
+   BoundingBox* boundingBoxes, 
+   const int    nbActiveBoxes,
+	Primitive*   primitives, 
+   const int    nbPrimitives,
+	Lamp*        lamps, 
+   const int    nbLamps )
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
 	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[device],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[device][0] ));
 	   checkCudaErrors(cudaMemcpyAsync( d_primitives[device],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[device][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_lamps[device],              lamps,              nbLamps*sizeof(int),               cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_lamps[device],              lamps,              nbLamps*sizeof(Lamp),              cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 
 extern "C" void h2d_materials( 
-   int2 occupancyParameters,
-	Material*  materials, int nbActiveMaterials,
-	float*     randoms,   int nbRandoms)
+   const int2 occupancyParameters,
+	Material*  materials, 
+   const int  nbActiveMaterials,
+	float*     randoms,   
+   const int  nbRandoms)
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1160,8 +1233,8 @@ extern "C" void h2d_materials(
 }
 
 extern "C" void h2d_textures( 
-   int2 occupancyParameters,
-	const int activeTextures, 
+   const int2          occupancyParameters,
+	const int           activeTextures, 
    TextureInformation* textureInfos )
 {
    for( int device(0); device<occupancyParameters.x; ++device )
@@ -1175,7 +1248,9 @@ extern "C" void h2d_textures(
       {
 	      checkCudaErrors(cudaFree( d_textures[device] ));
       }
-	   checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize*sizeof(char)));
+      totalSize *= sizeof(BitmapBuffer);
+	   checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
+      LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
 
       checkCudaErrors(cudaSetDevice(device));
       for( int i(0); i<activeTextures; ++i )
@@ -1190,9 +1265,9 @@ extern "C" void h2d_textures(
 }
 
 extern "C" void h2d_lightInformation( 
-   int2              occupancyParameters,
+   const int2        occupancyParameters,
    LightInformation* lightInformation , 
-   int               lightInformationSize)
+   const int         lightInformationSize)
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1203,9 +1278,9 @@ extern "C" void h2d_lightInformation(
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
-   int2  occupancyParameters,
-	unsigned char* kinectVideo, 
-   unsigned char* kinectDepth )
+   const int2    occupancyParameters,
+	BitmapBuffer* kinectVideo, 
+   BitmapBuffer* kinectDepth )
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1222,29 +1297,28 @@ GPU -> CPU data transfers
 ________________________________________________________________________________
 */
 extern "C" void d2h_bitmap( 
-   int2            occupancyParameters,
-   unsigned char*  bitmap, 
-   int4*           primitivesXYIds, 
-   const SceneInfo sceneInfo )
+   const int2           occupancyParameters,
+   const SceneInfo      sceneInfo,
+   BitmapBuffer*        bitmap, 
+   PrimitiveXYIdBuffer* primitivesXYIds )
 {
-   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(char)/occupancyParameters.x;
-   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(int4)/occupancyParameters.x;
+   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
+   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
       
-      // Copy results back to host
-      LOG_INFO(3, "Device " << device << "/" << occupancyParameters.x );
-      LOG_INFO(3, "Copy results back to host: " << device*offsetBitmap << ", " << device*offsetXYIds );
-      checkCudaErrors(cudaMemcpy( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost ));
-	   // ***** ***** ***** checkCudaErrors(cudaMemcpy( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost ));
-
       // Synchronize stream
       for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
          LOG_INFO(3, "Synchronizing stream " << stream << "/" << occupancyParameters.y << " on device " << device << "/" << occupancyParameters.x );
          checkCudaErrors(cudaStreamSynchronize(d_streams[device][stream]));
       }
+
+      // Copy results back to host
+      LOG_INFO(3, "Copy results back to host: " << device*offsetBitmap << "/" << offsetBitmap << ", " << device*offsetXYIds << "/" << offsetXYIds );
+      checkCudaErrors(cudaMemcpyAsync( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost, d_streams[device][0] ));
    }
 }
 
@@ -1255,23 +1329,20 @@ Kernel launcher
 ________________________________________________________________________________
 */
 extern "C" void cudaRender(
-   int2 occupancyParameters,
-	int4 blockSize,
-	SceneInfo sceneInfo,
-	int4 objects,
-	PostProcessingInfo postProcessingInfo,
-	float3 origin, 
-	float3 direction, 
-	float3 angles)
+   const int2               occupancyParameters,
+	const int4               blockSize,
+	const SceneInfo          sceneInfo,
+	const int4               objects,
+	const PostProcessingInfo postProcessingInfo,
+	const float3             origin, 
+	const float3             direction, 
+	const float3             angles)
 {
-   LOG_INFO(3, "GPU Bounding Box: " << sizeof(BoundingBox));
-   LOG_INFO(3, "GPU Primitive   : " << sizeof(Primitive));
-   LOG_INFO(3, "GPU Material    : " << sizeof(Material));
-
-	LOG_INFO(3, "GPU Boxes              :" << objects.x);
-	LOG_INFO(3, "GPU Primitives         :" << objects.y);
-	LOG_INFO(3, "GPU Lamps              :" << objects.z);
-	LOG_INFO(3, "GPU Light information  :" << objects.w);
+   LOG_INFO(3, "CPU PostProcessingBuffer: " << sizeof(PostProcessingBuffer));
+   LOG_INFO(3, "CPU PrimitiveXYIdBuffer : " << sizeof(PrimitiveXYIdBuffer));
+   LOG_INFO(3, "CPU BoundingBox         : " << sizeof(BoundingBox));
+   LOG_INFO(3, "CPU Primitive           : " << sizeof(Primitive));
+   LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
 	int2 size;
 	size.x = static_cast<int>(sceneInfo.width.x);
@@ -1301,6 +1372,7 @@ extern "C" void cudaRender(
 		      {
                step = "vtAnaglyph";
 			      k_anaglyphRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  occupancyParameters,
 				      d_boundingBoxes[device], objects.x, 
                   d_primitives[device], objects.y,  
                   d_lightInformation[device], objects.w, objects.z,
@@ -1313,6 +1385,7 @@ extern "C" void cudaRender(
 		      {
                step = "vt3DVision";
 			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  occupancyParameters,
 				      d_boundingBoxes[device], objects.x, 
                   d_primitives[device], objects.y,  
                   d_lightInformation[device], objects.w, objects.z,
@@ -1325,6 +1398,7 @@ extern "C" void cudaRender(
 		      {
                step = "vtFishEye";
 			      k_fishEyeRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  occupancyParameters,
                   device*stream*size.y,
 				      d_boundingBoxes[device], objects.x, 
                   d_primitives[device], objects.y,  
@@ -1338,6 +1412,7 @@ extern "C" void cudaRender(
 		      {
                step = "k_standardRenderer";
 			      k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  occupancyParameters,
                   device*(sceneInfo.height.x/occupancyParameters.x),
                   stream*size.y,
 				      d_boundingBoxes[device], objects.x, 
@@ -1393,6 +1468,7 @@ extern "C" void cudaRender(
 	   case ppe_depthOfField:
          step = "ppe_depthOfField";
 		   k_depthOfField<<<grid,blocks,0,d_streams[device][0]>>>(
+            occupancyParameters,
 			   sceneInfo, 
 			   postProcessingInfo, 
 			   d_postProcessingBuffer[device],
@@ -1402,6 +1478,7 @@ extern "C" void cudaRender(
 	   case ppe_ambientOcclusion:
          step = "ppe_ambientOcclusion";
 		   k_ambiantOcclusion<<<grid,blocks,0,d_streams[device][0]>>>(
+            occupancyParameters,
 			   sceneInfo, 
 			   postProcessingInfo, 
 			   d_postProcessingBuffer[device],
@@ -1411,6 +1488,7 @@ extern "C" void cudaRender(
 	   case ppe_enlightment:
          step = "ppe_enlightment";
 		   k_enlightment<<<grid,blocks,0,d_streams[device][0]>>>(
+            occupancyParameters,
 			   sceneInfo, 
 			   postProcessingInfo, 
             d_primitivesXYIds[device],
@@ -1421,6 +1499,7 @@ extern "C" void cudaRender(
 	   default:
          step = "k_default";
          k_default<<<grid,blocks,0,d_streams[device][0]>>>(
+            occupancyParameters,
             sceneInfo,
 			   postProcessingInfo, 
 			   d_postProcessingBuffer[device],

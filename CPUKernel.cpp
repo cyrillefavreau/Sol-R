@@ -300,8 +300,8 @@ float4 CPUKernel::sphereUVMapping(
    d.z = primitive.p0.z-intersection.z;
    d = normalize(d);
 
-   int u = int(primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2.f*M_PI));
-   int v = int(primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2.f*M_PI)));
+   int u = int(primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2.f*PI));
+   int v = int(primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2.f*PI)));
 
    if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
    if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
@@ -346,8 +346,8 @@ float4 CPUKernel::triangleUVMapping(
    {
       switch( material.textureMapping.z )
       {
-      case TEXTURE_MANDELBROT: mandelbrotSet( primitive, u, v, result ); break;
-      case TEXTURE_JULIA: juliaSet( primitive, u, v, result ); break;
+      case TEXTURE_MANDELBROT: mandelbrotSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
+      case TEXTURE_JULIA: juliaSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
       default:
          {
             int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
@@ -400,12 +400,12 @@ float4 CPUKernel::cubeMapping(
 #endif // USE_KINECT
    {
       int u = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane) || (primitive.type.x == ptXYPlane))  ? 
-         (intersection.x-primitive.p0.x+primitive.size.x):
-      (intersection.z-primitive.p0.z+primitive.size.z);
+         static_cast<int>(intersection.x-primitive.p0.x+primitive.size.x):
+         static_cast<int>(intersection.z-primitive.p0.z+primitive.size.z);
 
       int v = ((primitive.type.x == ptCheckboard) || (primitive.type.x == ptXZPlane)) ? 
-         (intersection.z+primitive.p0.z+primitive.size.z) :
-      (intersection.y-primitive.p0.y+primitive.size.y);
+         static_cast<int>(intersection.z+primitive.p0.z+primitive.size.z) :
+         static_cast<int>(intersection.y-primitive.p0.y+primitive.size.y);
 
       u = u%material.textureMapping.x;
       v = v%material.textureMapping.y;
@@ -414,8 +414,8 @@ float4 CPUKernel::cubeMapping(
       {
          switch( material.textureMapping.z )
          {
-         case TEXTURE_MANDELBROT: mandelbrotSet( primitive, u, v, result ); break;
-         case TEXTURE_JULIA: juliaSet( primitive, u, v, result ); break;
+         case TEXTURE_MANDELBROT: mandelbrotSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
+         case TEXTURE_JULIA: juliaSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
          default:
             {
                int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
@@ -435,8 +435,8 @@ float4 CPUKernel::cubeMapping(
 
 bool CPUKernel::wireFrameMapping( float x, float y, int width, const Primitive& primitive )
 {
-   int X = abs(x);
-   int Y = abs(y);
+   int X = static_cast<int>(abs(x));
+   int Y = static_cast<int>(abs(y));
    int A = 100; // TODO
    int B = 100; // TODO
    return ( X%A<=width ) || ( Y%B<=width );
@@ -1370,8 +1370,8 @@ float4 CPUKernel::intersectionShader(
          }
          else 
          {
-            int x = m_sceneInfo.viewDistance.x + ((intersection.x - primitive.p0.x)/primitive.size.x);
-            int z = m_sceneInfo.viewDistance.x + ((intersection.z - primitive.p0.z)/primitive.size.x);
+            int x = static_cast<int>(m_sceneInfo.viewDistance.x + ((intersection.x - primitive.p0.x)/primitive.size.x));
+            int z = static_cast<int>(m_sceneInfo.viewDistance.x + ((intersection.z - primitive.p0.z)/primitive.size.x));
             if(x%2==0) 
             {
                if (z%2==0) 
@@ -2068,8 +2068,8 @@ void CPUKernel::k_fishEyeRenderer()
          ray.origin.y = ray.origin.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
 
          // 360° X axis
-         step.x = 2.f*M_PI/m_sceneInfo.width.x;
-         step.y = 2.f*M_PI/m_sceneInfo.height.x;
+         step.x = 2.f*PI/static_cast<float>(m_sceneInfo.width.x);
+         step.y = 2.f*PI/static_cast<float>(m_sceneInfo.height.x);
 
          float3 fishEyeAngles = {0.f,0.f,0.f};
          fishEyeAngles.y = m_angles.y + step.x*(float)x;
@@ -2324,8 +2324,8 @@ void CPUKernel::k_depthOfField()
          {
             int ix = i%wh;
             int iy = (i+m_sceneInfo.width.x)%wh;
-            int xx = x+depth*m_hRandoms[ix]*0.5f;
-            int yy = y+depth*m_hRandoms[iy]*0.5f;
+            int xx = x+static_cast<int>(depth*m_hRandoms[ix]*0.5f);
+            int yy = y+static_cast<int>(depth*m_hRandoms[iy]*0.5f);
             if( xx>=0 && xx<m_sceneInfo.width.x && yy>=0 && yy<m_sceneInfo.height.x )
             {
                int localIndex = yy*m_sceneInfo.width.x+xx;
@@ -2445,8 +2445,8 @@ void CPUKernel::k_enlightment()
          {
             int ix = (i+m_sceneInfo.pathTracingIteration.x)%wh;
             int iy = (i+m_sceneInfo.width.x)%wh;
-            int xx = x+m_hRandoms[ix]*m_postProcessingInfo.param2.x/10.f;
-            int yy = y+m_hRandoms[iy]*m_postProcessingInfo.param2.x/10.f;
+            int xx = x+static_cast<int>(m_hRandoms[ix]*m_postProcessingInfo.param2.x/10.f);
+            int yy = y+static_cast<int>(m_hRandoms[iy]*m_postProcessingInfo.param2.x/10.f);
             localColor.x += m_postProcessingBuffer[index].x;
             localColor.y += m_postProcessingBuffer[index].y;
             localColor.z += m_postProcessingBuffer[index].z;

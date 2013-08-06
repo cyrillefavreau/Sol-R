@@ -41,9 +41,9 @@ ________________________________________________________________________________
 */
 __device__ void makeColor(
 	const SceneInfo& sceneInfo,
-	float4&   color,
-	char*     bitmap,
-	int       index)
+	float4&          color,
+	unsigned char*   bitmap,
+	int              index)
 {
    int mdc_index = index*gColorDepth; 
 	color.x = (color.x>1.f) ? 1.f : color.x;
@@ -109,7 +109,7 @@ __device__ float processShadows(
 	BoundingBox*  boudingBoxes, const int& nbActiveBoxes,
 	Primitive*    primitives,
 	Material*     materials,
-	char*         textures,
+	BitmapBuffer* textures,
 	const int&    nbPrimitives, 
 	const float3& lampCenter, 
 	const float3& origin, 
@@ -206,7 +206,7 @@ __device__ float4 intersectionShader(
 	const SceneInfo& sceneInfo,
 	const Primitive& primitive, 
 	Material*        materials,
-	char*            textures,
+	BitmapBuffer*    textures,
 	const float3&    intersection,
 	const float3&    areas)
 {
@@ -306,8 +306,8 @@ __device__ float4 primitiveShader(
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes, 
 	Primitive* primitives, const int& nbActivePrimitives,
 	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
-	Material* materials, char* textures,
-	float* randoms,
+	Material* materials, BitmapBuffer* textures,
+	RandomBuffer* randoms,
 	const float3& origin,
 	const float3& normal, 
 	const int&    objectId, 

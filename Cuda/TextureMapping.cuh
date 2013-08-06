@@ -123,7 +123,7 @@ __device__ float4 triangleUVMapping(
    const SceneInfo& sceneInfo,
 	const Primitive& primitive,
 	Material*        materials,
-	char*            textures,
+	BitmapBuffer*    textures,
 	const float3&    intersection,
    const float3&    areas)
 {
@@ -145,9 +145,9 @@ __device__ float4 triangleUVMapping(
       default:
          {
 		      int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-		      unsigned char r = textures[index  ];
-		      unsigned char g = textures[index+1];
-		      unsigned char b = textures[index+2];
+		      BitmapBuffer r = textures[index  ];
+		      BitmapBuffer g = textures[index+1];
+		      BitmapBuffer b = textures[index+2];
 		      result.x = r/256.f;
 		      result.y = g/256.f;
 		      result.z = b/256.f;
@@ -167,24 +167,24 @@ ________________________________________________________________________________
 __device__ float4 sphereUVMapping( 
 	const Primitive& primitive,
 	Material*        materials,
-	char*            textures,
+	BitmapBuffer*    textures,
 	const float3&    intersection)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
 
 	float3 d = normalize(primitive.p0-intersection);
-	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*M_PI);
-	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*M_PI));
+	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*PI);
+	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*PI));
 
    if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
    if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
 	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
 		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-		unsigned char r = textures[index  ];
-		unsigned char g = textures[index+1];
-		unsigned char b = textures[index+2];
+		BitmapBuffer r = textures[index  ];
+		BitmapBuffer g = textures[index+1];
+		BitmapBuffer b = textures[index+2];
 		result.x = r/256.f;
 		result.y = g/256.f;
 		result.z = b/256.f;
@@ -202,7 +202,7 @@ __device__ float4 cubeMapping(
    const SceneInfo& sceneInfo,
 	const Primitive& primitive, 
 	Material*        materials,
-	char*            textures,
+	BitmapBuffer*    textures,
 	const float3&    intersection)
 {
    Material& material=materials[primitive.materialId.x];
@@ -220,9 +220,9 @@ __device__ float4 cubeMapping(
 		if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
 		{
 			int index = (y*gKinectVideoWidth+x)*gKinectVideo;
-			unsigned char r = textures[index+2];
-			unsigned char g = textures[index+1];
-			unsigned char b = textures[index+0];
+			BitmapBuffer r = textures[index+2];
+			BitmapBuffer g = textures[index+1];
+			BitmapBuffer b = textures[index+0];
 			result.x = r/256.f;
 			result.y = g/256.f;
 			result.z = b/256.f;
@@ -251,9 +251,9 @@ __device__ float4 cubeMapping(
          default:
             {
          		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-			      unsigned char r = textures[index];
-			      unsigned char g = textures[index+1];
-			      unsigned char b = textures[index+2];
+			      BitmapBuffer r = textures[index];
+			      BitmapBuffer g = textures[index+1];
+			      BitmapBuffer b = textures[index+2];
 			      result.x = r/256.f;
 			      result.y = g/256.f;
 			      result.z = b/256.f;

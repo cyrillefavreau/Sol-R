@@ -20,8 +20,6 @@
  *
  */
 
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <GL/freeglut.h>
 
 #include <math.h>
@@ -77,8 +75,8 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
-   m_occupancyParameters.x = 2; // GPUs
-   m_occupancyParameters.y = 1; // Streams
+   m_occupancyParameters.x = 1; // GPUs
+   m_occupancyParameters.y = 1; // Streams per GPU
 
    m_gpuDescription = "CUDA device";
 
@@ -131,7 +129,7 @@ ________________________________________________________________________________
 void CudaKernel::initializeDevice()
 {
    LOG_INFO(1,"CudaKernel::initializeDevice");
-	initialize_scene( m_occupancyParameters, m_sceneInfo.width.x, m_sceneInfo.height.x, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS );
+	initialize_scene( m_occupancyParameters, m_sceneInfo, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS );
 }
 
 void CudaKernel::resetBoxesAndPrimitives()
@@ -260,14 +258,11 @@ void CudaKernel::render_begin( const float timer )
       objects.z = nbLamps;
       objects.w = m_lightInformationSize;
 
-      LOG_INFO(3, "CPU Bounding Box: " << sizeof(BoundingBox));
-      LOG_INFO(3, "CPU Primitive   : " << sizeof(Primitive));
-      LOG_INFO(3, "CPU Material    : " << sizeof(Material));
-
-      LOG_INFO(3, "CPU Boxes              :" << objects.x);
-      LOG_INFO(3, "CPU Primitives         :" << objects.y);
-      LOG_INFO(3, "CPU Lamps              :" << objects.z);
-      LOG_INFO(3, "CPU Light information  :" << objects.w);
+      LOG_INFO(3, "CPU PostProcessingBuffer: " << sizeof(PostProcessingBuffer));
+      LOG_INFO(3, "CPU PrimitiveXYIdBuffer : " << sizeof(PrimitiveXYIdBuffer));
+      LOG_INFO(3, "CPU BoundingBox         : " << sizeof(BoundingBox));
+      LOG_INFO(3, "CPU Primitive           : " << sizeof(Primitive));
+      LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
       cudaRender(
          m_occupancyParameters,
@@ -284,11 +279,10 @@ void CudaKernel::render_begin( const float timer )
 void CudaKernel::render_end()
 {
    // GPU -> CPU Data transfers
-   d2h_bitmap( m_occupancyParameters, m_bitmap, m_hPrimitivesXYIds, m_sceneInfo);
+   d2h_bitmap( m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds );
 
    if( m_sceneInfo.misc.x == 0 )
    {
-
       ::glEnable(GL_TEXTURE_2D);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -297,7 +291,6 @@ void CudaKernel::render_end()
       ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
 #ifdef USE_OCULUS
-      float2 angles;
       float step = 0.01f;
       float halfStep = 1.f;
       float scale = 2.f;
