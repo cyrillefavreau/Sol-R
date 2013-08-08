@@ -70,8 +70,8 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_imageCount(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
-   m_blockSize.x = 12;
-   m_blockSize.y = 12;
+   m_blockSize.x = 8;
+   m_blockSize.y = 8;
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
@@ -290,80 +290,83 @@ void CudaKernel::render_end()
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
       ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
-#ifdef USE_OCULUS
-      float step = 0.01f;
-      float halfStep = 1.f;
-      float scale = 2.f;
-      float distortion=1.f;
-
-      for( int a(0); a<2; ++a ) 
+      if( m_sceneInfo.renderingType.x == vt3DVision )
       {
-         float2 center = {0.f,0.f};
-         center.x = (a==0) ? -0.5f: 0.5f;
-         float b = (a==0) ? 0.f : 0.5f;
+         float step = 0.1f;
+         float halfStep = 1.f;
+         float scale = 2.f;
+         float distortion=1.f;
 
-         for( float x(0); x<1; x+=step )
+         for( int a(0); a<2; ++a ) 
          {
-            for( float y(0); y<1; y+=step )
+            float2 center = {0.f,0.f};
+            center.x = (a==0) ? -0.5f: 0.5f;
+            float b = (a==0) ? 0.f : 0.5f;
+
+            for( float x(0); x<1; x+=step )
             {
+               for( float y(0); y<1; y+=step )
+               {
 
-               float2 s;
-               s.x = scale;
-               s.y = scale;
+                  float2 s;
+                  s.x = scale;
+                  s.y = scale;
 
-               float2 p0 = {s.x*x-halfStep,        s.y*y-halfStep};
-               float2 p1 = {s.x*(x+step)-halfStep, s.y*y-halfStep};
-               float2 p2 = {s.x*(x+step)-halfStep, s.y*(y+step)-halfStep};
-               float2 p3 = {s.x*x-halfStep,        s.y*(y+step)-halfStep};
+                  float2 p0 = {s.x*x-halfStep,        s.y*y-halfStep};
+                  float2 p1 = {s.x*(x+step)-halfStep, s.y*y-halfStep};
+                  float2 p2 = {s.x*(x+step)-halfStep, s.y*(y+step)-halfStep};
+                  float2 p3 = {s.x*x-halfStep,        s.y*(y+step)-halfStep};
 
-               float d0 = sqrt(pow(p0.x,2)+pow(p0.y,2));
-               float d1 = sqrt(pow(p1.x,2)+pow(p1.y,2));
-               float d2 = sqrt(pow(p2.x,2)+pow(p2.y,2));
-               float d3 = sqrt(pow(p3.x,2)+pow(p3.y,2));
+                  float d0 = sqrt(pow(p0.x,2)+pow(p0.y,2));
+                  float d1 = sqrt(pow(p1.x,2)+pow(p1.y,2));
+                  float d2 = sqrt(pow(p2.x,2)+pow(p2.y,2));
+                  float d3 = sqrt(pow(p3.x,2)+pow(p3.y,2));
 
-               d0 = 1.f-pow(d0,2.f)*m_distortion;
-               d1 = 1.f-pow(d1,2.f)*m_distortion;
-               d2 = 1.f-pow(d2,2.f)*m_distortion;
-               d3 = 1.f-pow(d3,2.f)*m_distortion;
+                  d0 = 1.f-pow(d0,2.f)*m_distortion;
+                  d1 = 1.f-pow(d1,2.f)*m_distortion;
+                  d2 = 1.f-pow(d2,2.f)*m_distortion;
+                  d3 = 1.f-pow(d3,2.f)*m_distortion;
 
-               /*
-               d0 = (d0==0.f) ? 1.f : (1.f/(sin(d0-M_PI/2.f)+m_distortion));
-               d1 = (d1==0.f) ? 1.f : (1.f/(sin(d1-M_PI/2.f)+m_distortion));
-               d2 = (d2==0.f) ? 1.f : (1.f/(sin(d2-M_PI/2.f)+m_distortion));
-               d3 = (d3==0.f) ? 1.f : (1.f/(sin(d3-M_PI/2.f)+m_distortion));
-               */
+                  /*
+                  d0 = (d0==0.f) ? 1.f : (1.f/(sin(d0-M_PI/2.f)+m_distortion));
+                  d1 = (d1==0.f) ? 1.f : (1.f/(sin(d1-M_PI/2.f)+m_distortion));
+                  d2 = (d2==0.f) ? 1.f : (1.f/(sin(d2-M_PI/2.f)+m_distortion));
+                  d3 = (d3==0.f) ? 1.f : (1.f/(sin(d3-M_PI/2.f)+m_distortion));
+                  */
 
-               ::glBegin(GL_QUADS);
-               ::glTexCoord2f(b+(x/2.f), y);
-               ::glVertex3f(center.x+0.5f*p0.x*d0, center.y+p0.y*d0, 0.f);
+                  ::glBegin(GL_QUADS);
+                  ::glTexCoord2f(b+(x/2.f), y);
+                  ::glVertex3f(center.x+0.5f*p0.x*d0, center.y+p0.y*d0, 0.f);
 
-               ::glTexCoord2f(b+(x+step)/2.f, y);
-               ::glVertex3f(center.x+0.5f*p1.x*d1, center.y+p1.y*d1, 0.f);
+                  ::glTexCoord2f(b+(x+step)/2.f, y);
+                  ::glVertex3f(center.x+0.5f*p1.x*d1, center.y+p1.y*d1, 0.f);
 
-               ::glTexCoord2f(b+(x+step)/2.f, y+step);
-               ::glVertex3f(center.x+0.5f*p2.x*d2, center.y+p2.y*d2, 0.f);
+                  ::glTexCoord2f(b+(x+step)/2.f, y+step);
+                  ::glVertex3f(center.x+0.5f*p2.x*d2, center.y+p2.y*d2, 0.f);
 
-               ::glTexCoord2f(b+(x/2.f), y+step);
-               ::glVertex3f(center.x+0.5f*p3.x*d3, center.y+p3.y*d3, 0.f);
-               ::glEnd();
+                  ::glTexCoord2f(b+(x/2.f), y+step);
+                  ::glVertex3f(center.x+0.5f*p3.x*d3, center.y+p3.y*d3, 0.f);
+                  ::glEnd();
+               }
             }
          }
       }
-#else
-      ::glBegin(GL_QUADS);
-      ::glTexCoord2f(0.f,0.f);
-      ::glVertex3f(-1.f, -1.f, 0.f);
+      else
+      {
+         ::glBegin(GL_QUADS);
+         ::glTexCoord2f(0.f,0.f);
+         ::glVertex3f(-1.f, -1.f, 0.f);
 
-      ::glTexCoord2f(1.f,0.f);
-      ::glVertex3f( 1.f, -1.f, 0.f);
+         ::glTexCoord2f(1.f,0.f);
+         ::glVertex3f( 1.f, -1.f, 0.f);
 
-      ::glTexCoord2f(1.f,1.f);
-      ::glVertex3f( 1.f,  1.f, 0.f);
+         ::glTexCoord2f(1.f,1.f);
+         ::glVertex3f( 1.f,  1.f, 0.f);
 
-      ::glTexCoord2f(0.f,1.f);
-      ::glVertex3f(-1.f,  1.f, 0.f);
-      ::glEnd();
-#endif
+         ::glTexCoord2f(0.f,1.f);
+         ::glVertex3f(-1.f,  1.f, 0.f);
+         ::glEnd();
+      }
       ::glDisable(GL_TEXTURE_2D);
    }
 }
