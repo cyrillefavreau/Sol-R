@@ -473,8 +473,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, double scale )
 {
+   float3 center = { 0.f,0.f,0.f };
    FileMarshaller fm;
-   fm.loadFromFile( *gKernel, filename, static_cast<float>(scale) );
+   fm.loadFromFile( *gKernel, filename, center, static_cast<float>(scale) );
    return gKernel->getNbActivePrimitives();
 }
 

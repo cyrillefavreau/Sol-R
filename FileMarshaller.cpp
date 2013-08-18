@@ -123,7 +123,7 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
    kernel.setSceneInfo( sceneInfo );
 }
 
-void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max )
+void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max, const float3& center )
 {
    Primitive primitive = {0.f};
    std::string value;
@@ -198,9 +198,9 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
    int n = kernel.addPrimitive( static_cast<PrimitiveType>(primitive.type.x) );
    kernel.setPrimitive(
       n, 
-      primitive.p0.x, primitive.p0.y, primitive.p0.z,
-      primitive.p1.x, primitive.p1.y, primitive.p1.z,
-      primitive.p2.x, primitive.p2.y, primitive.p2.z,
+      center.x+primitive.p0.x, center.y+primitive.p0.y, center.z+primitive.p0.z,
+      center.x+primitive.p1.x, center.y+primitive.p1.y, center.z+primitive.p1.z,
+      center.x+primitive.p2.x, center.y+primitive.p2.y, center.z+primitive.p2.z,
       primitive.size.x, primitive.size.y, primitive.size.z,
       primitive.materialId.x );
 
@@ -290,7 +290,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       (material.attributes.x==1));
 }
 
-float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float scale )
+float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float3& center, const float scale )
 {
    LOG_INFO(1, "Loading 3D scene from " << filename );
 
@@ -312,7 +312,6 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
          if( line.find(SCENEINFO) == 0 )
          {
             readSceneInfo( kernel, line );
-            //kernel.initBuffers();
          }
          else if( line.find(MATERIAL) == 0 )
          {
@@ -321,7 +320,7 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
          }
          else if( line.find(PRIMITIVE) == 0 )
          {
-            readPrimitive( kernel, line, min, max );
+            readPrimitive( kernel, line, min, max, center );
          }
          else if( line.find(TEXTURE) == 0 )
          {

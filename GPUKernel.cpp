@@ -1447,6 +1447,8 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].attributes.y = procedural ? 1 : 0;
 		m_hMaterials[index].attributes.z = wireframe ? ((wireframeWidth == 0 ) ? 1 : 2) : 0;
 		m_hMaterials[index].attributes.w = wireframeWidth;
+		m_hMaterials[index].textureMapping.x = 1;
+		m_hMaterials[index].textureMapping.y = 1;
 		m_hMaterials[index].textureMapping.z = textureId;
       if( textureId>=0 && textureId<NB_MAX_TEXTURES )
       {
