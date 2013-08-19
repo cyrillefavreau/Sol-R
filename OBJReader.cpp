@@ -215,9 +215,12 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
-            m_materials[id].reflection   = 1.f; 
-            m_materials[id].transparency = d; 
-            m_materials[id].refraction   = 1.66; 
+            if( d!=0.f )
+            {
+               m_materials[id].reflection   = 1.f; 
+               m_materials[id].transparency = d; 
+               m_materials[id].refraction   = 1.66f;
+            }
          }
       }
 
