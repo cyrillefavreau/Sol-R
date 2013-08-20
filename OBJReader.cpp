@@ -103,9 +103,9 @@ int4 readFace( const std::string& face )
       {
          switch( item )
          {
-            case 0: returnValue.x = abs(atoi(value.c_str())); break;
-            case 1: returnValue.y = abs(atoi(value.c_str())); break;
-            case 2: returnValue.z = abs(atoi(value.c_str())); break;
+            case 0: returnValue.x = (atoi(value.c_str())); break;
+            case 1: returnValue.y = (atoi(value.c_str())); break;
+            case 2: returnValue.z = (atoi(value.c_str())); break;
          }
          ++item;
          value = "";
@@ -116,9 +116,9 @@ int4 readFace( const std::string& face )
    {
       switch( item )
       {
-         case 0: returnValue.x = abs(atoi(value.c_str())); break;
-         case 1: returnValue.y = abs(atoi(value.c_str())); break;
-         case 2: returnValue.z = abs(atoi(value.c_str())); break;
+         case 0: returnValue.x = (atoi(value.c_str())); break;
+         case 1: returnValue.y = (atoi(value.c_str())); break;
+         case 2: returnValue.z = (atoi(value.c_str())); break;
       }
    }
 
@@ -220,10 +220,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
-            if( d!=1.f )
+            if( d!=0.f )
             {
                materials[id].reflection   = 1.f; 
-               materials[id].transparency = 1.f-d; 
+               materials[id].transparency = d; 
                materials[id].refraction   = 1.66f;
             }
          }
@@ -316,7 +316,7 @@ float3 OBJReader::loadModelFromFile(
                      {
                      case 1: vertex.x = static_cast<float>(atof(value.c_str())); break;
                      case 2: vertex.y = static_cast<float>(atof(value.c_str())); break;
-                     case 3: vertex.z = -static_cast<float>(atof(value.c_str())); break;
+                     case 3: vertex.z = static_cast<float>(atof(value.c_str())); break;
                      }
                      ++item;
                      value = "";
@@ -334,21 +334,21 @@ float3 OBJReader::loadModelFromFile(
                {
                   switch( item )
                   {
-                  case 2: vertex.y =  static_cast<float>(atof(value.c_str())); break;
-                  case 3: vertex.z = -static_cast<float>(atof(value.c_str())); break;
+                  case 2: vertex.y = static_cast<float>(atof(value.c_str())); break;
+                  case 3: vertex.z = static_cast<float>(atof(value.c_str())); break;
                   }
                }
 
                if( line[1] == 'n' )
                {  
                   // Normals
+                  vertex.z = -vertex.z;
                   normals[index_normals] = vertex;
                   ++index_normals;
                }
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
-                  vertex.z = -vertex.z;
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }
@@ -357,6 +357,7 @@ float3 OBJReader::loadModelFromFile(
                   // Vertex
                   if( line[1] == ' ' ) 
                   {
+                     vertex.z = -vertex.z;
                      vertices[index_vertices] = vertex;
                      ++index_vertices;
 
