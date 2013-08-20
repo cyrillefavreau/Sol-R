@@ -37,7 +37,7 @@ ImageLoader::~ImageLoader(void)
 {
 }
 
-bool ImageLoader::loadBMP24(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames)
+bool ImageLoader::loadBMP24(const int index, const std::string& filename, TextureInformation* textureInformations)
 {
 	FILE *filePtr(0); //our file pointer
 	BITMAPFILEHEADER bitmapFileHeader; //our bitmap file header
@@ -86,7 +86,6 @@ bool ImageLoader::loadBMP24(const int index, const std::string& filename, Textur
    textureInformations[index].size.x = bitmapInfoHeader.biWidth;
    textureInformations[index].size.y = bitmapInfoHeader.biHeight;
    textureInformations[index].size.z = bitmapInfoHeader.biBitCount/8;
-   textureFilenames[index] = filename;
 
 	//verify memory allocation
 	if (!textureInformations[index].buffer)
@@ -140,7 +139,7 @@ bool ImageLoader::loadBMP24(const int index, const std::string& filename, Textur
    return true;
 }
 
-bool ImageLoader::loadJPEG(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames)
+bool ImageLoader::loadJPEG(const int index, const std::string& filename, TextureInformation* textureInformations)
 {
    int width, height, actual_comps, req_comps(3);
    textureInformations[index].buffer = jpgd::decompress_jpeg_image_from_file( filename.c_str(), &width, &height, &actual_comps, req_comps);
@@ -162,7 +161,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
    return false;
 }
 
-bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames)
+bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureInformation* textureInformations)
 {
 #if 0
    TGAFILE tgaFile;
@@ -225,7 +224,6 @@ bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureI
    textureInformations[index].size.x = tgaFile.imageWidth;
    textureInformations[index].size.y = tgaFile.imageHeight;
    textureInformations[index].size.z = tgaFile.bitCount/8;
-   textureFilenames[index] = filename;
 
    // Read the image data.
    fread(textureInformations[index].buffer, sizeof(unsigned char), imageSize, filePtr);

@@ -128,7 +128,7 @@ int4 readFace( const std::string& face )
 
 unsigned int OBJReader::loadMaterialsFromFile(
    const std::string& filename,
-   std::map<std::string,MaterialMTL>& m_materials,
+   std::map<std::string,MaterialMTL>& materials,
    GPUKernel& kernel,
    int materialId)
 {
@@ -155,8 +155,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
          {
             if( id.length() != 0 )
             {
-               MaterialMTL& m = m_materials[id];
-               m.index = (m_materials.size()-1)%50 + materialId;
+               MaterialMTL& m = materials[id];
                kernel.setMaterial(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
@@ -165,7 +164,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 10.f, 10000.f,
                   false );
-               LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Texture ID= " << m.textureId );
@@ -173,22 +172,23 @@ unsigned int OBJReader::loadMaterialsFromFile(
             id = line.substr(7);
             MaterialMTL material;
             memset( &material, 0, sizeof(MaterialMTL));
-            m_materials[id].textureId = MATERIAL_NONE;
-            m_materials[id] = material;
+            material.index = static_cast<unsigned int>(materials.size()+materialId);
+            materials[id].textureId = MATERIAL_NONE;
+            materials[id] = material;
          }
 
          if( line.find("Kd") == 0 )
          {
             // RGB Color
             line = line.substr(3);
-            m_materials[id].Kd = readfloat3(line);
+            materials[id].Kd = readfloat3(line);
          }
 
          if( line.find("Ks") == 0 )
          {
             // Specular values
             line = line.substr(3);
-            m_materials[id].Ks = readfloat3(line);
+            materials[id].Ks = readfloat3(line);
          }
 
          if( line.find("map_Kd") == 0 )
@@ -196,6 +196,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
             line = line.substr(7);
             std::string folder(filename);
             size_t backSlashPos = filename.rfind('/');
+            if( backSlashPos==-1 )
+            {
+               backSlashPos = filename.rfind('\\');
+            }
             if( backSlashPos != -1 )
             {
                folder = filename.substr(0, backSlashPos);
@@ -206,7 +210,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             LOG_INFO(1, "Loading texture " << folder );
             if( kernel.loadTextureFromFile(idx, folder) )
             {
-               m_materials[id].textureId = idx;
+               materials[id].textureId = idx;
+               LOG_INFO(1, "Texture successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
             }
          }
 
@@ -215,19 +220,18 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
-            if( d!=0.f )
+            if( d!=1.f )
             {
-               m_materials[id].reflection   = 1.f; 
-               m_materials[id].transparency = d; 
-               m_materials[id].refraction   = 1.66f;
+               materials[id].reflection   = 1.f; 
+               materials[id].transparency = 1.f-d; 
+               materials[id].refraction   = 1.66f;
             }
          }
       }
 
       if( id.length() != 0 )
       {
-         MaterialMTL& m = m_materials[id];
-         m.index = (m_materials.size()-1)%50 + materialId;
+         MaterialMTL& m = materials[id];
          kernel.setMaterial(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
@@ -236,7 +240,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
             ", Texture ID= " << m.textureId );

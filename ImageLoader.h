@@ -42,14 +42,14 @@ public:
 
 public:
    // BITMAP
-   bool loadBMP24(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames);
+   bool loadBMP24(const int index, const std::string& filename, TextureInformation* textureInformations);
 
    // JPEG
    // https://code.google.com/p/jpeg-compressor
-   bool loadJPEG(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames);
+   bool loadJPEG(const int index, const std::string& filename, TextureInformation* textureInformations);
 
    // TGA
-   bool loadTGA(const int index, const std::string& filename, TextureInformation* textureInformations, std::map<int,std::string>& textureFilenames);
+   bool loadTGA(const int index, const std::string& filename, TextureInformation* textureInformations);
 
 
 protected:

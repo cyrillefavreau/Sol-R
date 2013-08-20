@@ -1684,23 +1684,26 @@ bool GPUKernel::loadTextureFromFile( const int index, const std::string& filenam
       ImageLoader imageLoader;
       if( filename.find(".bmp") != -1 )
       {
-         result = imageLoader.loadBMP24( index, filename, m_hTextures, m_textureFilenames );
+         result = imageLoader.loadBMP24( index, filename, m_hTextures );
       }
       else if ( filename.find(".jpg") != -1 )
       {
-         result = imageLoader.loadJPEG( index, filename, m_hTextures, m_textureFilenames );
+         result = imageLoader.loadJPEG( index, filename, m_hTextures );
       }
       else if ( filename.find(".tga") != -1 )
       {
-         result = imageLoader.loadTGA( index, filename, m_hTextures, m_textureFilenames );
+         result = imageLoader.loadTGA( index, filename, m_hTextures );
       }
 
-      if( !result )
+      if( result )
+      {
+         m_textureFilenames[index] = filename;
+         ++m_nbActiveTextures;
+      }
+      else
       {
          LOG_ERROR("Failed to load " << filename );
       }
-
-      m_nbActiveTextures += result ? 1 : 0;
    }
    return result;
 }

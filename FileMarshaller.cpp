@@ -75,7 +75,11 @@ void FileMarshaller::readTexture( GPUKernel& kernel, const std::string& line )
 
    if( textureId != -1 )
    {
-      kernel.loadTextureFromFile(textureId, textureFilename);
+      LOG_INFO(1, "Loading texture " << textureFilename << " into slot " << textureId );
+      if( !kernel.loadTextureFromFile(textureId, textureFilename) )
+      {
+         LOG_ERROR("Failed to load texture " << textureFilename );
+      }
    }
 }
 
@@ -288,6 +292,11 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       material.specular.x, material.specular.y, material.specular.z,
       material.innerIllumination.x,material.innerIllumination.y,material.innerIllumination.z,
       (material.attributes.x==1));
+   
+   LOG_INFO(1, "Added material [" << materialId << "] " << 
+      "( " << material.color.x << ", " << material.color.y << ", " << material.color.z << ") " <<
+      "( " << material.specular.x << ", " << material.specular.y << ", " << material.specular.z << ") " <<
+      ", Texture ID= " << material.textureMapping.z );
 }
 
 float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float3& center, const float scale )
@@ -355,6 +364,10 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
    myfile.open(filename.c_str());
    if( myfile.is_open() ) 
    {
+
+      std::map<int,Material*> materials;
+      std::map<int,std::string> textures;
+
       LOG_INFO(1, "Scene information " );
 
       SceneInfo sceneInfo = kernel.getSceneInfo();
@@ -379,56 +392,28 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          sceneInfo.misc.x << ";" <<
          sceneInfo.misc.y << std::endl;
 
-      // Textures
-      for( unsigned int i(0); i<=kernel.getNbActiveMaterials()-30; ++i )
-      {
-         Material* material = kernel.getMaterial(i);
-         int textureId = material->textureMapping.z;
-         if( textureId>=0 )
-         {
-            std::string filename(kernel.getTextureFilename(textureId));
-            if( filename.length() != 0 )
-            {
-               myfile << TEXTURE << ";" << textureId << ";" << filename << std::endl;
-            }
-         }
-      }
-
-      // Materials
-      LOG_INFO(1, kernel.getNbActiveMaterials() << " materials");
-      for( unsigned int i(0); i<=kernel.getNbActiveMaterials()-30; ++i )
-      {
-         Material* material = kernel.getMaterial(i);
-         myfile << MATERIAL << ";" <<  
-            material->color.x << ";" <<
-            material->color.y << ";" <<
-            material->color.z << ";" <<
-            material->color.w << ";" <<
-            material->innerIllumination.x << ";" <<
-            material->innerIllumination.y << ";" <<
-            material->innerIllumination.z << ";" <<
-            material->innerIllumination.w << ";" <<
-            material->reflection.x << ";" <<
-            material->refraction.x << ";" <<
-            material->specular.x << ";" <<
-            material->specular.y << ";" <<
-            material->specular.z << ";" <<
-            material->specular.w << ";" <<
-            material->attributes.x << ";" <<
-            material->attributes.y << ";" <<
-            material->attributes.z << ";" <<
-            material->attributes.w << ";" <<
-            material->transparency.x << ";" <<
-            material->textureMapping.x << ";" <<
-            material->textureMapping.y << ";" <<
-            material->textureMapping.z << ";" <<
-            material->textureMapping.w << ";" << 
-            std::endl;
-      }
-
       // Primitives
       int nbPrimitives = kernel.getNbActivePrimitives();
       LOG_INFO(1,nbPrimitives << " primitives");
+
+      // Identify used materials
+      std::map<int,int> materialIndexMapping;
+      for( int i(0); i<nbPrimitives; ++i )
+      {
+         CPUPrimitive* primitive = kernel.getPrimitive(i);
+         materialIndexMapping[primitive->materialId] = 0;
+      }
+
+      int index(0);
+      std::map<int,int>::iterator itmim=materialIndexMapping.begin();
+      while(itmim!=materialIndexMapping.end())
+      {
+         (*itmim).second = index;
+         ++itmim;
+         ++index;
+      }
+
+
       for( int i(0); i<nbPrimitives; ++i )
       {
          CPUPrimitive* primitive = kernel.getPrimitive(i);
@@ -459,7 +444,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
                primitive->size.x << ";" <<
                primitive->size.y << ";" <<
                primitive->size.z << ";" <<
-               primitive->materialId << ";" <<
+               materialIndexMapping[primitive->materialId] << ";" <<
                primitive->vt0.x << ";" <<
                primitive->vt0.y << ";" <<
                primitive->vt0.z << ";" <<
@@ -469,8 +454,70 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
                primitive->vt2.x << ";" <<
                primitive->vt2.y << ";" <<
                primitive->vt2.z << std::endl;
+
+            materials[primitive->materialId] = kernel.getMaterial(primitive->materialId);
          }
       }
+
+      // Determine textures in use
+      std::map<int,Material*>::const_iterator ittiu(materials.begin());
+      index=0;
+      while( ittiu!=materials.end() )
+      {
+         Material* material = (*ittiu).second;
+         if( material->textureMapping.z!=MATERIAL_NONE )
+         {
+            textures[material->textureMapping.z] = kernel.getTextureFilename(material->textureMapping.z);
+         }
+         ++ittiu;
+      }
+
+      // Write Textures
+      std::map<int,std::string>::const_iterator itt=textures.begin();
+      while( itt!=textures.end() )
+      {
+         if( filename.length() != 0 )
+         {
+            myfile << TEXTURE << ";" << (*itt).first << ";" << (*itt).second << std::endl;
+         }
+         ++itt;
+      }
+
+      // Write Materials
+      LOG_INFO(1, materials.size() << " materials");
+      std::map<int,Material*>::const_iterator itm(materials.begin());
+      index=0;
+      while( itm!=materials.end() )
+      {
+         Material* material = (*itm).second;
+         myfile << MATERIAL << ";" <<
+            material->color.x << ";" <<
+            material->color.y << ";" <<
+            material->color.z << ";" <<
+            material->color.w << ";" <<
+            material->innerIllumination.x << ";" <<
+            material->innerIllumination.y << ";" <<
+            material->innerIllumination.z << ";" <<
+            material->innerIllumination.w << ";" <<
+            material->reflection.x << ";" <<
+            material->refraction.x << ";" <<
+            material->specular.x << ";" <<
+            material->specular.y << ";" <<
+            material->specular.z << ";" <<
+            material->specular.w << ";" <<
+            material->attributes.x << ";" <<
+            material->attributes.y << ";" <<
+            material->attributes.z << ";" <<
+            material->attributes.w << ";" <<
+            material->transparency.x << ";" <<
+            material->textureMapping.x << ";" <<
+            material->textureMapping.y << ";" <<
+            material->textureMapping.z << ";" <<
+            material->textureMapping.w << ";" << 
+            std::endl;
+         ++itm;
+      }
+
       myfile.close();
    }
 }
