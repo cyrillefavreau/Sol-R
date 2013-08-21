@@ -335,16 +335,16 @@ void CudaKernel::render_end()
                   */
 
                   ::glBegin(GL_QUADS);
-                  ::glTexCoord2f(b+(x/2.f), y);
+                  ::glTexCoord2f(1.f-(b+(x/2.f)), y);
                   ::glVertex3f(center.x+0.5f*p0.x*d0, center.y+p0.y*d0, 0.f);
 
-                  ::glTexCoord2f(b+(x+step)/2.f, y);
+                  ::glTexCoord2f(1.f-(b+(x+step)/2.f), y);
                   ::glVertex3f(center.x+0.5f*p1.x*d1, center.y+p1.y*d1, 0.f);
 
-                  ::glTexCoord2f(b+(x+step)/2.f, y+step);
+                  ::glTexCoord2f(1.f-(b+(x+step)/2.f), y+step);
                   ::glVertex3f(center.x+0.5f*p2.x*d2, center.y+p2.y*d2, 0.f);
 
-                  ::glTexCoord2f(b+(x/2.f), y+step);
+                  ::glTexCoord2f(1.f-(b+(x/2.f)), y+step);
                   ::glVertex3f(center.x+0.5f*p3.x*d3, center.y+p3.y*d3, 0.f);
                   ::glEnd();
                }
@@ -354,16 +354,16 @@ void CudaKernel::render_end()
       else
       {
          ::glBegin(GL_QUADS);
-         ::glTexCoord2f(0.f,0.f);
+         ::glTexCoord2f(1.f,0.f);
          ::glVertex3f(-1.f, -1.f, 0.f);
 
-         ::glTexCoord2f(1.f,0.f);
+         ::glTexCoord2f(0.f,0.f);
          ::glVertex3f( 1.f, -1.f, 0.f);
 
-         ::glTexCoord2f(1.f,1.f);
+         ::glTexCoord2f(0.f,1.f);
          ::glVertex3f( 1.f,  1.f, 0.f);
 
-         ::glTexCoord2f(0.f,1.f);
+         ::glTexCoord2f(1.f,1.f);
          ::glVertex3f(-1.f,  1.f, 0.f);
          ::glEnd();
       }
