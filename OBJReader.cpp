@@ -207,11 +207,14 @@ unsigned int OBJReader::loadMaterialsFromFile(
             folder += '/';
             folder += line;
             int idx = kernel.getNbActiveTextures();
-            LOG_INFO(1, "Loading texture " << folder );
             if( kernel.loadTextureFromFile(idx, folder) )
             {
                materials[id].textureId = idx;
                LOG_INFO(1, "Texture successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
+            }
+            else
+            {
+               LOG_ERROR("Failed to load texture " << folder );
             }
          }
 
@@ -220,11 +223,32 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
-            if( d!=0.f )
+            materials[id].reflection   = d; 
+            materials[id].transparency = d; 
+            materials[id].refraction   = 1.66f;
+         }
+
+         if( line.find("illum") == 0 )
+         {
+            line = line.substr(6);
+            int illum=static_cast<int>(atoi(line.c_str()));
+            switch(illum)
             {
-               materials[id].reflection   = 1.f; 
-               materials[id].transparency = d; 
-               materials[id].refraction   = 1.66f;
+            case 3:
+            case 5:
+            case 8:
+               // Reflection
+               materials[id].transparency = 0.f;
+               break;
+            case 6:
+            case 7:
+            case 9:
+               // Transparency
+               break;
+            default:
+               materials[id].reflection   = 0.f;
+               materials[id].transparency = 0.f;
+               materials[id].refraction   = 0.f;
             }
          }
       }
@@ -242,6 +266,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             false );
          LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
+            "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
             ", Texture ID= " << m.textureId );
       }
