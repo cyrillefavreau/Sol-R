@@ -397,11 +397,11 @@ __global__ void k_standardRenderer(
 	ray.origin = origin;
 	ray.direction = direction;
 
-#ifdef USE_OCULUS
-   float3 rotationCenter = origin;
-#else
    float3 rotationCenter = {0.f,0.f,0.f};
-#endif // USE_OCULUS
+   if( sceneInfo.renderingType.x==vt3DVision)
+   {
+      rotationCenter = origin;
+   }
 
    bool antialiasingActivated = (sceneInfo.misc.w == 2);
    
@@ -493,6 +493,11 @@ __global__ void k_standardRenderer(
 		intersection,
 		dof,
 		primitiveXYIds[index]);
+
+   // Randomize light intensity
+	int rindex = index;// + sceneInfo.pathTracingIteration.x;
+	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+   color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
    
    if( antialiasingActivated )
    {
@@ -659,11 +664,11 @@ __global__ void k_anaglyphRenderer(
    float focus = primitiveXYIds[sceneInfo.width.x*sceneInfo.height.x/2].x - origin.z;
    float eyeSeparation = sceneInfo.width3DVision.x*(focus/direction.z);
 
-#ifdef USE_OCULUS
-   float3 rotationCenter = origin;
-#else
    float3 rotationCenter = {0.f,0.f,0.f};
-#endif // USE_OCULUS
+   if( sceneInfo.renderingType.x==vt3DVision)
+   {
+      rotationCenter = origin;
+   }
 
 	if( sceneInfo.pathTracingIteration.x == 0 )
 	{
@@ -785,13 +790,13 @@ __global__ void k_3DVisionRenderer(
    float focus = primitiveXYIds[sceneInfo.width.x*sceneInfo.height.x/2].x - origin.z;
    float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
-#ifdef USE_OCULUS
-   float3 rotationCenter = origin;
-#else
    float3 rotationCenter = {0.f,0.f,0.f};
-#endif // USE_OCULUS
+   if( sceneInfo.renderingType.x==vt3DVision)
+   {
+      rotationCenter = origin;
+   }
 
-	if( sceneInfo.pathTracingIteration.x == 0 )
+   if( sceneInfo.pathTracingIteration.x == 0 )
 	{
 		postProcessingBuffer[index].x = 0.f;
 		postProcessingBuffer[index].y = 0.f;

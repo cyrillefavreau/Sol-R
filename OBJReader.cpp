@@ -167,13 +167,13 @@ unsigned int OBJReader::loadMaterialsFromFile(
                LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
-                  ", Texture ID= " << m.textureId );
+                  ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
             }
             id = line.substr(7);
             MaterialMTL material;
             memset( &material, 0, sizeof(MaterialMTL));
             material.index = static_cast<unsigned int>(materials.size()+materialId);
-            materials[id].textureId = MATERIAL_NONE;
+            material.textureId = MATERIAL_NONE;
             materials[id] = material;
          }
 
@@ -268,7 +268,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
-            ", Texture ID= " << m.textureId );
+            ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
       }
 
       file.close();
@@ -374,6 +374,7 @@ float3 OBJReader::loadModelFromFile(
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
+                  vertex.y = 1.f-vertex.y;
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }

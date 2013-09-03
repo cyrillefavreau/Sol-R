@@ -49,6 +49,9 @@ __device__ void makeColor(
 	color.x = (color.x>1.f) ? 1.f : color.x;
 	color.y = (color.y>1.f) ? 1.f : color.y; 
 	color.z = (color.z>1.f) ? 1.f : color.z;
+	color.x = (color.x<0.f) ? 0.f : color.x;
+	color.y = (color.y<0.f) ? 0.f : color.y; 
+	color.z = (color.z<0.f) ? 0.f : color.z;
 
    switch( sceneInfo.misc.x )
    {

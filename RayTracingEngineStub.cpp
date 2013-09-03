@@ -30,7 +30,7 @@
 
 #include <fstream>
 
-#if USE_CUDA
+#ifdef USE_CUDA
 #include "Cuda/CudaKernel.h"
 CudaKernel* gKernel = nullptr;
 #else
