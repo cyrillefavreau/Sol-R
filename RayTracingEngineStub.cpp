@@ -430,13 +430,15 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
 {
    // PDB
 	PDBReader prbReader;
-	float4 minPos = prbReader.loadAtomsFromFile(
+   float s(static_cast<float>(scale));
+   float3 objectScale = {s,s,s};
+	float3 minPos = prbReader.loadAtomsFromFile(
       filename, *gKernel,
       static_cast<GeometryType>(geometryType),
       static_cast<float>(defaultAtomSize), 
       static_cast<float>(defaultStickSize),
       atomMaterialType, 
-      static_cast<float>(scale) );
+      objectScale );
    gKernel->compactBoxes(true);
    return gKernel->getNbActivePrimitives();
 }
@@ -450,12 +452,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
    float3 center={0.f,0.f,0.f};
    // PDB
 	OBJReader objReader;
+   float s(static_cast<float>(scale));
+   float3 objectScale = {s,s,s};
 	float3 minPos = objReader.loadModelFromFile(
       filename,
       *gKernel,
       center,
       true,
-      static_cast<float>(scale), 
+      objectScale,
       true,
       materialId,
       false);

@@ -495,7 +495,7 @@ __global__ void k_standardRenderer(
 		primitiveXYIds[index]);
 
    // Randomize light intensity
-	int rindex = index;// + sceneInfo.pathTracingIteration.x;
+	int rindex = index;
 	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
    color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
    
@@ -821,7 +821,7 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 ) + sceneInfo.width3DVision.x;
+      eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 ) + sceneInfo.width3DVision.x;
 		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 		eyeRay.direction.z = direction.z;
 	}
@@ -836,6 +836,8 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 		eyeRay.direction.z = direction.z;
 	}
+
+   if(sqrt(eyeRay.direction.x*eyeRay.direction.x+eyeRay.direction.y*eyeRay.direction.y)>(halfWidth*6)) return;
 
 	vectorRotation( eyeRay.origin,    rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
@@ -852,6 +854,12 @@ __global__ void k_3DVisionRenderer(
 		dof,
 		primitiveXYIds[index]);
 
+   // Randomize light intensity
+	int rindex = index;
+	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+   color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+
+   // Contribute to final image
 	if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
    if( sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS )
    {

@@ -56,7 +56,7 @@ public:
       GPUKernel& cudaKernel,
       const float3& center,
       const bool autoScale,
-      const float& scale, 
+      const float3& scale, 
       bool loadMaterials,
       int  materialId,
       bool allSpheres);

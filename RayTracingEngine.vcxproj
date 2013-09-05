@@ -339,7 +339,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NOMINMAX;USE_OCULUS;USE_CUDA;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;USE_KINECT;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <OpenMPSupport>true</OpenMPSupport>
@@ -356,7 +356,7 @@
       </Command>
     </PostBuildEvent>
     <CudaCompile>
-      <Defines>USE_KINECT;USE_OCULUS</Defines>
+      <Defines>USE_KINECT</Defines>
       <FastMath>true</FastMath>
       <CodeGeneration>compute_13,sm_13</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>

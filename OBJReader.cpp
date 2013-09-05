@@ -164,7 +164,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 10.f, 10000.f,
                   false );
-               LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
@@ -210,7 +210,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             if( kernel.loadTextureFromFile(idx, folder) )
             {
                materials[id].textureId = idx;
-               LOG_INFO(1, "Texture successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
+               LOG_INFO(3, "Texture successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
             }
             else
             {
@@ -264,7 +264,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
@@ -281,7 +281,7 @@ float3 OBJReader::loadModelFromFile(
    GPUKernel& kernel,
    const float3& center,
    const bool autoScale,
-   const float& scale,
+   const float3& scale,
    bool loadMaterials,
    int materialId,
    bool allSpheres)
@@ -407,14 +407,16 @@ float3 OBJReader::loadModelFromFile(
 
    LOG_INFO(3, "Nb Vertices: " << vertices.size());
    LOG_INFO(3, "Nb Normals : " << normals.size());
-   //float objectScale = (scale/std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z )));
    //float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
 
    float3 objectCenter = center;
-   float objectScale = scale;
+   float3 objectScale  = scale;
    if( autoScale )
    {
-      objectScale = scale/(maxPos.y - minPos.y);
+      float os = std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z ));
+      objectScale.x = scale.x/os;
+      objectScale.y = scale.y/os;
+      objectScale.z = scale.z/os;
 
       // Center align object
       objectCenter.x = (minPos.x+maxPos.x) / 2.f;
@@ -424,7 +426,7 @@ float3 OBJReader::loadModelFromFile(
       LOG_INFO(3, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
       LOG_INFO(3, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
       LOG_INFO(3, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
-      LOG_INFO(3, "Scale : " << objectScale );
+      LOG_INFO(3, "Scale : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
    }
 
    // Populate ray-tracing engine
@@ -501,7 +503,9 @@ float3 OBJReader::loadModelFromFile(
                   nbPrimitives = kernel.addPrimitive( ptSphere );
                   kernel.setPrimitive( 
                      nbPrimitives,
-                     center.x+objectScale*(-objectCenter.x+sphereCenter.x),center.y+objectScale*(-objectCenter.y+sphereCenter.y),center.z+objectScale*(-objectCenter.z+sphereCenter.z),
+                     center.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
+                     center.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
+                     center.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                      radius, 0.f, 0.f,
                      material);
                }
@@ -510,9 +514,9 @@ float3 OBJReader::loadModelFromFile(
                   nbPrimitives = kernel.addPrimitive( ptTriangle );
                   kernel.setPrimitive( 
                      nbPrimitives,
-                     center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
-                     center.x+objectScale*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+1].x].z),
-                     center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
+                     center.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
+                     center.x+objectScale.x*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+1].x].z),
+                     center.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
                      0.f, 0.f, 0.f,
                      material);
                }
@@ -545,7 +549,9 @@ float3 OBJReader::loadModelFromFile(
                      nbPrimitives = kernel.addPrimitive( ptSphere );
                      kernel.setPrimitive( 
                         nbPrimitives,
-                        center.x+objectScale*(-objectCenter.x+sphereCenter.x),center.y+objectScale*(-objectCenter.y+sphereCenter.y),center.z+objectScale*(-objectCenter.z+sphereCenter.z),
+                        center.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
+                        center.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
+                        center.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         radius, 0.f, 0.f,
                         material);
                   }
@@ -554,9 +560,9 @@ float3 OBJReader::loadModelFromFile(
                      nbPrimitives = kernel.addPrimitive( ptTriangle );
                      kernel.setPrimitive( 
                         nbPrimitives, 
-                        center.x+objectScale*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+3].x].z),
-                        center.x+objectScale*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f+2].x].z),
-                        center.x+objectScale*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale*(-objectCenter.z+vertices[face[f  ].x].z),
+                        center.x+objectScale.x*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+3].x].z),
+                        center.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
+                        center.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
                         0.f, 0.f, 0.f,
                         material);
                   }
@@ -573,13 +579,14 @@ float3 OBJReader::loadModelFromFile(
       file.close();
    }
    float3 objectSize;
-   objectSize.x = (maxPos.x - minPos.x)*objectScale;
-   objectSize.y = (maxPos.y - minPos.y)*objectScale;
-   objectSize.z = (maxPos.z - minPos.z)*objectScale;
+   objectSize.x = (maxPos.x - minPos.x)*objectScale.x;
+   objectSize.y = (maxPos.y - minPos.y)*objectScale.y;
+   objectSize.z = (maxPos.z - minPos.z)*objectScale.z;
    
-   LOG_INFO( 1, "Loading " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
 
    kernel.setNbMaxPrimitivePerBox( 2*static_cast<int>(sqrt(static_cast<float>(kernel.getNbActivePrimitives()))));
 
+   LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
+   LOG_INFO(1, "Object size after scaling: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
    return objectSize;
 }

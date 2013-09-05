@@ -147,17 +147,16 @@ PDBReader::~PDBReader(void)
 {
 }
 
-float4 PDBReader::loadAtomsFromFile(
+float3 PDBReader::loadAtomsFromFile(
 	const std::string& filename,
-	GPUKernel& cudaKernel,
+	GPUKernel&   cudaKernel,
 	GeometryType geometryType,
-	float defaultAtomSize,
-	float defaultStickSize,
-	int   materialType,
-	float scale,
-	bool  useModels)
+	const float  defaultAtomSize,
+	const float  defaultStickSize,
+	const int    materialType,
+	const float3 scale,
+	const bool   useModels)
 {
-   LOG_INFO(1, "Loading " << filename );
 	int frame(0);
 	int chainSelection(rand()%2);
 	cudaKernel.resetBoxes(true);
@@ -276,17 +275,20 @@ float4 PDBReader::loadAtomsFromFile(
 		file.close();
 	}
 
-	float4 size;
-	size.x = (maxPos.x-minPos.x);
-	size.y = (maxPos.y-minPos.y);
-	size.z = (maxPos.z-minPos.z);
+	float3 objectSize;
+	objectSize.x = (maxPos.x-minPos.x);
+	objectSize.y = (maxPos.y-minPos.y);
+	objectSize.z = (maxPos.z-minPos.z);
 
 	float4 center;
 	center.x = (minPos.x+maxPos.x)/2.f;
 	center.y = (minPos.y+maxPos.y)/2.f;
 	center.z = (minPos.z+maxPos.z)/2.f;
 
-	scale = (scale/std::max( maxPos.x - minPos.x, std::max( maxPos.y - minPos.y, maxPos.z - minPos.z )));
+   float3 objectScale;
+	objectScale.x = scale.x/( maxPos.x - minPos.x);
+	objectScale.y = scale.y/( maxPos.y - minPos.y);
+	objectScale.z = scale.z/( maxPos.z - minPos.z);
 
    float atomDistance(DEFAULT_ATOM_DISTANCE);
 
@@ -337,11 +339,9 @@ float4 PDBReader::loadAtomsFromFile(
 						a.z = atom.position.z - atom2.position.z;
 						float distance = sqrtf( a.x*a.x + a.y*a.y + a.z*a.z );
 						float stickDistance = (geometryType==gtBackbone && atom2.isBackbone) ? DEFAULT_STICK_DISTANCE*2.f : DEFAULT_STICK_DISTANCE;
-						if( distance < stickDistance )
+						
+                  if( distance < stickDistance )
 						{
-							//stickradius = (geometryType==gtBackbone && !atom.isBackbone) ? defaultStickSize*0.2f : defaultStickSize; 
-                     //stickradius /= 5.f;
-
 							float4 halfCenter;
 							halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
 							halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
@@ -351,34 +351,26 @@ float4 PDBReader::loadAtomsFromFile(
                      nb = cudaKernel.addPrimitive( ptCylinder );
 							cudaKernel.setPrimitive( 
 								nb,
-								scale*distanceRatio*atomDistance*(atom.position.x - center.x), 
-								scale*distanceRatio*atomDistance*(atom.position.y - center.y), 
-								scale*distanceRatio*atomDistance*(atom.position.z - center.z), 
-								scale*distanceRatio*atomDistance*(halfCenter.x - center.x), 
-								scale*distanceRatio*atomDistance*(halfCenter.y - center.y), 
-								scale*distanceRatio*atomDistance*(halfCenter.z - center.z),
-								scale*stickRadius, 0.f,0.f,
+								objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
+								objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
+								objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
+								objectScale.x*distanceRatio*atomDistance*(halfCenter.x - center.x), 
+								objectScale.y*distanceRatio*atomDistance*(halfCenter.y - center.y), 
+								objectScale.z*distanceRatio*atomDistance*(halfCenter.z - center.z),
+								objectScale.x*stickRadius, 0.f,0.f,
                         (geometryType==gtSticks) ? atom.materialId : 11 );
 						}
 					}
 					it2++;
 				}
-				//radius = stickradius;
-				//radius *= 4.f;
-			}
-			else
-			{
-				//radius *= 4.f; 
 			}
 
-			bool addAtom(true);
+         bool addAtom( true );
 
-         /*
 			if( useModels && (atom.chainId%2==chainSelection) )
 			{
-				addAtom = false;
+            addAtom = false;
 			}
-         */
 
 			if( addAtom )
 			{
@@ -388,27 +380,29 @@ float4 PDBReader::loadAtomsFromFile(
 					nb = cudaKernel.addPrimitive( ptSphere );
 					cudaKernel.setPrimitive( 
 						nb,
-					   scale*distanceRatio*atomDistance*(atom.position.x - center.x), 
-					   scale*distanceRatio*atomDistance*(atom.position.y - center.y), 
-					   scale*distanceRatio*atomDistance*(atom.position.z - center.z), 
-					   scale*radius*5.f, 0.f, 0.f,
+					   objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
+					   objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
+					   objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
+					   objectScale.x*radius*5.f, 0.f, 0.f,
 						10 );
             }
 
 				nb = cudaKernel.addPrimitive( ptSphere );
 				cudaKernel.setPrimitive( 
 					nb, 
-					scale*distanceRatio*atomDistance*(atom.position.x - center.x), 
-					scale*distanceRatio*atomDistance*(atom.position.y - center.y), 
-					scale*distanceRatio*atomDistance*(atom.position.z - center.z), 
-					scale*radius, 0.f, 0.f,
-					atom.materialId );
+					objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
+					objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
+					objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
+					objectScale.x*radius, 0.f, 0.f,
+               atom.materialId );
 			}
 		}
 		++it;
 	}
-	size.x *= scale;
-	size.y *= scale;
-	size.z *= scale;
-	return size;
+	objectSize.x *= objectScale.x*distanceRatio*atomDistance;
+	objectSize.y *= objectScale.y*distanceRatio*atomDistance;
+	objectSize.z *= objectScale.z*distanceRatio*atomDistance;
+   LOG_INFO(1, "Loaded " << filename << " into frame " << cudaKernel.getFrame() << " [" << cudaKernel.getNbActivePrimitives() << " primitives]" );
+   LOG_INFO(1, "Object size after scaling: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
+	return objectSize;
 }

@@ -30,8 +30,8 @@ enum GeometryType
    gtFixedSizeAtoms  = 1,
    gtSticks          = 2,
    gtAtomsAndSticks  = 3,
-   gtBackbone        = 4,
-   gtIsoSurface      = 5
+   gtIsoSurface      = 4,
+   gtBackbone        = 5
 };
 
 class RAYTRACINGENGINE_API PDBReader
@@ -43,15 +43,15 @@ public:
 
 public:
 
-   float4 loadAtomsFromFile( 
+   float3 loadAtomsFromFile( 
       const std::string& filename,
-      GPUKernel& cudaKernel,
+      GPUKernel&   cudaKernel,
       GeometryType geometryType,
-      float defaultAtomSize,
-      float defaultStickSize,
-      int   materialType,
-      float scale,
-      bool  useModels = false);
+      const float  defaultAtomSize,
+      const float  defaultStickSize,
+      const int    materialType,
+      const float3 scale,
+      const bool   useModels = false);
 
    int getNbBoxes() { return m_nbBoxes; }
    int getNbPrimitives() { return m_nbPrimitives; }
