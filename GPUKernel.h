@@ -401,6 +401,9 @@ protected:
    // GPU information
    std::string m_gpuDescription;
 
+   // GPUs & streams
+   int2 m_occupancyParameters; 
+
 protected:
 
    // CPU

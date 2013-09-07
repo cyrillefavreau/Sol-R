@@ -79,23 +79,33 @@ private:
 	int              m_hPlatformId;
 	cl_context       m_hContext;
 	cl_command_queue m_hQueue;
-	cl_kernel        m_kStandardRenderer;
-	cl_kernel        m_kDefault;
 	cl_uint          m_preferredWorkGroupSize;
+
+private:
+   // Rendering kernels
+	cl_kernel        m_kStandardRenderer;
+	cl_kernel        m_kAnaglyphRenderer;
+	cl_kernel        m_k3DVisionRenderer;
+	cl_kernel        m_kFishEyeRenderer;
+
+   // Post processing kernels
+	cl_kernel        m_kDefault;
+	cl_kernel        m_kDepthOfField;
+	cl_kernel        m_kAmbiantOcclusion;
+	cl_kernel        m_kEnlightment;
 
 private:
 
 	cl_mem m_dBoundingBoxes;
    cl_mem m_dPrimitives;
-   cl_mem m_dBoxPrimitivesIndex;
 	cl_mem m_dLamps;
+	cl_mem m_dLightInformation;
 	cl_mem m_dMaterials;
 	cl_mem m_dTextures;
-	cl_mem m_dDepthOfField;
 	cl_mem m_dRandoms;
-   cl_mem m_dPrimitiveIDs;
 	cl_mem m_dBitmap;
    cl_mem m_dPostProcessingBuffer;
+   cl_mem m_dPrimitivesXYIds;
 
 private:
 

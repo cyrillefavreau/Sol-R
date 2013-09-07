@@ -155,7 +155,7 @@ void RayTracer::glutInitWindowSize( int width, int height )
    gPostProcessingInfo.param3.x = 200;
 
    // Kernel
-   gKernel = new GenericGPUKernel(0, 480, 0, 0);
+   gKernel = new GenericGPUKernel(0, 480, 1, 0);
    gSceneInfo.pathTracingIteration.x = 0; 
    gKernel->setSceneInfo( gSceneInfo );
    gKernel->initBuffers();

@@ -131,18 +131,32 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
    m_hContext(0),
    m_hQueue(0),
    m_dRandoms(0),
-   m_dPrimitiveIDs(0),
 	m_dBitmap(0), 
    m_dTextures(0),
 	m_dPrimitives(0), 
-   m_dBoxPrimitivesIndex(0), 
    m_dPostProcessingBuffer(0),
-   m_preferredWorkGroupSize(0)
+   m_dPrimitivesXYIds(0),
+   m_dLamps(0),
+   m_dLightInformation(0),
+   m_preferredWorkGroupSize(0),
+   m_kStandardRenderer(0),
+   m_kAnaglyphRenderer(0),
+   m_k3DVisionRenderer(0),
+   m_kFishEyeRenderer(0),
+   m_kDefault(0),
+   m_kDepthOfField(0),
+   m_kAmbiantOcclusion(0),
+   m_kEnlightment(0)
 {
 	int  status(0);
 	cl_platform_id   platforms[MAX_DEVICES];
 	cl_uint          ret_num_devices;
 	cl_uint          ret_num_platforms;
+
+   // TODO: Occupancy parameters
+   m_occupancyParameters.x = 1;
+   m_occupancyParameters.y = 1;
+
 	char buffer[MAX_SOURCE_SIZE];
 	size_t len;
 
@@ -176,7 +190,7 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 
 	std::stringstream s;
    s << "--------------------------------------------------------------------------------\n";
-	LOG_INFO(3,"clGetPlatformIDs\n");
+	LOG_INFO(3,"clGetPlatformIDs");
 	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, platforms, &ret_num_platforms));
    s << ret_num_platforms << " platorm(s) detected" << "\n";
 
@@ -306,16 +320,23 @@ void OpenCLKernel::compileKernels(
 
       //saveToFile("encoded.cl", source_str );
 
-		LOG_INFO(3,"clCreateProgramWithSource\n");
+		LOG_INFO(1,"clCreateProgramWithSource");
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO(3,"clCreateProgramWithSource\n");
+		LOG_INFO(1,"clCreateProgramWithSource");
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO(3,"clBuildProgram\n");
-		CHECKSTATUS( clBuildProgram( hProgram, 0, NULL, options.c_str(), NULL, NULL) );
+		LOG_INFO(1,"clBuildProgram");
+      if(clBuildProgram( hProgram, 0, NULL, options.c_str(), NULL, NULL) != CL_SUCCESS)
+      {
+         size_t length;
+		   char buffer[MAX_SOURCE_SIZE];
+         memset(buffer,0,MAX_SOURCE_SIZE);
+         CHECKSTATUS(clGetProgramBuildInfo(hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
+         LOG_ERROR("Program Build failed: " << buffer );
+      }
 
 		if( sourceType == kst_file)
 		{
@@ -325,39 +346,40 @@ void OpenCLKernel::compileKernels(
 
 		clUnloadCompiler();
 
-		LOG_INFO(3,"clCreateKernel(render_kernel)\n");
+      // Rendering kernels
+		LOG_INFO(1,"Creating Rendering kernels");
 		m_kStandardRenderer = clCreateKernel( hProgram, "k_standardRenderer", &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO(3,"clCreateKernel(postProcessing_kernel)\n");
+      m_kAnaglyphRenderer = clCreateKernel( hProgram, "k_anaglyphRenderer", &status );
+		CHECKSTATUS(status);
+
+      m_k3DVisionRenderer = clCreateKernel( hProgram, "k_3DVisionRenderer", &status );
+		CHECKSTATUS(status);
+
+      m_kFishEyeRenderer = clCreateKernel( hProgram, "k_fishEyeRenderer", &status );
+		CHECKSTATUS(status);
+
+      // Post-processing kernels
+		LOG_INFO(1,"Creating Post-processing kernels");
       m_kDefault = clCreateKernel( hProgram, "k_default", &status );
+		CHECKSTATUS(status);
+
+      m_kDepthOfField = clCreateKernel( hProgram, "k_depthOfField", &status );
+		CHECKSTATUS(status);
+
+      m_kAmbiantOcclusion = clCreateKernel( hProgram, "k_ambiantOcclusion", &status );
+		CHECKSTATUS(status);
+
+      m_kEnlightment = clCreateKernel( hProgram, "k_enlightment", &status );
 		CHECKSTATUS(status);
 
       cl_int computeUnits;
 		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDevices[0], CL_KERNEL_WORK_GROUP_SIZE, sizeof(cl_int), &computeUnits , NULL);
-		LOG_INFO(3,"CL_KERNEL_WORK_GROUP_SIZE=" << computeUnits );
+		LOG_INFO(1,"CL_KERNEL_WORK_GROUP_SIZE=" << computeUnits );
 
 		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDevices[0], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(m_preferredWorkGroupSize), &m_preferredWorkGroupSize , NULL);
-		LOG_INFO(3,"CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE=" << m_preferredWorkGroupSize );
-
-      len = 0;
-		char buffer[MAX_SOURCE_SIZE];
-      memset(buffer,0,MAX_SOURCE_SIZE);
-		LOG_INFO(3,"clGetProgramBuildInfo\n");
-		CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &len ) );
-
-		if( buffer[0]==0 ) 
-      {
-         std::cout << "OpenCL Kernels successfully compiled" << std::endl;
-      }
-      else
-		{
-			buffer[len] = 0;
-			std::stringstream s;
-			s << buffer;
-			LOG_INFO(3, s.str().c_str() );
-         std::cout << "ERROR [" << len << "] " << s.str().c_str() << std::endl;
-		}
+		LOG_INFO(1,"CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE=" << m_preferredWorkGroupSize );
 
 #if 0
 		// Generate Binaries!!!
@@ -435,7 +457,7 @@ void OpenCLKernel::compileKernels(
 
 			CHECKSTATUS( clBuildProgram( hProgram, 0, NULL, "", NULL, NULL) );
 
-		   LOG_INFO(3,"clGetProgramBuildInfo\n");
+		   LOG_INFO(3,"clGetProgramBuildInfo");
 		   CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDevices[0], CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &lSize ) );
 
 		   if( buffer[0] != 0 ) 
@@ -447,20 +469,16 @@ void OpenCLKernel::compileKernels(
 			   LOG_INFO(3,s.str() );
 		   }
 
-			m_kStandardRenderer = clCreateKernel(
-				hProgram, "render_kernel", &status );
-			CHECKSTATUS(status);
-
 			delete [] buffer;
 		}
 
-		LOG_INFO(3,"clReleaseProgram\n");
+		LOG_INFO(3,"clReleaseProgram");
 		CHECKSTATUS(clReleaseProgram(hProgram));
 		hProgram = 0;
 	}
 	catch( ... ) 
 	{
-		LOG_ERROR("Unexpected exception\n");
+		LOG_ERROR("Unexpected exception");
 	}
 }
 
@@ -469,23 +487,17 @@ void OpenCLKernel::initializeDevice()
 	LOG_INFO(3,"OpenCLKernel::initializeDevice");
 	int status(0);
 	// Setup device memory
-	LOG_INFO(3,"Setup device memory\n");
+	LOG_INFO(3,"Setup device memory");
    int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
-   m_dBitmap       = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(char)*gColorDepth,   0, NULL);
-	m_dDepthOfField = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(float4),             0, NULL);
-   m_dPrimitiveIDs = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(int),                0, NULL);
-
-	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(float),       0, NULL);
-	m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(float4),      0, NULL);
-
-   m_dBoundingBoxes       = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(BoundingBox)*NB_MAX_BOXES,    0, NULL);
-   m_dPrimitives          = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Primitive)*NB_MAX_PRIMITIVES, 0, NULL);
-   m_dBoxPrimitivesIndex  = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(int)*NB_MAX_PRIMITIVES,       0, NULL);
-   m_dLamps               = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(int)*NB_MAX_LAMPS,            0, NULL);
-
-   m_dMaterials  = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Material)*NB_MAX_MATERIALS, 0, NULL);
-
-   //TODO: m_dTextures   = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , gTextureWidth*gTextureHeight*gTextureDepth*sizeof(char)*NB_MAX_TEXTURES, 0, NULL);
+   m_dBitmap              = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(BitmapBuffer)*gColorDepth,   0, NULL);
+	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(RandomBuffer),         0, NULL);
+   m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PostProcessingBuffer), 0, NULL);
+   m_dPrimitivesXYIds     = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PrimitiveXYIdBuffer),  0, NULL);
+   m_dBoundingBoxes       = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(BoundingBox)*NB_MAX_BOXES,                  0, NULL);
+   m_dPrimitives          = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Primitive)*NB_MAX_PRIMITIVES,               0, NULL);
+   m_dLamps               = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Lamp)*NB_MAX_LAMPS,                         0, NULL);
+   m_dLightInformation    = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(LightInformation)*NB_MAX_LIGHTINFORMATIONS, 0, NULL);
+   m_dMaterials           = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Material)*NB_MAX_MATERIALS, 0, NULL);
 
 #if USE_KINECT
 	m_dVideo      = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , gVideoWidth*gVideoHeight*gKinectColorVideo, 0, NULL);
@@ -495,20 +507,30 @@ void OpenCLKernel::initializeDevice()
 
 void OpenCLKernel::releaseDevice()
 {
-	LOG_INFO(3,"Release device memory\n");
+	LOG_INFO(3,"Release device memory");
 	if( m_dPrimitives ) CHECKSTATUS(clReleaseMemObject(m_dPrimitives));
 	if( m_dBoundingBoxes ) CHECKSTATUS(clReleaseMemObject(m_dBoundingBoxes));
-	if( m_dBoxPrimitivesIndex ) CHECKSTATUS(clReleaseMemObject(m_dBoxPrimitivesIndex));
 	if( m_dMaterials ) CHECKSTATUS(clReleaseMemObject(m_dMaterials));
 	if( m_dTextures ) CHECKSTATUS(clReleaseMemObject(m_dTextures));
 	if( m_dRandoms ) CHECKSTATUS(clReleaseMemObject(m_dRandoms));
-   if( m_dPrimitiveIDs ) CHECKSTATUS(clReleaseMemObject(m_dPrimitiveIDs));
    if( m_dPostProcessingBuffer ) CHECKSTATUS(clReleaseMemObject(m_dPostProcessingBuffer));
+   if( m_dPrimitivesXYIds ) CHECKSTATUS(clReleaseMemObject(m_dPrimitivesXYIds));
 	if( m_dBitmap ) CHECKSTATUS(clReleaseMemObject(m_dBitmap));
-	if( m_dDepthOfField ) CHECKSTATUS(clReleaseMemObject(m_dDepthOfField));
-	if( m_kStandardRenderer ) CHECKSTATUS(clReleaseKernel(m_kStandardRenderer));
-   if( m_kDefault ) CHECKSTATUS(clReleaseKernel(m_kDefault));
-	if( m_hQueue ) CHECKSTATUS(clReleaseCommandQueue(m_hQueue));
+
+   // Rendering kernels
+   if( m_kStandardRenderer ) CHECKSTATUS(clReleaseKernel(m_kStandardRenderer));
+   if( m_kAnaglyphRenderer ) CHECKSTATUS(clReleaseKernel(m_kAnaglyphRenderer));
+   if( m_k3DVisionRenderer ) CHECKSTATUS(clReleaseKernel(m_k3DVisionRenderer));
+   if( m_kFishEyeRenderer )  CHECKSTATUS(clReleaseKernel(m_kFishEyeRenderer));
+
+   // Post processing kernels
+	if( m_kDefault )          CHECKSTATUS(clReleaseKernel(m_kDefault));
+	if( m_kDepthOfField )     CHECKSTATUS(clReleaseKernel(m_kDepthOfField));
+	if( m_kAmbiantOcclusion ) CHECKSTATUS(clReleaseKernel(m_kAmbiantOcclusion));
+	if( m_kEnlightment )      CHECKSTATUS(clReleaseKernel(m_kEnlightment));
+
+   // Queue and context
+   if( m_hQueue ) CHECKSTATUS(clReleaseCommandQueue(m_hQueue));
 	if( m_hContext ) CHECKSTATUS(clReleaseContext(m_hContext));
 }
 
@@ -518,109 +540,278 @@ void OpenCLKernel::releaseDevice()
 void OpenCLKernel::render_begin( const float timer )
 {
 	int status(0);
+   if( m_refresh )
+   {
+	   // CPU -> GPU Data transfers
+      int nbBoxes      = m_nbActiveBoxes[m_frame];
+      int nbPrimitives = m_nbActivePrimitives[m_frame];
+      int nbLamps      = m_nbActiveLamps[m_frame];
+      int nbMaterials  = m_nbActiveMaterials+1;
+      LOG_INFO( 3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
+         
+      if( !m_primitivesTransfered )
+      {
+         CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dBoundingBoxes,      CL_TRUE, 0, nbBoxes*sizeof(BoundingBox),                     m_hBoundingBoxes,      0, NULL, NULL));
+	      CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dPrimitives,         CL_TRUE, 0, nbPrimitives*sizeof(Primitive),                  m_hPrimitives,         0, NULL, NULL));
+	      CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dLamps,              CL_TRUE, 0, nbLamps*sizeof(Lamp),                            m_hLamps,              0, NULL, NULL));
+	      CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dLightInformation,   CL_TRUE, 0, m_lightInformationSize*sizeof(LightInformation), m_lightInformation,    0, NULL, NULL));
+         m_primitivesTransfered = true;
+      }
+	
+      if( !m_materialsTransfered )
+	   {
 
-#if USE_KINECT
-	char* video(0);
-	char* depth(0);
-	// Video
-	const NUI_IMAGE_FRAME* pImageFrame = 0;
-	WaitForSingleObject (m_hNextVideoFrameEvent,INFINITE); 
-	status = NuiImageStreamGetNextFrame( m_pVideoStreamHandle, 0, &pImageFrame ); 
-	if(( status == S_OK) && pImageFrame ) 
-	{
-		INuiFrameTexture* pTexture = pImageFrame->pFrameTexture;
-		NUI_LOCKED_RECT LockedRect;
-		pTexture->LockRect( 0, &LockedRect, NULL, 0 ) ; 
-		if( LockedRect.Pitch != 0 ) 
-		{
-			video = (char*) LockedRect.pBits;
-		}
-	}
-
-	// Depth
-	const NUI_IMAGE_FRAME* pDepthFrame = 0;
-	WaitForSingleObject (m_hNextDepthFrameEvent,INFINITE); 
-	status = NuiImageStreamGetNextFrame( m_pDepthStreamHandle, 0, &pDepthFrame ); 
-	if(( status == S_OK) && pDepthFrame ) 
-	{
-		INuiFrameTexture* pTexture = pDepthFrame->pFrameTexture;
-		if( pTexture ) 
-		{
-			NUI_LOCKED_RECT LockedRectDepth;
-			pTexture->LockRect( 0, &LockedRectDepth, NULL, 0 ) ; 
-			if( LockedRectDepth.Pitch != 0 ) 
-			{
-				depth = (char*) LockedRectDepth.pBits;
-			}
-		}
-	}
-	NuiImageStreamReleaseFrame( m_pVideoStreamHandle, pImageFrame ); 
-	NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
-#endif // USE_KINECT
-
-	// Initialise Input arrays
-   CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dBoundingBoxes,      CL_TRUE, 0, (m_nbActiveBoxes[m_frame]+1)*sizeof(BoundingBox),    m_hBoundingBoxes,      0, NULL, NULL));
-	CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dPrimitives,         CL_TRUE, 0, (m_nbActivePrimitives[m_frame]+1)*sizeof(Primitive), m_hPrimitives,         0, NULL, NULL));
-	CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dMaterials,          CL_TRUE, 0, (m_nbActiveMaterials+1)*sizeof(Material),            m_hMaterials,          0, NULL, NULL));
-	CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dLamps,              CL_TRUE, 0, (m_nbActiveLamps[m_frame]+1)*sizeof(int),            m_hLamps,              0, NULL, NULL));
-
-   int nbBoxes = m_nbActiveBoxes[m_frame]+1;
-   int nbPrimitives = m_nbActivePrimitives[m_frame]+1;
-   int nbMaterials = m_nbActiveMaterials+1;
-   int nbLamps = m_nbActiveLamps[m_frame]+1;
-	if( !m_texturesTransfered )
-	{
-		//TODO: CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dTextures,   CL_TRUE, 0, gTextureDepth*gTextureWidth*gTextureHeight*m_nbActiveTextures, m_hTextures,   0, NULL, NULL));
-		CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,    CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(float), m_hRandoms,    0, NULL, NULL));
-
-      LOG_INFO(3,"Boxes     : " << nbBoxes );
-      LOG_INFO(3,"Primitives: " << nbPrimitives );
-      LOG_INFO(3,"Materials : " << nbMaterials );
-      LOG_INFO(3,"Lamps     : " << nbLamps );
-		m_texturesTransfered = true;
-	}
+         CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,   CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(RandomBuffer), m_hRandoms,      0, NULL, NULL));
+         CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dMaterials, CL_TRUE, 0, nbMaterials*sizeof(Material),   m_hMaterials,    0, NULL, NULL));
+		   m_materialsTransfered = true;
+	   }
 
 #ifdef USE_KINECT
-	if( video ) CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_hVideo, CL_TRUE, 0, gKinectColorVideo*gVideoWidth*gVideoHeight, video, 0, NULL, NULL));
-	if( depth ) CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_hDepth, CL_TRUE, 0, gKinectColorDepth*gDepthWidth*gDepthHeight, depth, 0, NULL, NULL));
+   if( m_kinectEnabled )
+   {
+	   // Video
+	   const NUI_IMAGE_FRAME* pImageFrame = 0;
+	   WaitForSingleObject (m_hNextVideoFrameEvent,INFINITE); 
+	   HRESULT status = NuiImageStreamGetNextFrame( m_pVideoStreamHandle, 0, &pImageFrame ); 
+	   if(( status == S_OK) && pImageFrame ) 
+	   {
+		   INuiFrameTexture* pTexture = pImageFrame->pFrameTexture;
+		   NUI_LOCKED_RECT LockedRect;
+		   pTexture->LockRect( 0, &LockedRect, NULL, 0 ) ; 
+		   if( LockedRect.Pitch != 0 ) 
+		   {
+			   m_hVideo = (unsigned char*)LockedRect.pBits;
+		   }
+	   }
+
+	   // Depth
+	   const NUI_IMAGE_FRAME* pDepthFrame = 0;
+	   WaitForSingleObject (m_hNextDepthFrameEvent,INFINITE); 
+	   status = NuiImageStreamGetNextFrame( m_pDepthStreamHandle, 0, &pDepthFrame ); 
+	   if(( status == S_OK) && pDepthFrame ) 
+	   {
+		   INuiFrameTexture* pTexture = pDepthFrame->pFrameTexture;
+		   if( pTexture ) 
+		   {
+			   NUI_LOCKED_RECT LockedRectDepth;
+			   pTexture->LockRect( 0, &LockedRectDepth, NULL, 0 ) ; 
+			   if( LockedRectDepth.Pitch != 0 ) 
+			   {
+				   m_hDepth = (unsigned char*)LockedRectDepth.pBits;
+			   }
+		   }
+	   }
+	   NuiImageStreamReleaseFrame( m_pVideoStreamHandle, pImageFrame ); 
+	   NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pDepthFrame ); 
+
+      m_hTextures[0].buffer = m_hVideo;
+      m_hTextures[1].buffer = m_hDepth;
+   }
+
+      if( !m_texturesTransfered )
+	   {
+         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
+         h2d_textures( 
+            m_occupancyParameters,
+            NB_MAX_TEXTURES,  m_hTextures );
+		      m_texturesTransfered = true;
+      }
 #endif // USE_KINECT
 
-   // Define scene parameters
-   Ray ray;
-   memset(&ray, 0, sizeof(Ray));
-   ray.origin    = m_viewPos;
-   ray.direction = m_viewDir;
+      if( !m_texturesTransfered )
+	   {
+         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
+         int totalSize(0);
+         for( int i(0); i<m_nbActiveTextures; ++i )
+         {
+            totalSize += m_hTextures[i].size.x*m_hTextures[i].size.y*m_hTextures[i].size.z;
+         }
+      	
+         if( m_dTextures ) 
+         {
+            LOG_INFO(1, "Releasing existing texture resources" );
+            CHECKSTATUS(clReleaseMemObject(m_dTextures));
+            m_dTextures = 0;
+         }
 
-	// Run the raytracing kernel!!
-	CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 0, sizeof(cl_mem), (void*)&m_dBoundingBoxes ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 1, sizeof(cl_int), (void*)&nbBoxes ));
-	CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 2, sizeof(cl_mem), (void*)&m_dBoxPrimitivesIndex ));
-	CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 3, sizeof(cl_mem), (void*)&m_dPrimitives ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 4, sizeof(cl_int), (void*)&nbPrimitives ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 5, sizeof(cl_mem), (void*)&m_dLamps ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 6, sizeof(cl_int), (void*)&nbLamps ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 7, sizeof(cl_mem), (void*)&m_dMaterials ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 8, sizeof(cl_mem), (void*)&m_dTextures ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 9, sizeof(cl_mem), (void*)&m_dRandoms ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,10, sizeof(Ray),               (void*)&ray ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,11, sizeof(cl_float4),         (void*)&m_angles ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,12, sizeof(SceneInfo),         (void*)&m_sceneInfo ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,13, sizeof(cl_float),          (void*)&timer ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,14, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,15, sizeof(cl_mem),            (void*)&m_dPostProcessingBuffer ));
-   CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,16, sizeof(cl_mem),            (void*)&m_dPrimitiveIDs ));
+         if( totalSize>0 )
+         {
+            // Allocate host buffer
+            BitmapBuffer* tmpTextures = new BitmapBuffer[totalSize];
+            for( int i(0); i<m_nbActiveTextures; ++i )
+            {
+               if( m_hTextures[i].buffer != nullptr )
+               {
+                  int textureSize = m_hTextures[i].size.x*m_hTextures[i].size.y*m_hTextures[i].size.z;
+                  memcpy(tmpTextures+m_hTextures[i].offset,m_hTextures[i].buffer,textureSize);
+               }
+            }
+            m_dTextures = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , totalSize*sizeof(BitmapBuffer), 0, NULL);
+            CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dTextures, CL_TRUE, 0, totalSize*sizeof(BitmapBuffer), tmpTextures, 0, NULL, NULL));
+            LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
+            delete tmpTextures;
+         }
+         m_texturesTransfered = true;
+      }
 
-   CHECKSTATUS(clSetKernelArg( m_kDefault, 0, sizeof(SceneInfo),         (void*)&m_sceneInfo ));
-   CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
-   CHECKSTATUS(clSetKernelArg( m_kDefault, 2, sizeof(cl_mem),            (void*)&m_dPostProcessingBuffer ));
-   CHECKSTATUS(clSetKernelArg( m_kDefault, 3, sizeof(cl_mem),            (void*)&m_dBitmap ));
+      // Kernel execution
+      LOG_INFO(3, "CPU PostProcessingBuffer: " << sizeof(PostProcessingBuffer));
+      LOG_INFO(3, "CPU PrimitiveXYIdBuffer : " << sizeof(PrimitiveXYIdBuffer));
+      LOG_INFO(3, "CPU BoundingBox         : " << sizeof(BoundingBox));
+      LOG_INFO(3, "CPU Primitive           : " << sizeof(Primitive));
+      LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
-	// Run the post processing kernel!!
-   size_t szGlobalWorkSize[] = { m_sceneInfo.width.x, m_sceneInfo.height.x };
-	CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kStandardRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+      size_t szGlobalWorkSize[] = { m_sceneInfo.width.x, m_sceneInfo.height.x };
+      int zero(0);
+	   switch( m_sceneInfo.renderingType.x ) 
+	   {
+	   case vtAnaglyph:
+		   {
+	         // Run the post processing kernel!!
+	         CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 1, sizeof(cl_int),   (void*)&zero )); 
+	         CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 2, sizeof(cl_int),   (void*)&zero ));
+	         CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 3, sizeof(cl_mem),   (void*)&m_dBoundingBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 4, sizeof(cl_int),   (void*)&nbBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 5, sizeof(cl_mem),   (void*)&m_dPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 6, sizeof(cl_int),   (void*)&nbPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 7, sizeof(cl_mem),   (void*)&m_dLightInformation ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 8, sizeof(cl_int),   (void*)&m_lightInformationSize ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer, 9, sizeof(cl_int),   (void*)&nbLamps ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAnaglyphRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+			   break;
+		   }
+	   case vt3DVision:
+		   {
+	         CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 1, sizeof(cl_int),   (void*)&zero )); 
+	         CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 2, sizeof(cl_int),   (void*)&zero ));
+	         CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 3, sizeof(cl_mem),   (void*)&m_dBoundingBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 4, sizeof(cl_int),   (void*)&nbBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 5, sizeof(cl_mem),   (void*)&m_dPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 6, sizeof(cl_int),   (void*)&nbPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 7, sizeof(cl_mem),   (void*)&m_dLightInformation ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 8, sizeof(cl_int),   (void*)&m_lightInformationSize ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer, 9, sizeof(cl_int),   (void*)&nbLamps ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_k3DVisionRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+			   break;
+		   }
+	   case vtFishEye:
+		   {
+	         CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 1, sizeof(cl_int),   (void*)&zero )); 
+	         CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 2, sizeof(cl_int),   (void*)&zero ));
+	         CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 3, sizeof(cl_mem),   (void*)&m_dBoundingBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 4, sizeof(cl_int),   (void*)&nbBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 5, sizeof(cl_mem),   (void*)&m_dPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 6, sizeof(cl_int),   (void*)&nbPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 7, sizeof(cl_mem),   (void*)&m_dLightInformation ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 8, sizeof(cl_int),   (void*)&m_lightInformationSize ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer, 9, sizeof(cl_int),   (void*)&nbLamps ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kFishEyeRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+			   break;
+		   }
+	   default:
+		   {
+	         CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 1, sizeof(cl_int),   (void*)&zero )); 
+	         CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 2, sizeof(cl_int),   (void*)&zero ));
+	         CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 3, sizeof(cl_mem),   (void*)&m_dBoundingBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 4, sizeof(cl_int),   (void*)&nbBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 5, sizeof(cl_mem),   (void*)&m_dPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 6, sizeof(cl_int),   (void*)&nbPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 7, sizeof(cl_mem),   (void*)&m_dLightInformation ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 8, sizeof(cl_int),   (void*)&m_lightInformationSize ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer, 9, sizeof(cl_int),   (void*)&nbLamps ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kStandardRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+			   break;
+		   }
+      }
 
-	// Post Processing
-	CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDefault, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+      // --------------------------------------------------------------------------------
+      // Post processing
+      // --------------------------------------------------------------------------------
+	   switch( m_postProcessingInfo.type.x )
+	   {
+	   case ppe_depthOfField:
+         CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+	      CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+	      CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
+         CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 5, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDepthOfField, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+		   break;
+	   case ppe_ambientOcclusion:
+         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+	      CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+	      CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 5, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbiantOcclusion, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+		   break;
+	   case ppe_enlightment:
+         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 3, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	      CHECKSTATUS(clSetKernelArg( m_kEnlightment, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+	      CHECKSTATUS(clSetKernelArg( m_kEnlightment, 5, sizeof(cl_mem),   (void*)&m_dRandoms ));
+         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kEnlightment, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+		   break;
+	   default:
+         CHECKSTATUS(clSetKernelArg( m_kDefault, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kDefault, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+	      CHECKSTATUS(clSetKernelArg( m_kDefault, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+         CHECKSTATUS(clSetKernelArg( m_kDefault, 4, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDefault, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+		   break;
+	   }
+   }
+   m_refresh = (m_sceneInfo.pathTracingIteration.x<m_sceneInfo.maxPathTracingIterations.x);
 }
   
 void OpenCLKernel::render_end()
@@ -628,8 +819,8 @@ void OpenCLKernel::render_end()
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
-	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,       CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(char)*gColorDepth, m_bitmap, 0, NULL, NULL) );
-	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitiveIDs, CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(int), m_hPrimitivesXYIds, 0, NULL, NULL) );
+	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,          CL_FALSE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(BitmapBuffer)*gColorDepth, m_bitmap, 0, NULL, NULL) );
+   CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitivesXYIds, CL_FALSE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer), m_hPrimitivesXYIds, 0, NULL, NULL) );
    
 	CHECKSTATUS(clFlush(m_hQueue));
 	CHECKSTATUS(clFinish(m_hQueue));

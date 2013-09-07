@@ -38,7 +38,7 @@
 #include "Consts.h"
 #include "ImageLoader.h"
 
-const unsigned int MAX_SOURCE_SIZE = 65535;
+const unsigned int MAX_SOURCE_SIZE = 65535*2;
 
 float3 min4( const float3 a, const float3 b, const float3 c )
 {
@@ -173,7 +173,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    m_refresh(true),
    m_bitmap(nullptr),
    m_GLMode(-1),
-   m_distortion(0.1f)
+   m_distortion(0.1f),
+   m_frame(0)
 {
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
@@ -1622,7 +1623,7 @@ char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 #endif
 	if( fp == 0 ) 
 	{
-		LOG_INFO(3,"Failed to load GPUKernel " << filename.c_str() );
+		LOG_ERROR("Failed to load OpenCL file: " << filename.c_str() );
 	}
 	else 
 	{
