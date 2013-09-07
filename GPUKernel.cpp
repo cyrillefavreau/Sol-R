@@ -779,6 +779,8 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    nbActiveBoxes = 0;
    std::map<unsigned int,unsigned int> primitivesPerBox;
 
+   int optimalNbOfPrimmitivesPerBox = std::min( m_optimalNbOfPrimmitivesPerBox, 3*static_cast<int>(sqrtf(static_cast<float>(m_primitives[m_frame]->size()))));
+
    int p(0);
    std::map<unsigned int,CPUPrimitive>::iterator it = (m_primitives[m_frame])->begin();
    while( it != (m_primitives[m_frame])->end() )
@@ -832,9 +834,9 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    if( simulate )
    {
       maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives[m_frame]->size()/nbActiveBoxes) : 0;
-      //delta = abs(m_optimalNbOfPrimmitivesPerBox-maxPrimitivePerBox);
-      delta = abs(m_optimalNbOfPrimmitivesPerBox-nbActiveBoxes);
-      LOG_INFO(3, "[" << boxSize << "/" << delta << "] Avg : " << maxPrimitivePerBox << " for " << nbActiveBoxes << " active boxes (" << m_primitives[m_frame]->size() << " primitives) - " << m_optimalNbOfPrimmitivesPerBox );
+      //delta = abs(optimalNbOfPrimmitivesPerBox-maxPrimitivePerBox);
+      delta = abs(optimalNbOfPrimmitivesPerBox-nbActiveBoxes);
+      LOG_INFO(1, "[" << boxSize << "/" << delta << "] Avg : " << maxPrimitivePerBox << " for " << nbActiveBoxes << " active boxes (" << m_primitives[m_frame]->size() << " primitives) - " << optimalNbOfPrimmitivesPerBox );
    }
    else
    {

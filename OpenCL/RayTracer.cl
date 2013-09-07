@@ -592,7 +592,7 @@ Box intersection
 ________________________________________________________________________________
 */
 bool boxIntersection( 
-   const BoundingBox* box, 
+   __global const BoundingBox* box, 
    const Ray*         ray,
    const float        t0,
    const float        t1)
@@ -1277,19 +1277,18 @@ float processShadows(
 
    while( result<sceneInfo->shadowIntensity && cptBoxes<nbActiveBoxes )
    {
-
-      BoundingBox box = boudingBoxes[cptBoxes];
-      if( boxIntersection(&box, &r, 0.f, sceneInfo->viewDistance))
+      __global const BoundingBox* box = &boudingBoxes[cptBoxes];
+      if( boxIntersection(box, &r, 0.f, sceneInfo->viewDistance))
       {
          int cptPrimitives = 0;
-         while( result<sceneInfo->shadowIntensity && cptPrimitives<box.nbPrimitives)
+         while( result<sceneInfo->shadowIntensity && cptPrimitives<box->nbPrimitives)
          {
             float3 intersection = {0.f,0.f,0.f};
             float3 normal       = {0.f,0.f,0.f};
             float3 areas        = {0.f,0.f,0.f};
             float  shadowIntensity = 0.f;
 
-            __global const Primitive* primitive = &(primitives[box.startIndex+cptPrimitives]);
+            __global const Primitive* primitive = &(primitives[box->startIndex+cptPrimitives]);
             if( primitive->index!=objectId && materials[primitive->materialId].attributes.x==0)
             {
 
@@ -1535,8 +1534,8 @@ inline bool intersectionWithPrimitives(
 
    for( int cptBoxes = 0; cptBoxes<nbActiveBoxes; ++cptBoxes )
    {
-      BoundingBox box = boundingBoxes[cptBoxes];
-      if( boxIntersection(&box, &r, 0.f, sceneInfo->viewDistance) )
+      __global const BoundingBox* box = &boundingBoxes[cptBoxes];
+      if( boxIntersection(box, &r, 0.f, sceneInfo->viewDistance) )
       {
          // Intersection with Box
          if( sceneInfo->renderBoxes != 0 ) 
@@ -1545,9 +1544,9 @@ inline bool intersectionWithPrimitives(
          }
 
          // Intersection with primitive within boxes
-         for( int cptPrimitives = 0; cptPrimitives<box.nbPrimitives; ++cptPrimitives )
+         for( int cptPrimitives = 0; cptPrimitives<box->nbPrimitives; ++cptPrimitives )
          { 
-            __global const Primitive* primitive = &(primitives[box.startIndex+cptPrimitives]);
+            __global const Primitive* primitive = &(primitives[box->startIndex+cptPrimitives]);
             __global const Material* material = &materials[primitive->materialId];
             if( material->attributes.x==0 || (material->attributes.x==1 && currentMaterialId != primitive->materialId)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
             {
@@ -1578,7 +1577,7 @@ inline bool intersectionWithPrimitives(
                {
                   // Only keep intersection with the closest object
                   minDistance            = distance;
-                  (*closestPrimitive)    = box.startIndex+cptPrimitives;
+                  (*closestPrimitive)    = box->startIndex+cptPrimitives;
                   (*closestIntersection) = intersection;
                   (*closestNormal)       = normal;
                   (*closestAreas)        = areas;
