@@ -278,7 +278,6 @@ void GPUKernel::initBuffers()
    // Primitive IDs
    int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
    m_hPrimitivesXYIds = new PrimitiveXYIdBuffer[size];
-   LOG_INFO(1, m_hPrimitivesXYIds << "->" << m_hPrimitivesXYIds+size*sizeof(PrimitiveXYIdBuffer));
    memset(m_hPrimitivesXYIds,0,size*sizeof(PrimitiveXYIdBuffer));
 
 	m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];

@@ -32,17 +32,17 @@
 
 #ifdef USE_CUDA
 #include "Cuda/CudaKernel.h"
-CudaKernel* gKernel = nullptr;
+typedef CudaKernel GenericGPUKernel;
 #else
-#include "CPUKernel.h"
-CPUKernel* gKernel = nullptr;
-#endif // USE_OPENCL
-
-#if USE_OPENCL
-#include "OpenCL/OpenCLKernel.h"
-typedef OpenCLKernel gKernel;
-gKernel* gKernel = NULL;
-#endif // USE_OPENCL
+   #ifdef USE_OPENCL
+      #include "OpenCL/OpenCLKernel.h"
+      typedef OpenCLKernel GenericGPUKernel;
+   #else
+      #include "CPUKernel.h"
+      typedef CPUKernel GenericGPUKernel;
+   #endif // USE_OPENCL
+#endif // USE_CUDA
+GenericGPUKernel* gKernel = NULL;
 
 SceneInfo gSceneInfoStub;
 PostProcessingInfo gPostProcessingInfoStub;
@@ -99,11 +99,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 {
    if( gKernel == nullptr )
    {
-#ifdef USE_CUDA
-	   gKernel = new CudaKernel( activeLogging, NB_MAX_BOXES, platform, device );
-#else
-	   gKernel = new CPUKernel( activeLogging, NB_MAX_BOXES, platform, device );
-#endif // USE_CUDA
+	   gKernel = new GenericGPUKernel( activeLogging, NB_MAX_BOXES, platform, device );
       gSceneInfoStub.pathTracingIteration.x = 0; 
 	   gKernel->setSceneInfo( gSceneInfoStub );
       gKernel->initBuffers();

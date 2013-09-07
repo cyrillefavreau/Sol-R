@@ -23,7 +23,6 @@
 #pragma once
 
 #define USE_OCULUS
-#define USE_CUDA
 
 // Defines
 // #define PHOTON_ENERGY

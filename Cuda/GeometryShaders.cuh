@@ -42,7 +42,7 @@ ________________________________________________________________________________
 __device__ void makeColor(
 	const SceneInfo& sceneInfo,
 	float4&          color,
-	unsigned char*   bitmap,
+	BitmapBuffer*    bitmap,
 	int              index)
 {
    int mdc_index = index*gColorDepth; 
@@ -58,26 +58,26 @@ __device__ void makeColor(
       case otOpenGL: 
 	   {
 		   // OpenGL
-		   bitmap[mdc_index  ] = (char)(color.x*255.f); // Red
-      	bitmap[mdc_index+1] = (char)(color.y*255.f); // Green
-		   bitmap[mdc_index+2] = (char)(color.z*255.f); // Blue
+		   bitmap[mdc_index  ] = (BitmapBuffer)(color.x*255.f); // Red
+      	bitmap[mdc_index+1] = (BitmapBuffer)(color.y*255.f); // Green
+		   bitmap[mdc_index+2] = (BitmapBuffer)(color.z*255.f); // Blue
          break;
 	   }
       case otDelphi: 
 	   {
 		   // Delphi
-		   bitmap[mdc_index  ] = (char)(color.z*255.f); // Blue
-      	bitmap[mdc_index+1] = (char)(color.y*255.f); // Green
-		   bitmap[mdc_index+2] = (char)(color.x*255.f); // Red
+		   bitmap[mdc_index  ] = (BitmapBuffer)(color.z*255.f); // Blue
+      	bitmap[mdc_index+1] = (BitmapBuffer)(color.y*255.f); // Green
+		   bitmap[mdc_index+2] = (BitmapBuffer)(color.x*255.f); // Red
          break;
 	   }
       case otJPEG: 
 	   {
          mdc_index = (sceneInfo.width.x*sceneInfo.height.x-index)*gColorDepth; 
 		   // JPEG
-		   bitmap[mdc_index+2] = (char)(color.z*255.f); // Blue
-      	bitmap[mdc_index+1] = (char)(color.y*255.f); // Green
-		   bitmap[mdc_index  ] = (char)(color.x*255.f); // Red
+		   bitmap[mdc_index+2] = (BitmapBuffer)(color.z*255.f); // Blue
+      	bitmap[mdc_index+1] = (BitmapBuffer)(color.y*255.f); // Green
+		   bitmap[mdc_index  ] = (BitmapBuffer)(color.x*255.f); // Red
          break;
 	   }
    }

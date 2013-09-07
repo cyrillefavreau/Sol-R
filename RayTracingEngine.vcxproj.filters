@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Source Files\Cuda">
       <UniqueIdentifier>{fcba4bed-1d43-41b0-9365-0dc1f66e5bb3}</UniqueIdentifier>
     </Filter>
@@ -45,6 +41,9 @@
     </Filter>
     <Filter Include="Source Files\CPU">
       <UniqueIdentifier>{4f022407-245a-436f-8fd0-585891099857}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{b2d7151a-5bdf-4d79-8d23-3b2158ab0f22}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -157,11 +156,6 @@
     <CudaCompile Include="Cuda\CudaRayTracer.cu">
       <Filter>Source Files\Cuda</Filter>
     </CudaCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="RayTracingEngine.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="OpenCL\RayTracer.cl">

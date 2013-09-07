@@ -83,30 +83,30 @@ struct LightInformation
 // Enums
 enum PrimitiveType 
 {
-	ptSphere      = 0,
-	ptCylinder    = 1,
-	ptTriangle    = 2,
-	ptCheckboard  = 3,
-	ptCamera      = 4,
-	ptXYPlane     = 5,
-	ptYZPlane     = 6,
-	ptXZPlane     = 7,
-	ptMagicCarpet = 8,
-	ptEnvironment = 9,
-	ptEllipsoid   = 10
+   ptSphere      = 0,
+   ptCylinder    = 1,
+   ptTriangle    = 2,
+   ptCheckboard  = 3,
+   ptCamera      = 4,
+   ptXYPlane     = 5,
+   ptYZPlane     = 6,
+   ptXZPlane     = 7,
+   ptMagicCarpet = 8,
+   ptEnvironment = 9,
+   ptEllipsoid   = 10
 };
 
 // TODO! Data structure is too big!!!
 struct Material
 {
    float4 innerIllumination; // x: inner illumination, y: diffusion strength
-	float4 color;             // w: noise
+   float4 color;             // w: noise
    float4 specular;          // x: value, y: power, w: coef
    float1 reflection;     
-	float1 refraction;
+   float1 refraction;
    float1 transparency;
    int4   attributes;        // x: fastTransparency, y: procedural, z: wireframe, w: wireframeWidth
-	int4   textureMapping;    // x: width, y:height, z: Texture ID, w: color depth
+   int4   textureMapping;    // x: width, y:height, z: Texture ID, w: color depth
    int1   textureOffset;     // x: offset in the texture buffer
 };
 
@@ -120,19 +120,19 @@ struct BoundingBox
 
 struct Primitive
 {
-	float3 p0;
-	float3 p1;
-	float3 p2;
-	float3 n0;
-	float3 n1;
-	float3 n2;
-	float3 size;
-	int1   type;
+   float3 p0;
+   float3 p1;
+   float3 p2;
+   float3 n0;
+   float3 n1;
+   float3 n2;
+   float3 size;
+   int1   type;
    int1   index;
-	int1   materialId;
-	float3 vt0;
-	float3 vt1;
-	float3 vt2;
+   int1   materialId;
+   float3 vt0;
+   float3 vt1;
+   float3 vt2;
 };
 
 struct TextureInformation

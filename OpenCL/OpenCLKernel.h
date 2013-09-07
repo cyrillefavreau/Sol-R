@@ -52,7 +52,7 @@ public:
    };
 
 public:
-	OpenCLKernel( bool activeLogging, int platform = 0, int device = 0 );
+	OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform = 0, int device = 0 );
 	~OpenCLKernel();
 
    virtual void initBuffers();
@@ -71,7 +71,7 @@ public:
 public:
 	// ---------- Rendering ----------
 	void render_begin( const float timer );
-   void render_end( char* bitmap);
+   void render_end();
 
 private:
 	// OpenCL Objects

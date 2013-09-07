@@ -24,8 +24,18 @@
 
 #include "../DLL_API.h"
 
-// TO REMOVE!!!
-#include "../GPUKernel.h"
+#ifdef USE_CUDA
+#include "../Cuda/CudaKernel.h"
+typedef CudaKernel GenericGPUKernel;
+#else
+   #ifdef USE_OPENCL
+      #include "../OpenCL/OpenCLKernel.h"
+      typedef OpenCLKernel GenericGPUKernel;
+   #else
+      #include "../CPUKernel.h"
+      typedef CPUKernel GenericGPUKernel;
+   #endif // USE_OPENCL
+#endif // USE_CUDA
 
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
@@ -46,7 +56,7 @@ typedef void GLvoid;
 namespace RayTracer
 {
 
-   extern RAYTRACINGENGINE_API GPUKernel* gKernel;
+   extern RAYTRACINGENGINE_API GenericGPUKernel* gKernel;
 
    // OpenGL
    /*************************************************************/

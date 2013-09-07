@@ -1271,7 +1271,7 @@ extern "C" void h2d_textures(
          if( textureInfos[i].buffer != nullptr )
          {
             int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
-	         checkCudaErrors(cudaMemcpyAsync( d_textures[device]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
+            checkCudaErrors(cudaMemcpyAsync( d_textures[device]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
          }
       }
    }
@@ -1297,8 +1297,8 @@ extern "C" void h2d_kinect(
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[device],                  kinectVideo, gKinectVideoSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[device]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(char), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[device],                  kinectVideo, gKinectVideoSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[device]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 #endif // USE_KINECT
