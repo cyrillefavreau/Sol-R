@@ -975,7 +975,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          ++itb;
       }
       buildLightInformationFromTexture( 4);
-      LOG_INFO( 1, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
+      LOG_INFO( 3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
       if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame]->size() )
       {
          LOG_ERROR("Lost primitives on the way... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame]->size() );
@@ -1587,7 +1587,7 @@ void GPUKernel::setSceneInfo(
 	m_sceneInfo.shadowIntensity.x      = shadowIntensity;
 	m_sceneInfo.nbRayIterations.x      = nbRayIterations;
 	m_sceneInfo.backgroundColor        = backgroundColor;
-	m_sceneInfo.renderingType.x        = renderingType;
+   m_sceneInfo.renderingType.x        = renderingType;
 	m_sceneInfo.width3DVision.x        = width3DVision;
 	m_sceneInfo.renderBoxes.x          = renderBoxes;
 	m_sceneInfo.pathTracingIteration.x = pathTracingIteration;
@@ -1874,7 +1874,7 @@ int GPUKernel::updateSkeletons(
 			if( m_skeletonFrame.SkeletonData[i].eTrackingState == NUI_SKELETON_TRACKED ) 
 			{
 				m_skeletonIndex = i;
-				found = true;
+				found = true; //(m_skeletonIndex==0);
 				/*
 				for( int j=0; j<20; j++ ) 
 				{
@@ -1912,7 +1912,7 @@ int GPUKernel::updateSkeletons(
 			i++;
 		}
 	}
-	return hr;
+	return found ? S_OK : S_FALSE;
 }
 
 bool GPUKernel::getSkeletonPosition( int index, float3& position )

@@ -661,9 +661,6 @@ __global__ void k_anaglyphRenderer(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
 
-   float focus = primitiveXYIds[sceneInfo.width.x*sceneInfo.height.x/2].x - origin.z;
-   float eyeSeparation = sceneInfo.width3DVision.x*(focus/direction.z);
-
    float3 rotationCenter = {0.f,0.f,0.f};
    if( sceneInfo.renderingType.x==vt3DVision)
    {
@@ -684,11 +681,11 @@ __global__ void k_anaglyphRenderer(
 
    float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
    float2 step;
-   step.x=4.f*ratio*6400.f/(float)sceneInfo.width.x;
-   step.y=4.f*6400.f/(float)sceneInfo.height.x;
+   step.x=ratio*6400.f/(float)sceneInfo.width.x;
+   step.y=6400.f/(float)sceneInfo.height.x;
 
    // Left eye
-	eyeRay.origin.x = origin.x + eyeSeparation;
+	eyeRay.origin.x = origin.x - sceneInfo.width3DVision.x;
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
@@ -696,7 +693,7 @@ __global__ void k_anaglyphRenderer(
 	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 	eyeRay.direction.z = direction.z;
 
-	//vectorRotation( eyeRay.origin, rotationCenter, angles );
+	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 colorLeft = launchRay(
@@ -712,7 +709,7 @@ __global__ void k_anaglyphRenderer(
 		primitiveXYIds[index]);
 
 	// Right eye
-	eyeRay.origin.x = origin.x - eyeSeparation;
+	eyeRay.origin.x = origin.x + sceneInfo.width3DVision.x;
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
@@ -720,7 +717,7 @@ __global__ void k_anaglyphRenderer(
 	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
 	eyeRay.direction.z = direction.z;
 
-	//vectorRotation( eyeRay.origin, rotationCenter, angles );
+	vectorRotation( eyeRay.origin, rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 	
    float4 colorRight = launchRay(
@@ -837,7 +834,7 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.direction.z = direction.z;
 	}
 
-   if(sqrt(eyeRay.direction.x*eyeRay.direction.x+eyeRay.direction.y*eyeRay.direction.y)>(halfWidth*6)) return;
+   //if(sqrt(eyeRay.direction.x*eyeRay.direction.x+eyeRay.direction.y*eyeRay.direction.y)>(halfWidth*6)) return;
 
 	vectorRotation( eyeRay.origin,    rotationCenter, angles );
 	vectorRotation( eyeRay.direction, rotationCenter, angles );

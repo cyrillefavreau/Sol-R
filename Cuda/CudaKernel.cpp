@@ -327,13 +327,6 @@ void CudaKernel::render_end()
                   d2 = 1.f-pow(d2,2.f)*m_distortion;
                   d3 = 1.f-pow(d3,2.f)*m_distortion;
 
-                  /*
-                  d0 = (d0==0.f) ? 1.f : (1.f/(sin(d0-M_PI/2.f)+m_distortion));
-                  d1 = (d1==0.f) ? 1.f : (1.f/(sin(d1-M_PI/2.f)+m_distortion));
-                  d2 = (d2==0.f) ? 1.f : (1.f/(sin(d2-M_PI/2.f)+m_distortion));
-                  d3 = (d3==0.f) ? 1.f : (1.f/(sin(d3-M_PI/2.f)+m_distortion));
-                  */
-
                   ::glBegin(GL_QUADS);
                   ::glTexCoord2f(1.f-(b+(x/2.f)), y);
                   ::glVertex3f(center.x+0.5f*p0.x*d0, center.y+p0.y*d0, 0.f);
