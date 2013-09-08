@@ -367,9 +367,12 @@ float3 PDBReader::loadAtomsFromFile(
 
          bool addAtom( true );
 
+         int m = atom.materialId;
 			if( useModels && (atom.chainId%2==chainSelection) )
 			{
-            addAtom = false;
+            //addAtom = false;
+            radius = stickRadius;
+            if( geometryType==gtAtomsAndSticks)  m = 11;
 			}
 
 			if( addAtom )
@@ -383,7 +386,7 @@ float3 PDBReader::loadAtomsFromFile(
 					   objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
 					   objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
 					   objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
-					   objectScale.x*radius*5.f, 0.f, 0.f,
+					   objectScale.x*radius*2.f, 0.f, 0.f,
 						10 );
             }
 
@@ -394,7 +397,7 @@ float3 PDBReader::loadAtomsFromFile(
 					objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
 					objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
 					objectScale.x*radius, 0.f, 0.f,
-               atom.materialId );
+               m );
 			}
 		}
 		++it;

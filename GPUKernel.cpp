@@ -779,7 +779,8 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    nbActiveBoxes = 0;
    std::map<unsigned int,unsigned int> primitivesPerBox;
 
-   int optimalNbOfPrimmitivesPerBox = std::min( m_optimalNbOfPrimmitivesPerBox, 3*static_cast<int>(sqrtf(static_cast<float>(m_primitives[m_frame]->size()))));
+   int optimalNbOfPrimmitivesPerBox = 5*static_cast<int>(sqrtf(static_cast<float>(m_primitives[m_frame]->size())));
+   optimalNbOfPrimmitivesPerBox = (optimalNbOfPrimmitivesPerBox>480) ? 480 : optimalNbOfPrimmitivesPerBox;
 
    int p(0);
    std::map<unsigned int,CPUPrimitive>::iterator it = (m_primitives[m_frame])->begin();
@@ -860,7 +861,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       int activeBoxes(NB_MAX_BOXES);
 #if 1
-      LOG_INFO(3,"Constructing acceleration structures" );
+      LOG_INFO(1,"Constructing acceleration structures" );
       // Bounding boxes
       // Search for best trade-off
       std::map<unsigned int,unsigned int> primitivesPerBox;
@@ -974,7 +975,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          ++itb;
       }
       buildLightInformationFromTexture( 4);
-      LOG_INFO( 3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
+      LOG_INFO( 1, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
       if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame]->size() )
       {
          LOG_ERROR("Lost primitives on the way... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame]->size() );
