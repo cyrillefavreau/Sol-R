@@ -1125,6 +1125,46 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
    }
 }
 
+void GPUKernel::translatePrimitives( float3 translation, unsigned int from, unsigned int to )
+{
+	LOG_INFO(3,"GPUKernel::translatePrimitives(" << from << "->" << to << ")" );
+   m_primitivesTransfered = false;
+#pragma omp parallel
+   for( BoxContainer::iterator itb=m_boundingBoxes[m_frame]->begin(); itb!=m_boundingBoxes[m_frame]->end(); ++itb )
+   {
+      #pragma omp single nowait
+      {
+         CPUBoundingBox& box = (*itb).second;
+         for( int i(0); i<2; ++i )
+         {
+            box.parameters[i].x += translation.x;
+            box.parameters[i].y += translation.y;
+            box.parameters[i].z += translation.z;
+         }
+
+         for( std::vector<unsigned int>::iterator it=box.primitives.begin(); it!=box.primitives.end(); ++it )
+		   {
+            //#pragma single nowait
+            CPUPrimitive& primitive((*m_primitives[m_frame])[*it]);
+            if( primitive.movable && primitive.type != ptCamera )
+            {
+               primitive.p0.x += translation.x;
+               primitive.p0.y += translation.y;
+               primitive.p0.z += translation.z;
+
+               primitive.p1.x += translation.x;
+               primitive.p1.y += translation.y;
+               primitive.p1.z += translation.z;
+
+               primitive.p2.x += translation.x;
+               primitive.p2.y += translation.y;
+               primitive.p2.z += translation.z;
+            }
+         }
+      }
+   }
+}
+
 void GPUKernel::morphPrimitives()
 {
 //#pragma omp parallel

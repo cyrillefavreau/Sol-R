@@ -115,6 +115,9 @@ public:
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
 
+   // Translation
+   void translatePrimitives( float3 translation, unsigned int from, unsigned int to );
+
    // Morphing
    void morphPrimitives();
 
