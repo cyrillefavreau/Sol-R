@@ -323,7 +323,7 @@ public:
 
 public:
 
-   void rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles );
+   void rotateVector( float3& v, const float3& rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
 protected:
    

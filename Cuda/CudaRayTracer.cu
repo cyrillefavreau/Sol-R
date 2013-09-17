@@ -784,7 +784,7 @@ __global__ void k_3DVisionRenderer(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
 
-   float focus = primitiveXYIds[sceneInfo.width.x*sceneInfo.height.x/2].x - origin.z;
+   float focus = fabs(postProcessingBuffer[sceneInfo.width.x/2*sceneInfo.height.x/2].w - origin.z);
    float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
    float3 rotationCenter = {0.f,0.f,0.f};

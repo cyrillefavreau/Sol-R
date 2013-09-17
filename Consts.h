@@ -28,6 +28,7 @@
 // #define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND
 #define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#define AUTOFOCUS
 
 // Consts
 const int MAX_GPU_COUNT     = 32;

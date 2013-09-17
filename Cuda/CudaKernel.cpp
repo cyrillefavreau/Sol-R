@@ -292,7 +292,7 @@ void CudaKernel::render_end()
 
       if( m_sceneInfo.renderingType.x == vt3DVision )
       {
-         float step = 0.1f;
+         float step = 0.125f;
          float halfStep = 1.f;
          float scale = 2.f;
          float distortion=1.f;
@@ -322,10 +322,10 @@ void CudaKernel::render_end()
                   float d2 = sqrt(pow(p2.x,2)+pow(p2.y,2));
                   float d3 = sqrt(pow(p3.x,2)+pow(p3.y,2));
 
-                  d0 = 1.f-pow(d0,2.f)*m_distortion;
-                  d1 = 1.f-pow(d1,2.f)*m_distortion;
-                  d2 = 1.f-pow(d2,2.f)*m_distortion;
-                  d3 = 1.f-pow(d3,2.f)*m_distortion;
+                  d0 = 1.f-pow(d0,3.f)*m_distortion;
+                  d1 = 1.f-pow(d1,3.f)*m_distortion;
+                  d2 = 1.f-pow(d2,3.f)*m_distortion;
+                  d3 = 1.f-pow(d3,3.f)*m_distortion;
 
                   ::glBegin(GL_QUADS);
                   ::glTexCoord2f(1.f-(b+(x/2.f)), y);

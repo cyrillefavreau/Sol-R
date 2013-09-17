@@ -1258,7 +1258,7 @@ void GPUKernel::scalePrimitives( float scale, unsigned int from, unsigned int to
 	}
 }
 
-void GPUKernel::rotateVector( float3& v, const float3 rotationCenter, const float3& cosAngles, const float3& sinAngles )
+void GPUKernel::rotateVector( float3& v, const float3& rotationCenter, const float3& cosAngles, const float3& sinAngles )
 {
    // Rotate Center
    float3 vector;
@@ -1300,9 +1300,10 @@ void GPUKernel::rotatePrimitive(
          rotateVector( primitive.p1, rotationCenter, cosAngles, sinAngles );
          rotateVector( primitive.p2, rotationCenter, cosAngles, sinAngles );
          // Rotate Normals
-         rotateVector( primitive.n0, rotationCenter, cosAngles, sinAngles );
-         rotateVector( primitive.n1, rotationCenter, cosAngles, sinAngles );
-         rotateVector( primitive.n2, rotationCenter, cosAngles, sinAngles );
+         float3 zeroCenter = {0.f,0.f,0.f};
+         rotateVector( primitive.n0, zeroCenter, cosAngles, sinAngles );
+         rotateVector( primitive.n1, zeroCenter, cosAngles, sinAngles );
+         rotateVector( primitive.n2, zeroCenter, cosAngles, sinAngles );
          if( primitive.type == ptCylinder )
          {
             // Axis
