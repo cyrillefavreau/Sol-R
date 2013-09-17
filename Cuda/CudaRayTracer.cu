@@ -494,10 +494,12 @@ __global__ void k_standardRenderer(
 		dof,
 		primitiveXYIds[index]);
 
+#ifdef ADVANCED_FEATURES
    // Randomize light intensity
 	int rindex = index;
 	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
    color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+#endif // ADVANCED_FEATURES
    
    if( antialiasingActivated )
    {
