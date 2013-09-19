@@ -280,7 +280,6 @@ void CudaKernel::render_end()
 {
    // GPU -> CPU Data transfers
    d2h_bitmap( m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds );
-
    if( m_sceneInfo.misc.x == 0 )
    {
       ::glEnable(GL_TEXTURE_2D);
@@ -290,6 +289,7 @@ void CudaKernel::render_end()
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
       ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
+#if 1
       if( m_sceneInfo.renderingType.x == vt3DVision )
       {
          float step = 0.125f;
@@ -345,6 +345,7 @@ void CudaKernel::render_end()
          }
       }
       else
+#endif // 0
       {
          ::glBegin(GL_QUADS);
          ::glTexCoord2f(1.f,0.f);
