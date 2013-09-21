@@ -31,7 +31,6 @@
 // Cuda
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
-//#include <helper_math.h>
 
 /*
 ________________________________________________________________________________
@@ -165,7 +164,6 @@ __device__ float processShadows(
 #else
                if( triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ))
 #endif
-
 					{
 						float3 O_I = intersection-r.origin;
 						float3 O_L = r.direction;

@@ -2292,9 +2292,11 @@ void CPUKernel::k_default()
          float4 localColor = m_postProcessingBuffer[index];
 
          if(m_sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+         {
             localColor.x /= (float)(m_sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
-         localColor.y /= (float)(m_sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
-         localColor.z /= (float)(m_sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+            localColor.y /= (float)(m_sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+            localColor.z /= (float)(m_sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+         }
 
          makeColor( localColor, index ); 
       }

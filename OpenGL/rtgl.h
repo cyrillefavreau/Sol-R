@@ -85,7 +85,7 @@ namespace RayTracer
 #define GL_3_BYTES                        0x1408
 #define GL_4_BYTES                        0x1409
 #define GL_DOUBLE                         0x140A
-#define GL_DOUBLE_EXT                     0x140A
+//#define GL_DOUBLE_EXT                     0x140A
 
    /* PixelFormat */
 #define GL_COLOR_INDEX                    0x1900
@@ -116,14 +116,10 @@ namespace RayTracer
 #define GL_POINT_SIZE                     0x0B11
 #define GL_SMOOTH_POINT_SIZE_RANGE        0x0B12
 #define GL_SMOOTH_POINT_SIZE_GRANULARITY  0x0B13
-#define GL_POINT_SIZE_RANGE               GL_SMOOTH_POINT_SIZE_RANGE
-#define GL_POINT_SIZE_GRANULARITY         GL_SMOOTH_POINT_SIZE_GRANULARITY
 #define GL_LINE_SMOOTH                    0x0B20
 #define GL_LINE_WIDTH                     0x0B21
 #define GL_SMOOTH_LINE_WIDTH_RANGE        0x0B22
 #define GL_SMOOTH_LINE_WIDTH_GRANULARITY  0x0B23
-#define GL_LINE_WIDTH_RANGE               GL_SMOOTH_LINE_WIDTH_RANGE
-#define GL_LINE_WIDTH_GRANULARITY         GL_SMOOTH_LINE_WIDTH_GRANULARITY
 #define GL_LINE_STIPPLE                   0x0B24
 #define GL_LINE_STIPPLE_PATTERN           0x0B25
 #define GL_LINE_STIPPLE_REPEAT            0x0B26
@@ -422,7 +418,10 @@ namespace RayTracer
 #define GL_LIST_BIT                       0x00020000
 #define GL_TEXTURE_BIT                    0x00040000
 #define GL_SCISSOR_BIT                    0x00080000
-#define GL_ALL_ATTRIB_BITS                0xFFFFFFFF
+
+#define GLUquadricObj void
+
+   void RAYTRACINGENGINE_API glLoadIdentity();
 
    void RAYTRACINGENGINE_API glBegin( GLint );
    int  RAYTRACINGENGINE_API glEnd();
@@ -432,7 +431,9 @@ namespace RayTracer
    void RAYTRACINGENGINE_API glFlush (void);
 
    void RAYTRACINGENGINE_API glVertex3f( GLfloat x, GLfloat y, GLfloat z );
+   void RAYTRACINGENGINE_API glVertex3fv( const GLfloat *v );
    void RAYTRACINGENGINE_API glNormal3f( GLfloat x, GLfloat y, GLfloat z );
+   void RAYTRACINGENGINE_API glNormal3fv( const GLfloat *v );
    void RAYTRACINGENGINE_API glColor3f (GLfloat red, GLfloat green, GLfloat blue);
    void RAYTRACINGENGINE_API glRasterPos2f (GLfloat x, GLfloat y);
    void RAYTRACINGENGINE_API glTexParameterf (GLenum target, GLenum pname, GLfloat param);
@@ -440,7 +441,46 @@ namespace RayTracer
    void RAYTRACINGENGINE_API glTexCoord3f( GLfloat x, GLfloat y, GLfloat z );
    void RAYTRACINGENGINE_API glTexEnvf (GLenum target, GLenum pname, GLfloat param);
    void RAYTRACINGENGINE_API glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
+   void RAYTRACINGENGINE_API gluSphere(void *, GLfloat, GLint, GLint);
+   RAYTRACINGENGINE_API GLUquadricObj* gluNewQuadric();
 
+   void RAYTRACINGENGINE_API glViewport(GLint a, GLint b, GLint width, GLint height );
+
+   // Raytracer specific
+   void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
+
+
+   // TO BE DONE
+
+#define GL_LIGHT1                         0x4001
+
+#define glMatrixMode(...)
+#define gluPerspective(...)
+#define glMatrixMode(...)
+#define glShadeModel(...)
+#define glClearColor(...)
+#define glColor4f(...)
+#define glHint(...)
+#define glClearDepth(...)
+#define glDepthFunc(...)
+#define glLightfv(...)
+#define glLightModeli(...)
+#define glGenTextures(...)
+#define glTexParameteri(...)
+#define gluBuild2DMipmaps(...)
+#define glBindTexture(...)
+#define glTranslatef(...)
+#define glMaterialfv(...)
+#define glColor4fv(...)
+#define glMaterialf(...)
+#define glFrontFace(...)
+#define glMap2f(...)
+#define glMapGrid2f(...)
+#define glEvalMesh2(...)
+#define glPointSize(...)
+#define glPushMatrix(...)
+#define glPopMatrix(...)
+#define glDeleteLists(...)
    // GLUT
 
    /*

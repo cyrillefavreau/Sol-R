@@ -293,7 +293,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       material.innerIllumination.x,material.innerIllumination.y,material.innerIllumination.z,
       (material.attributes.x==1));
    
-   LOG_INFO(1, "Added material [" << materialId << "] " << 
+   LOG_INFO(3, "Added material [" << materialId << "] " << 
       "( " << material.color.x << ", " << material.color.y << ", " << material.color.z << ") " <<
       "( " << material.specular.x << ", " << material.specular.y << ", " << material.specular.z << ") " <<
       ", Texture ID= " << material.textureMapping.z );

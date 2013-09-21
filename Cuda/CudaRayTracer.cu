@@ -362,11 +362,32 @@ __device__ inline float4 launchRay(
 }
 
 
-/*
-________________________________________________________________________________
-
-Standard renderer
-________________________________________________________________________________
+/*!
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \brief      This kernel processes a "standard" image, meaning that the screen is a single image for 
+ *             which every pixel is a ray of light entering the same camera.
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
+ * \param[in]  device_split Y coordinate from where the current GPU should start working
+ * \param[in]  stream_split Y coordinate from where the current stream should start working
+ * \param[in]  BoundingBoxes Pointer to the array of bounding boxes
+ * \param[in]  nbActiveBoxes Number of bounding boxes
+ * \param[in]  primitives Pointer to the array of primitives
+ * \param[in]  nbActivePrimitives Number of primitives
+ * \param[in]  lightInformation Pointer to the array of light positions and intensities (Used for global illumination)
+ * \param[in]  lightInformationSize Number of lights
+ * \param[in]  nbActiveLamps Number of lamps
+ * \param[in]  materials Pointer to the array of materials
+ * \param[in]  textures Pointer to the array of textures
+ * \param[in]  randoms Pointer to the array of random floats (GPUs are not good at generating numbers, done by the CPU)
+ * \param[in]  origin Camera position
+ * \param[in]  direction Camera LookAt
+ * \param[in]  angles Angles applied to the camera. The rotation center is {0,0,0}
+ * \param[in]  sceneInfo Information about the scene and environment
+ * \param[in]  postProcessingInfo Information about PostProcessing effect
+ * \param[out] postProcessingBuffer Pointer to the output array of color information
+ * \param[out] primitiveXYIds Pointer to the array containing the Id of the primitivive for each pixel
+ * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_standardRenderer(
    const int2   occupancyParameters,
@@ -525,11 +546,31 @@ __global__ void k_standardRenderer(
    }
 }
 
-/*
-________________________________________________________________________________
-
-Standard renderer
-________________________________________________________________________________
+/*!
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \brief      This kernel processes a fisheye image
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
+ * \param[in]  device_split Y coordinate from where the current GPU should start working
+ * \param[in]  stream_split Y coordinate from where the current stream should start working
+ * \param[in]  BoundingBoxes Pointer to the array of bounding boxes
+ * \param[in]  nbActiveBoxes Number of bounding boxes
+ * \param[in]  primitives Pointer to the array of primitives
+ * \param[in]  nbActivePrimitives Number of primitives
+ * \param[in]  lightInformation Pointer to the array of light positions and intensities (Used for global illumination)
+ * \param[in]  lightInformationSize Number of lights
+ * \param[in]  nbActiveLamps Number of lamps
+ * \param[in]  materials Pointer to the array of materials
+ * \param[in]  textures Pointer to the array of textures
+ * \param[in]  randoms Pointer to the array of random floats (GPUs are not good at generating numbers, done by the CPU)
+ * \param[in]  origin Camera position
+ * \param[in]  direction Camera LookAt
+ * \param[in]  angles Angles applied to the camera. The rotation center is {0,0,0}
+ * \param[in]  sceneInfo Information about the scene and environment
+ * \param[in]  postProcessingInfo Information about PostProcessing effect
+ * \param[out] postProcessingBuffer Pointer to the output array of color information
+ * \param[out] primitiveXYIds Pointer to the array containing the Id of the primitivive for each pixel
+ * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_fishEyeRenderer(
    const int2   occupancyParameters,
@@ -634,11 +675,30 @@ __global__ void k_fishEyeRenderer(
    }
 }
 
-/*
-________________________________________________________________________________
-
-Anaglyph Renderer
-________________________________________________________________________________
+/*!
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \brief      This kernel processes an anaglyph image. The sceneInfo.width3DVision parameter specifies the distance
+ *             between both eyes.
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
+ * \param[in]  BoundingBoxes Pointer to the array of bounding boxes
+ * \param[in]  nbActiveBoxes Number of bounding boxes
+ * \param[in]  primitives Pointer to the array of primitives
+ * \param[in]  nbActivePrimitives Number of primitives
+ * \param[in]  lightInformation Pointer to the array of light positions and intensities (Used for global illumination)
+ * \param[in]  lightInformationSize Number of lights
+ * \param[in]  nbActiveLamps Number of lamps
+ * \param[in]  materials Pointer to the array of materials
+ * \param[in]  textures Pointer to the array of textures
+ * \param[in]  randoms Pointer to the array of random floats (GPUs are not good at generating numbers, done by the CPU)
+ * \param[in]  origin Camera position
+ * \param[in]  direction Camera LookAt
+ * \param[in]  angles Angles applied to the camera. The rotation center is {0,0,0}
+ * \param[in]  sceneInfo Information about the scene and environment
+ * \param[in]  postProcessingInfo Information about PostProcessing effect
+ * \param[out] postProcessingBuffer Pointer to the output array of color information
+ * \param[out] primitiveXYIds Pointer to the array containing the Id of the primitivive for each pixel
+ * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_anaglyphRenderer(
    const int2    occupancyParameters,
@@ -757,11 +817,30 @@ __global__ void k_anaglyphRenderer(
    }
 }
 
-/*
-________________________________________________________________________________
-
-3D Vision Renderer
-________________________________________________________________________________
+/*!
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \brief      This kernel processes two images in a side-by-side format. The sceneInfo.width3DVision parameter specifies
+ *             the distance between both eyes.
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
+ * \param[in]  BoundingBoxes Pointer to the array of bounding boxes
+ * \param[in]  nbActiveBoxes Number of bounding boxes
+ * \param[in]  primitives Pointer to the array of primitives
+ * \param[in]  nbActivePrimitives Number of primitives
+ * \param[in]  lightInformation Pointer to the array of light positions and intensities (Used for global illumination)
+ * \param[in]  lightInformationSize Number of lights
+ * \param[in]  nbActiveLamps Number of lamps
+ * \param[in]  materials Pointer to the array of materials
+ * \param[in]  textures Pointer to the array of textures
+ * \param[in]  randoms Pointer to the array of random floats (GPUs are not good at generating numbers, done by the CPU)
+ * \param[in]  origin Camera position
+ * \param[in]  direction Camera LookAt
+ * \param[in]  angles Angles applied to the camera. The rotation center is {0,0,0}
+ * \param[in]  sceneInfo Information about the scene and environment
+ * \param[in]  postProcessingInfo Information about PostProcessing effect
+ * \param[out] postProcessingBuffer Pointer to the output array of color information
+ * \param[out] primitiveXYIds Pointer to the array containing the Id of the primitivive for each pixel
+ * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_3DVisionRenderer(
    const int2    occupancyParameters,
@@ -874,11 +953,16 @@ __global__ void k_3DVisionRenderer(
    }
 }
 
-/*
-________________________________________________________________________________
-
-Post Processing Effect: Default
-________________________________________________________________________________
+/*!
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \brief      This post-processing kernel simply converts the contents of the postProcessingBuffer into a bitmap
+ * ------------------------------------------------------------------------------------------------------------------------
+ * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
+ * \param[in]  sceneInfo Information about the scene and environment
+ * \param[in]  postProcessingInfo Information about PostProcessing effect
+ * \param[in]  postProcessingBuffer Pointer to the output array of color information
+ * \param[out] Bitmap Pointer to a bitmap. The bitmap is encoded according to the value of the sceneInfo.misc.x parameter
+ * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_default(
    const int2            occupancyParameters,
@@ -1537,3 +1621,4 @@ extern "C" void cudaRender(
 	   }
    }
 }
+   

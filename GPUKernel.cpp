@@ -837,7 +837,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives[m_frame]->size()/nbActiveBoxes) : 0;
       //delta = abs(optimalNbOfPrimmitivesPerBox-maxPrimitivePerBox);
       delta = abs(optimalNbOfPrimmitivesPerBox-nbActiveBoxes);
-      LOG_INFO(1, "[" << boxSize << "/" << delta << "] Avg : " << maxPrimitivePerBox << " for " << nbActiveBoxes << " active boxes (" << m_primitives[m_frame]->size() << " primitives) - " << optimalNbOfPrimmitivesPerBox );
+      LOG_INFO(2, "[" << boxSize << "/" << delta << "] Avg : " << maxPrimitivePerBox << " for " << nbActiveBoxes << " active boxes (" << m_primitives[m_frame]->size() << " primitives) - " << optimalNbOfPrimmitivesPerBox );
    }
    else
    {
@@ -2030,15 +2030,28 @@ int GPUKernel::setGLMode( const int& glMode )
       case GL_TRIANGLES:
          {
             // Vertices
-            if( m_vertices.size() == 3 )
+            if( m_vertices.size()%3 == 0 )
             {
-               p = addPrimitive( ptTriangle);
-               setPrimitive(  p,
-                  m_vertices[0].x, m_vertices[0].y, m_vertices[0].z, 
-                  m_vertices[1].x, m_vertices[1].y, m_vertices[1].z, 
-                  m_vertices[2].x, m_vertices[2].y, m_vertices[2].z, 
-                  0.f,0.f,0.f,
-                  0);
+               int nbTriangles=m_vertices.size()/3;
+               for( int i(0); i<nbTriangles; ++i)
+               {
+                  p = addPrimitive( ptTriangle);
+                  setPrimitive(  p,
+                     m_vertices[i*3+0].x, m_vertices[i*3+0].y, m_vertices[i*3+0].z, 
+                     m_vertices[i*3+1].x, m_vertices[i*3+1].y, m_vertices[i*3+1].z, 
+                     m_vertices[i*3+2].x, m_vertices[i*3+2].y, m_vertices[i*3+2].z, 
+                     0.f,0.f,0.f,
+                     0);
+
+                  if( m_textCoords.size()>=i*3+2 )
+                  {
+                     setPrimitiveTextureCoordinates(  p, m_textCoords[i*3+0], m_textCoords[i*3+1], m_textCoords[i*3+2] );
+                  }
+                  if( m_normals.size()>=i*3+2 )
+                  {
+                     setPrimitiveNormals(  p, m_normals[i*3+0], m_normals[i*3+1], m_normals[i*3+2] );
+                  }
+               }
                LOG_INFO(3, "Triangle created");
             }
             else
@@ -2046,25 +2059,6 @@ int GPUKernel::setGLMode( const int& glMode )
                LOG_ERROR("Incorrect number of vertices to create a triangle" );
             }
 
-            // Texture coordinates
-            if( p!=-1 && m_textCoords.size() == 3 )
-            {
-               setPrimitiveTextureCoordinates(  p, m_textCoords[0], m_textCoords[1], m_textCoords[2] );
-            }
-            else
-            {
-               LOG_ERROR("Incorrect number of texture coordinates" );
-            }
-
-            // Normals
-            if( p!=-1 && m_normals.size() == 3 )
-            {
-               setPrimitiveNormals(  p, m_normals[0], m_normals[1], m_normals[2] );
-            }
-            else
-            {
-               LOG_ERROR("Incorrect number of normals" );
-            }
 
          }
          break;
