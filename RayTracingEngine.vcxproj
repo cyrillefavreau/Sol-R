@@ -355,7 +355,7 @@
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
       <CodeGeneration>compute_13,sm_13;compute_30,sm_30</CodeGeneration>
-      <GPUDebugInfo>true</GPUDebugInfo>
+      <GPUDebugInfo>false</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
@@ -584,8 +584,9 @@
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13;compute_30,sm_30</CodeGeneration>
       <Defines>WIN32</Defines>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
@@ -937,6 +938,7 @@
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">true</FastMath>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <TargetMachinePlatform Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">64</TargetMachinePlatform>
     </CudaCompile>
     <None Include="Cuda\GeometryIntersections.cuh">
       <FileType>Document</FileType>

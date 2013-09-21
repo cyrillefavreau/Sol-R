@@ -283,9 +283,8 @@ void RayTracer::glViewport(int a, int b, int width, int height )
    gKernel->setSceneInfo( gSceneInfo );
    gKernel->initBuffers();
    createRandomMaterials(false,false);
-   Sleep(1000);
 
-   ::glViewport(a,b,width,height);
+   //::glViewport(a,b,width,height);
 }
 
 void RayTracer::glutInitWindowSize( int width, int height )
@@ -352,8 +351,8 @@ void RayTracer::glutFullScreen( void )
 
 void RayTracer::glLoadIdentity()
 {
-   float3 eye = {0.f,0.f,  -30.f};
-   float3 dir = {0.f,0.f, 8000.f};
+   float3 eye = {0.f,0.f,   -30.f};
+   float3 dir = {0.f,0.f, 10000.f};
    float3 angles = {0.f,0.f, 0.f};
    RayTracer::gKernel->setCamera(eye,dir,angles);
    RayTracer::gKernel->setSceneInfo(gSceneInfo);

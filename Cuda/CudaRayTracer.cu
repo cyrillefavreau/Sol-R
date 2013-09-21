@@ -433,6 +433,7 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
+   /*
    else
 	{
 		// Randomize view for natural depth of field
@@ -445,6 +446,7 @@ __global__ void k_standardRenderer(
 		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
       }
 	}
+   */
 
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
