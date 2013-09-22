@@ -49,11 +49,11 @@ void RayTracer::InitializeRaytracer( const int width, const int height, const bo
    // Scene
    gSceneInfo.width.x = width;
    gSceneInfo.height.x = height; 
-   gSceneInfo.graphicsLevel.x = 5;
+   gSceneInfo.graphicsLevel.x = 4;
    gSceneInfo.nbRayIterations.x = 10;
    gSceneInfo.transparentColor.x =  0.f;
    gSceneInfo.viewDistance.x = 1000000.f;
-   gSceneInfo.shadowIntensity.x = 0.5f;
+   gSceneInfo.shadowIntensity.x = 0.8f;
    gSceneInfo.width3DVision.x = 400.f;
    gSceneInfo.backgroundColor.x = 1.f;
    gSceneInfo.backgroundColor.y = 1.f;
@@ -115,8 +115,6 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 		bool wireframe = false;
 		int  wireframeDepth = 0;
 		float r,g,b,noise;
-      bool fastTransparency = false;
-      float fastTransparencyRefraction = 0.95f;
        
 		r = rand()%1000/1000.f;
 		g = rand()%1000/1000.f;
@@ -186,7 +184,7 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 			transparency, textureId,
 			specular.x, specular.y, specular.w, 
          innerIllumination.x, innerIllumination.y, innerIllumination.z,
-			fastTransparency);
+			false);
 	}
    RayTracer::gKernel->compactBoxes(false);
 }
@@ -210,7 +208,7 @@ void RayTracer::glEnable (GLenum cap)
    case GL_LIGHTING: 
       {
          int p = RayTracer::gKernel->addPrimitive(ptSphere);
-         RayTracer::gKernel->setPrimitive(p,-10.f*gScale,10.f*gScale,-10.f*gScale,1.f*gScale,0.f,0.f,DEFAULT_LIGHT_MATERIAL);
+         RayTracer::gKernel->setPrimitive(p,-4.f*gScale,20.f*gScale,-10.f*gScale,1.f*gScale,0.f,0.f,DEFAULT_LIGHT_MATERIAL);
          //RayTracer::gKernel->compactBoxes(true);
          LOG_INFO(1, "[OpenGL] Light Added" );
       }
