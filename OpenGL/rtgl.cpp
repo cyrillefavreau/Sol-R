@@ -21,8 +21,10 @@
 */
 
 #include <GL/freeglut.h>
+#include <iostream>
 #include <time.h>
 
+#include "../Logging.h"
 #include "rtgl.h"
 
 GenericGPUKernel* RayTracer::gKernel = nullptr;
@@ -33,7 +35,7 @@ const int DEFAULT_LIGHT_MATERIAL      = 1029;
 const int gTotalPathTracingIterations = 1;
 int4      gMisc = {otOpenGL,0,0,0};
 float3    gRotationCenter = { 0.f, 0.f, 0.f };
-float     gScale=100.f;
+float     gScale=1.f;
 
 static bool ARB_multitexture_supported = false;
 static bool EXT_texture_env_combine_supported = false;
@@ -42,7 +44,7 @@ static bool SGIX_depth_texture_supported = false;
 static bool SGIX_shadow_supported = false;
 static bool EXT_blend_minmax_supported = false;
 
-void RayTracer::InitializeRaytracer( int width, int height )
+void RayTracer::InitializeRaytracer( const int width, const int height, const bool initializeMaterials )
 {
    // Scene
    gSceneInfo.width.x = width;
@@ -73,7 +75,11 @@ void RayTracer::InitializeRaytracer( int width, int height )
    gSceneInfo.pathTracingIteration.x = 0; 
    gKernel->setSceneInfo( gSceneInfo );
    gKernel->initBuffers();
-   createRandomMaterials(false,false);
+
+   if( initializeMaterials )
+   {
+      createRandomMaterials(false,false);
+   }
 }
 /*
 ________________________________________________________________________________
@@ -169,7 +175,7 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 		case 126: innerIllumination.x=.5f; break; 
 		case 127: innerIllumination.x=.5f; break; 
 		case 128: innerIllumination.x=.5f; break; 
-		case DEFAULT_LIGHT_MATERIAL: r=1.f; g=1.f; b=1.f; innerIllumination.x=0.5f; break; 
+		case DEFAULT_LIGHT_MATERIAL: r=1.f; g=1.f; b=1.f; innerIllumination.x=1.f; break; 
       }
 
       int material = update ? i : RayTracer::gKernel->addMaterial();
@@ -205,7 +211,8 @@ void RayTracer::glEnable (GLenum cap)
       {
          int p = RayTracer::gKernel->addPrimitive(ptSphere);
          RayTracer::gKernel->setPrimitive(p,-10.f*gScale,10.f*gScale,-10.f*gScale,1.f*gScale,0.f,0.f,DEFAULT_LIGHT_MATERIAL);
-         RayTracer::gKernel->compactBoxes(true);
+         //RayTracer::gKernel->compactBoxes(true);
+         LOG_INFO(1, "[OpenGL] Light Added" );
       }
       break;
    }
@@ -312,14 +319,14 @@ void RayTracer::glViewport(int a, int b, int width, int height )
    EXT_blend_minmax_supported=false;
 
    // Initialize Raytracer
-   InitializeRaytracer(width, height);
+   InitializeRaytracer(width, height, true);
    //::glViewport(a,b,width,height);
 }
 
 void RayTracer::glutInitWindowSize( int width, int height )
 {
    // Initialize Raytracer
-   InitializeRaytracer(width, height);
+   InitializeRaytracer(width, height, false);
 
    ::glutInitWindowSize(width,height);
 }

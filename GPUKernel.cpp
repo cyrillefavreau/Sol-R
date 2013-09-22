@@ -866,7 +866,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       // Search for best trade-off
       std::map<unsigned int,unsigned int> primitivesPerBox;
       int maxPrimitivePerBox(0);
-      int boxSize = 64;
+      int boxSize = 1024;
       int bestSize = boxSize;
       int bestActiveBoxes = 0;
       int bestRatio = 10000; 
@@ -2034,27 +2034,27 @@ int GPUKernel::setGLMode( const int& glMode )
             for( int i(0); i<nbTriangles; ++i)
             {
                int index=i*3;
-               if( index+2 < m_vertices.size() )
+               if( index+2<=m_vertices.size() )
                {
                   p = addPrimitive( ptTriangle);
                   setPrimitive(  p,
-                     m_vertices[index+0].x, m_vertices[index+0].y, m_vertices[index+0].z, 
+                     m_vertices[index  ].x, m_vertices[index  ].y, m_vertices[index  ].z, 
                      m_vertices[index+1].x, m_vertices[index+1].y, m_vertices[index+1].z, 
                      m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
                      0.f,0.f,0.f,
                      0);
                }
 
-               if( index+2 < m_textCoords.size() )
+               if( index+2<=m_textCoords.size() )
                {
-                  setPrimitiveTextureCoordinates(  p, m_textCoords[i*3+0], m_textCoords[i*3+1], m_textCoords[i*3+2] );
+                  setPrimitiveTextureCoordinates( p, m_textCoords[index], m_textCoords[index+1], m_textCoords[index+2] );
                }
-               if( index+2 < m_normals.size() )
+               if( index+2<=m_normals.size() )
                {
-                  setPrimitiveNormals(  p, m_normals[i*3+0], m_normals[i*3+1], m_normals[i*3+2] );
+                  setPrimitiveNormals( p, m_normals[index], m_normals[index+1], m_normals[index+2] );
                }
             }
-            LOG_INFO(3, "Triangle created");
+            LOG_INFO(1, "[OpenGL] Triangle created");
 
          }
          break;

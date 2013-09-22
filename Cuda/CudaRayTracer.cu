@@ -322,38 +322,39 @@ __device__ inline float4 launchRay(
 
 	intersection = closestIntersection;
 
+	float len = length(firstIntersection - ray.origin);
    if( closestPrimitive != -1 )
    {
       Primitive& primitive=primitives[closestPrimitive];
-	   float len = length(firstIntersection - ray.origin);
-      if( materials[primitive.materialId.x].attributes.z == 0 ) // Wireframe
+      if( materials[primitive.materialId.x].attributes.z==1 ) // Wireframe
       {
-   #ifdef PHOTON_ENERGY
-	      // --------------------------------------------------
-         // Photon energy
-	      // --------------------------------------------------
-         intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
-   #endif // PHOTON_ENERGY
-
-	      // --------------------------------------------------
-	      // Fog
-	      // --------------------------------------------------
-         //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
-
-	      // --------------------------------------------------
-	      // Background color
-	      // --------------------------------------------------
-         float D1 = sceneInfo.viewDistance.x*0.95f;
-         if( sceneInfo.misc.z==1 && len>D1)
-         {
-            float D2 = sceneInfo.viewDistance.x*0.05f;
-            float a = len - D1;
-            float b = 1.f-(a/D2);
-            intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
-         }
+         len = sceneInfo.viewDistance.x;
       }
-      depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
    }
+#ifdef PHOTON_ENERGY
+	// --------------------------------------------------
+   // Photon energy
+	// --------------------------------------------------
+   intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
+#endif // PHOTON_ENERGY
+
+	// --------------------------------------------------
+	// Fog
+	// --------------------------------------------------
+   //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
+
+	// --------------------------------------------------
+	// Background color
+	// --------------------------------------------------
+   float D1 = sceneInfo.viewDistance.x*0.95f;
+   if( sceneInfo.misc.z==1 && len>D1)
+   {
+      float D2 = sceneInfo.viewDistance.x*0.05f;
+      float a = len - D1;
+      float b = 1.f-(a/D2);
+      intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
+   }
+   depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
 
    // Primitive information
    primitiveXYId.y = iteration;

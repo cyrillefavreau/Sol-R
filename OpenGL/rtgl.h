@@ -763,7 +763,7 @@ static bool EXT_blend_minmax_supported;
    /*
    * Raytracer
    */
-   void InitializeRaytracer( int width, int height );
+   void InitializeRaytracer( const int width, const int height, const bool initializeMaterials );
 
    /*
    * Initialization functions, see fglut_init.c
