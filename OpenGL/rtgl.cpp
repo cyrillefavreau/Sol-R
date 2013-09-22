@@ -21,6 +21,7 @@
 */
 
 #include <GL/freeglut.h>
+#include <time.h>
 
 #include "rtgl.h"
 
@@ -30,10 +31,50 @@ SceneInfo gSceneInfo;
 PostProcessingInfo gPostProcessingInfo;
 const int DEFAULT_LIGHT_MATERIAL      = 1029;
 const int gTotalPathTracingIterations = 1;
-int4      gMisc = {otOpenGL,0,1,0};
+int4      gMisc = {otOpenGL,0,0,0};
 float3    gRotationCenter = { 0.f, 0.f, 0.f };
+float     gScale=100.f;
 
+static bool ARB_multitexture_supported = false;
+static bool EXT_texture_env_combine_supported = false;
+static bool NV_register_combiners_supported = false;
+static bool SGIX_depth_texture_supported = false;
+static bool SGIX_shadow_supported = false;
+static bool EXT_blend_minmax_supported = false;
 
+void RayTracer::InitializeRaytracer( int width, int height )
+{
+   // Scene
+   gSceneInfo.width.x = width;
+   gSceneInfo.height.x = height; 
+   gSceneInfo.graphicsLevel.x = 5;
+   gSceneInfo.nbRayIterations.x = 10;
+   gSceneInfo.transparentColor.x =  0.f;
+   gSceneInfo.viewDistance.x = 1000000.f;
+   gSceneInfo.shadowIntensity.x = 0.5f;
+   gSceneInfo.width3DVision.x = 400.f;
+   gSceneInfo.backgroundColor.x = 1.f;
+   gSceneInfo.backgroundColor.y = 1.f;
+   gSceneInfo.backgroundColor.z = 1.f;
+   gSceneInfo.backgroundColor.w = 0.f;
+   gSceneInfo.renderingType.x = vtStandard;
+   gSceneInfo.renderBoxes.x = 0;
+   gSceneInfo.pathTracingIteration.x = 0;
+   gSceneInfo.maxPathTracingIterations.x = gTotalPathTracingIterations;
+   gSceneInfo.misc = gMisc;
+
+   gPostProcessingInfo.type.x   = ppe_none;
+   gPostProcessingInfo.param1.x = 10000.f;
+   gPostProcessingInfo.param2.x = 1000.f;
+   gPostProcessingInfo.param3.x = 200;
+
+   // Kernel
+   gKernel = new GenericGPUKernel(0, 480, 1, 0);
+   gSceneInfo.pathTracingIteration.x = 0; 
+   gKernel->setSceneInfo( gSceneInfo );
+   gKernel->initBuffers();
+   createRandomMaterials(false,false);
+}
 /*
 ________________________________________________________________________________
 
@@ -42,6 +83,7 @@ ________________________________________________________________________________
 */
 void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 {
+	srand(static_cast<int>(time(nullptr)));
    int start(0);
    int end(NB_MAX_MATERIALS);
    if( lightsOnly )
@@ -54,7 +96,7 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 	{
 		float4 specular = {0.f,0.f,0.f,0.f};
 		specular.x = 0.5f;
-		specular.y = 200.f;
+		specular.y = 50.f;
 		specular.z = 0.f;
 		specular.w = 0.f;
 
@@ -77,8 +119,16 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 
 		switch( i )
 		{
-      case   0: reflection = 0.4f; refraction=1.3f; transparency=0.7f; break;
-      case   1: reflection = 0.5f; /* refraction=1.3f; transparency=0.7f;*/ break;
+      case   0: 
+      case   1: 
+         {
+            switch(rand()%3)
+            {
+            case 0: reflection=1.0f; refraction=1.66f; transparency=0.7f; break;
+            case 1: reflection=0.8f; break;
+            }
+         }
+         break;
 
       // Sky Box  
 		case 101: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 0; break; 
@@ -119,7 +169,7 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 		case 126: innerIllumination.x=.5f; break; 
 		case 127: innerIllumination.x=.5f; break; 
 		case 128: innerIllumination.x=.5f; break; 
-		case DEFAULT_LIGHT_MATERIAL: r=1.f; g=1.f; b=1.f; innerIllumination.x=0.8f; break; 
+		case DEFAULT_LIGHT_MATERIAL: r=1.f; g=1.f; b=1.f; innerIllumination.x=0.5f; break; 
       }
 
       int material = update ? i : RayTracer::gKernel->addMaterial();
@@ -154,7 +204,7 @@ void RayTracer::glEnable (GLenum cap)
    case GL_LIGHTING: 
       {
          int p = RayTracer::gKernel->addPrimitive(ptSphere);
-         RayTracer::gKernel->setPrimitive(p,50.f,0.f,-50.f,10.f,1.f,1.f,DEFAULT_LIGHT_MATERIAL);
+         RayTracer::gKernel->setPrimitive(p,-10.f*gScale,10.f*gScale,-10.f*gScale,1.f*gScale,0.f,0.f,DEFAULT_LIGHT_MATERIAL);
          RayTracer::gKernel->compactBoxes(true);
       }
       break;
@@ -180,13 +230,13 @@ void RayTracer::glFlush (void)
 void RayTracer::glVertex3f( GLfloat x, GLfloat y, GLfloat z )
 {
    //::glVertex3f(x,y,z);
-   RayTracer::gKernel->addVertex(x,y,z);
+   RayTracer::gKernel->addVertex(x*gScale,y*gScale,z*gScale);
 }
 
 void RayTracer::glVertex3fv( const GLfloat* v )
 {
    //::glVertex3f(x,y,z);
-   RayTracer::gKernel->addVertex(v[0],v[1],v[2]);
+   RayTracer::gKernel->addVertex(v[0]*gScale,v[1]*gScale,v[2]*gScale);
 }
 
 void RayTracer::glNormal3f( GLfloat x, GLfloat y, GLfloat z )
@@ -253,71 +303,23 @@ void RayTracer::glutInitWindowPosition( int x, int y )
 
 void RayTracer::glViewport(int a, int b, int width, int height )
 {
-   // Scene
-   gSceneInfo.width.x = width;
-   gSceneInfo.height.x = height; 
-   gSceneInfo.graphicsLevel.x = 4;
-   gSceneInfo.nbRayIterations.x = 3;
-   gSceneInfo.transparentColor.x =  0.f;
-   gSceneInfo.viewDistance.x = 1000000.f;
-   gSceneInfo.shadowIntensity.x = 0.5f;
-   gSceneInfo.width3DVision.x = 400.f;
-   gSceneInfo.backgroundColor.x = 0.4f;
-   gSceneInfo.backgroundColor.y = 0.4f;
-   gSceneInfo.backgroundColor.z = 0.4f;
-   gSceneInfo.backgroundColor.w = 0.f;
-   gSceneInfo.renderingType.x = vtStandard;
-   gSceneInfo.renderBoxes.x = 0;
-   gSceneInfo.pathTracingIteration.x = 0;
-   gSceneInfo.maxPathTracingIterations.x = gTotalPathTracingIterations;
-   gSceneInfo.misc = gMisc;
+   // OpenGL
+   ARB_multitexture_supported=false;
+   EXT_texture_env_combine_supported=false;
+   NV_register_combiners_supported=false;
+   SGIX_depth_texture_supported=false;
+   SGIX_shadow_supported=false;
+   EXT_blend_minmax_supported=false;
 
-   gPostProcessingInfo.type.x   = ppe_none;
-   gPostProcessingInfo.param1.x = 10000.f;
-   gPostProcessingInfo.param2.x = 1000.f;
-   gPostProcessingInfo.param3.x = 200;
-
-   // Kernel
-   gKernel = new GenericGPUKernel(0, 480, 1, 0);
-   gSceneInfo.pathTracingIteration.x = 0; 
-   gKernel->setSceneInfo( gSceneInfo );
-   gKernel->initBuffers();
-   createRandomMaterials(false,false);
-
+   // Initialize Raytracer
+   InitializeRaytracer(width, height);
    //::glViewport(a,b,width,height);
 }
 
 void RayTracer::glutInitWindowSize( int width, int height )
 {
-   // Scene
-   gSceneInfo.width.x = width;
-   gSceneInfo.height.x = height; 
-   gSceneInfo.graphicsLevel.x = 5;
-   gSceneInfo.nbRayIterations.x = 10;
-   gSceneInfo.transparentColor.x =  3.0f;
-   gSceneInfo.viewDistance.x = 1000000.f;
-   gSceneInfo.shadowIntensity.x = 0.2f;
-   gSceneInfo.width3DVision.x = 400.f;
-   gSceneInfo.backgroundColor.x = 1.f;
-   gSceneInfo.backgroundColor.y = 1.f;
-   gSceneInfo.backgroundColor.z = 1.f;
-   gSceneInfo.backgroundColor.w = 0.f;
-   gSceneInfo.renderingType.x = vtStandard;
-   gSceneInfo.renderBoxes.x = 0;
-   gSceneInfo.pathTracingIteration.x = 0;
-   gSceneInfo.maxPathTracingIterations.x = gTotalPathTracingIterations;
-   gSceneInfo.misc = gMisc;
-
-   gPostProcessingInfo.type.x   = ppe_none;
-   gPostProcessingInfo.param1.x = 10000.f;
-   gPostProcessingInfo.param2.x = 1000.f;
-   gPostProcessingInfo.param3.x = 200;
-
-   // Kernel
-   gKernel = new GenericGPUKernel(0, 480, 1, 0);
-   gSceneInfo.pathTracingIteration.x = 0; 
-   gKernel->setSceneInfo( gSceneInfo );
-   gKernel->initBuffers();
+   // Initialize Raytracer
+   InitializeRaytracer(width, height);
 
    ::glutInitWindowSize(width,height);
 }
@@ -351,8 +353,8 @@ void RayTracer::glutFullScreen( void )
 
 void RayTracer::glLoadIdentity()
 {
-   float3 eye = {0.f,0.f,   -30.f};
-   float3 dir = {0.f,0.f, 10000.f};
+   float3 eye = {0.f,0.f, -30.f*gScale};
+   float3 dir = {0.f,0.f, -30.f*gScale+10000.f};
    float3 angles = {0.f,0.f, 0.f};
    RayTracer::gKernel->setCamera(eye,dir,angles);
    RayTracer::gKernel->setSceneInfo(gSceneInfo);
@@ -446,10 +448,18 @@ void RayTracer::glutSwapBuffers( void )
 void RayTracer::gluSphere(void *, GLfloat radius, GLint , GLint)
 {
    int p = RayTracer::gKernel->addPrimitive(ptSphere);
-   RayTracer::gKernel->setPrimitive(p, 0.f, 0.f, 0.f, radius, 0.f, 0.f, 1 );
+   RayTracer::gKernel->setPrimitive(p, 0.f, 0.f, 0.f, radius*gScale, 0.f, 0.f, 1 );
 }
 
 GLUquadricObj* RayTracer::gluNewQuadric(void)
 {
    return 0;
+}
+
+void RayTracer::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+{
+   gSceneInfo.backgroundColor.x = red;
+   gSceneInfo.backgroundColor.y = green;
+   gSceneInfo.backgroundColor.z = blue;
+   gSceneInfo.backgroundColor.w = alpha;
 }

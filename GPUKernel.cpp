@@ -866,7 +866,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       // Search for best trade-off
       std::map<unsigned int,unsigned int> primitivesPerBox;
       int maxPrimitivePerBox(0);
-      int boxSize = 1024;
+      int boxSize = 64;
       int bestSize = boxSize;
       int bestActiveBoxes = 0;
       int bestRatio = 10000; 
@@ -2030,35 +2030,31 @@ int GPUKernel::setGLMode( const int& glMode )
       case GL_TRIANGLES:
          {
             // Vertices
-            if( m_vertices.size()%3 == 0 )
+            int nbTriangles=m_vertices.size()/3;
+            for( int i(0); i<nbTriangles; ++i)
             {
-               int nbTriangles=m_vertices.size()/3;
-               for( int i(0); i<nbTriangles; ++i)
+               int index=i*3;
+               if( index+2 < m_vertices.size() )
                {
                   p = addPrimitive( ptTriangle);
                   setPrimitive(  p,
-                     m_vertices[i*3+0].x, m_vertices[i*3+0].y, m_vertices[i*3+0].z, 
-                     m_vertices[i*3+1].x, m_vertices[i*3+1].y, m_vertices[i*3+1].z, 
-                     m_vertices[i*3+2].x, m_vertices[i*3+2].y, m_vertices[i*3+2].z, 
+                     m_vertices[index+0].x, m_vertices[index+0].y, m_vertices[index+0].z, 
+                     m_vertices[index+1].x, m_vertices[index+1].y, m_vertices[index+1].z, 
+                     m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
                      0.f,0.f,0.f,
                      0);
-
-                  if( m_textCoords.size()>=i*3+2 )
-                  {
-                     setPrimitiveTextureCoordinates(  p, m_textCoords[i*3+0], m_textCoords[i*3+1], m_textCoords[i*3+2] );
-                  }
-                  if( m_normals.size()>=i*3+2 )
-                  {
-                     setPrimitiveNormals(  p, m_normals[i*3+0], m_normals[i*3+1], m_normals[i*3+2] );
-                  }
                }
-               LOG_INFO(3, "Triangle created");
-            }
-            else
-            {
-               LOG_ERROR("Incorrect number of vertices to create a triangle" );
-            }
 
+               if( index+2 < m_textCoords.size() )
+               {
+                  setPrimitiveTextureCoordinates(  p, m_textCoords[i*3+0], m_textCoords[i*3+1], m_textCoords[i*3+2] );
+               }
+               if( index+2 < m_normals.size() )
+               {
+                  setPrimitiveNormals(  p, m_normals[i*3+0], m_normals[i*3+1], m_normals[i*3+2] );
+               }
+            }
+            LOG_INFO(3, "Triangle created");
 
          }
          break;

@@ -337,7 +337,16 @@ namespace RayTracer
    /*      GL_TEXTURE_COORD_ARRAY_COUNT_EXT */
    /*      GL_EDGE_FLAG_ARRAY_COUNT_EXT */
 
-   /* TextureCoordName */
+/* MaterialParameter */
+#define GL_EMISSION                       0x1600
+#define GL_SHININESS                      0x1601
+#define GL_AMBIENT_AND_DIFFUSE            0x1602
+#define GL_COLOR_INDEXES                  0x1603
+/*      GL_AMBIENT */
+/*      GL_DIFFUSE */
+/*      GL_SPECULAR */
+
+/* TextureCoordName */
 #define GL_S                              0x2000
 #define GL_T                              0x2001
 #define GL_R                              0x2002
@@ -397,7 +406,7 @@ namespace RayTracer
 #define GL_CLAMP                          0x2900
 #define GL_REPEAT                         0x2901
 
-   /* AttribMask */
+/* AttribMask */
 #define GL_CURRENT_BIT                    0x00000001
 #define GL_POINT_BIT                      0x00000002
 #define GL_LINE_BIT                       0x00000004
@@ -418,6 +427,70 @@ namespace RayTracer
 #define GL_LIST_BIT                       0x00020000
 #define GL_TEXTURE_BIT                    0x00040000
 #define GL_SCISSOR_BIT                    0x00080000
+#define GL_ALL_ATTRIB_BITS                0x000fffff
+
+/* DrawBufferMode */
+#define GL_NONE                           0
+#define GL_FRONT_LEFT                     0x0400
+#define GL_FRONT_RIGHT                    0x0401
+#define GL_BACK_LEFT                      0x0402
+#define GL_BACK_RIGHT                     0x0403
+#define GL_FRONT                          0x0404
+#define GL_BACK                           0x0405
+#define GL_LEFT                           0x0406
+#define GL_RIGHT                          0x0407
+#define GL_FRONT_AND_BACK                 0x0408
+#define GL_AUX0                           0x0409
+#define GL_AUX1                           0x040A
+#define GL_AUX2                           0x040B
+#define GL_AUX3                           0x040C
+
+/* texture */
+#define GL_ALPHA4                         0x803B
+#define GL_ALPHA8                         0x803C
+#define GL_ALPHA12                        0x803D
+#define GL_ALPHA16                        0x803E
+#define GL_LUMINANCE4                     0x803F
+#define GL_LUMINANCE8                     0x8040
+#define GL_LUMINANCE12                    0x8041
+#define GL_LUMINANCE16                    0x8042
+#define GL_LUMINANCE4_ALPHA4              0x8043
+#define GL_LUMINANCE6_ALPHA2              0x8044
+#define GL_LUMINANCE8_ALPHA8              0x8045
+#define GL_LUMINANCE12_ALPHA4             0x8046
+#define GL_LUMINANCE12_ALPHA12            0x8047
+#define GL_LUMINANCE16_ALPHA16            0x8048
+#define GL_INTENSITY                      0x8049
+#define GL_INTENSITY4                     0x804A
+#define GL_INTENSITY8                     0x804B
+#define GL_INTENSITY12                    0x804C
+#define GL_INTENSITY16                    0x804D
+#define GL_R3_G3_B2                       0x2A10
+#define GL_RGB4                           0x804F
+#define GL_RGB5                           0x8050
+#define GL_RGB8                           0x8051
+#define GL_RGB10                          0x8052
+#define GL_RGB12                          0x8053
+#define GL_RGB16                          0x8054
+#define GL_RGBA2                          0x8055
+#define GL_RGBA4                          0x8056
+#define GL_RGB5_A1                        0x8057
+#define GL_RGBA8                          0x8058
+#define GL_RGB10_A2                       0x8059
+#define GL_RGBA12                         0x805A
+#define GL_RGBA16                         0x805B
+#define GL_TEXTURE_RED_SIZE               0x805C
+#define GL_TEXTURE_GREEN_SIZE             0x805D
+#define GL_TEXTURE_BLUE_SIZE              0x805E
+#define GL_TEXTURE_ALPHA_SIZE             0x805F
+#define GL_TEXTURE_LUMINANCE_SIZE         0x8060
+#define GL_TEXTURE_INTENSITY_SIZE         0x8061
+#define GL_PROXY_TEXTURE_1D               0x8063
+#define GL_PROXY_TEXTURE_2D               0x8064
+
+/* GL_NV_register_combiners */
+/* Constants */
+#define GL_REGISTER_COMBINERS_NV                           0x8522
 
 #define GLUquadricObj void
 
@@ -443,6 +516,7 @@ namespace RayTracer
    void RAYTRACINGENGINE_API glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
    void RAYTRACINGENGINE_API gluSphere(void *, GLfloat, GLint, GLint);
    RAYTRACINGENGINE_API GLUquadricObj* gluNewQuadric();
+   RAYTRACINGENGINE_API void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 
    void RAYTRACINGENGINE_API glViewport(GLint a, GLint b, GLint width, GLint height );
 
@@ -450,15 +524,13 @@ namespace RayTracer
    void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
 
 
-   // TO BE DONE
-
+// TO BE DONE
 #define GL_LIGHT1                         0x4001
 
 #define glMatrixMode(...)
 #define gluPerspective(...)
 #define glMatrixMode(...)
 #define glShadeModel(...)
-#define glClearColor(...)
 #define glColor4f(...)
 #define glHint(...)
 #define glClearDepth(...)
@@ -481,6 +553,56 @@ namespace RayTracer
 #define glPushMatrix(...)
 #define glPopMatrix(...)
 #define glDeleteLists(...)
+#define glPolygonMode(...)
+#define glRotatef(...)
+#define glTexImage1D(...)
+#define glColorMaterial(...)
+#define glPushAttrib(...)
+#define glLoadMatrixf(...)
+#define glColorMask(...)
+#define glPolygonOffset(...)
+#define glCullFace(...)
+#define glPopAttrib(...)
+#define glReadPixels(...)
+#define glTexSubImage2D(...)
+#define glCopyTexSubImage2D(...)
+#define glMultMatrixf(...)
+#define glutWireCube(...)
+#define glTexGeni(...)
+#define glTexGenfv(...)
+#define glActiveTextureARB(...)
+#define glTexEnvi(...)
+#define glAlphaFunc(...)
+#define glCombinerParameteriNV(...)
+#define glCombinerOutputNV(...)
+#define glCombinerInputNV(...)
+#define glFinalCombinerInputNV(...)
+#define glBlendEquationEXT(...)
+#define glGenLists(...) NULL
+#define glNewList(...)
+#define glEndList(...)
+#define glutSolidTorus(...)
+#define glCallList(...)
+
+// Aliases
+#define glutSolidSphere(a,b,c) gluSphere(0,a,b,c)
+
+// Extensions
+#define SetUpARB_multitexture(...)
+#define SetUpEXT_texture_env_combine(...)
+#define SetUpNV_register_combiners(...)
+#define SetUpSGIX_depth_texture(...)
+#define SetUpSGIX_shadow(...)
+#define SetUpEXT_blend_minmax(...)
+
+static bool ARB_multitexture_supported;
+static bool EXT_texture_env_combine_supported;
+static bool NV_register_combiners_supported;
+static bool SGIX_depth_texture_supported;
+static bool SGIX_shadow_supported;
+static bool EXT_blend_minmax_supported;
+
+
    // GLUT
 
    /*
@@ -637,6 +759,11 @@ namespace RayTracer
 #define  GLUT_ACTIVE_SHIFT                  0x0001
 #define  GLUT_ACTIVE_CTRL                   0x0002
 #define  GLUT_ACTIVE_ALT                    0x0004
+
+   /*
+   * Raytracer
+   */
+   void InitializeRaytracer( int width, int height );
 
    /*
    * Initialization functions, see fglut_init.c

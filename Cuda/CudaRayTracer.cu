@@ -89,7 +89,7 @@ __device__ inline float4 launchRay(
 	float3 closestIntersection = {0.f,0.f,0.f};
 	float3 firstIntersection   = {0.f,0.f,0.f};
 	float3 normal              = {0.f,0.f,0.f};
-	int    closestPrimitive  = 0;
+	int    closestPrimitive  = -1;
 	bool   carryon           = true;
 	Ray    rayOrigin         = ray;
 	float  initialRefraction = 1.f;
@@ -322,35 +322,38 @@ __device__ inline float4 launchRay(
 
 	intersection = closestIntersection;
 
-   Primitive& primitive=primitives[closestPrimitive];
-	float len = length(firstIntersection - ray.origin);
-   if( materials[primitive.materialId.x].attributes.z == 0 ) // Wireframe
+   if( closestPrimitive != -1 )
    {
-#ifdef PHOTON_ENERGY
-	   // --------------------------------------------------
-      // Photon energy
-	   // --------------------------------------------------
-      intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
-#endif // PHOTON_ENERGY
-
-	   // --------------------------------------------------
-	   // Fog
-	   // --------------------------------------------------
-      //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
-
-	   // --------------------------------------------------
-	   // Background color
-	   // --------------------------------------------------
-      float D1 = sceneInfo.viewDistance.x*0.95f;
-      if( sceneInfo.misc.z==1 && len>D1)
+      Primitive& primitive=primitives[closestPrimitive];
+	   float len = length(firstIntersection - ray.origin);
+      if( materials[primitive.materialId.x].attributes.z == 0 ) // Wireframe
       {
-         float D2 = sceneInfo.viewDistance.x*0.05f;
-         float a = len - D1;
-         float b = 1.f-(a/D2);
-         intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
+   #ifdef PHOTON_ENERGY
+	      // --------------------------------------------------
+         // Photon energy
+	      // --------------------------------------------------
+         intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
+   #endif // PHOTON_ENERGY
+
+	      // --------------------------------------------------
+	      // Fog
+	      // --------------------------------------------------
+         //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
+
+	      // --------------------------------------------------
+	      // Background color
+	      // --------------------------------------------------
+         float D1 = sceneInfo.viewDistance.x*0.95f;
+         if( sceneInfo.misc.z==1 && len>D1)
+         {
+            float D2 = sceneInfo.viewDistance.x*0.05f;
+            float a = len - D1;
+            float b = 1.f-(a/D2);
+            intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
+         }
       }
+      depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
    }
-   depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
 
    // Primitive information
    primitiveXYId.y = iteration;
@@ -433,7 +436,6 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
-   /*
    else
 	{
 		// Randomize view for natural depth of field
@@ -446,7 +448,6 @@ __global__ void k_standardRenderer(
 		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
       }
 	}
-   */
 
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
