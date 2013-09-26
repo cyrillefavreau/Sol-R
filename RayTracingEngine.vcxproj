@@ -354,9 +354,10 @@
     </CudaCompile>
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
-      <CodeGeneration>compute_13,sm_13;compute_30,sm_30</CodeGeneration>
-      <GPUDebugInfo>false</GPUDebugInfo>
+      <CodeGeneration>compute_13,sm_13;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>true</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -584,7 +585,7 @@
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_13,sm_13;compute_30,sm_30</CodeGeneration>
+      <CodeGeneration>compute_13,sm_13;compute_35,sm_35</CodeGeneration>
       <Defines>WIN32</Defines>
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
@@ -930,7 +931,6 @@
       <Defines Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">WIN32</Defines>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">compute_13,sm_13;compute_30,sm_30</CodeGeneration>
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">compute_13,sm_13;compute_30,sm_30</CodeGeneration>
       <GenerateLineInfo Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</GenerateLineInfo>
       <GenerateLineInfo Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">true</GenerateLineInfo>

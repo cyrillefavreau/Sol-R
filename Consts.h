@@ -30,6 +30,8 @@
 #define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  ADVANCED_FEATURES
 #define AUTOFOCUS
+#undef  PHOTON_ENERGY
+#undef  DODGY_REFRACTIONS
 
 // Consts
 const int MAX_GPU_COUNT     = 32;
@@ -39,7 +41,7 @@ const int NB_MAX_ITERATIONS = 20;
 const int NB_MAX_BOXES      = 4096;
 const int NB_MAX_PRIMITIVES = 1000000;
 const int NB_MAX_LAMPS      = 10;
-const int NB_MAX_MATERIALS  = 1030; // Last 30 materials are reserved
+const int NB_MAX_MATERIALS  = 1000+30; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 1000;
 const int NB_MAX_FRAMES     = 1000;
 const int NB_MAX_LIGHTINFORMATIONS = 500;

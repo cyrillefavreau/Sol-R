@@ -1674,7 +1674,11 @@ float4 CPUKernel::launchRay(
 
 #ifdef PHOTON_ENERGY
          // Photon
-         photonDistance -= vectorLength(closestIntersection-rayOrigin.origin) * (2.f-previousTransparency);
+         float3 d;
+         d.x = closestIntersection.x-rayOrigin.origin.x;
+         d.y = closestIntersection.y-rayOrigin.origin.y;
+         d.z = closestIntersection.z-rayOrigin.origin.z;
+         photonDistance -= vectorLength(d) * (2.f-previousTransparency);
          previousTransparency = back ? 1.f : m_hMaterials[m_hPrimitives[closestPrimitive].materialId.x].transparency.x;
 #endif // PHOTON_ENERGY
 
@@ -1855,7 +1859,9 @@ float4 CPUKernel::launchRay(
       // --------------------------------------------------
       // Photon energy
       // --------------------------------------------------
-      intersectionColor *= ( photonDistance>0.f) ? (photonDistance/m_sceneInfo.viewDistance.x) : 0.f;
+      intersectionColor.x *= ( photonDistance>0.f) ? (photonDistance/m_sceneInfo.viewDistance.x) : 0.f;
+      intersectionColor.y *= ( photonDistance>0.f) ? (photonDistance/m_sceneInfo.viewDistance.x) : 0.f;
+      intersectionColor.z *= ( photonDistance>0.f) ? (photonDistance/m_sceneInfo.viewDistance.x) : 0.f;
 #endif // PHOTON_ENERGY
 
       // --------------------------------------------------

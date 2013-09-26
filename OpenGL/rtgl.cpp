@@ -31,11 +31,14 @@ GenericGPUKernel* RayTracer::gKernel = nullptr;
 
 SceneInfo gSceneInfo;
 PostProcessingInfo gPostProcessingInfo;
-const int DEFAULT_LIGHT_MATERIAL      = 1029;
+const int DEFAULT_LIGHT_MATERIAL = NB_MAX_MATERIALS-1;
 const int gTotalPathTracingIterations = 1;
 int4      gMisc = {otOpenGL,0,0,0};
 float3    gRotationCenter = { 0.f, 0.f, 0.f };
 float     gScale=1.f;
+// Current Material
+int       gCurrentMaterial(0); 
+bool      gLighting(false);
 
 static bool ARB_multitexture_supported = false;
 static bool EXT_texture_env_combine_supported = false;
@@ -44,16 +47,38 @@ static bool SGIX_depth_texture_supported = false;
 static bool SGIX_shadow_supported = false;
 static bool EXT_blend_minmax_supported = false;
 
+// Utils
+int RGBToInt(float r, float g, float b)
+{
+   int R=int(r*255.f) << 16;
+   int G=int(g*255.f) << 8;
+   int B=int(b*255.f);
+   return (R+G+B);
+}
+
+void IntToRGB(int v, float& r, float& g, float& b)
+{
+   int V = v;
+   int R=(V & 0x00FF0000) >> 16;
+   int G=(V & 0x0000FF00) >> 8;
+   int B=(V & 0x000000FF);
+
+   r = R/255.f;
+   g = G/255.f;
+   b = B/255.f;
+}
+
 void RayTracer::InitializeRaytracer( const int width, const int height, const bool initializeMaterials )
 {
+   gCurrentMaterial = 0;
    // Scene
    gSceneInfo.width.x = width;
    gSceneInfo.height.x = height; 
    gSceneInfo.graphicsLevel.x = 4;
-   gSceneInfo.nbRayIterations.x = 10;
+   gSceneInfo.nbRayIterations.x = 5;
    gSceneInfo.transparentColor.x =  0.f;
    gSceneInfo.viewDistance.x = 1000000.f;
-   gSceneInfo.shadowIntensity.x = 0.8f;
+   gSceneInfo.shadowIntensity.x = 0.9f;
    gSceneInfo.width3DVision.x = 400.f;
    gSceneInfo.backgroundColor.x = 1.f;
    gSceneInfo.backgroundColor.y = 1.f;
@@ -71,6 +96,7 @@ void RayTracer::InitializeRaytracer( const int width, const int height, const bo
    gPostProcessingInfo.param3.x = 200;
 
    // Kernel
+   if(gKernel) delete gKernel;
    gKernel = new GenericGPUKernel(0, 480, 1, 0);
    gSceneInfo.pathTracingIteration.x = 0; 
    gKernel->setSceneInfo( gSceneInfo );
@@ -98,11 +124,14 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
       end   = 130;
    }
 	// Materials
+   long R = 0;
+   long G = 0;
+   long B = 0;
 	for( int i(start); i<end; ++i ) 
 	{
 		float4 specular = {0.f,0.f,0.f,0.f};
 		specular.x = 0.5f;
-		specular.y = 50.f;
+		specular.y = 500.f;
 		specular.z = 0.f;
 		specular.w = 0.f;
 
@@ -115,12 +144,36 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 		bool wireframe = false;
 		int  wireframeDepth = 0;
 		float r,g,b,noise;
-       
-		r = rand()%1000/1000.f;
-		g = rand()%1000/1000.f;
-		b = rand()%1000/1000.f;
-      noise = 0.f;
+      bool fastTransparency = false;
 
+      /*
+      int step(64);
+      if( R<=255 )
+      {
+         r = R/255.f;
+         g = G/255.f;
+         b = B/255.f;
+
+         B += step;
+         if( B>255 )
+         {
+            B = 0;
+            G += step;
+            if( G>255 )
+            {
+               G = 0;
+               R += step;
+            }
+         }
+      }
+      else
+      */
+      {
+         r = 0.5f+(rand()%255)/512.f;
+         g = 0.5f+(rand()%255)/512.f;
+         b = 0.5f+(rand()%255)/512.f;
+      }
+      noise = 0.f;
 		switch( i )
 		{
       case   0: 
@@ -128,51 +181,11 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
          {
             switch(rand()%3)
             {
-            case 0: reflection=1.0f; refraction=1.66f; transparency=0.7f; break;
+            case 0: reflection=1.0f; refraction=1.66f; transparency=0.5f; break;
             case 1: reflection=0.8f; break;
             }
          }
          break;
-
-      // Sky Box  
-		case 101: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 0; break; 
-		case 102: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 1; break; 
-		case 103: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 2; break; 
-		case 104: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 3; break; 
-		case 105: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 4; break; 
-		case 106: r=1.f; g=1.f; b=1.f; wireframe=true; textureId = 5; break; 
-      
-      // Cornell Box
-      case 107: r=127.f/255.f; g=127.f/255.f; b=127.f/255.f; specular.x = 0.2f; specular.y = 10.f;  specular.w = 0.3f; break;
-      case 108: r=154.f/255.f; g=94.f/255.f;  b=64.f/255.f;  specular.x = 0.1f; specular.y = 100.f; specular.w = 0.1f; break;
-		case 109: r=92.f/255.f;  g=93.f/255.f;  b=150.f/255.f; specular.x = 0.3f; specular.y = 20.f;  specular.w = 0.5f; break;
-		case 110: r=92.f/255.f;  g=150.f/255.f; b=93.f/255.f;  specular.x = 0.3f; specular.y = 20.f;  specular.w = 0.5f; break;
-		
-      // Fractals
-      case 111: r=127.f/255.f; g=127.f/255.f; b=127.f/255.f; specular.x = 0.2f; specular.y = 10.f;  specular.w = 0.3f; wireframe=false; textureId=TEXTURE_MANDELBROT; break;
-      case 112: r=154.f/255.f; g=94.f/255.f;  b=64.f/255.f;  specular.x = 0.1f; specular.y = 100.f; specular.w = 0.1f; wireframe=false; textureId=TEXTURE_JULIA; break;
-
-      // Basic reflection
-      case 113: /*r=0.5f; g=1.0f; b=0.7f; */reflection = 0.5f; refraction=1.6f; transparency=0.7f; break;
-		case 114: /*r=1.f; g=1.f; b=1.f;*/ reflection = 0.9f; break;
-      case 115: r=0.5f; g=1.0f; b=0.7f; reflection = 0.f; textureId = 0; break;
-      case 116: /*r=0.f; g=0.f; b=0.f;*/ reflection = 0.1f; refraction=1.66f; transparency=0.5f; specular.x = 0.5f; specular.y = 10.f;break;
-		case 117: r=1.f; g=0.f; b=0.f; reflection = 0.5f; break;
-		case 118: r=0.f; g=1.f; b=1.f; reflection = 0.5f; break;
-
-      // White
-      case 119: r=1.f; g=1.f; b=1.f; break;
-
-      // Wireframe
-      case 120: innerIllumination.x=.5f; break; 
-      case 121: innerIllumination.x=.5f; break; 
-      case 122: innerIllumination.x=.5f; break; 
-      case 123: innerIllumination.x=.5f; break; 
-		case 124: innerIllumination.x=.5f; break; 
-		case 125: innerIllumination.x=.5f; break; 
-		case 126: innerIllumination.x=.5f; break; 
-		case 127: innerIllumination.x=.5f; break; 
-		case 128: innerIllumination.x=.5f; break; 
 		case DEFAULT_LIGHT_MATERIAL: r=1.f; g=1.f; b=1.f; innerIllumination.x=1.f; break; 
       }
 
@@ -184,21 +197,19 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 			transparency, textureId,
 			specular.x, specular.y, specular.w, 
          innerIllumination.x, innerIllumination.y, innerIllumination.z,
-			false);
+			fastTransparency);
 	}
-   RayTracer::gKernel->compactBoxes(false);
+   //RayTracer::gKernel->compactBoxes(false);
 }
 
 void RayTracer::glBegin( GLint mode )
 {
-   //::glBegin(mode);
-   RayTracer::gKernel->setGLMode(mode);
+   RayTracer::gKernel->setGLMode(mode,gCurrentMaterial);
 }
 
 int RayTracer::glEnd()
 {
-   //::glEnd();
-   return RayTracer::gKernel->setGLMode(-1);
+   return RayTracer::gKernel->setGLMode(-1,gCurrentMaterial);
 }
 
 void RayTracer::glEnable (GLenum cap)
@@ -207,10 +218,14 @@ void RayTracer::glEnable (GLenum cap)
    {
    case GL_LIGHTING: 
       {
-         int p = RayTracer::gKernel->addPrimitive(ptSphere);
-         RayTracer::gKernel->setPrimitive(p,-4.f*gScale,20.f*gScale,-10.f*gScale,1.f*gScale,0.f,0.f,DEFAULT_LIGHT_MATERIAL);
-         //RayTracer::gKernel->compactBoxes(true);
-         LOG_INFO(1, "[OpenGL] Light Added" );
+         if( !gLighting )
+         {
+            int p = RayTracer::gKernel->addPrimitive(ptSphere);
+            RayTracer::gKernel->setPrimitive(p,-10.f*gScale,10.f*gScale,-10.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
+            gLighting = true;
+            //RayTracer::gKernel->compactBoxes(true);
+            LOG_INFO(1, "[OpenGL] Light Added" );
+         }
       }
       break;
    }
@@ -257,7 +272,28 @@ void RayTracer::glNormal3fv( const GLfloat* n )
 
 void RayTracer::glColor3f (GLfloat red, GLfloat green, GLfloat blue)
 {
-   ::glColor3f(red,green,blue);
+   /*
+   int i(0);
+   bool found(false);
+   while( !found && i<gKernel->getNbActiveMaterials() )
+   {
+      Material* m = gKernel->getMaterial(i);
+      if( m && (fabs(m->color.x - red)<0.1f && fabs(m->color.y - green)<0.1f && fabs(m->color.z - blue)<0.1f ) )
+      {
+         found = true;
+      }
+      else
+      {
+         ++i;
+      }
+   }
+   gCurrentMaterial = found ? i : 0;
+   */
+}
+
+void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+{
+   RayTracer::glColor3f( red, green, blue );
 }
 
 void RayTracer::glRasterPos2f (GLfloat x, GLfloat y)
@@ -270,7 +306,7 @@ void RayTracer::glTexParameterf (GLenum target, GLenum pname, GLfloat param)
    ::glTexParameterf(target,pname,param);
 }
 
-void RayTracer::glTexCoord2f (GLfloat s, GLfloat t)
+void RayTracer::glTexCoord2f (GLfloat s, GLfloat t )
 {
    //::glTexCoord2f(s,t);
    RayTracer::gKernel->addTextCoord(s,t,0.f);
@@ -358,16 +394,20 @@ void RayTracer::glutFullScreen( void )
 
 void RayTracer::glLoadIdentity()
 {
-   float3 eye = {0.f,0.f, -30.f*gScale};
-   float3 dir = {0.f,0.f, -30.f*gScale+10000.f};
+   float3 eye = {0.f,0.f, -15.f*gScale};
+   float3 dir = {0.f,0.f, -15.f*gScale+5000.f};
    float3 angles = {0.f,0.f, 0.f};
    RayTracer::gKernel->setCamera(eye,dir,angles);
    RayTracer::gKernel->setSceneInfo(gSceneInfo);
    RayTracer::gKernel->setPostProcessingInfo(gPostProcessingInfo);
    RayTracer::gKernel->compactBoxes(true);
-   RayTracer::gKernel->render_begin(0);
-   RayTracer::gKernel->render_end();
+   for( int i(0); i<gTotalPathTracingIterations; ++i)
+   {
+      RayTracer::gKernel->render_begin(0);
+      RayTracer::gKernel->render_end();
+   }
    RayTracer::gKernel->resetFrame();
+   gLighting=false;
 }
 
 int  RayTracer::glutGet( GLenum query )

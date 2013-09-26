@@ -2019,7 +2019,7 @@ int GPUKernel::getLight( int index )
 }
 
 // OpenGL
-int GPUKernel::setGLMode( const int& glMode )
+int GPUKernel::setGLMode( const int& glMode, const int materialId )
 {
    int p=-1;
    int frame(0);
@@ -2027,10 +2027,22 @@ int GPUKernel::setGLMode( const int& glMode )
    {
       switch( m_GLMode )
       {
+      case GL_POINTS:
+         {
+            for( int i(0); i<m_vertices.size(); ++i)
+            {
+               p = addPrimitive( ptSphere);
+               setPrimitive(  p,
+                  m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
+                  0.1f,0.f,0.f,
+                  materialId);
+            }
+         }
+         break;
       case GL_TRIANGLES:
          {
             // Vertices
-            int nbTriangles=m_vertices.size()/3;
+            int nbTriangles=static_cast<int>(m_vertices.size()/3);
             for( int i(0); i<nbTriangles; ++i)
             {
                int index=i*3;
@@ -2042,7 +2054,7 @@ int GPUKernel::setGLMode( const int& glMode )
                      m_vertices[index+1].x, m_vertices[index+1].y, m_vertices[index+1].z, 
                      m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
                      0.f,0.f,0.f,
-                     0);
+                     materialId);
                }
 
                if( index+2<=m_textCoords.size() )
@@ -2054,7 +2066,7 @@ int GPUKernel::setGLMode( const int& glMode )
                   setPrimitiveNormals( p, m_normals[index], m_normals[index+1], m_normals[index+2] );
                }
             }
-            LOG_INFO(1, "[OpenGL] Triangle created");
+            LOG_INFO(1, "[OpenGL] Triangle created with material ID " << materialId );
 
          }
          break;

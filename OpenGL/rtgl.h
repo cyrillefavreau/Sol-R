@@ -507,7 +507,8 @@ namespace RayTracer
    void RAYTRACINGENGINE_API glVertex3fv( const GLfloat *v );
    void RAYTRACINGENGINE_API glNormal3f( GLfloat x, GLfloat y, GLfloat z );
    void RAYTRACINGENGINE_API glNormal3fv( const GLfloat *v );
-   void RAYTRACINGENGINE_API glColor3f (GLfloat red, GLfloat green, GLfloat blue);
+   void RAYTRACINGENGINE_API glColor3f(GLfloat red, GLfloat green, GLfloat blue);
+   void RAYTRACINGENGINE_API glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
    void RAYTRACINGENGINE_API glRasterPos2f (GLfloat x, GLfloat y);
    void RAYTRACINGENGINE_API glTexParameterf (GLenum target, GLenum pname, GLfloat param);
    void RAYTRACINGENGINE_API glTexCoord2f (GLfloat s, GLfloat t);
@@ -531,7 +532,6 @@ namespace RayTracer
 #define gluPerspective(...)
 #define glMatrixMode(...)
 #define glShadeModel(...)
-#define glColor4f(...)
 #define glHint(...)
 #define glClearDepth(...)
 #define glDepthFunc(...)
