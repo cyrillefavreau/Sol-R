@@ -22,21 +22,23 @@
 
 #pragma once
 
+#include "Consts.h"
+#include "Cuda/CudaDataTypes.h"
+#include "DLL_API.h"
+
 #ifdef WIN32
-   #include <Windows.h>
    #ifdef USE_KINECT
       #include <NuiApi.h>
    #endif // USE_KINECT
 #endif // WIN32
 
-#include <stdio.h>
-#include <string>
+#ifdef USE_OCULUS
+// Oculus Rift
+#include <OVR.h>
+#endif // USE_OCULUS
+
 #include <map>
 #include <vector>
-
-#include "Consts.h"
-#include "Cuda/CudaDataTypes.h"
-#include "DLL_API.h"
 
 struct CPUPrimitive
 {
@@ -82,7 +84,7 @@ public:
 public:
 
    // ---------- Rendering ----------
-	virtual void render_begin( const float timer ) = 0;
+	virtual void render_begin( const float timer );
    virtual void render_end() = 0;
    BitmapBuffer* getBitmap() { return m_bitmap; };
 
@@ -155,6 +157,7 @@ public:
    void addVertex( float x, float y, float z);
    void addNormal( float x, float y, float z);
    void addTextCoord( float x, float y, float z);
+   void translate( float x, float y, float z);
 
 public:
 
@@ -186,6 +189,12 @@ public:
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
       bool  fastTransparency);
 
+	void setMaterialColor(
+		unsigned int index,
+		float r, float g, float b );
+	void setMaterialTextureId(
+		unsigned int index, unsigned int textureId );
+
    int getMaterialAttributes( 
 		int index,
 		float& r, float& g, float& b, float& noise,
@@ -212,6 +221,8 @@ public:
 
 	// ---------- Textures ----------
 	void setTexture( const int index, const TextureInformation& textureInfo );
+   void setTexturesTransfered(const bool transfered) { m_texturesTransfered=transfered; };
+
 	bool loadTextureFromFile( const int index, const std::string& filename );
    void buildLightInformationFromTexture( unsigned int index );
 
@@ -255,6 +266,20 @@ public:
      
    // Bitmap export
    void saveBitmapToFile( const std::string& filename, BitmapBuffer* bitmap, const int width, const int height, const int depth );
+
+   // Oculus
+protected:
+#ifdef USE_OCULUS
+   void initializeOVR();
+   void finializeOVR();
+private:
+   // Oculus
+   OVR::SensorFusion            m_sensorFusion;
+   OVR::Ptr<OVR::SensorDevice>  m_sensor;
+   OVR::Ptr<OVR::DeviceManager> m_manager;
+   OVR::Ptr<OVR::HMDDevice>	  m_HMD;
+#endif //  USE_OCULUS
+   bool m_oculus; // True if Oculus is present and active
 
 
 #ifdef USE_KINECT
@@ -424,6 +449,7 @@ protected:
    Vertices m_vertices;
    Vertices m_normals;
    Vertices m_textCoords;
+   float3   m_translation;
 
 	// Kinect declarations
 #ifdef USE_KINECT

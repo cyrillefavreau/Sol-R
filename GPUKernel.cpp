@@ -38,6 +38,15 @@
 #include "Consts.h"
 #include "ImageLoader.h"
 
+// Oculus
+#ifdef USE_OCULUS
+   #pragma comment(lib,"Winmm.lib")
+   #pragma comment(lib,"Shell32.lib")
+   #pragma comment(lib,"Ole32.lib")
+   #pragma comment(lib,"User32.lib")
+   #pragma comment(lib,"libovr64.lib")
+#endif // USE_OCULUS
+
 const unsigned int MAX_SOURCE_SIZE = 65535*2;
 
 float3 min4( const float3 a, const float3 b, const float3 c )
@@ -301,10 +310,19 @@ void GPUKernel::initBuffers()
 
    // Bitmap
    m_bitmap = new BitmapBuffer[m_sceneInfo.width.x*m_sceneInfo.height.x*gColorDepth];
+
+
+#ifdef USE_OCULUS
+   initializeOVR();
+#endif // USE_OCULUS
 }
 
 void GPUKernel::cleanup()
 {
+#ifdef USE_OCULUS
+   //finializeOVR();
+#endif // USE_OCULUS
+
    LOG_INFO(1,"Cleaning up resources");
 
    for( int i(0); i<NB_MAX_FRAMES; ++i)
@@ -861,7 +879,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       int activeBoxes(NB_MAX_BOXES);
 #if 1
-      LOG_INFO(1,"Constructing acceleration structures" );
+      LOG_INFO(3,"Constructing acceleration structures" );
       // Bounding boxes
       // Search for best trade-off
       std::map<unsigned int,unsigned int> primitivesPerBox;
@@ -882,7 +900,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          boxSize/=2;
       }
       while( boxSize>=2 );
-      LOG_INFO(1, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
+      LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
       processBoxes(  bestSize, activeBoxes, false );
 #else
       processBoxes(  64, activeBoxes, false );
@@ -988,6 +1006,10 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 void GPUKernel::resetFrame()
 {
    LOG_INFO(3, "Resetting frame " << m_frame);
+   m_translation.x = 0.f;
+   m_translation.y = 0.f;
+   m_translation.z = 0.f;
+
    m_boundingBoxes[m_frame]->clear();
    m_nbActiveBoxes[m_frame] = 0;
    LOG_INFO(3, "Nb Boxes: " << m_boundingBoxes[m_frame]->size());
@@ -1003,7 +1025,7 @@ void GPUKernel::resetFrame()
 
 void GPUKernel::resetAll()
 {
-	LOG_INFO(1,"Resetting frames" );
+	LOG_INFO(3,"Resetting frames" );
 
    int oldFrame(m_frame);
    for( int frame(0); frame<NB_MAX_FRAMES; ++frame)
@@ -1014,7 +1036,7 @@ void GPUKernel::resetAll()
    m_frame=oldFrame;
    m_primitivesTransfered = false;
 
-	LOG_INFO(1,"Resetting textures and materials" );
+	LOG_INFO(3,"Resetting textures and materials" );
    m_nbActiveMaterials = -1;
    m_materialsTransfered = false;
 
@@ -1494,6 +1516,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureMapping.x = 1;
 		m_hMaterials[index].textureMapping.y = 1;
 		m_hMaterials[index].textureMapping.z = textureId;
+		m_hMaterials[index].textureMapping.w = 0;
       if( textureId>=0 && textureId<NB_MAX_TEXTURES )
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[textureId].size.x; // Width
@@ -1511,6 +1534,49 @@ void GPUKernel::setMaterial(
       }
 
 		m_materialsTransfered = false;
+	}
+	else
+	{
+		LOG_ERROR("GPUKernel::setMaterial: Out of bounds(" << index << "/" << NB_MAX_MATERIALS << ")" );
+	}
+}
+
+void GPUKernel::setMaterialColor( unsigned int index, float r, float g, float b )
+{
+	LOG_INFO(3,"GPUKernel::setMaterialColor( " << 
+		index << "," << "color=(" << r << "," << g << "," << b << ")" );
+
+   if( index>=0 && index<NB_MAX_MATERIALS ) 
+	{
+      if( m_hMaterials[index].color.x!=r || m_hMaterials[index].color.y!=g || m_hMaterials[index].color.z!=b )
+      {
+		   m_hMaterials[index].color.x     = r;
+		   m_hMaterials[index].color.y     = g;
+		   m_hMaterials[index].color.z     = b;
+		   m_materialsTransfered = false;
+      }
+	}
+	else
+	{
+		LOG_ERROR("GPUKernel::setMaterial: Out of bounds(" << index << "/" << NB_MAX_MATERIALS << ")" );
+	}
+}
+
+void GPUKernel::setMaterialTextureId( unsigned int index, unsigned int textureId )
+{
+	LOG_INFO(3,"GPUKernel::setMaterialTextureId( " << 
+		index << "," << "Texture Id=" << textureId << ")" );
+
+   if( index>=0 && index<NB_MAX_MATERIALS ) 
+	{
+      if( textureId != m_hMaterials[index].textureMapping.z )
+      {
+         m_hMaterials[index].textureMapping.x = 1;
+         m_hMaterials[index].textureMapping.y = 1;
+         m_hMaterials[index].textureMapping.z = textureId;
+         m_hMaterials[index].textureMapping.w = m_hTextures[textureId].size.z;
+		   m_materialsTransfered = false;
+      }
 	}
 	else
 	{
@@ -1581,7 +1647,7 @@ void GPUKernel::setTexture(
 	const TextureInformation& textureInfo )
 {
    LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
-   if( index<m_nbActiveTextures )
+   if( index<=m_nbActiveTextures )
    {
       delete [] m_hTextures[index].buffer;
       int size = textureInfo.size.x*textureInfo.size.y*textureInfo.size.z;
@@ -2025,6 +2091,13 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
    int frame(0);
    if( glMode == -1 )
    {
+      for( int i(0); i<m_vertices.size(); ++i)
+      {
+         m_vertices[i].x += m_translation.x;
+         m_vertices[i].y += m_translation.y;
+         m_vertices[i].z += m_translation.z;
+      }
+
       switch( m_GLMode )
       {
       case GL_POINTS:
@@ -2037,6 +2110,26 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                   0.1f,0.f,0.f,
                   materialId);
             }
+            LOG_INFO(3, "[OpenGL] Added " << m_vertices.size() << " Points");
+         }
+         break;
+      case GL_LINES:
+         {
+            int nbLines=static_cast<int>(m_vertices.size()/2);
+            for( int i(0); i<nbLines; ++i)
+            {
+               int index=i*2;
+               if( index+1<=m_vertices.size() )
+               {
+                  p = addPrimitive( ptCylinder);
+                  setPrimitive(  p,
+                     m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
+                     m_vertices[i+1].x, m_vertices[i+1].y, m_vertices[i+1].z, 
+                     0.05f,0.f,0.f,
+                     materialId);
+               }
+            }
+            LOG_INFO(3, "[OpenGL] Added " << nbLines << " Lines");
          }
          break;
       case GL_TRIANGLES:
@@ -2066,14 +2159,64 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                   setPrimitiveNormals( p, m_normals[index], m_normals[index+1], m_normals[index+2] );
                }
             }
-            LOG_INFO(1, "[OpenGL] Triangle created with material ID " << materialId );
+            LOG_INFO(3, "[OpenGL] Added " << nbTriangles << " triangles");
+         }
+         break;
+      case GL_QUADS:
+         {
+            // Vertices
+            int nbQuads=static_cast<int>(m_vertices.size()/4);
+            for( int i(0); i<nbQuads; ++i)
+            {
+               int p1,p2;
+               int index=i*4;
+               if( index+2<=m_vertices.size() )
+               {
+                  p1 = addPrimitive( ptTriangle);
+                  setPrimitive(  p1,
+                     m_vertices[index  ].x, m_vertices[index  ].y, m_vertices[index  ].z, 
+                     m_vertices[index+1].x, m_vertices[index+1].y, m_vertices[index+1].z, 
+                     m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
+                     0.f,0.f,0.f,
+                     materialId);
 
+                  p2 = addPrimitive( ptTriangle);
+                  setPrimitive(  p2,
+                     m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
+                     m_vertices[index+3].x, m_vertices[index+3].y, m_vertices[index+3].z, 
+                     m_vertices[index+0].x, m_vertices[index+0].y, m_vertices[index+0].z, 
+                     0.f,0.f,0.f,
+                     materialId);
+               }
+
+               if( index+3<=m_textCoords.size() )
+               {
+                  setPrimitiveTextureCoordinates( p1, m_textCoords[index], m_textCoords[index+1], m_textCoords[index+2] );
+                  setPrimitiveTextureCoordinates( p2, m_textCoords[index+2], m_textCoords[index+3], m_textCoords[index] );
+               }
+               if( index+3<=m_normals.size() )
+               {
+                  setPrimitiveNormals( p1, m_normals[index], m_normals[index+1], m_normals[index+2] );
+                  setPrimitiveNormals( p2, m_normals[index+2], m_normals[index+3], m_normals[index] );
+               }
+            }
+            LOG_INFO(3, "[OpenGL] " << nbQuads << " quads created with material ID " << materialId );
+
+         }
+         break;
+      default:
+         {
+            LOG_INFO(1, "[OpenGL] Mode " << m_GLMode << " not supported" );
          }
          break;
       }
       m_vertices.clear();
       m_normals.clear();
       m_textCoords.clear();
+
+      m_translation.x = 0.f;
+      m_translation.y = 0.f;
+      m_translation.z = 0.f;
    }
    m_GLMode = glMode;
    return p;
@@ -2096,3 +2239,81 @@ void GPUKernel::addTextCoord( float x, float y, float z)
    float3 v = {x,y,z};
    m_textCoords.push_back(v);
 }
+
+void GPUKernel::translate( float x, float y, float z)
+{
+   /*
+   m_translation.x += x;
+   m_translation.y += y;
+   m_translation.z += z;
+   */
+}
+
+
+void GPUKernel::render_begin( const float timer )
+{
+#ifdef USE_OCULUS
+   if( m_sensorFusion.IsAttachedToSensor() )
+   {
+      OVR::Quatf orientation = m_sensorFusion.GetOrientation();
+      m_angles.x = -PI*orientation.x;
+      m_angles.y = -PI*orientation.y;
+      m_angles.z =  PI*orientation.z;
+      m_sceneInfo.pathTracingIteration.x = 0;
+      m_sceneInfo.renderingType.x = vt3DVision;
+   }
+#endif // USE_OCULUS
+}
+
+#ifdef USE_OCULUS
+void GPUKernel::initializeOVR()
+{
+   LOG_INFO(1, "----------------------------" );
+   LOG_INFO(1, "                       _____" );
+   LOG_INFO(1, "                       [O_O]" );
+   LOG_INFO(1, "                            " );
+   LOG_INFO(1, "Oculus initialization       " );
+
+   m_oculus = false;
+
+   OVR::HMDInfo Info;
+   bool InfoLoaded;
+
+   OVR::System::Init();
+
+	m_manager = *OVR::DeviceManager::Create();
+
+   m_HMD = *m_manager->EnumerateDevices<OVR::HMDDevice>().CreateDevice();
+
+   if (m_HMD)
+   {
+      InfoLoaded = m_HMD->GetDeviceInfo(&Info);
+      m_sensor = *m_HMD->GetSensor();
+   }
+   else
+   {  
+      m_sensor = *m_manager->EnumerateDevices<OVR::SensorDevice>().CreateDevice();
+   }
+
+   if(m_sensor)
+   {
+      m_sensorFusion.AttachToSensor(m_sensor);
+      m_sensorFusion.Reset();
+      m_oculus = true;
+      m_sceneInfo.renderingType.x = vt3DVision;
+   }
+   else
+   {
+      LOG_ERROR("    FAILED" );
+   }
+   LOG_INFO(1, "----------------------------" );
+}
+
+void GPUKernel::finializeOVR()
+{
+	m_sensor.Clear();
+   m_HMD.Clear();
+	m_manager.Clear();
+	OVR::System::Destroy();
+}
+#endif // USE_OCULUS

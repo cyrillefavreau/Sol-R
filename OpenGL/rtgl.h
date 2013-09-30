@@ -24,19 +24,6 @@
 
 #include "../DLL_API.h"
 
-#ifdef USE_CUDA
-#include "../Cuda/CudaKernel.h"
-typedef CudaKernel GenericGPUKernel;
-#else
-   #ifdef USE_OPENCL
-      #include "../OpenCL/OpenCLKernel.h"
-      typedef OpenCLKernel GenericGPUKernel;
-   #else
-      #include "../CPUKernel.h"
-      typedef CPUKernel GenericGPUKernel;
-   #endif // USE_OPENCL
-#endif // USE_CUDA
-
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
 typedef unsigned int GLbitfield;
@@ -53,15 +40,63 @@ typedef double GLdouble;
 typedef double GLclampd;
 typedef void GLvoid;
 
+#ifdef __cplusplus
+class GPUKernel;
 namespace RayTracer
 {
-
-   extern RAYTRACINGENGINE_API GenericGPUKernel* gKernel;
+   extern RAYTRACINGENGINE_API GPUKernel* gKernel;
+#else
+typedef int bool;
+#endif // #__cplusplus
 
    // OpenGL
    /*************************************************************/
 
-   /* BeginMode */
+/* LightName */
+#define GL_LIGHT0                         0x4000
+#define GL_LIGHT1                         0x4001
+#define GL_LIGHT2                         0x4002
+#define GL_LIGHT3                         0x4003
+#define GL_LIGHT4                         0x4004
+#define GL_LIGHT5                         0x4005
+#define GL_LIGHT6                         0x4006
+#define GL_LIGHT7                         0x4007
+
+/* ErrorCode */
+#define GL_NO_ERROR                       0
+#define GL_INVALID_ENUM                   0x0500
+#define GL_INVALID_VALUE                  0x0501
+#define GL_INVALID_OPERATION              0x0502
+#define GL_STACK_OVERFLOW                 0x0503
+#define GL_STACK_UNDERFLOW                0x0504
+#define GL_OUT_OF_MEMORY                  0x0505
+
+/* Boolean */
+#define GL_TRUE                           1
+#define GL_FALSE                          0
+
+/* MatrixMode */
+#define GL_MODELVIEW                      0x1700
+#define GL_PROJECTION                     0x1701
+#define GL_TEXTURE                        0x1702
+
+/* StringName */
+#define GL_VENDOR                         0x1F00
+#define GL_RENDERER                       0x1F01
+#define GL_VERSION                        0x1F02
+#define GL_EXTENSIONS                     0x1F03
+
+/* BlendingFactorDest */
+#define GL_ZERO                           0
+#define GL_ONE                            1
+#define GL_SRC_COLOR                      0x0300
+#define GL_ONE_MINUS_SRC_COLOR            0x0301
+#define GL_SRC_ALPHA                      0x0302
+#define GL_ONE_MINUS_SRC_ALPHA            0x0303
+#define GL_DST_ALPHA                      0x0304
+#define GL_ONE_MINUS_DST_ALPHA            0x0305
+
+/* BeginMode */
 #define GL_POINTS                         0x0000
 #define GL_LINES                          0x0001
 #define GL_LINE_LOOP                      0x0002
@@ -85,7 +120,7 @@ namespace RayTracer
 #define GL_3_BYTES                        0x1408
 #define GL_4_BYTES                        0x1409
 #define GL_DOUBLE                         0x140A
-//#define GL_DOUBLE_EXT                     0x140A
+   //#define GL_DOUBLE_EXT                     0x140A
 
    /* PixelFormat */
 #define GL_COLOR_INDEX                    0x1900
@@ -337,16 +372,25 @@ namespace RayTracer
    /*      GL_TEXTURE_COORD_ARRAY_COUNT_EXT */
    /*      GL_EDGE_FLAG_ARRAY_COUNT_EXT */
 
-/* MaterialParameter */
+   /* MaterialParameter */
 #define GL_EMISSION                       0x1600
 #define GL_SHININESS                      0x1601
 #define GL_AMBIENT_AND_DIFFUSE            0x1602
 #define GL_COLOR_INDEXES                  0x1603
-/*      GL_AMBIENT */
-/*      GL_DIFFUSE */
-/*      GL_SPECULAR */
 
-/* TextureCoordName */
+   /* LightParameter */
+#define GL_AMBIENT                        0x1200
+#define GL_DIFFUSE                        0x1201
+#define GL_SPECULAR                       0x1202
+#define GL_POSITION                       0x1203
+#define GL_SPOT_DIRECTION                 0x1204
+#define GL_SPOT_EXPONENT                  0x1205
+#define GL_SPOT_CUTOFF                    0x1206
+#define GL_CONSTANT_ATTENUATION           0x1207
+#define GL_LINEAR_ATTENUATION             0x1208
+#define GL_QUADRATIC_ATTENUATION          0x1209
+
+   /* TextureCoordName */
 #define GL_S                              0x2000
 #define GL_T                              0x2001
 #define GL_R                              0x2002
@@ -406,7 +450,7 @@ namespace RayTracer
 #define GL_CLAMP                          0x2900
 #define GL_REPEAT                         0x2901
 
-/* AttribMask */
+   /* AttribMask */
 #define GL_CURRENT_BIT                    0x00000001
 #define GL_POINT_BIT                      0x00000002
 #define GL_LINE_BIT                       0x00000004
@@ -429,7 +473,7 @@ namespace RayTracer
 #define GL_SCISSOR_BIT                    0x00080000
 #define GL_ALL_ATTRIB_BITS                0x000fffff
 
-/* DrawBufferMode */
+   /* DrawBufferMode */
 #define GL_NONE                           0
 #define GL_FRONT_LEFT                     0x0400
 #define GL_FRONT_RIGHT                    0x0401
@@ -445,7 +489,7 @@ namespace RayTracer
 #define GL_AUX2                           0x040B
 #define GL_AUX3                           0x040C
 
-/* texture */
+   /* texture */
 #define GL_ALPHA4                         0x803B
 #define GL_ALPHA8                         0x803C
 #define GL_ALPHA12                        0x803D
@@ -488,8 +532,8 @@ namespace RayTracer
 #define GL_PROXY_TEXTURE_1D               0x8063
 #define GL_PROXY_TEXTURE_2D               0x8064
 
-/* GL_NV_register_combiners */
-/* Constants */
+   /* GL_NV_register_combiners */
+   /* Constants */
 #define GL_REGISTER_COMBINERS_NV                           0x8522
 
 #define GLUquadricObj void
@@ -501,8 +545,9 @@ namespace RayTracer
    void RAYTRACINGENGINE_API glEnable (GLenum cap);
    void RAYTRACINGENGINE_API glDisable (GLenum cap);
    void RAYTRACINGENGINE_API glClear (GLbitfield mask);
-   void RAYTRACINGENGINE_API glFlush (void);
+   void RAYTRACINGENGINE_API glFlush();
 
+   void RAYTRACINGENGINE_API glVertex2i(GLint x, GLint y);
    void RAYTRACINGENGINE_API glVertex3f( GLfloat x, GLfloat y, GLfloat z );
    void RAYTRACINGENGINE_API glVertex3fv( const GLfloat *v );
    void RAYTRACINGENGINE_API glNormal3f( GLfloat x, GLfloat y, GLfloat z );
@@ -517,32 +562,88 @@ namespace RayTracer
    void RAYTRACINGENGINE_API glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
    void RAYTRACINGENGINE_API gluSphere(void *, GLfloat, GLint, GLint);
    RAYTRACINGENGINE_API GLUquadricObj* gluNewQuadric();
-   RAYTRACINGENGINE_API void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+   void RAYTRACINGENGINE_API glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 
    void RAYTRACINGENGINE_API glViewport(GLint a, GLint b, GLint width, GLint height );
 
+   // Materials
+   void RAYTRACINGENGINE_API glMaterialfv(GLenum face, GLenum pname, const GLfloat *params);
+
+   // Textures
+   void RAYTRACINGENGINE_API glGenTextures(GLsizei n, GLuint *textures);
+   void RAYTRACINGENGINE_API glBindTexture(GLenum target, GLuint texture);
+   int  RAYTRACINGENGINE_API gluBuild2DMipmaps(
+      GLenum      target, 
+      GLint       components, 
+      GLint       width, 
+      GLint       height, 
+      GLenum      format, 
+      GLenum      type, 
+      const void  *data);
+   void RAYTRACINGENGINE_API glTexSubImage2D(
+      GLenum target,
+ 	   GLint level,
+ 	   GLint xoffset,
+ 	   GLint yoffset,
+ 	   GLsizei width,
+ 	   GLsizei height,
+ 	   GLenum format,
+ 	   GLenum type,
+ 	   const GLvoid * data);
+   void RAYTRACINGENGINE_API glPushAttrib(	GLbitfield  	mask);
+   void RAYTRACINGENGINE_API glPopAttrib();
+   void RAYTRACINGENGINE_API glTexParameteri(	GLenum target,
+ 	   GLenum pname,
+ 	   GLint param);
+   void RAYTRACINGENGINE_API glBlendFunc(	GLenum sfactor, GLenum dfactor);
+   void RAYTRACINGENGINE_API glMatrixMode( GLenum mode);
+   void RAYTRACINGENGINE_API glPushMatrix();
+   void RAYTRACINGENGINE_API glPopMatrix();
+   RAYTRACINGENGINE_API GLenum glGetError();
+   void RAYTRACINGENGINE_API glOrtho(	GLdouble  	left,
+      GLdouble  	right,
+      GLdouble  	bottom,
+      GLdouble  	top,
+      GLdouble  	nearVal,
+      GLdouble  	farVal);
+
+   void RAYTRACINGENGINE_API glTranslatef( GLfloat x, GLfloat y, GLfloat z );
+
    // Raytracer specific
    void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
+   void RAYTRACINGENGINE_API setAngles( GLfloat, GLfloat, GLfloat );
+   void RAYTRACINGENGINE_API render();
+   void RAYTRACINGENGINE_API gluLookAt(	GLdouble eyeX,
+ 	   GLdouble eyeY,
+ 	   GLdouble eyeZ,
+ 	   GLdouble centerX,
+ 	   GLdouble centerY,
+ 	   GLdouble centerZ,
+ 	   GLdouble upX,
+ 	   GLdouble upY,
+ 	   GLdouble upZ);
 
 
-// TO BE DONE
-#define GL_LIGHT1                         0x4001
+   // TO BE DONE
 
-#define glMatrixMode(...)
+#define glRasterPos2i(...)
+#define glDrawPixels(...)
+#define glGetFloatv(...)
+#define glLightModelfv(...)
+#define glDeleteTextures(...)
+#define glLineWidth(...)
+#define glLineStipple(...)
+#define glScalef(...)
+#define glFogi(...)
+#define glFogfv(...)
+#define glFogf(...)
 #define gluPerspective(...)
-#define glMatrixMode(...)
 #define glShadeModel(...)
 #define glHint(...)
 #define glClearDepth(...)
 #define glDepthFunc(...)
 #define glLightfv(...)
 #define glLightModeli(...)
-#define glGenTextures(...)
-#define glTexParameteri(...)
-#define gluBuild2DMipmaps(...)
-#define glBindTexture(...)
-#define glTranslatef(...)
-#define glMaterialfv(...)
 #define glColor4fv(...)
 #define glMaterialf(...)
 #define glFrontFace(...)
@@ -550,21 +651,16 @@ namespace RayTracer
 #define glMapGrid2f(...)
 #define glEvalMesh2(...)
 #define glPointSize(...)
-#define glPushMatrix(...)
-#define glPopMatrix(...)
 #define glDeleteLists(...)
 #define glPolygonMode(...)
 #define glRotatef(...)
 #define glTexImage1D(...)
 #define glColorMaterial(...)
-#define glPushAttrib(...)
 #define glLoadMatrixf(...)
 #define glColorMask(...)
 #define glPolygonOffset(...)
 #define glCullFace(...)
-#define glPopAttrib(...)
 #define glReadPixels(...)
-#define glTexSubImage2D(...)
 #define glCopyTexSubImage2D(...)
 #define glMultMatrixf(...)
 #define glutWireCube(...)
@@ -584,10 +680,10 @@ namespace RayTracer
 #define glutSolidTorus(...)
 #define glCallList(...)
 
-// Aliases
+   // Aliases
 #define glutSolidSphere(a,b,c) gluSphere(0,a,b,c)
 
-// Extensions
+   // Extensions
 #define SetUpARB_multitexture(...)
 #define SetUpEXT_texture_env_combine(...)
 #define SetUpNV_register_combiners(...)
@@ -595,12 +691,12 @@ namespace RayTracer
 #define SetUpSGIX_shadow(...)
 #define SetUpEXT_blend_minmax(...)
 
-static bool ARB_multitexture_supported;
-static bool EXT_texture_env_combine_supported;
-static bool NV_register_combiners_supported;
-static bool SGIX_depth_texture_supported;
-static bool SGIX_shadow_supported;
-static bool EXT_blend_minmax_supported;
+   static bool ARB_multitexture_supported;
+   static bool EXT_texture_env_combine_supported;
+   static bool NV_register_combiners_supported;
+   static bool SGIX_depth_texture_supported;
+   static bool SGIX_shadow_supported;
+   static bool EXT_blend_minmax_supported;
 
 
    // GLUT
@@ -824,4 +920,6 @@ static bool EXT_blend_minmax_supported;
    */
    void RAYTRACINGENGINE_API glutPostRedisplay( void );
    void RAYTRACINGENGINE_API glutSwapBuffers( void );
+#ifdef __cplusplus
 };
+#endif // #__cplusplus

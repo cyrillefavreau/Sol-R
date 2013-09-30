@@ -2489,6 +2489,7 @@ ________________________________________________________________________________
 */
 void CPUKernel::render_begin( const float timer ) 
 {
+   GPUKernel::render_begin(timer);
    if( m_postProcessingBuffer==nullptr )
    {
       m_postProcessingBuffer = new float4[m_sceneInfo.width.x*m_sceneInfo.height.x];

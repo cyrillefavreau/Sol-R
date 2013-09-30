@@ -20,6 +20,19 @@
 *
 */
 
+#ifdef USE_CUDA
+#include "../Cuda/CudaKernel.h"
+typedef CudaKernel GenericGPUKernel;
+#else
+   #ifdef USE_OPENCL
+      #include "../OpenCL/OpenCLKernel.h"
+      typedef OpenCLKernel GenericGPUKernel;
+   #else
+      #include "../CPUKernel.h"
+      typedef CPUKernel GenericGPUKernel;
+   #endif // USE_OPENCL
+#endif // USE_CUDA
+
 #include <GL/freeglut.h>
 #include <iostream>
 #include <time.h>
@@ -27,7 +40,7 @@
 #include "../Logging.h"
 #include "rtgl.h"
 
-GenericGPUKernel* RayTracer::gKernel = nullptr;
+GPUKernel* RayTracer::gKernel = nullptr;
 
 SceneInfo gSceneInfo;
 PostProcessingInfo gPostProcessingInfo;
@@ -38,7 +51,12 @@ float3    gRotationCenter = { 0.f, 0.f, 0.f };
 float     gScale=1.f;
 // Current Material
 int       gCurrentMaterial(0); 
+int       gCurrentTexture(-1);
 bool      gLighting(false);
+// Camera. THIS IS UGLY
+float3 gEye = {0.f,0.f, -15.f*gScale};
+float3 gDir = {0.f,0.f, -15.f*gScale+5000.f};
+float3 gAngles = {0.f,0.f,0.f};
 
 static bool ARB_multitexture_supported = false;
 static bool EXT_texture_env_combine_supported = false;
@@ -77,9 +95,9 @@ void RayTracer::InitializeRaytracer( const int width, const int height, const bo
    gSceneInfo.graphicsLevel.x = 4;
    gSceneInfo.nbRayIterations.x = 5;
    gSceneInfo.transparentColor.x =  0.f;
-   gSceneInfo.viewDistance.x = 1000000.f;
+   gSceneInfo.viewDistance.x = 100000.f;
    gSceneInfo.shadowIntensity.x = 0.9f;
-   gSceneInfo.width3DVision.x = 400.f;
+   gSceneInfo.width3DVision.x = 1.3f;
    gSceneInfo.backgroundColor.x = 1.f;
    gSceneInfo.backgroundColor.y = 1.f;
    gSceneInfo.backgroundColor.z = 1.f;
@@ -96,15 +114,16 @@ void RayTracer::InitializeRaytracer( const int width, const int height, const bo
    gPostProcessingInfo.param3.x = 200;
 
    // Kernel
-   if(gKernel) delete gKernel;
-   gKernel = new GenericGPUKernel(0, 480, 1, 0);
-   gSceneInfo.pathTracingIteration.x = 0; 
-   gKernel->setSceneInfo( gSceneInfo );
-   gKernel->initBuffers();
-
-   if( initializeMaterials )
+   if(!gKernel) 
    {
-      createRandomMaterials(false,false);
+      gKernel = new GenericGPUKernel(0, 480, 1, 0);
+      gSceneInfo.pathTracingIteration.x = 0; 
+      gKernel->setSceneInfo( gSceneInfo );
+      gKernel->initBuffers();
+      if( initializeMaterials )
+      {
+         createRandomMaterials(false,false);
+      }
    }
 }
 /*
@@ -146,46 +165,18 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 		float r,g,b,noise;
       bool fastTransparency = false;
 
-      /*
-      int step(64);
-      if( R<=255 )
-      {
-         r = R/255.f;
-         g = G/255.f;
-         b = B/255.f;
-
-         B += step;
-         if( B>255 )
-         {
-            B = 0;
-            G += step;
-            if( G>255 )
-            {
-               G = 0;
-               R += step;
-            }
-         }
-      }
-      else
-      */
-      {
-         r = 0.5f+(rand()%255)/512.f;
-         g = 0.5f+(rand()%255)/512.f;
-         b = 0.5f+(rand()%255)/512.f;
-      }
+      r = 0.5f+(rand()%255)/512.f;
+      g = 0.5f+(rand()%255)/512.f;
+      b = 0.5f+(rand()%255)/512.f;
       noise = 0.f;
-		switch( i )
+
+      if( rand()%3==0 )
+      {
+         reflection=1.0f; refraction=1.66f; transparency=0.5f;
+      }
+
+      switch( i )
 		{
-      case   0: 
-      case   1: 
-         {
-            switch(rand()%3)
-            {
-            case 0: reflection=1.0f; refraction=1.66f; transparency=0.5f; break;
-            case 1: reflection=0.8f; break;
-            }
-         }
-         break;
 		case DEFAULT_LIGHT_MATERIAL: r=1.f; g=1.f; b=1.f; innerIllumination.x=1.f; break; 
       }
 
@@ -224,7 +215,7 @@ void RayTracer::glEnable (GLenum cap)
             RayTracer::gKernel->setPrimitive(p,-10.f*gScale,10.f*gScale,-10.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
             gLighting = true;
             //RayTracer::gKernel->compactBoxes(true);
-            LOG_INFO(1, "[OpenGL] Light Added" );
+            LOG_INFO(3, "[OpenGL] Light Added" );
          }
       }
       break;
@@ -240,11 +231,6 @@ void RayTracer::glDisable (GLenum cap)
 void RayTracer::glClear (GLbitfield mask)
 {
    ::glClear(mask);
-}
-
-void RayTracer::glFlush (void)
-{
-   ::glFlush();
 }
 
 void RayTracer::glVertex3f( GLfloat x, GLfloat y, GLfloat z )
@@ -272,22 +258,14 @@ void RayTracer::glNormal3fv( const GLfloat* n )
 
 void RayTracer::glColor3f (GLfloat red, GLfloat green, GLfloat blue)
 {
+   gCurrentMaterial = red*100+green*100+blue*100;
    /*
-   int i(0);
-   bool found(false);
-   while( !found && i<gKernel->getNbActiveMaterials() )
+   Material* material = RayTracer::gKernel->getMaterial(gCurrentMaterial);
+   if( material->color.x!=red || material->color.y!=green || material->color.z!=blue )
    {
-      Material* m = gKernel->getMaterial(i);
-      if( m && (fabs(m->color.x - red)<0.1f && fabs(m->color.y - green)<0.1f && fabs(m->color.z - blue)<0.1f ) )
-      {
-         found = true;
-      }
-      else
-      {
-         ++i;
-      }
+      ++gCurrentMaterial;
+      RayTracer::gKernel->setMaterialColor( gCurrentMaterial, red, green, blue );
    }
-   gCurrentMaterial = found ? i : 0;
    */
 }
 
@@ -394,20 +372,8 @@ void RayTracer::glutFullScreen( void )
 
 void RayTracer::glLoadIdentity()
 {
-   float3 eye = {0.f,0.f, -15.f*gScale};
-   float3 dir = {0.f,0.f, -15.f*gScale+5000.f};
-   float3 angles = {0.f,0.f, 0.f};
-   RayTracer::gKernel->setCamera(eye,dir,angles);
-   RayTracer::gKernel->setSceneInfo(gSceneInfo);
-   RayTracer::gKernel->setPostProcessingInfo(gPostProcessingInfo);
-   RayTracer::gKernel->compactBoxes(true);
-   for( int i(0); i<gTotalPathTracingIterations; ++i)
-   {
-      RayTracer::gKernel->render_begin(0);
-      RayTracer::gKernel->render_end();
-   }
-   RayTracer::gKernel->resetFrame();
-   gLighting=false;
+   RayTracer::render();
+   ::glLoadIdentity();
 }
 
 int  RayTracer::glutGet( GLenum query )
@@ -493,7 +459,7 @@ void RayTracer::glutSwapBuffers( void )
 void RayTracer::gluSphere(void *, GLfloat radius, GLint , GLint)
 {
    int p = RayTracer::gKernel->addPrimitive(ptSphere);
-   RayTracer::gKernel->setPrimitive(p, 0.f, 0.f, 0.f, radius*gScale, 0.f, 0.f, 1 );
+   RayTracer::gKernel->setPrimitive(p, 0.f, 0.f, 0.f, radius*gScale, 0.f, 0.f, gCurrentMaterial );
 }
 
 GLUquadricObj* RayTracer::gluNewQuadric(void)
@@ -507,4 +473,179 @@ void RayTracer::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat a
    gSceneInfo.backgroundColor.y = green;
    gSceneInfo.backgroundColor.z = blue;
    gSceneInfo.backgroundColor.w = alpha;
+}
+
+void RayTracer::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
+{
+   switch( pname )
+   {
+   case GL_AMBIENT: RayTracer::glColor3f( params[0], params[1], params[2] ); break;
+   }
+}
+
+void RayTracer::glGenTextures(GLsizei n, GLuint *textures)
+{
+   /*
+   ++gCurrentTexture;
+   RayTracer::gKernel->setTexturesTransfered(false);
+   *textures=gCurrentTexture; 
+   */
+}
+
+void RayTracer::glBindTexture(GLenum target, GLuint texture)
+{
+   /*
+   switch( target )
+   {
+   case GL_TEXTURE_2D: 
+      RayTracer::gKernel->setMaterialTextureId(gCurrentMaterial,gCurrentTexture); 
+      break;
+   }
+   */
+}
+
+int RayTracer::gluBuild2DMipmaps (
+   GLenum      target, 
+   GLint       components, 
+   GLint       width, 
+   GLint       height, 
+   GLenum      format, 
+   GLenum      type, 
+   const void  *data)
+{
+   /*
+   TextureInformation textureInfo;
+   textureInfo.size.x = width;
+   textureInfo.size.y = height;
+
+   switch( format )
+   {
+   case GL_RGB : textureInfo.size.z=3; break;
+   case GL_RGBA: textureInfo.size.z=4; break;
+   }
+   textureInfo.offset = 0;
+   textureInfo.buffer = (unsigned char*)data;
+
+   RayTracer::gKernel->setTexture(gCurrentTexture, textureInfo );
+   */
+   return 0;
+}
+
+void RayTracer::setAngles( GLfloat x, GLfloat y, GLfloat z)
+{
+   gAngles.x = x;
+   gAngles.y = y;
+   gAngles.z = z;
+}
+
+void RayTracer::glFlush()
+{
+}
+
+void RayTracer::glTexSubImage2D(
+      GLenum target,
+ 	   GLint level,
+ 	   GLint xoffset,
+ 	   GLint yoffset,
+ 	   GLsizei width,
+ 	   GLsizei height,
+ 	   GLenum format,
+ 	   GLenum type,
+ 	   const GLvoid * data);
+
+void RayTracer::glPushAttrib(	GLbitfield  	mask)
+{
+}
+
+void RayTracer::glPopAttrib()
+{
+}
+
+void RayTracer::glTexParameteri(	GLenum target,
+ 	   GLenum pname,
+ 	   GLint param)
+{
+}
+
+void RayTracer::glBlendFunc(	GLenum sfactor, GLenum dfactor)
+{
+}
+
+void RayTracer::glMatrixMode( GLenum mode)
+{
+}
+
+void RayTracer::glPushMatrix()
+{
+}
+
+void RayTracer::glPopMatrix()
+{
+}
+
+GLenum RayTracer::glGetError()
+{
+   return ::glGetError();
+}
+
+void RayTracer::glVertex2i(GLint x, GLint y)
+{
+   glVertex3f(static_cast<GLfloat>(x),static_cast<GLfloat>(y),0.f);
+}
+
+void RayTracer::glOrtho(	GLdouble  	left,
+   GLdouble  	right,
+   GLdouble  	bottom,
+   GLdouble  	top,
+   GLdouble  	nearVal,
+   GLdouble  	farVal)
+{
+   //gMisc.w = 1;
+}
+
+void RayTracer::render()
+{
+   RayTracer::gKernel->setCamera(gEye,gDir,gAngles);
+   RayTracer::gKernel->setSceneInfo(gSceneInfo);
+   RayTracer::gKernel->setPostProcessingInfo(gPostProcessingInfo);
+   if( !gLighting )
+   {
+      // if no light is defined, I add one
+      int p = RayTracer::gKernel->addPrimitive(ptSphere);
+      RayTracer::gKernel->setPrimitive(p,-20.f*gScale,20.f*gScale,20.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
+      gLighting = true;
+   }
+   RayTracer::gKernel->compactBoxes(true);
+   for( int i(0); i<gTotalPathTracingIterations; ++i)
+   {
+      RayTracer::gKernel->render_begin(0);
+      RayTracer::gKernel->render_end();
+   }
+   RayTracer::gKernel->resetFrame();
+   gCurrentMaterial=0;
+   gLighting=false;
+}
+
+void RayTracer::glTranslatef( GLfloat x, GLfloat y, GLfloat z )
+{
+   RayTracer::gKernel->translate(x*gScale,y*gScale,z*gScale);
+}
+
+void RayTracer::gluLookAt(	
+   GLdouble eyeX,
+ 	GLdouble eyeY,
+ 	GLdouble eyeZ,
+ 	GLdouble centerX,
+ 	GLdouble centerY,
+ 	GLdouble centerZ,
+ 	GLdouble upX,
+ 	GLdouble upY,
+ 	GLdouble upZ)
+{
+   gEye.x = eyeX*gScale;
+   gEye.y = eyeY*gScale;
+   gEye.z = eyeZ*gScale-5000.f;
+   gDir.x = centerX*gScale;
+   gDir.y = centerY*gScale;
+   gDir.z = centerZ*gScale;
 }

@@ -539,6 +539,7 @@ void OpenCLKernel::releaseDevice()
 */
 void OpenCLKernel::render_begin( const float timer )
 {
+   GPUKernel::render_begin(timer);
 	int status(0);
    if( m_refresh )
    {

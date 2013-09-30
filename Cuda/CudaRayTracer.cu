@@ -1247,10 +1247,12 @@ __global__ void k_3DVisionRenderer(
 		dof,
 		primitiveXYIds[index]);
 
+#ifdef ADVANCED_FEATURES
    // Randomize light intensity
 	int rindex = index;
 	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
    color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+#endif // ADVANCED_FEATURES
 
    // Contribute to final image
 	if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;
@@ -1792,7 +1794,7 @@ extern "C" void cudaRender(
 				      postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
 			      break;
 		      }
-	      case vt3DVision:
+         case vt3DVision:
 		      {
                step = "vt3DVision";
 			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(

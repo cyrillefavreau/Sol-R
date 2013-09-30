@@ -70,8 +70,8 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_imageCount(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
-   m_blockSize.x = 8;
-   m_blockSize.y = 8;
+   m_blockSize.x = 16;
+   m_blockSize.y = 16;
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
@@ -156,6 +156,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::render_begin( const float timer )
 {
+   GPUKernel::render_begin(timer);
    if( m_refresh )
    {
 	   // CPU -> GPU Data transfers
@@ -235,7 +236,7 @@ void CudaKernel::render_begin( const float timer )
 
       if( !m_texturesTransfered )
 	   {
-         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
+         LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
          h2d_textures( 
             m_occupancyParameters,
             NB_MAX_TEXTURES,  m_hTextures );
@@ -347,18 +348,19 @@ void CudaKernel::render_end()
       else
 #endif // 0
       {
+         float scale=1.f;
          ::glBegin(GL_QUADS);
          ::glTexCoord2f(1.f,0.f);
-         ::glVertex3f(-1.f, -1.f, 0.f);
+         ::glVertex3f(-scale, -scale, 0.f);
 
          ::glTexCoord2f(0.f,0.f);
-         ::glVertex3f( 1.f, -1.f, 0.f);
+         ::glVertex3f( scale, -scale, 0.f);
 
          ::glTexCoord2f(0.f,1.f);
-         ::glVertex3f( 1.f,  1.f, 0.f);
+         ::glVertex3f( scale,  scale, 0.f);
 
          ::glTexCoord2f(1.f,1.f);
-         ::glVertex3f(-1.f,  1.f, 0.f);
+         ::glVertex3f(-scale,  scale, 0.f);
          ::glEnd();
       }
       ::glDisable(GL_TEXTURE_2D);
