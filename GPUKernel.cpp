@@ -262,7 +262,6 @@ GPUKernel::~GPUKernel()
 
    cleanup();
    LOG_INFO(1,"----------++++++++++ GPU Kernel Destroyed ++++++++++----------" );
-   LOG_INFO(1,"" );
 }
 
 void GPUKernel::initBuffers()
@@ -275,12 +274,6 @@ void GPUKernel::initBuffers()
       m_primitives[i]    = new PrimitiveContainer[NB_MAX_FRAMES];
       m_boundingBoxes[i] = new BoxContainer[NB_MAX_FRAMES];
       m_lamps[i]         = new LampContainer[NB_MAX_FRAMES];
-   }
-
-   // Textures
-   for( int i(0); i<NB_MAX_TEXTURES; ++i )
-   {
-      memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
 
    m_lightInformation = new LightInformation[ NB_MAX_LIGHTINFORMATIONS ];
@@ -311,6 +304,8 @@ void GPUKernel::initBuffers()
    // Bitmap
    m_bitmap = new BitmapBuffer[m_sceneInfo.width.x*m_sceneInfo.height.x*gColorDepth];
 
+   // Textures
+   memset(m_hTextures,0,NB_MAX_TEXTURES*sizeof(TextureInformation));
 
 #ifdef USE_OCULUS
    initializeOVR();
@@ -349,10 +344,14 @@ void GPUKernel::cleanup()
 #ifdef USE_KINECT
       if(i>1 && m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
 #else
-      if(m_hTextures[i].buffer) delete [] m_hTextures[i].buffer;
+      if(m_hTextures[i].buffer!=0) 
+      {
+         LOG_INFO(3, "[cleanup] Buffer " << i << " needs to be released");
+         delete [] m_hTextures[i].buffer;
+      }
 #endif // USE_KINECT
-      m_hTextures[i].buffer = nullptr;
    }
+   memset(m_hTextures,0,NB_MAX_TEXTURES*sizeof(TextureInformation));
    
    m_vertices.clear();
    m_normals.clear();
@@ -1010,16 +1009,25 @@ void GPUKernel::resetFrame()
    m_translation.y = 0.f;
    m_translation.z = 0.f;
 
-   m_boundingBoxes[m_frame]->clear();
-   m_nbActiveBoxes[m_frame] = 0;
+   if( m_boundingBoxes[m_frame] )
+   {
+      m_boundingBoxes[m_frame]->clear();
+      m_nbActiveBoxes[m_frame] = 0;
+   }
    LOG_INFO(3, "Nb Boxes: " << m_boundingBoxes[m_frame]->size());
 
-   m_primitives[m_frame]->clear();
-   m_nbActivePrimitives[m_frame] = 0;
+   if( m_primitives[m_frame] )
+   {
+      m_primitives[m_frame]->clear();
+      m_nbActivePrimitives[m_frame] = 0;
+   }
    LOG_INFO(3, "Nb Primitives: " << m_primitives[m_frame]->size());
 
-   m_lamps[m_frame]->clear();
-   m_nbActiveLamps[m_frame] = 0;
+   if( m_lamps[m_frame] )
+   {
+      m_lamps[m_frame]->clear();
+      m_nbActiveLamps[m_frame] = 0;
+   }
    LOG_INFO(3, "Nb Primitives: " << m_primitives[m_frame]->size());
 }
 
@@ -1043,12 +1051,16 @@ void GPUKernel::resetAll()
    for( int i(0); i<NB_MAX_TEXTURES; ++i )
    {
 #ifdef USE_KINECT
-      if( i>1 && m_hTextures[i].buffer ) delete [] m_hTextures[i].buffer;
+      if( i>1 && m_hTextures[i].buffer!=0 ) delete [] m_hTextures[i].buffer;
 #else
-      if( m_hTextures[i].buffer ) delete [] m_hTextures[i].buffer;
+      if( m_hTextures[i].buffer!=0 )
+      {
+         LOG_INFO(1, "[resetAll] Buffer " << i << " needs to be released");
+         delete [] m_hTextures[i].buffer;
+      }
 #endif USE_KINECT
-      memset(&m_hTextures[i],0,sizeof(TextureInformation));
    }
+   memset(&m_hTextures[0],0,NB_MAX_TEXTURES*sizeof(TextureInformation));
    m_nbActiveTextures = 0;
    m_texturesTransfered = false;
 #ifdef USE_KINECT
@@ -1571,8 +1583,10 @@ void GPUKernel::setMaterialTextureId( unsigned int index, unsigned int textureId
 	{
       if( textureId != m_hMaterials[index].textureMapping.z )
       {
-         m_hMaterials[index].textureMapping.x = 1;
-         m_hMaterials[index].textureMapping.y = 1;
+         m_hMaterials[index].reflection.x     = 0.3f;
+         m_hMaterials[index].transparency.x   = 0.f;
+         m_hMaterials[index].textureMapping.x = m_hTextures[textureId].size.x;
+         m_hMaterials[index].textureMapping.y = m_hTextures[textureId].size.x;
          m_hMaterials[index].textureMapping.z = textureId;
          m_hMaterials[index].textureMapping.w = m_hTextures[textureId].size.z;
 		   m_materialsTransfered = false;
@@ -1649,13 +1663,15 @@ void GPUKernel::setTexture(
    LOG_INFO(3,"GPUKernel::setTexture(" << index << ")" );
    if( index<=m_nbActiveTextures )
    {
-      delete [] m_hTextures[index].buffer;
+      if( m_hTextures[index].buffer!=0 ) delete [] m_hTextures[index].buffer;
       int size = textureInfo.size.x*textureInfo.size.y*textureInfo.size.z;
 	   m_hTextures[index].buffer = new unsigned char[size];
       m_hTextures[index].offset = 0;
 	   m_hTextures[index].size.x = textureInfo.size.x;
 	   m_hTextures[index].size.y = textureInfo.size.y;
 	   m_hTextures[index].size.z = textureInfo.size.z;
+      memcpy(m_hTextures[index].buffer,textureInfo.buffer,textureInfo.size.x*textureInfo.size.y*textureInfo.size.z);
+      /*
 	   int j(0);
       for( int i(0); i<textureInfo.size.x*textureInfo.size.y*textureInfo.size.z; i+=textureInfo.size.z ) {
          m_hTextures[index].buffer[j]   = textureInfo.buffer[i+2];
@@ -1663,6 +1679,7 @@ void GPUKernel::setTexture(
 		   m_hTextures[index].buffer[j+2] = textureInfo.buffer[i];
 		   j+=textureInfo.size.z;
 	   }
+      */
    }
 }
 
@@ -1704,6 +1721,16 @@ void GPUKernel::setSceneInfo(
 	m_sceneInfo.misc.z = fogEffect;
 }
 
+void GPUKernel::setSceneInfo( const SceneInfo& sceneInfo ) 
+{ 
+   m_sceneInfo = sceneInfo; 
+}
+
+SceneInfo GPUKernel::getSceneInfo() 
+{ 
+   return m_sceneInfo; 
+}
+
 void GPUKernel::setPostProcessingInfo( 
 	PostProcessingType type,
 	float              param1,
@@ -1715,6 +1742,11 @@ void GPUKernel::setPostProcessingInfo(
 	m_postProcessingInfo.param1.x = param1;
 	m_postProcessingInfo.param2.x = param2;
 	m_postProcessingInfo.param3.x = param3;
+}
+
+void GPUKernel::setPostProcessingInfo( const PostProcessingInfo& postProcessingInfo ) 
+{ 
+   m_postProcessingInfo = postProcessingInfo; 
 }
 
 /*
@@ -2252,7 +2284,7 @@ void GPUKernel::translate( float x, float y, float z)
 
 void GPUKernel::render_begin( const float timer )
 {
-#ifdef USE_OCULUS
+ #ifdef USE_OCULUS
    if( m_sensorFusion.IsAttachedToSensor() )
    {
       OVR::Quatf orientation = m_sensorFusion.GetOrientation();

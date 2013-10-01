@@ -450,7 +450,7 @@ typedef int bool;
 #define GL_CLAMP                          0x2900
 #define GL_REPEAT                         0x2901
 
-   /* AttribMask */
+/* AttribMask */
 #define GL_CURRENT_BIT                    0x00000001
 #define GL_POINT_BIT                      0x00000002
 #define GL_LINE_BIT                       0x00000004
@@ -532,8 +532,15 @@ typedef int bool;
 #define GL_PROXY_TEXTURE_1D               0x8063
 #define GL_PROXY_TEXTURE_2D               0x8064
 
-   /* GL_NV_register_combiners */
-   /* Constants */
+#ifndef GL_SGIX_shadow
+#define GL_TEXTURE_COMPARE_SGIX           0x819A
+#define GL_TEXTURE_COMPARE_OPERATOR_SGIX  0x819B
+#define GL_TEXTURE_LEQUAL_R_SGIX          0x819C
+#define GL_TEXTURE_GEQUAL_R_SGIX          0x819D
+#endif
+
+/* GL_NV_register_combiners */
+/* Constants */
 #define GL_REGISTER_COMBINERS_NV                           0x8522
 
 #define GLUquadricObj void
@@ -625,6 +632,7 @@ typedef int bool;
 
 
    // TO BE DONE
+#define glColor4fv(...)
 
 #define glRasterPos2i(...)
 #define glDrawPixels(...)
@@ -644,7 +652,6 @@ typedef int bool;
 #define glDepthFunc(...)
 #define glLightfv(...)
 #define glLightModeli(...)
-#define glColor4fv(...)
 #define glMaterialf(...)
 #define glFrontFace(...)
 #define glMap2f(...)
@@ -690,14 +697,6 @@ typedef int bool;
 #define SetUpSGIX_depth_texture(...)
 #define SetUpSGIX_shadow(...)
 #define SetUpEXT_blend_minmax(...)
-
-   static bool ARB_multitexture_supported;
-   static bool EXT_texture_env_combine_supported;
-   static bool NV_register_combiners_supported;
-   static bool SGIX_depth_texture_supported;
-   static bool SGIX_shadow_supported;
-   static bool EXT_blend_minmax_supported;
-
 
    // GLUT
 

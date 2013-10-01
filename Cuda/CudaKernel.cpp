@@ -165,7 +165,7 @@ void CudaKernel::render_begin( const float timer )
       int nbLamps      = m_nbActiveLamps[m_frame];
       int nbMaterials  = m_nbActiveMaterials+1;
 
-      LOG_INFO( 3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
+      LOG_INFO(3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps);
 
       if( !m_primitivesTransfered )
       {
@@ -251,19 +251,12 @@ void CudaKernel::render_begin( const float timer )
          m_hDepth );
 #endif // USE_KINECT
 
-
       // Kernel execution
       int4 objects;
       objects.x = nbBoxes;
       objects.y = nbPrimitives;
       objects.z = nbLamps;
       objects.w = m_lightInformationSize;
-
-      LOG_INFO(3, "CPU PostProcessingBuffer: " << sizeof(PostProcessingBuffer));
-      LOG_INFO(3, "CPU PrimitiveXYIdBuffer : " << sizeof(PrimitiveXYIdBuffer));
-      LOG_INFO(3, "CPU BoundingBox         : " << sizeof(BoundingBox));
-      LOG_INFO(3, "CPU Primitive           : " << sizeof(Primitive));
-      LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
       cudaRender(
          m_occupancyParameters,

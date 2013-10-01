@@ -54,16 +54,9 @@ int       gCurrentMaterial(0);
 int       gCurrentTexture(-1);
 bool      gLighting(false);
 // Camera. THIS IS UGLY
-float3 gEye = {0.f,0.f, -15.f*gScale};
-float3 gDir = {0.f,0.f, -15.f*gScale+5000.f};
+float3 gEye = {gScale,0.f, -32.f*gScale};
+float3 gDir = {gScale,0.f, -32.f*gScale+9000.f};
 float3 gAngles = {0.f,0.f,0.f};
-
-static bool ARB_multitexture_supported = false;
-static bool EXT_texture_env_combine_supported = false;
-static bool NV_register_combiners_supported = false;
-static bool SGIX_depth_texture_supported = false;
-static bool SGIX_shadow_supported = false;
-static bool EXT_blend_minmax_supported = false;
 
 // Utils
 int RGBToInt(float r, float g, float b)
@@ -149,8 +142,8 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 	for( int i(start); i<end; ++i ) 
 	{
 		float4 specular = {0.f,0.f,0.f,0.f};
-		specular.x = 0.5f;
-		specular.y = 500.f;
+		specular.x = 0.7f;
+		specular.y = 50.f;
 		specular.z = 0.f;
 		specular.w = 0.f;
 
@@ -170,9 +163,10 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
       b = 0.5f+(rand()%255)/512.f;
       noise = 0.f;
 
-      if( rand()%3==0 )
+      //if( i>0 && i<100 )
       {
-         reflection=1.0f; refraction=1.66f; transparency=0.5f;
+         //reflection=float(rand()%10)/10.f; refraction=1.f+float(rand()%10)/10.f; transparency=float(rand()%10)/10.f;
+         reflection=1.f; refraction=1.66f; transparency=0.8f;
       }
 
       switch( i )
@@ -212,7 +206,7 @@ void RayTracer::glEnable (GLenum cap)
          if( !gLighting )
          {
             int p = RayTracer::gKernel->addPrimitive(ptSphere);
-            RayTracer::gKernel->setPrimitive(p,-10.f*gScale,10.f*gScale,-10.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
+            RayTracer::gKernel->setPrimitive(p,20.f*gScale,20.f*gScale,-20.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
             gLighting = true;
             //RayTracer::gKernel->compactBoxes(true);
             LOG_INFO(3, "[OpenGL] Light Added" );
@@ -258,20 +252,26 @@ void RayTracer::glNormal3fv( const GLfloat* n )
 
 void RayTracer::glColor3f (GLfloat red, GLfloat green, GLfloat blue)
 {
-   gCurrentMaterial = red*100+green*100+blue*100;
-   /*
+   //gCurrentMaterial = static_cast<int>(red*100.f+green*100.f+blue*100.f);
    Material* material = RayTracer::gKernel->getMaterial(gCurrentMaterial);
-   if( material->color.x!=red || material->color.y!=green || material->color.z!=blue )
+   //if( material->color.x!=red || material->color.y!=green || material->color.z!=blue )
    {
       ++gCurrentMaterial;
       RayTracer::gKernel->setMaterialColor( gCurrentMaterial, red, green, blue );
    }
-   */
 }
 
 void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
-   RayTracer::glColor3f( red, green, blue );
+   Material* material = RayTracer::gKernel->getMaterial(gCurrentMaterial);
+   //if( material->color.x!=red || material->color.y!=green || material->color.z!=blue )
+   {
+      ++gCurrentMaterial;
+      RayTracer::gKernel->setMaterialColor( gCurrentMaterial, red, green, blue );
+      material = RayTracer::gKernel->getMaterial(gCurrentMaterial);
+      material->transparency.x = alpha;
+      material->refraction.x = 1.f+alpha;
+   }
 }
 
 void RayTracer::glRasterPos2f (GLfloat x, GLfloat y)
@@ -322,17 +322,9 @@ void RayTracer::glutInitWindowPosition( int x, int y )
 
 void RayTracer::glViewport(int a, int b, int width, int height )
 {
-   // OpenGL
-   ARB_multitexture_supported=false;
-   EXT_texture_env_combine_supported=false;
-   NV_register_combiners_supported=false;
-   SGIX_depth_texture_supported=false;
-   SGIX_shadow_supported=false;
-   EXT_blend_minmax_supported=false;
-
    // Initialize Raytracer
    InitializeRaytracer(width, height, true);
-   //::glViewport(a,b,width,height);
+   ::glViewport(a,b,width,height);
 }
 
 void RayTracer::glutInitWindowSize( int width, int height )
@@ -485,23 +477,19 @@ void RayTracer::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 
 void RayTracer::glGenTextures(GLsizei n, GLuint *textures)
 {
-   /*
    ++gCurrentTexture;
    RayTracer::gKernel->setTexturesTransfered(false);
    *textures=gCurrentTexture; 
-   */
 }
 
 void RayTracer::glBindTexture(GLenum target, GLuint texture)
 {
-   /*
    switch( target )
    {
-   case GL_TEXTURE_2D: 
+   case GL_TEXTURE_2D:
       RayTracer::gKernel->setMaterialTextureId(gCurrentMaterial,gCurrentTexture); 
       break;
    }
-   */
 }
 
 int RayTracer::gluBuild2DMipmaps (
@@ -513,7 +501,6 @@ int RayTracer::gluBuild2DMipmaps (
    GLenum      type, 
    const void  *data)
 {
-   /*
    TextureInformation textureInfo;
    textureInfo.size.x = width;
    textureInfo.size.y = height;
@@ -527,7 +514,6 @@ int RayTracer::gluBuild2DMipmaps (
    textureInfo.buffer = (unsigned char*)data;
 
    RayTracer::gKernel->setTexture(gCurrentTexture, textureInfo );
-   */
    return 0;
 }
 
@@ -540,6 +526,7 @@ void RayTracer::setAngles( GLfloat x, GLfloat y, GLfloat z)
 
 void RayTracer::glFlush()
 {
+   ::glFlush();
 }
 
 void RayTracer::glTexSubImage2D(
@@ -612,7 +599,7 @@ void RayTracer::render()
    {
       // if no light is defined, I add one
       int p = RayTracer::gKernel->addPrimitive(ptSphere);
-      RayTracer::gKernel->setPrimitive(p,-20.f*gScale,20.f*gScale,20.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
+      RayTracer::gKernel->setPrimitive(p,20.f*gScale,20.f*gScale,20.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
       gLighting = true;
    }
    RayTracer::gKernel->compactBoxes(true);
@@ -642,10 +629,24 @@ void RayTracer::gluLookAt(
  	GLdouble upY,
  	GLdouble upZ)
 {
-   gEye.x = eyeX*gScale;
-   gEye.y = eyeY*gScale;
-   gEye.z = eyeZ*gScale-5000.f;
-   gDir.x = centerX*gScale;
-   gDir.y = centerY*gScale;
-   gDir.z = centerZ*gScale;
+   gEye.x = static_cast<float>(eyeX*gScale);
+   gEye.y = static_cast<float>(eyeY*gScale);
+   gEye.z = static_cast<float>(eyeZ*gScale-5000.f);
+   gDir.x = static_cast<float>(centerX*gScale);
+   gDir.y = static_cast<float>(centerY*gScale);
+   gDir.z = static_cast<float>(centerZ*gScale);
+}
+
+void RayTracer::glTexSubImage2D(
+   GLenum target,
+ 	GLint level,
+ 	GLint xoffset,
+ 	GLint yoffset,
+ 	GLsizei width,
+ 	GLsizei height,
+ 	GLenum format,
+ 	GLenum type,
+ 	const GLvoid * data)
+{
+   ::glTexSubImage2D(target,level,xoffset,yoffset,width,height,format,type,data);
 }

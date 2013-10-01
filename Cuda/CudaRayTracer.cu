@@ -47,6 +47,13 @@ BitmapBuffer*         d_bitmap[MAX_GPU_COUNT];
 PrimitiveXYIdBuffer*  d_primitivesXYIds[MAX_GPU_COUNT];
 cudaStream_t          d_streams[MAX_GPU_COUNT][MAX_STREAM_COUNT];
 
+#define FREECUDARESOURCE(x) \
+   if( x!=0 ) \
+   { \
+      checkCudaErrors(cudaFree(x)); \
+      x=0; \
+   }
+
 #ifdef USE_RECURSION
 __device__ inline float4 recursiveRay( 
    const int                 iteration, 
@@ -395,7 +402,6 @@ __device__ inline float4 launchRay(
 	PrimitiveXYIdBuffer& primitiveXYId)
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
-
 	float3 closestIntersection = {0.f,0.f,0.f};
 	float3 firstIntersection   = {0.f,0.f,0.f};
 	float3 normal              = {0.f,0.f,0.f};
@@ -409,10 +415,10 @@ __device__ inline float4 launchRay(
    int currentMaterialId=-2;
 
    // TODO
-   float  colorContributions[NB_MAX_ITERATIONS];
-   float4 colors[NB_MAX_ITERATIONS];
-   memset(&colorContributions[0],0,sizeof(float)*NB_MAX_ITERATIONS);
-   memset(&colors[0],0,sizeof(float4)*NB_MAX_ITERATIONS);
+   float  colorContributions[NB_MAX_ITERATIONS+1];
+   float4 colors[NB_MAX_ITERATIONS+1];
+   memset(&colorContributions[0],0,sizeof(float)*(NB_MAX_ITERATIONS+1));
+   memset(&colors[0],0,sizeof(float4)*(NB_MAX_ITERATIONS+1));
 
 	float4 recursiveBlinn = { 0.f, 0.f, 0.f, 0.f };
 
@@ -619,11 +625,13 @@ __device__ inline float4 launchRay(
 			   reflectedRays, 
             refractionFromColor, shadowIntensity, rBlinn );
 
+         //colors[reflectedRays] = color*(1.f-reflectedRatio)+colors[reflectedRays]*reflectedRatio;
          colors[reflectedRays] += color*reflectedRatio;
       }
    }
-
-   for( int i=iteration-2; i>=0; --i)
+   
+   colors[iteration]=colors[0];
+   for( int i=NB_MAX_ITERATIONS-2; i>=0; --i)
    {
       colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
    }
@@ -1588,19 +1596,20 @@ extern "C" void finalize_scene(
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
-	   checkCudaErrors(cudaFree( d_boundingBoxes[device] ));
-	   checkCudaErrors(cudaFree( d_primitives[device] ));
-	   checkCudaErrors(cudaFree( d_lamps[device] ));
-	   checkCudaErrors(cudaFree( d_materials[device] ));
-	   checkCudaErrors(cudaFree( d_textures[device] ));
-	   checkCudaErrors(cudaFree( d_lightInformation[device] ));
-	   checkCudaErrors(cudaFree( d_randoms[device] ));
-	   checkCudaErrors(cudaFree( d_postProcessingBuffer[device] ));
-	   checkCudaErrors(cudaFree( d_bitmap[device] ));
-	   checkCudaErrors(cudaFree( d_primitivesXYIds[device] ));
+	   FREECUDARESOURCE(d_boundingBoxes[device]);
+	   FREECUDARESOURCE(d_primitives[device]);
+      FREECUDARESOURCE(d_lamps[device]);
+	   FREECUDARESOURCE(d_materials[device]);
+      FREECUDARESOURCE(d_textures[device]);
+      FREECUDARESOURCE(d_lightInformation[device]);
+	   FREECUDARESOURCE(d_randoms[device]);
+	   FREECUDARESOURCE(d_postProcessingBuffer[device]);
+      FREECUDARESOURCE(d_bitmap[device]);
+	   FREECUDARESOURCE(d_primitivesXYIds[device]);
       for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
          checkCudaErrors(cudaStreamDestroy(d_streams[device][stream]));
+         d_streams[device][stream] = 0;
       }
       cudaDeviceReset();
    }
@@ -1655,23 +1664,27 @@ extern "C" void h2d_textures(
       int totalSize(0);
       for( int i(0); i<activeTextures; ++i )
       {
-         totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
-      }
-      if( d_textures[device] )
-      {
-	      checkCudaErrors(cudaFree( d_textures[device] ));
-      }
-      totalSize *= sizeof(BitmapBuffer);
-	   checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
-      LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
-
-      checkCudaErrors(cudaSetDevice(device));
-      for( int i(0); i<activeTextures; ++i )
-      {
-         if( textureInfos[i].buffer != nullptr )
+         if( textureInfos[i].buffer )
          {
-            int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
-            checkCudaErrors(cudaMemcpyAsync( d_textures[device]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
+            LOG_INFO( 1, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
+            totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
+         }
+      }
+      FREECUDARESOURCE(d_textures[device]);
+      if( totalSize>0 )
+      {
+         totalSize *= sizeof(BitmapBuffer);
+         LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
+	      checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
+
+         checkCudaErrors(cudaSetDevice(device));
+         for( int i(0); i<activeTextures; ++i )
+         {
+            if( textureInfos[i].buffer != nullptr )
+            {
+               int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
+               checkCudaErrors(cudaMemcpyAsync( d_textures[device]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
+            }
          }
       }
    }
@@ -1730,8 +1743,8 @@ extern "C" void d2h_bitmap(
 
       // Copy results back to host
       LOG_INFO(3, "Copy results back to host: " << device*offsetBitmap << "/" << offsetBitmap << ", " << device*offsetXYIds << "/" << offsetXYIds );
-      checkCudaErrors(cudaMemcpyAsync( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost, d_streams[device][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost, d_streams[device][0] ));
+      checkCudaErrors(cudaMemcpy( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost));
+	   checkCudaErrors(cudaMemcpy( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost));
    }
 }
 

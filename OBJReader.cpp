@@ -164,7 +164,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 10.f, 10000.f,
                   false );
-               LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
@@ -264,7 +264,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
@@ -355,10 +355,12 @@ float3 OBJReader::loadModelFromFile(
                   ++i;
                }
 
+               // Process last element
                if( value.length() != 0 )
                {
                   switch( item )
                   {
+                  case 1: vertex.x = static_cast<float>(atof(value.c_str())); break;
                   case 2: vertex.y = static_cast<float>(atof(value.c_str())); break;
                   case 3: vertex.z = static_cast<float>(atof(value.c_str())); break;
                   }
@@ -374,7 +376,29 @@ float3 OBJReader::loadModelFromFile(
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
-                  vertex.y = 1.f-vertex.y;
+                  /*
+                  if( vertex.x<0.f )
+                  {
+                     int X = fabs(vertex.x)+1;
+                     vertex.x = X-vertex.x;
+                  }
+                  */
+
+                  //if( vertex.y<0.f )
+                  {
+                     int Ya = fabs(vertex.y)+1;
+                     float Yb = Ya-vertex.y;
+                     vertex.y = Yb;
+                  }
+
+                  /*
+                  if( vertex.z<0.f )
+                  {
+                     int Z = fabs(vertex.z)+1;
+                     vertex.z = Z+vertex.z;
+                  }
+                  */
+
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }
@@ -405,8 +429,8 @@ float3 OBJReader::loadModelFromFile(
       file.close();
    }
 
-   LOG_INFO(3, "Nb Vertices: " << vertices.size());
-   LOG_INFO(3, "Nb Normals : " << normals.size());
+   LOG_INFO(1, "Nb Vertices: " << vertices.size());
+   LOG_INFO(1, "Nb Normals : " << normals.size());
    //float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
 
    float3 objectCenter = center;
@@ -423,10 +447,10 @@ float3 OBJReader::loadModelFromFile(
       objectCenter.y = (minPos.y+maxPos.y) / 2.f;
       objectCenter.z = (minPos.z+maxPos.z) / 2.f;
       file.close();
-      LOG_INFO(3, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
-      LOG_INFO(3, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
-      LOG_INFO(3, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
-      LOG_INFO(3, "Scale : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
+      LOG_INFO(1, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
+      LOG_INFO(1, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
+      LOG_INFO(1, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
+      LOG_INFO(1, "Scale : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
    }
 
    // Populate ray-tracing engine

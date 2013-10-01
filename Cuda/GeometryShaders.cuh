@@ -466,6 +466,7 @@ __device__ float4 primitiveShader(
 					      blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
 					      blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y);
+                     blinnTerm *= (1.f-materials[primitive.materialId.x].transparency.x);
 
 #if 0
 					      totalBlinn += material.color * material.innerIllumination.x * blinnTerm;

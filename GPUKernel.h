@@ -245,8 +245,8 @@ public:
       int    fogEffect);
 
    // Scene
-   void setSceneInfo( const SceneInfo& sceneInfo ) { m_sceneInfo = sceneInfo; };
-   SceneInfo getSceneInfo() { return m_sceneInfo; };
+   void setSceneInfo( const SceneInfo& sceneInfo );
+   SceneInfo getSceneInfo();
 
    // Post processing
    void setPostProcessingInfo( 
@@ -254,7 +254,7 @@ public:
       float              param1,
       float              param2,
       int                param3 );
-   void setPostProcessingInfo( const PostProcessingInfo& postProcessingInfo ) { m_postProcessingInfo = postProcessingInfo; }
+   void setPostProcessingInfo( const PostProcessingInfo& postProcessingInfo );
 
 public:
 
