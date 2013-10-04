@@ -183,7 +183,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
    m_bitmap(nullptr),
    m_GLMode(-1),
    m_distortion(0.1f),
-   m_frame(0)
+   m_frame(0),
+   m_currentMaterial(0)
 {
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
@@ -346,8 +347,9 @@ void GPUKernel::cleanup()
 #else
       if(m_hTextures[i].buffer!=0) 
       {
-         LOG_INFO(3, "[cleanup] Buffer " << i << " needs to be released");
+         LOG_INFO(1, "[cleanup] Buffer " << i << " needs to be released");
          delete [] m_hTextures[i].buffer;
+         m_hTextures[i].buffer = 0;
       }
 #endif // USE_KINECT
    }
@@ -877,7 +879,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    if( reconstructBoxes )
    {
       int activeBoxes(NB_MAX_BOXES);
-#if 1
+#if 0
       LOG_INFO(3,"Constructing acceleration structures" );
       // Bounding boxes
       // Search for best trade-off
@@ -902,7 +904,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
       processBoxes(  bestSize, activeBoxes, false );
 #else
-      processBoxes(  64, activeBoxes, false );
+      processBoxes(  128, activeBoxes, false );
 #endif 0
    }
 
@@ -927,7 +929,6 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       {
          CPUBoundingBox& box = (*itb).second;
 
-         //bool addBox(true);
          if( m_progressiveBoxes )
          {
             // Only consider boxes that are not too far
@@ -941,11 +942,9 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
             v2.x = box.parameters[1].x-viewPos.x;
             v2.y = box.parameters[1].y-viewPos.y;
             v2.z = box.parameters[1].z-viewPos.z;
-            //float d = std::min(vectorLength(v1),vectorLength(v2));
-            //addBox = (containsLight || (d<m_sceneInfo.viewDistance.x));
          }
 
-         if( /*addBox && */(box.primitives.size()!=0) && (m_nbActiveBoxes[m_frame]<NB_MAX_BOXES) )
+         if( (box.primitives.size()!=0) && (m_nbActiveBoxes[m_frame]<NB_MAX_BOXES) )
          {
             // Prepare boxes for GPU
 
@@ -1005,9 +1004,10 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 void GPUKernel::resetFrame()
 {
    LOG_INFO(3, "Resetting frame " << m_frame);
-   m_translation.x = 0.f;
-   m_translation.y = 0.f;
-   m_translation.z = 0.f;
+   memset(&m_translation,0,sizeof(float3));
+   memset(&m_rotation,0,sizeof(float3));
+
+   m_currentMaterial = 0;
 
    if( m_boundingBoxes[m_frame] )
    {
@@ -1028,7 +1028,7 @@ void GPUKernel::resetFrame()
       m_lamps[m_frame]->clear();
       m_nbActiveLamps[m_frame] = 0;
    }
-   LOG_INFO(3, "Nb Primitives: " << m_primitives[m_frame]->size());
+   LOG_INFO(3, "Nb Lamps: " << m_lamps[m_frame]->size());
 }
 
 void GPUKernel::resetAll()
@@ -1057,6 +1057,7 @@ void GPUKernel::resetAll()
       {
          LOG_INFO(1, "[resetAll] Buffer " << i << " needs to be released");
          delete [] m_hTextures[i].buffer;
+         m_hTextures[i].buffer = 0;
       }
 #endif USE_KINECT
    }
@@ -1574,28 +1575,21 @@ void GPUKernel::setMaterialColor( unsigned int index, float r, float g, float b 
 	}
 }
 
-void GPUKernel::setMaterialTextureId( unsigned int index, unsigned int textureId )
+void GPUKernel::setMaterialTextureId( unsigned int textureId )
 {
 	LOG_INFO(3,"GPUKernel::setMaterialTextureId( " << 
-		index << "," << "Texture Id=" << textureId << ")" );
+		m_currentMaterial << "," << "Texture Id=" << textureId << ")" );
 
-   if( index>=0 && index<NB_MAX_MATERIALS ) 
-	{
-      if( textureId != m_hMaterials[index].textureMapping.z )
-      {
-         m_hMaterials[index].reflection.x     = 0.3f;
-         m_hMaterials[index].transparency.x   = 0.f;
-         m_hMaterials[index].textureMapping.x = m_hTextures[textureId].size.x;
-         m_hMaterials[index].textureMapping.y = m_hTextures[textureId].size.x;
-         m_hMaterials[index].textureMapping.z = textureId;
-         m_hMaterials[index].textureMapping.w = m_hTextures[textureId].size.z;
-		   m_materialsTransfered = false;
-      }
-	}
-	else
-	{
-		LOG_ERROR("GPUKernel::setMaterial: Out of bounds(" << index << "/" << NB_MAX_MATERIALS << ")" );
-	}
+   if( textureId != m_hMaterials[m_currentMaterial].textureMapping.z )
+   {
+      m_hMaterials[m_currentMaterial].reflection.x     = 0.3f;
+      m_hMaterials[m_currentMaterial].transparency.x   = 0.f;
+      m_hMaterials[m_currentMaterial].textureMapping.x = m_hTextures[textureId].size.x;
+      m_hMaterials[m_currentMaterial].textureMapping.y = m_hTextures[textureId].size.x;
+      m_hMaterials[m_currentMaterial].textureMapping.z = textureId;
+      m_hMaterials[m_currentMaterial].textureMapping.w = m_hTextures[textureId].size.z;
+		m_materialsTransfered = false;
+   }
 }
 
 int GPUKernel::getMaterialAttributes( 
@@ -2117,7 +2111,7 @@ int GPUKernel::getLight( int index )
 }
 
 // OpenGL
-int GPUKernel::setGLMode( const int& glMode, const int materialId )
+int GPUKernel::setGLMode( const int& glMode )
 {
    int p=-1;
    int frame(0);
@@ -2140,7 +2134,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                setPrimitive(  p,
                   m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
                   0.1f,0.f,0.f,
-                  materialId);
+                  m_currentMaterial);
             }
             LOG_INFO(3, "[OpenGL] Added " << m_vertices.size() << " Points");
          }
@@ -2158,7 +2152,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                      m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
                      m_vertices[i+1].x, m_vertices[i+1].y, m_vertices[i+1].z, 
                      0.05f,0.f,0.f,
-                     materialId);
+                     m_currentMaterial);
                }
             }
             LOG_INFO(3, "[OpenGL] Added " << nbLines << " Lines");
@@ -2179,7 +2173,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                      m_vertices[index+1].x, m_vertices[index+1].y, m_vertices[index+1].z, 
                      m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
                      0.f,0.f,0.f,
-                     materialId);
+                     m_currentMaterial);
                }
 
                if( index+2<=m_textCoords.size() )
@@ -2191,7 +2185,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                   setPrimitiveNormals( p, m_normals[index], m_normals[index+1], m_normals[index+2] );
                }
             }
-            LOG_INFO(3, "[OpenGL] Added " << nbTriangles << " triangles");
+            LOG_INFO(3, "[OpenGL] Added " << nbTriangles << " triangles with material ID " << m_currentMaterial );
          }
          break;
       case GL_QUADS:
@@ -2210,7 +2204,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                      m_vertices[index+1].x, m_vertices[index+1].y, m_vertices[index+1].z, 
                      m_vertices[index+2].x, m_vertices[index+2].y, m_vertices[index+2].z, 
                      0.f,0.f,0.f,
-                     materialId);
+                     m_currentMaterial);
 
                   p2 = addPrimitive( ptTriangle);
                   setPrimitive(  p2,
@@ -2218,7 +2212,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                      m_vertices[index+3].x, m_vertices[index+3].y, m_vertices[index+3].z, 
                      m_vertices[index+0].x, m_vertices[index+0].y, m_vertices[index+0].z, 
                      0.f,0.f,0.f,
-                     materialId);
+                     m_currentMaterial);
                }
 
                if( index+3<=m_textCoords.size() )
@@ -2232,7 +2226,7 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
                   setPrimitiveNormals( p2, m_normals[index+2], m_normals[index+3], m_normals[index] );
                }
             }
-            LOG_INFO(3, "[OpenGL] " << nbQuads << " quads created with material ID " << materialId );
+            LOG_INFO(3, "[OpenGL] " << nbQuads << " quads created with material ID " << m_currentMaterial );
 
          }
          break;
@@ -2246,9 +2240,8 @@ int GPUKernel::setGLMode( const int& glMode, const int materialId )
       m_normals.clear();
       m_textCoords.clear();
 
-      m_translation.x = 0.f;
-      m_translation.y = 0.f;
-      m_translation.z = 0.f;
+      memset(&m_translation,0,sizeof(float3));
+      //memset(&m_rotation,0,sizeof(float3));
    }
    m_GLMode = glMode;
    return p;
@@ -2274,13 +2267,27 @@ void GPUKernel::addTextCoord( float x, float y, float z)
 
 void GPUKernel::translate( float x, float y, float z)
 {
-   /*
    m_translation.x += x;
    m_translation.y += y;
    m_translation.z += z;
-   */
 }
 
+void GPUKernel::rotate( float x, float y, float z)
+{
+   m_rotation.x += x;
+   m_rotation.y += y;
+   m_rotation.z += z;
+}
+
+int  GPUKernel::getCurrentMaterial() 
+{ 
+   return m_currentMaterial; 
+}
+
+void GPUKernel::setCurrentMaterial( const int currentMaterial ) 
+{ 
+   m_currentMaterial=currentMaterial; 
+}
 
 void GPUKernel::render_begin( const float timer )
 {

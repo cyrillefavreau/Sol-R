@@ -166,6 +166,11 @@ void CudaKernel::render_begin( const float timer )
       int nbMaterials  = m_nbActiveMaterials+1;
 
       LOG_INFO(3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps);
+      LOG_INFO(3, "Pos = " << m_viewPos.x << "," << m_viewPos.y << "," << m_viewPos.z);
+      LOG_INFO(3, "Dir = " << m_viewDir.x << "," << m_viewDir.y << "," << m_viewDir.z);
+      LOG_INFO(3, "Ang = " << m_angles.x << "," << m_angles.y << "," << m_angles.z);
+      LOG_INFO(3, "Min = " << m_minPos[m_frame].x << "," << m_minPos[m_frame].y << "," << m_minPos[m_frame].z);
+      LOG_INFO(3, "Max = " << m_maxPos[m_frame].x << "," << m_maxPos[m_frame].y << "," << m_maxPos[m_frame].z);
 
       if( !m_primitivesTransfered )
       {

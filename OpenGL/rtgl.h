@@ -539,6 +539,33 @@ typedef int bool;
 #define GL_TEXTURE_GEQUAL_R_SGIX          0x819D
 #endif
 
+    /*
+     * GLUT API macro definitions -- the glutSetCursor parameters
+     */
+#define  GLUT_CURSOR_RIGHT_ARROW            0x0000
+#define  GLUT_CURSOR_LEFT_ARROW             0x0001
+#define  GLUT_CURSOR_INFO                   0x0002
+#define  GLUT_CURSOR_DESTROY                0x0003
+#define  GLUT_CURSOR_HELP                   0x0004
+#define  GLUT_CURSOR_CYCLE                  0x0005
+#define  GLUT_CURSOR_SPRAY                  0x0006
+#define  GLUT_CURSOR_WAIT                   0x0007
+#define  GLUT_CURSOR_TEXT                   0x0008
+#define  GLUT_CURSOR_CROSSHAIR              0x0009
+#define  GLUT_CURSOR_UP_DOWN                0x000A
+#define  GLUT_CURSOR_LEFT_RIGHT             0x000B
+#define  GLUT_CURSOR_TOP_SIDE               0x000C
+#define  GLUT_CURSOR_BOTTOM_SIDE            0x000D
+#define  GLUT_CURSOR_LEFT_SIDE              0x000E
+#define  GLUT_CURSOR_RIGHT_SIDE             0x000F
+#define  GLUT_CURSOR_TOP_LEFT_CORNER        0x0010
+#define  GLUT_CURSOR_TOP_RIGHT_CORNER       0x0011
+#define  GLUT_CURSOR_BOTTOM_RIGHT_CORNER    0x0012
+#define  GLUT_CURSOR_BOTTOM_LEFT_CORNER     0x0013
+#define  GLUT_CURSOR_INHERIT                0x0064
+#define  GLUT_CURSOR_NONE                   0x0065
+#define  GLUT_CURSOR_FULL_CROSSHAIR         0x0066
+
 /* GL_NV_register_combiners */
 /* Constants */
 #define GL_REGISTER_COMBINERS_NV                           0x8522
@@ -568,6 +595,7 @@ typedef int bool;
    void RAYTRACINGENGINE_API glTexEnvf (GLenum target, GLenum pname, GLfloat param);
    void RAYTRACINGENGINE_API glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
    void RAYTRACINGENGINE_API gluSphere(void *, GLfloat, GLint, GLint);
+   void RAYTRACINGENGINE_API glutWireSphere(GLdouble radius, GLint slices, GLint stacks);
    RAYTRACINGENGINE_API GLUquadricObj* gluNewQuadric();
    void RAYTRACINGENGINE_API glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 
@@ -615,6 +643,7 @@ typedef int bool;
       GLdouble  	farVal);
 
    void RAYTRACINGENGINE_API glTranslatef( GLfloat x, GLfloat y, GLfloat z );
+   void RAYTRACINGENGINE_API glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z );
 
    // Raytracer specific
    void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
@@ -629,6 +658,13 @@ typedef int bool;
  	   GLdouble upX,
  	   GLdouble upY,
  	   GLdouble upZ);
+   void RAYTRACINGENGINE_API gluPerspective(GLdouble  fovy,  GLdouble  aspect,  GLdouble  zNear,  GLdouble  zFar);
+
+   // Glut
+   void RAYTRACINGENGINE_API glutSpecialFunc(void (*func)(int key, int x, int y));
+   void RAYTRACINGENGINE_API glutReshapeFunc(void (*func)(int width, int height));
+   void RAYTRACINGENGINE_API glutIdleFunc(void (*func)(void));
+   void RAYTRACINGENGINE_API glutSetCursor(int cursor);
 
 
    // TO BE DONE
@@ -645,7 +681,6 @@ typedef int bool;
 #define glFogi(...)
 #define glFogfv(...)
 #define glFogf(...)
-#define gluPerspective(...)
 #define glShadeModel(...)
 #define glHint(...)
 #define glClearDepth(...)
@@ -660,7 +695,6 @@ typedef int bool;
 #define glPointSize(...)
 #define glDeleteLists(...)
 #define glPolygonMode(...)
-#define glRotatef(...)
 #define glTexImage1D(...)
 #define glColorMaterial(...)
 #define glLoadMatrixf(...)
@@ -681,11 +715,22 @@ typedef int bool;
 #define glCombinerInputNV(...)
 #define glFinalCombinerInputNV(...)
 #define glBlendEquationEXT(...)
-#define glGenLists(...) NULL
+#define glGenLists(...) 0
 #define glNewList(...)
 #define glEndList(...)
 #define glutSolidTorus(...)
 #define glCallList(...)
+#define gluUnProject(...)
+#define wglSwapIntervalEXT(...)
+#define glGetIntegerv(...)
+#define glGetDoublev(...)
+#define glutSetWindowTitle(...)
+#define glutCloseFunc(...)
+#define glewInit(...)
+
+#define glTranslated glTranslatef
+#define glNormal3d glNormal3f
+#define glVertex3d glVertex3f
 
    // Aliases
 #define glutSolidSphere(a,b,c) gluSphere(0,a,b,c)
@@ -858,7 +903,9 @@ typedef int bool;
    /*
    * Raytracer
    */
-   void InitializeRaytracer( const int width, const int height, const bool initializeMaterials );
+   typedef void GLUnurbsObj;
+
+   void InitializeRaytracer( const int width, const int height );
 
    /*
    * Initialization functions, see fglut_init.c
@@ -919,6 +966,16 @@ typedef int bool;
    */
    void RAYTRACINGENGINE_API glutPostRedisplay( void );
    void RAYTRACINGENGINE_API glutSwapBuffers( void );
+
+   /*
+   * Nurbs
+   */
+   void* gluNewNurbsRenderer();
+   #define gluNurbsProperty(...)
+   #define gluBeginSurface(...)
+   #define gluNurbsSurface(...)
+   #define gluEndSurface(...)
+
 #ifdef __cplusplus
 };
 #endif // #__cplusplus

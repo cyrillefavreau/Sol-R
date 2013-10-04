@@ -116,9 +116,11 @@ public:
    void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
+   float3 getRotation() { return m_rotation; }
 
    // Translation
    void translatePrimitives( float3 translation, unsigned int from, unsigned int to );
+   float3 getTranslation() { return m_translation; }
 
    // Morphing
    void morphPrimitives();
@@ -153,11 +155,12 @@ public:
 public:
 
    // OpenGL
-   int  setGLMode( const int& glMode, const int materialId );
+   int  setGLMode( const int& glMode );
    void addVertex( float x, float y, float z);
    void addNormal( float x, float y, float z);
    void addTextCoord( float x, float y, float z);
    void translate( float x, float y, float z);
+   void rotate( float x, float y, float z);
 
 public:
 
@@ -192,8 +195,7 @@ public:
 	void setMaterialColor(
 		unsigned int index,
 		float r, float g, float b );
-	void setMaterialTextureId(
-		unsigned int index, unsigned int textureId );
+	void setMaterialTextureId(unsigned int textureId );
 
    int getMaterialAttributes( 
 		int index,
@@ -210,6 +212,8 @@ public:
       bool& fastTransparency);
 
    Material* getMaterial( const int index );
+   int       getCurrentMaterial();
+   void      setCurrentMaterial( const int currentMaterial );
 
 public:
 
@@ -445,11 +449,13 @@ protected:
 
 protected:
    // OpenGL
-   int m_GLMode;
+   int      m_GLMode;
    Vertices m_vertices;
    Vertices m_normals;
    Vertices m_textCoords;
    float3   m_translation;
+   float3   m_rotation;
+   int      m_currentMaterial;
 
 	// Kinect declarations
 #ifdef USE_KINECT

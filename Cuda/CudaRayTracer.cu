@@ -630,8 +630,7 @@ __device__ inline float4 launchRay(
       }
    }
    
-   colors[iteration]=colors[0];
-   for( int i=NB_MAX_ITERATIONS-2; i>=0; --i)
+   for( int i=iteration-2; i>=0; --i)
    {
       colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
    }
