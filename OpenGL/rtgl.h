@@ -665,6 +665,7 @@ typedef int bool;
    void RAYTRACINGENGINE_API glutReshapeFunc(void (*func)(int width, int height));
    void RAYTRACINGENGINE_API glutIdleFunc(void (*func)(void));
    void RAYTRACINGENGINE_API glutSetCursor(int cursor);
+   void RAYTRACINGENGINE_API wglSwapIntervalEXT();
 
 
    // TO BE DONE
@@ -721,7 +722,6 @@ typedef int bool;
 #define glutSolidTorus(...)
 #define glCallList(...)
 #define gluUnProject(...)
-#define wglSwapIntervalEXT(...)
 #define glGetIntegerv(...)
 #define glGetDoublev(...)
 #define glutSetWindowTitle(...)

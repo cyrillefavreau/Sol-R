@@ -347,7 +347,7 @@ void GPUKernel::cleanup()
 #else
       if(m_hTextures[i].buffer!=0) 
       {
-         LOG_INFO(1, "[cleanup] Buffer " << i << " needs to be released");
+         LOG_INFO(3, "[cleanup] Buffer " << i << " needs to be released");
          delete [] m_hTextures[i].buffer;
          m_hTextures[i].buffer = 0;
       }
@@ -879,7 +879,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    if( reconstructBoxes )
    {
       int activeBoxes(NB_MAX_BOXES);
-#if 0
+#if 1
       LOG_INFO(3,"Constructing acceleration structures" );
       // Bounding boxes
       // Search for best trade-off
@@ -980,7 +980,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
                      m_hLamps[m_nbActiveLamps[m_frame]] = m_nbActivePrimitives[m_frame];
                      (*m_lamps[m_frame])[m_nbActiveLamps[m_frame]] = (*itp);
                      m_nbActiveLamps[m_frame]++;
-                     LOG_INFO(3,"Lamp added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
+                     LOG_INFO(3,"Lamp " << (*m_lamps[m_frame])[m_nbActiveLamps[m_frame]] << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
                   }
                }
                ++itp;
@@ -990,7 +990,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          }
          ++itb;
       }
-      buildLightInformationFromTexture( 4);
+      buildLightInformationFromTexture(4);
       LOG_INFO( 3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
       if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame]->size() )
       {
@@ -1055,7 +1055,7 @@ void GPUKernel::resetAll()
 #else
       if( m_hTextures[i].buffer!=0 )
       {
-         LOG_INFO(1, "[resetAll] Buffer " << i << " needs to be released");
+         LOG_INFO(3, "[resetAll] Buffer " << i << " needs to be released");
          delete [] m_hTextures[i].buffer;
          m_hTextures[i].buffer = 0;
       }
@@ -1884,9 +1884,10 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    float size = m_sceneInfo.viewDistance.x/3.f;
 
    float pi = static_cast<float>(PI);
-#if 0
+#if 1
+   /*
    float x = 0.f;
-   for( int i(0); i<m_sceneInfo.maxPathTracingIterations.x/10; ++i)
+   for( int i(0); i<index; ++i)
    {
       LightInformation lightInformation;
       lightInformation.location.x = rand()%10000 - 5000.f;
@@ -1896,29 +1897,27 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       lightInformation.color.x = 0.5f+0.5f*cos(x);
       lightInformation.color.y = 0.5f+0.5f*sin(x);
       lightInformation.color.z = 0.5f+0.5f*cos(x+pi);
-      lightInformation.color.w = 0.2f;
+      lightInformation.color.w = 1.f;
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
 	  x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
    }
+   */
 #else
-   /*
-   for( float x(0.f); x<2.f*M_PI; x+=M_PI/8.f)
+   for( float x(0.f); x<2.f*PI; x+=PI/8.f)
    {
       LightInformation lightInformation;
-      lightInformation.location.x = 200.f*cos(x);
-      lightInformation.location.y = 200.f*sin(x);
-      lightInformation.location.z = -2000.f;
+      lightInformation.location.x = 10000.f*cos(x);
+      lightInformation.location.y = 0.f;
+      lightInformation.location.z = 10000.f*sin(x);
       lightInformation.attribute.x = -1;
       lightInformation.color.x = 0.5f+0.5f*cos(x);
       lightInformation.color.y = 0.5f+0.5f*sin(x);
       lightInformation.color.z = 0.5f+0.5f*cos(x+pi);
-      lightInformation.color.w = 0.2f;
+      lightInformation.color.w = 1.f;
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
-   */
-
    /*
    // Light from skybox
    if( index < m_textureIndex )
@@ -2107,6 +2106,10 @@ int GPUKernel::getLight( int index )
    {
       return (*m_lamps[m_frame])[index];
    }
+   else
+   {
+      LOG_ERROR("getLight(" << index << ") is out of bounds");
+   }
    return -1;
 }
 
@@ -2288,6 +2291,42 @@ void GPUKernel::setCurrentMaterial( const int currentMaterial )
 { 
    m_currentMaterial=currentMaterial; 
 }
+
+void GPUKernel::setNbMaxPrimitivePerBox( const int nbMaxPrimitivePerBox )
+{ 
+   m_optimalNbOfPrimmitivesPerBox = nbMaxPrimitivePerBox; 
+}
+
+unsigned int GPUKernel::getNbActiveBoxes()      
+{ 
+   return static_cast<unsigned int>(m_boundingBoxes[m_frame]->size());
+}
+
+unsigned int GPUKernel::getNbActivePrimitives() 
+{ 
+   return static_cast<unsigned int>(m_primitives[m_frame]->size()); 
+}
+
+unsigned int GPUKernel::getNbActiveLamps()      
+{ 
+   return m_nbActiveLamps[m_frame]; 
+}
+
+unsigned int GPUKernel::getNbActiveMaterials()  
+{ 
+   return m_nbActiveMaterials; 
+}
+
+unsigned int GPUKernel::getNbActiveTextures()
+{ 
+   return m_nbActiveTextures; 
+}
+
+std::string  GPUKernel::getTextureFilename( const int index ) 
+{ 
+   return m_textureFilenames[index]; 
+}
+
 
 void GPUKernel::render_begin( const float timer )
 {

@@ -164,7 +164,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 10.f, 10000.f,
                   false );
-               LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
@@ -264,7 +264,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
-         LOG_INFO(1, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
@@ -429,10 +429,6 @@ float3 OBJReader::loadModelFromFile(
       file.close();
    }
 
-   LOG_INFO(1, "Nb Vertices: " << vertices.size());
-   LOG_INFO(1, "Nb Normals : " << normals.size());
-   //float objectScale = (scale/std::max ( maxPos.y - minPos.y, maxPos.x - minPos.x ));
-
    float3 objectCenter = center;
    float3 objectScale  = scale;
    if( autoScale )
@@ -447,10 +443,6 @@ float3 OBJReader::loadModelFromFile(
       objectCenter.y = (minPos.y+maxPos.y) / 2.f;
       objectCenter.z = (minPos.z+maxPos.z) / 2.f;
       file.close();
-      LOG_INFO(1, "Min   : " << minPos.x << "," << minPos.y << "," << minPos.z );
-      LOG_INFO(1, "Max   : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
-      LOG_INFO(1, "Center: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
-      LOG_INFO(1, "Scale : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
    }
 
    // Populate ray-tracing engine
@@ -610,7 +602,14 @@ float3 OBJReader::loadModelFromFile(
 
    kernel.setNbMaxPrimitivePerBox( 2*static_cast<int>(sqrt(static_cast<float>(kernel.getNbActivePrimitives()))));
 
+   LOG_INFO(1,"--------------------------------------------------------------------------------");
    LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
-   LOG_INFO(1, "Object size after scaling: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
+   LOG_INFO(1, "Nb Vertices: " << kernel.getNbActivePrimitives() );
+   LOG_INFO(1, "Min        : " << minPos.x << "," << minPos.y << "," << minPos.z );
+   LOG_INFO(1, "Max        : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
+   LOG_INFO(1, "Center     : " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
+   LOG_INFO(1, "Scale      : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
+   LOG_INFO(1, "Object size: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
+   LOG_INFO(1,"--------------------------------------------------------------------------------");
    return objectSize;
 }

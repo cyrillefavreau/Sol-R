@@ -306,13 +306,13 @@ public:
 #endif // USE_KINECT
 
 public:
-   void setNbMaxPrimitivePerBox( const int nbMaxPrimitivePerBox ) { m_optimalNbOfPrimmitivesPerBox = nbMaxPrimitivePerBox; };
-   unsigned int getNbActiveBoxes()      { return static_cast<unsigned int>(m_boundingBoxes[m_frame]->size()); };
-   unsigned int getNbActivePrimitives() { return static_cast<unsigned int>(m_primitives[m_frame]->size()); };
-	unsigned int getNbActiveLamps()      { return m_nbActiveLamps[m_frame]; };
-	unsigned int getNbActiveMaterials()  { return m_nbActiveMaterials; };
-	unsigned int getNbActiveTextures()   { return m_nbActiveTextures; };
-   std::string  getTextureFilename( const int index ) { return m_textureFilenames[index]; };
+   void setNbMaxPrimitivePerBox( const int nbMaxPrimitivePerBox );
+   unsigned int getNbActiveBoxes();
+   unsigned int getNbActivePrimitives();
+	unsigned int getNbActiveLamps();
+	unsigned int getNbActiveMaterials();
+	unsigned int getNbActiveTextures();
+   std::string  getTextureFilename( const int index );
 
    bool getProgressiveBoxes() { return m_progressiveBoxes; };
    void setProgressiveBoxes( const bool progressiveBoxes ) { m_progressiveBoxes = progressiveBoxes; };

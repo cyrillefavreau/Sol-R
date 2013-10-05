@@ -412,6 +412,7 @@ __device__ inline float4 launchRay(
 	int    iteration         = 0;
 	primitiveXYId.x = -1;
    primitiveXYId.z = 0;
+   primitiveXYId.w = 0;
    int currentMaterialId=-2;
 
    // TODO
@@ -627,6 +628,8 @@ __device__ inline float4 launchRay(
 
          //colors[reflectedRays] = color*(1.f-reflectedRatio)+colors[reflectedRays]*reflectedRatio;
          colors[reflectedRays] += color*reflectedRatio;
+
+         primitiveXYId.w = shadowIntensity*255;
       }
    }
    
@@ -734,9 +737,14 @@ __global__ void k_standardRenderer(
 	int index = (stream_split+y)*sceneInfo.width.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+     (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration.x>0 && 
+      sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
-	Ray ray;
+   Ray ray;
 	ray.origin = origin;
 	ray.direction = direction;
 
@@ -771,7 +779,6 @@ __global__ void k_standardRenderer(
 	float dof = postProcessingInfo.param1.x;
 	float3 intersection;
 
-
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
       ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.width.x/2));
@@ -801,7 +808,6 @@ __global__ void k_standardRenderer(
       { -5.f,  3.f }
    };
 
-   if( sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y && sceneInfo.pathTracingIteration.x>0 && sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS ) return;
 
    float4 color = {0.f,0.f,0.f,0.f};
    if( antialiasingActivated )
@@ -916,7 +922,12 @@ __global__ void k_fishEyeRenderer(
 	int index = y*sceneInfo.width.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+     (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration.x>0 && 
+      sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
    Ray ray;
 	ray.origin = origin;
@@ -1043,7 +1054,12 @@ __global__ void k_anaglyphRenderer(
 	int index = y*sceneInfo.width.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+     (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration.x>0 && 
+      sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
    float3 rotationCenter = {0.f,0.f,0.f};
    if( sceneInfo.renderingType.x==vt3DVision)
@@ -1185,7 +1201,12 @@ __global__ void k_3DVisionRenderer(
 	int index = y*sceneInfo.width.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+     (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration.x>0 && 
+      sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
    //float focus = fabs(postProcessingBuffer[sceneInfo.width.x/2*sceneInfo.height.x/2].w - origin.z);
    float eyeSeparation = sceneInfo.width3DVision.x;//*(direction.z/focus);
@@ -1665,7 +1686,7 @@ extern "C" void h2d_textures(
       {
          if( textureInfos[i].buffer )
          {
-            LOG_INFO( 1, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
+            LOG_INFO( 3, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
             totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
          }
       }
