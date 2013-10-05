@@ -149,7 +149,7 @@ public:
    void resetBoxes( bool resetPrimitives );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives );
    CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[m_frame][boxIndex]; };
-   int compactBoxes( bool reconstructBoxes );
+   int compactBoxes( bool reconstructBoxes, int gridSize=0 );
    void displayBoxesInfo(  );
 
 public:

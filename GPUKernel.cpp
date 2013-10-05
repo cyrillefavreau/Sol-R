@@ -871,7 +871,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    return delta;
 }
 
-int GPUKernel::compactBoxes( bool reconstructBoxes )
+int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
 {
 	LOG_INFO(3,"GPUKernel::compactBoxes (frame " << m_frame << ")" );
    m_primitivesTransfered = false;
@@ -879,33 +879,36 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    if( reconstructBoxes )
    {
       int activeBoxes(NB_MAX_BOXES);
-#if 1
-      LOG_INFO(3,"Constructing acceleration structures" );
-      // Bounding boxes
-      // Search for best trade-off
-      std::map<unsigned int,unsigned int> primitivesPerBox;
-      int maxPrimitivePerBox(0);
-      int boxSize = 1024;
-      int bestSize = boxSize;
-      int bestActiveBoxes = 0;
-      int bestRatio = 10000; 
-      do 
+      if(gridSize==0)
       {
-         int ratio = processBoxes(  boxSize, activeBoxes, true );
-         if( ratio < bestRatio ) 
+         LOG_INFO(3,"Constructing acceleration structures" );
+         // Bounding boxes
+         // Search for best trade-off
+         std::map<unsigned int,unsigned int> primitivesPerBox;
+         int maxPrimitivePerBox(0);
+         int boxSize = 1024;
+         int bestSize = boxSize;
+         int bestActiveBoxes = 0;
+         int bestRatio = 10000; 
+         do 
          {
-            bestSize = boxSize;
-            bestRatio = ratio;
-            bestActiveBoxes = activeBoxes;
+            int ratio = processBoxes(  boxSize, activeBoxes, true );
+            if( ratio < bestRatio ) 
+            {
+               bestSize = boxSize;
+               bestRatio = ratio;
+               bestActiveBoxes = activeBoxes;
+            }
+            boxSize/=2;
          }
-         boxSize/=2;
+         while( boxSize>=2 );
+         LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
+         processBoxes(  bestSize, activeBoxes, false );
       }
-      while( boxSize>=2 );
-      LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
-      processBoxes(  bestSize, activeBoxes, false );
-#else
-      processBoxes(  128, activeBoxes, false );
-#endif 0
+      else
+      {
+         processBoxes(gridSize, activeBoxes, false );
+      }
    }
 
    // Transform data for ray-tracer
