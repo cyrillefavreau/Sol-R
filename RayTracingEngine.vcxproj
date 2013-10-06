@@ -764,8 +764,9 @@
     <CudaCompile>
       <Defines>USE_KINECT</Defines>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <MaxRegCount>32</MaxRegCount>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">

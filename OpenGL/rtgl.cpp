@@ -20,6 +20,13 @@
 *
 */
 
+#include <GL/freeglut.h>
+#include <iostream>
+#include <time.h>
+
+#include "../Logging.h"
+#include "rtgl.h"
+
 #ifdef USE_CUDA
 #include "../Cuda/CudaKernel.h"
 typedef CudaKernel GenericGPUKernel;
@@ -32,13 +39,6 @@ typedef CudaKernel GenericGPUKernel;
       typedef CPUKernel GenericGPUKernel;
    #endif // USE_OPENCL
 #endif // USE_CUDA
-
-#include <GL/freeglut.h>
-#include <iostream>
-#include <time.h>
-
-#include "../Logging.h"
-#include "rtgl.h"
 
 GPUKernel* RayTracer::gKernel = nullptr;
 
@@ -456,7 +456,7 @@ void RayTracer::glutWireSphere(GLdouble radius, GLint , GLint )
    int p = RayTracer::gKernel->addPrimitive(ptSphere);
    float3 translation = RayTracer::gKernel->getTranslation();
    int m = RayTracer::gKernel->getCurrentMaterial();
-   RayTracer::gKernel->setPrimitive(p, translation.x*gScale, translation.y*gScale, translation.z*gScale, radius*gScale, 0.f, 0.f, m );
+   RayTracer::gKernel->setPrimitive(p, translation.x*gScale, translation.y*gScale, translation.z*gScale, static_cast<float>(radius)*gScale, 0.f, 0.f, m );
 }
 
 GLUquadricObj* RayTracer::gluNewQuadric(void)
@@ -687,7 +687,7 @@ void RayTracer::glutIdleFunc(void (*func)(void))
 
 void RayTracer::gluPerspective(GLdouble  fovy,  GLdouble  aspect,  GLdouble  zNear,  GLdouble  zFar)
 {
-   gEye.z = -20.f*aspect/tanf(fovy)*gScale;
+   gEye.z = -20.f*static_cast<float>(aspect)/tanf(static_cast<float>(fovy))*gScale;
    gDir.z = static_cast<float>(gEye.z + zNear*gScale + 5000.f);
    gSceneInfo.viewDistance.x = static_cast<float>(gDir.z + zFar*gScale + 5000.f );
 }

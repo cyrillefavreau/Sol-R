@@ -20,8 +20,6 @@
 *
 */
 
-#include "CPUKernel.h"
-
 // System
 #include <iostream>
 
@@ -32,6 +30,8 @@
 #include "Cuda/CudaDataTypes.h"
 #include "Consts.h"
 #include "Logging.h"
+
+#include "CPUKernel.h"
 
 //#define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND

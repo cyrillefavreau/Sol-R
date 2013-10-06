@@ -145,9 +145,18 @@ __device__ float4 triangleUVMapping(
       default:
          {
 		      int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-		      BitmapBuffer r = textures[index  ];
-		      BitmapBuffer g = textures[index+1];
-		      BitmapBuffer b = textures[index+2];
+            BitmapBuffer r,g,b;
+		      r = textures[index  ];
+		      g = textures[index+1];
+		      b = textures[index+2];
+#ifdef USE_KINECT
+            if( material.textureMapping.z==0 )
+            {
+		         r = textures[index+2];
+		         g = textures[index+1];
+		         b = textures[index  ];
+            }
+#endif // USE_KINECT
 		      result.x = r/256.f;
 		      result.y = g/256.f;
 		      result.z = b/256.f;
