@@ -188,9 +188,11 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 {
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
+      /*
       m_primitives[i].clear();
       m_boundingBoxes[i].clear();
       m_lamps[i].clear();
+      */
    	m_nbActiveBoxes[i]=0;
    	m_nbActivePrimitives[i]=0;
    	m_nbActiveLamps[i]=0;

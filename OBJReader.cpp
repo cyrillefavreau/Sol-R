@@ -386,7 +386,7 @@ float3 OBJReader::loadModelFromFile(
 
                   //if( vertex.y<0.f )
                   {
-                     int Ya = fabs(vertex.y)+1;
+                     int Ya = static_cast<int>(fabs(vertex.y))+1;
                      float Yb = Ya-vertex.y;
                      vertex.y = Yb;
                   }

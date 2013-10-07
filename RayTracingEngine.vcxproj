@@ -115,7 +115,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'" Label="Configuration">
@@ -262,7 +261,6 @@
     <OutDir>$(KITTING)\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_Cuda</TargetName>
     <OutDir>$(KITTING)\bin\</OutDir>
@@ -572,10 +570,6 @@
       <AdditionalIncludeDirectories>..\..\OculusSDK\LibOVR\Include;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>cudart.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\OculusSDK\LibOVR\Lib\x64;%(AdditionalLibraryDirectories);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>
@@ -585,11 +579,10 @@
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35</CodeGeneration>
       <Defines>WIN32</Defines>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-ftz=true -prec-div=false -prec-sqrt=false %(AdditionalOptions)</AdditionalOptions>
-      <GenerateLineInfo>true</GenerateLineInfo>
       <MaxRegCount>32</MaxRegCount>
     </CudaCompile>
   </ItemDefinitionGroup>
