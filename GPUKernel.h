@@ -148,7 +148,7 @@ public:
    bool updateBoundingBox( CPUBoundingBox& box );
    void resetBoxes( bool resetPrimitives );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives );
-   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (*m_boundingBoxes)[m_frame][boxIndex]; };
+   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (m_boundingBoxes)[m_frame][boxIndex]; };
    int compactBoxes( bool reconstructBoxes, int gridSize=0 );
    void displayBoxesInfo(  );
 
@@ -439,9 +439,9 @@ protected:
 protected:
 
    // CPU
-	BoxContainer*       m_boundingBoxes[NB_MAX_FRAMES];
-	PrimitiveContainer* m_primitives[NB_MAX_FRAMES];
-	LampContainer*      m_lamps[NB_MAX_FRAMES];
+	BoxContainer        m_boundingBoxes[NB_MAX_FRAMES];
+	PrimitiveContainer  m_primitives[NB_MAX_FRAMES];
+	LampContainer       m_lamps[NB_MAX_FRAMES];
    LightInformation*   m_lightInformation;
 
 protected:
