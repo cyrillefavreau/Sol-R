@@ -41,7 +41,7 @@ const int NB_MAX_PRIMITIVES = 1000000;
 const int NB_MAX_LAMPS      = 10;
 const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 512;
-const int NB_MAX_FRAMES     = 100;
+const int NB_MAX_FRAMES     = 10;
 const int NB_MAX_LIGHTINFORMATIONS = 500;
 
 
