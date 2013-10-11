@@ -132,7 +132,6 @@ __device__ float processShadows(
 
    while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
 	{
-
 		BoundingBox& box = boudingBoxes[cptBoxes];
 		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x))
 		{

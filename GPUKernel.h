@@ -75,7 +75,7 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device );
+   GPUKernel( bool activeLogging, int optimalNbOfBoxes, int platform, int device );
    virtual ~GPUKernel();
 
    virtual void initBuffers();
@@ -306,7 +306,7 @@ public:
 #endif // USE_KINECT
 
 public:
-   void setNbMaxPrimitivePerBox( const int nbMaxPrimitivePerBox );
+   void setOptimalNbOfBoxes( const int optimalNbOfBoxes );
    unsigned int getNbActiveBoxes();
    unsigned int getNbActivePrimitives();
 	unsigned int getNbActiveLamps();
@@ -323,6 +323,7 @@ public:
    void resetAll();
 
    void setDistortion( const float distortion ) { m_distortion = distortion; };
+   void setPointSize( const float pointSize );
 
 public:
 
@@ -445,7 +446,7 @@ protected:
    LightInformation*   m_lightInformation;
 
 protected:
-   int m_optimalNbOfPrimmitivesPerBox;
+   int m_optimalNbOfBoxes;
 
 protected:
    // OpenGL
@@ -456,6 +457,7 @@ protected:
    float3   m_translation;
    float3   m_rotation;
    int      m_currentMaterial;
+   float    m_pointSize;
 
 	// Kinect declarations
 #ifdef USE_KINECT

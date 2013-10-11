@@ -644,6 +644,7 @@ typedef int bool;
 
    void RAYTRACINGENGINE_API glTranslatef( GLfloat x, GLfloat y, GLfloat z );
    void RAYTRACINGENGINE_API glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z );
+   void RAYTRACINGENGINE_API glPointSize(GLfloat size);
 
    // Raytracer specific
    void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
@@ -693,7 +694,6 @@ typedef int bool;
 #define glMap2f(...)
 #define glMapGrid2f(...)
 #define glEvalMesh2(...)
-#define glPointSize(...)
 #define glDeleteLists(...)
 #define glPolygonMode(...)
 #define glTexImage1D(...)

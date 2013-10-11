@@ -155,8 +155,8 @@ typedef struct {
 } BITMAPINFOHEADER;
 #endif
 
-GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device)
- : m_optimalNbOfPrimmitivesPerBox(optimalNbOfPrimmitivesPerBox),
+GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes, int platform, int device)
+ : m_optimalNbOfBoxes(optimalNbOfBoxes),
    m_hPrimitives(nullptr), 
 	m_hMaterials(nullptr), 
    m_hLamps(nullptr),
@@ -188,11 +188,6 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int p
 {
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
-      /*
-      m_primitives[i].clear();
-      m_boundingBoxes[i].clear();
-      m_lamps[i].clear();
-      */
    	m_nbActiveBoxes[i]=0;
    	m_nbActivePrimitives[i]=0;
    	m_nbActiveLamps[i]=0;
@@ -798,9 +793,6 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    nbActiveBoxes = 0;
    std::map<unsigned int,unsigned int> primitivesPerBox;
 
-   int optimalNbOfPrimmitivesPerBox = 5*static_cast<int>(sqrtf(static_cast<float>(m_primitives[m_frame].size())));
-   optimalNbOfPrimmitivesPerBox = (optimalNbOfPrimmitivesPerBox>480) ? 480 : optimalNbOfPrimmitivesPerBox;
-
    int p(0);
    std::map<unsigned int,CPUPrimitive>::iterator it = (m_primitives[m_frame]).begin();
    while( it != (m_primitives[m_frame]).end() )
@@ -808,12 +800,6 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       CPUPrimitive& primitive((*it).second);
 
       float3 center=primitive.p0;
-      /*
-      center.x = (primitive.p0.x+primitive.p1.x+primitive.p2.x)/3.f;
-      center.y = (primitive.p0.y+primitive.p1.y+primitive.p2.y)/3.f;
-      center.z = (primitive.p0.z+primitive.p1.z+primitive.p2.z)/3.f;
-      */
-
       int X = static_cast<int>(( center.x - m_minPos[m_frame].x ) / boxSteps.x);
       int Y = static_cast<int>(( center.y - m_minPos[m_frame].y ) / boxSteps.y);
       int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
@@ -849,16 +835,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       ++it;
    }
 
-   int maxPrimitivePerBox(0);
-   int delta = 0;
-   if( simulate )
-   {
-      maxPrimitivePerBox = ( nbActiveBoxes != 0 ) ? static_cast<int>(m_primitives[m_frame].size()/nbActiveBoxes) : 0;
-      //delta = abs(optimalNbOfPrimmitivesPerBox-maxPrimitivePerBox);
-      delta = abs(optimalNbOfPrimmitivesPerBox-nbActiveBoxes);
-      LOG_INFO(2, "[" << boxSize << "/" << delta << "] Avg : " << maxPrimitivePerBox << " for " << nbActiveBoxes << " active boxes (" << m_primitives[m_frame].size() << " primitives) - " << optimalNbOfPrimmitivesPerBox );
-   }
-   else
+   if( !simulate )
    {
       BoxContainer::iterator itb = (m_boundingBoxes[m_frame]).begin();
       while( itb != (m_boundingBoxes[m_frame]).end() )
@@ -868,7 +845,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       }
    }
 
-   return delta;
+   return abs(m_optimalNbOfBoxes-nbActiveBoxes);
 }
 
 int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
@@ -885,7 +862,6 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
          // Bounding boxes
          // Search for best trade-off
          std::map<unsigned int,unsigned int> primitivesPerBox;
-         int maxPrimitivePerBox(0);
          int boxSize = 1024;
          int bestSize = boxSize;
          int bestActiveBoxes = 0;
@@ -898,11 +874,12 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
                bestSize = boxSize;
                bestRatio = ratio;
                bestActiveBoxes = activeBoxes;
+               LOG_INFO(1, "Trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
             }
             boxSize/=2;
          }
          while( boxSize>=2 );
-         LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
+         LOG_INFO(1, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
          processBoxes(  bestSize, activeBoxes, false );
       }
       else
@@ -1321,7 +1298,7 @@ void GPUKernel::rotatePrimitive(
 	CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
-   if( primitive.type == ptTriangle || primitive.type == ptSphere || primitive.type == ptEllipsoid || primitive.type == ptCylinder )
+   //if( primitive.type == ptTriangle || primitive.type == ptSphere || primitive.type == ptEllipsoid || primitive.type == ptCylinder )
 	{
       rotateVector( primitive.p0, rotationCenter, cosAngles, sinAngles );
 		if( primitive.type == ptCylinder || primitive.type == ptTriangle )
@@ -2130,7 +2107,7 @@ int GPUKernel::setGLMode( const int& glMode )
                p = addPrimitive( ptSphere);
                setPrimitive(  p,
                   m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
-                  0.1f,0.f,0.f,
+                  m_pointSize,0.f,0.f,
                   m_currentMaterial);
             }
             LOG_INFO(3, "[OpenGL] Added " << m_vertices.size() << " Points");
@@ -2148,7 +2125,7 @@ int GPUKernel::setGLMode( const int& glMode )
                   setPrimitive(  p,
                      m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
                      m_vertices[i+1].x, m_vertices[i+1].y, m_vertices[i+1].z, 
-                     0.05f,0.f,0.f,
+                     m_pointSize,0.f,0.f,
                      m_currentMaterial);
                }
             }
@@ -2239,6 +2216,7 @@ int GPUKernel::setGLMode( const int& glMode )
 
       memset(&m_translation,0,sizeof(float3));
       //memset(&m_rotation,0,sizeof(float3));
+      m_pointSize = 1.f;
    }
    m_GLMode = glMode;
    return p;
@@ -2286,9 +2264,9 @@ void GPUKernel::setCurrentMaterial( const int currentMaterial )
    m_currentMaterial=currentMaterial; 
 }
 
-void GPUKernel::setNbMaxPrimitivePerBox( const int nbMaxPrimitivePerBox )
+void GPUKernel::setOptimalNbOfBoxes( const int optimalNbOfBoxes )
 { 
-   m_optimalNbOfPrimmitivesPerBox = nbMaxPrimitivePerBox; 
+   m_optimalNbOfBoxes = optimalNbOfBoxes; 
 }
 
 unsigned int GPUKernel::getNbActiveBoxes()      
@@ -2321,6 +2299,10 @@ std::string  GPUKernel::getTextureFilename( const int index )
    return m_textureFilenames[index]; 
 }
 
+void GPUKernel::setPointSize( const float pointSize )
+{
+   m_pointSize = pointSize;
+}
 
 void GPUKernel::render_begin( const float timer )
 {

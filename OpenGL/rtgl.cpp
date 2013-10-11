@@ -696,3 +696,8 @@ void RayTracer::glutSetCursor(int cursor)
 {
    ::glutSetCursor(cursor);
 }
+
+void RayTracer::glPointSize(GLfloat size)
+{
+   RayTracer::gKernel->setPointSize(size);
+}

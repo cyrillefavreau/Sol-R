@@ -566,7 +566,7 @@ __device__ inline float4 launchRay(
 			}
 
          // Contribute to final color
- 			recursiveBlinn += rBlinn;
+ 			if(iteration==0) recursiveBlinn=rBlinn;
 
          rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
 			rayOrigin.direction = reflectedTarget;

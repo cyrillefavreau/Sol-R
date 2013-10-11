@@ -56,9 +56,9 @@ __device__ inline bool boxIntersection(
 	const BoundingBox& box, 
 	const Ray&     ray,
 	const float&   t0,
-	const float&   t1 )
+	const float&   t1)
 {
-	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+	float tmin,tmax,tymin, tymax, tzmin, tzmax;
 
 	tmin = (box.parameters[ray.signs.x].x - ray.origin.x) * ray.inv_direction.x;
 	tmax = (box.parameters[1-ray.signs.x].x - ray.origin.x) * ray.inv_direction.x;
@@ -600,7 +600,7 @@ __device__ inline bool intersectionWithPrimitives(
    const int currentMaterialId)
 {
 	bool intersections = false; 
-	float minDistance  = sceneInfo.viewDistance.x;
+	float minDistance  = sceneInfo.viewDistance.x/iteration;
 
 	Ray r;
 	r.origin    = ray.origin;
@@ -615,7 +615,7 @@ __device__ inline bool intersectionWithPrimitives(
    for( int cptBoxes = 0; cptBoxes<nbActiveBoxes; ++cptBoxes )
 	{
 		BoundingBox& box = boundingBoxes[cptBoxes];
-		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x) )
+      if( boxIntersection(box, r, 0.f, minDistance) )
 		{
 			// Intersection with Box
 			if( sceneInfo.renderBoxes.x != 0 ) 
