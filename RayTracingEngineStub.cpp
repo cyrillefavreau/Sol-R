@@ -104,6 +104,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 	   gKernel->setSceneInfo( gSceneInfoStub );
       gKernel->initBuffers();
       gKernel->setFrame(0);
+      gKernel->setOptimalNbOfBoxes(1600);
       return 0;
    }
    return -1;
@@ -148,7 +149,7 @@ extern "C" RAYTRACINGENGINE_API
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, unsigned char* image )
+extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuffer* image )
 {
 	gKernel->setSceneInfo( gSceneInfoStub );
    gKernel->setPostProcessingInfo( gPostProcessingInfoStub );

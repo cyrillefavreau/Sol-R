@@ -44,7 +44,12 @@
    #pragma comment(lib,"Shell32.lib")
    #pragma comment(lib,"Ole32.lib")
    #pragma comment(lib,"User32.lib")
+
+#ifdef _DEBUG
+   #pragma comment(lib,"libovr64d.lib")
+#else
    #pragma comment(lib,"libovr64.lib")
+#endif // _DEBUG
 #endif // USE_OCULUS
 
 const unsigned int MAX_SOURCE_SIZE = 65535*2;
@@ -205,6 +210,9 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes, int platform, int
 	LOG_INFO(3, "Textures " << NB_MAX_TEXTURES );
 
    m_progressiveBoxes = true;
+
+   m_viewPos.x = 0.f; m_viewPos.y = 0.f; m_viewPos.z = 0.f;
+   m_viewDir.x = 0.f; m_viewDir.y = 0.f; m_viewDir.z = 0.f;
 
 #if USE_KINECT
 	// Initialize Kinect
@@ -401,7 +409,9 @@ void GPUKernel::setCamera(
 		dir.x << "," << dir.y << "," << dir.z << " : "  <<
 		angles.x << "," << angles.y << "," << angles.z << ")" 
 		);
-	m_viewPos   = eye;
+	m_viewPos.x   = eye.x;
+	m_viewPos.y   = eye.y;
+	m_viewPos.z   = eye.z;
 	m_viewDir   = dir;
 	m_angles.x  = angles.x;
 	m_angles.y  = angles.y;
@@ -971,7 +981,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
          ++itb;
       }
       buildLightInformationFromTexture(4);
-      LOG_INFO( 3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, and " << m_nbActivePrimitives[m_frame] << " primitives"); 
+      LOG_INFO( 2, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
       if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame].size() )
       {
          LOG_ERROR("Lost primitives on the way... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame].size() );
@@ -1691,7 +1701,7 @@ void GPUKernel::setSceneInfo( const SceneInfo& sceneInfo )
    m_sceneInfo = sceneInfo; 
 }
 
-SceneInfo GPUKernel::getSceneInfo() 
+SceneInfo& GPUKernel::getSceneInfo() 
 { 
    return m_sceneInfo; 
 }
@@ -1868,13 +1878,14 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       lightInformation.color.x = 0.5f+0.5f*cos(x);
       lightInformation.color.y = 0.5f+0.5f*sin(x);
       lightInformation.color.z = 0.5f+0.5f*cos(x+pi);
-      lightInformation.color.w = 1.f;
+      lightInformation.color.w = 1.5f;
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
-	  x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
+	   x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
    }
    */
 #else
+   /*
    for( float x(0.f); x<2.f*PI; x+=PI/8.f)
    {
       LightInformation lightInformation;
@@ -1889,7 +1900,6 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       m_lightInformation[m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
-   /*
    // Light from skybox
    if( index < m_textureIndex )
    {
@@ -2310,10 +2320,12 @@ void GPUKernel::render_begin( const float timer )
    if( m_sensorFusion.IsAttachedToSensor() )
    {
       OVR::Quatf orientation = m_sensorFusion.GetOrientation();
+      m_viewPos.y = 5000.f;
+      m_viewDir.y = m_viewPos.y;
       m_angles.x = -PI*orientation.x;
       m_angles.y = -PI*orientation.y;
       m_angles.z =  PI*orientation.z;
-      m_sceneInfo.pathTracingIteration.x = 0;
+      m_sceneInfo.pathTracingIteration.x=0;
       m_sceneInfo.renderingType.x = vt3DVision;
    }
 #endif // USE_OCULUS

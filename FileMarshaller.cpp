@@ -320,7 +320,7 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
          std::getline(myfile, line);
          if( line.find(SCENEINFO) == 0 )
          {
-            readSceneInfo( kernel, line );
+            //readSceneInfo( kernel, line );
          }
          else if( line.find(MATERIAL) == 0 )
          {
@@ -338,10 +338,6 @@ float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
       }
    }
    myfile.close();
-   LOG_INFO(1, kernel.getNbActiveMaterials()  << " materials" );
-   LOG_INFO(1, kernel.getNbActivePrimitives() << " primitives" );
-   LOG_INFO(1, kernel.getNbActiveLamps()      << " lamps" );
-
    returnValue.x = fabs( max.x - min.x );
    returnValue.y = fabs( max.y - min.y );
    returnValue.z = fabs( max.z - min.z );

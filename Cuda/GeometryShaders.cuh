@@ -342,11 +342,10 @@ __device__ float4 primitiveShader(
    if( sceneInfo.graphicsLevel.x>0 )
    {
 	   color *= materials[primitive.materialId.x].innerIllumination.x;
-      int activeLamps = nbActiveLamps;
-	   for( int cpt=0; cpt<activeLamps; ++cpt ) 
+      //int activeLamps = (sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS && lightInformationSize!=0) ? nbActiveLamps+1 : nbActiveLamps;
+	   for( int cpt=0; cpt<nbActiveLamps; ++cpt ) 
 	   {
-         //int cptLamp = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS && sceneInfo.pathTracingIteration.x%2==0) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
-         int cptLamp = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
+         int cptLamp = cpt;//(cpt>=nbActiveLamps) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   float3 center;

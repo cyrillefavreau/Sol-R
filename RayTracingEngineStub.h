@@ -56,7 +56,7 @@ extern "C" RAYTRACINGENGINE_API void RayTracer_SetCamera(
    double angle_x, double angle_y, double angle_z);
 
 // ---------- Rendering ----------
-extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, unsigned char* image );
+extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuffer* image );
 
 // ---------- Primitives ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive( int type );

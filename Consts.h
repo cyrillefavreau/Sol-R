@@ -36,13 +36,13 @@ const int MAX_GPU_COUNT     = 32;
 const int MAX_STREAM_COUNT  = 32;
 const int NB_MAX_ITERATIONS = 10;
 
-const int NB_MAX_BOXES      = 2048;
-const int NB_MAX_PRIMITIVES = 10000000;
-const int NB_MAX_LAMPS      = 10;
+const int NB_MAX_BOXES      = 4096;
+const int NB_MAX_PRIMITIVES = 1048576;
+const int NB_MAX_LAMPS      = 16;
 const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 512;
-const int NB_MAX_FRAMES     = 100;
-const int NB_MAX_LIGHTINFORMATIONS = 500;
+const int NB_MAX_FRAMES     = 128;
+const int NB_MAX_LIGHTINFORMATIONS = 512;
 
 
 // Constants

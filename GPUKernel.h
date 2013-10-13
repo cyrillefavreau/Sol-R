@@ -250,7 +250,7 @@ public:
 
    // Scene
    void setSceneInfo( const SceneInfo& sceneInfo );
-   SceneInfo getSceneInfo();
+   SceneInfo& getSceneInfo();
 
    // Post processing
    void setPostProcessingInfo( 
