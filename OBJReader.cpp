@@ -376,15 +376,14 @@ float3 OBJReader::loadModelFromFile(
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
-                  /*
                   if( vertex.x<0.f )
                   {
-                     int X = fabs(vertex.x)+1;
-                     vertex.x = X-vertex.x;
+                     int Xa = static_cast<int>(fabs(vertex.x))+1;
+                     float Xb = Xa-vertex.x;
+                     vertex.x = Xb;
                   }
-                  */
 
-                  //if( vertex.y<0.f )
+                  if( vertex.y<0.f )
                   {
                      int Ya = static_cast<int>(fabs(vertex.y))+1;
                      float Yb = Ya-vertex.y;
@@ -397,8 +396,8 @@ float3 OBJReader::loadModelFromFile(
                      int Z = fabs(vertex.z)+1;
                      vertex.z = Z+vertex.z;
                   }
+                  LOG_INFO(1,"vt=" << vertex.x << "," << vertex.y );
                   */
-
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }

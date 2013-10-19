@@ -174,6 +174,7 @@ void CudaKernel::render_begin( const float timer )
 
       if( !m_primitivesTransfered )
       {
+         LOG_INFO(3, "Transfering " << nbBoxes << " boxes, and " << nbPrimitives << " primitives");
 	      h2d_scene( 
             m_occupancyParameters,
             m_hBoundingBoxes, nbBoxes, 

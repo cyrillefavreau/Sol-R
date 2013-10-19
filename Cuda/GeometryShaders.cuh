@@ -188,8 +188,12 @@ __device__ float processShadows(
 				}
 				cptPrimitives++;
 			}
+   		cptBoxes++;
 		}
-		cptBoxes++;
+      else
+      {
+         cptBoxes+=box.indexForNextBox.x;
+      }
 	}
 	result = (result>sceneInfo.shadowIntensity.x) ? sceneInfo.shadowIntensity.x : result;
 	result = (result<0.f) ? 0.f : result;

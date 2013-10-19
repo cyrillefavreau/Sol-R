@@ -137,7 +137,7 @@ struct BoundingBox
    float3 parameters[2];     // Bottom-Left and Top-Right corners
    int1   nbPrimitives;      // Number of primitives in the box
    int1   startIndex;        // Index of the first primitive in the box
-   int2   type;              // Alignment issues (TO BE REMOVED!)
+   int2   indexForNextBox;   // If no intersection, how many of the following boxes can be skipped?
 };
 
 // Primitive Structure

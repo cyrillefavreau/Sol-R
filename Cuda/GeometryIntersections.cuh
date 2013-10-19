@@ -612,13 +612,14 @@ __device__ inline bool intersectionWithPrimitives(
 	bool i = false;
 	float shadowIntensity = 0.f;
 
-   for( int cptBoxes = 0; cptBoxes<nbActiveBoxes; ++cptBoxes )
+   int cptBoxes = 0;
+   while(cptBoxes<nbActiveBoxes)
 	{
 		BoundingBox& box = boundingBoxes[cptBoxes];
       if( boxIntersection(box, r, 0.f, minDistance) )
 		{
 			// Intersection with Box
-			if( sceneInfo.renderBoxes.x != 0 ) 
+         if( sceneInfo.renderBoxes.x!=0 && box.nbPrimitives.x==0 ) 
          {
             colorBox += materials[cptBoxes%NB_MAX_MATERIALS].color/20.f;
          }
@@ -682,7 +683,12 @@ __device__ inline bool intersectionWithPrimitives(
 				   }
             }
 			}
+         ++cptBoxes;
 		}
+      else
+      {
+         cptBoxes += box.indexForNextBox.x;
+      }
 	}
 	return intersections;
 }

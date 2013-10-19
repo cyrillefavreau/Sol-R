@@ -63,12 +63,14 @@ struct CPUPrimitive
 struct CPUBoundingBox
 {
    float3 parameters[2];
-   std::vector<unsigned int> primitives;
+   float3 center;
+   std::vector<long> primitives;
+   long indexForNextBox;
 };
 
-typedef std::map<unsigned int,CPUBoundingBox> BoxContainer;
-typedef std::map<unsigned int,CPUPrimitive>   PrimitiveContainer;
-typedef std::map<unsigned int,Lamp>           LampContainer;
+typedef std::map<long,CPUBoundingBox> BoxContainer;
+typedef std::map<long,CPUPrimitive>   PrimitiveContainer;
+typedef std::map<long,Lamp>           LampContainer;
 typedef std::vector<float3> Vertices;
 
 class RAYTRACINGENGINE_API GPUKernel
@@ -115,7 +117,6 @@ public:
    // Rotation
    void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
-   void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    float3 getRotation() { return m_rotation; }
 
    // Translation
@@ -146,6 +147,7 @@ public:
 public:
    
    bool updateBoundingBox( CPUBoundingBox& box );
+   bool updateOutterBoundingBox( CPUBoundingBox& box );
    void resetBoxes( bool resetPrimitives );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives );
    CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (m_boundingBoxes)[m_frame][boxIndex]; };
@@ -314,9 +316,6 @@ public:
 	unsigned int getNbActiveTextures();
    std::string  getTextureFilename( const int index );
 
-   bool getProgressiveBoxes() { return m_progressiveBoxes; };
-   void setProgressiveBoxes( const bool progressiveBoxes ) { m_progressiveBoxes = progressiveBoxes; };
-
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
    void resetFrame(  );
@@ -358,6 +357,8 @@ public:
 protected:
    
    int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
+   void processOutterBoxes( const int boxSize );
+
 
 protected:
  
@@ -422,10 +423,6 @@ protected:
    // Refresh
    bool m_refresh;
 
-   // Progressive boxes
-   // If true, only transfer visible boxes to the GPU
-   bool m_progressiveBoxes;
-
 protected:
 
    // activate or deactivate logging
@@ -440,6 +437,7 @@ protected:
 protected:
 
    // CPU
+	BoxContainer        m_outterBoundingBoxes[NB_MAX_FRAMES];
 	BoxContainer        m_boundingBoxes[NB_MAX_FRAMES];
 	PrimitiveContainer  m_primitives[NB_MAX_FRAMES];
 	LampContainer       m_lamps[NB_MAX_FRAMES];
