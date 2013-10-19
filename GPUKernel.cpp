@@ -966,7 +966,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
       }
 
       // Now that boxes have been constructed, we need to group them info even bigger boxes
-      bestSize = 32;
+      bestSize = 64;
       processOutterBoxes(bestSize);
    }
 
@@ -1090,6 +1090,13 @@ void GPUKernel::resetFrame()
 void GPUKernel::resetAll()
 {
 	LOG_INFO(3,"Resetting frames" );
+
+#ifdef USE_OCULUS
+   if( m_sensorFusion.IsAttachedToSensor() )
+   {
+      m_sensorFusion.Reset();
+   }
+#endif // USE_OCULUS
 
    int oldFrame(m_frame);
    for( int frame(0); frame<NB_MAX_FRAMES; ++frame)
@@ -2397,7 +2404,7 @@ void GPUKernel::render_begin( const float timer )
    if( m_sensorFusion.IsAttachedToSensor() )
    {
       OVR::Quatf orientation = m_sensorFusion.GetOrientation();
-      m_viewPos.y = 5000.f;
+      m_viewPos.y = 2000.f;
       m_viewDir.y = m_viewPos.y;
       m_angles.x = -PI*orientation.x;
       m_angles.y = -PI*orientation.y;

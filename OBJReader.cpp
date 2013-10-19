@@ -162,7 +162,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   0.f,m.reflection,m.refraction, false, false, 0,
                   m.transparency, m.textureId,
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
-                  0.f, 10.f, 10000.f,
+                  0.f, 40000.f, 10.f*kernel.getSceneInfo().viewDistance.x,
                   false );
                LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<

@@ -386,18 +386,11 @@ __device__ float4 primitiveShader(
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
-            //if( lightInformation[cptLamp].attribute.x != -1 )
-            {
-               Primitive& lamp = primitives[lightInformation[cptLamp].attribute.x];
-
-               //if( sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS /*&& sceneInfo.pathTracingIteration.x%2!=0*/ )
-			      {
-				      int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-                  center.x += materials[lamp.materialId.x].innerIllumination.y*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				      center.y += materials[lamp.materialId.x].innerIllumination.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				      center.z += materials[lamp.materialId.x].innerIllumination.y*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-			      }
-            }
+            Primitive& lamp = primitives[lightInformation[cptLamp].attribute.x];
+				int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
+            center.x += materials[lamp.materialId.x].innerIllumination.y*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				center.y += materials[lamp.materialId.x].innerIllumination.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				center.z += materials[lamp.materialId.x].innerIllumination.y*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 #endif
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};

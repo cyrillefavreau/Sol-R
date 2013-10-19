@@ -231,6 +231,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
 void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, const int materialId )
 {
    Material material;
+   memset(&material,0,sizeof(Material));
    std::string value;
    size_t i( strlen(MATERIAL.c_str())+1 );
    size_t c(0);
@@ -247,8 +248,8 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case  2: material.color.z   = static_cast<float>(atof( value.c_str() )); break;
             case  3: material.color.w   = static_cast<float>(atof( value.c_str() )); break;
             case  4: material.innerIllumination.x = static_cast<float>(atof( value.c_str() )); break;
-            case  5: material.innerIllumination.y = static_cast<float>(atof( value.c_str() )); break;
-            case  6: material.innerIllumination.z = static_cast<float>(atof( value.c_str() )); break;
+            case  5: material.innerIllumination.y = 40000.f; //static_cast<float>(atof( value.c_str() )); break;
+            case  6: material.innerIllumination.z = 10.f*kernel.getSceneInfo().viewDistance.x; //static_cast<float>(atof( value.c_str() )); break;
             case  7: material.innerIllumination.w = static_cast<float>(atof( value.c_str() )); break;
             case  8: material.reflection.x        = static_cast<float>(atof( value.c_str() )); break;
             case  9: material.refraction.x        = static_cast<float>(atof( value.c_str() )); break;

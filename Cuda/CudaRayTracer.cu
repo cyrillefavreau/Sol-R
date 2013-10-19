@@ -1210,8 +1210,8 @@ __global__ void k_3DVisionRenderer(
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
-   //float focus = fabs(postProcessingBuffer[sceneInfo.width.x/2*sceneInfo.height.x/2].w - origin.z);
-   float eyeSeparation = sceneInfo.width3DVision.x;//*(direction.z/focus);
+   float focus = fabs(postProcessingBuffer[sceneInfo.width.x/2*sceneInfo.height.x/2].w - origin.z);
+   float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
    float3 rotationCenter = {0.f,0.f,0.f};
    if( sceneInfo.renderingType.x==vt3DVision)
