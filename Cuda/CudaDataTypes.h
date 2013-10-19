@@ -181,7 +181,8 @@ enum PostProcessingType
    ppe_none,              // No effect
    ppe_depthOfField,      // Depth of field
    ppe_ambientOcclusion,  // Ambient occlusion
-   ppe_enlightment        // Enlightenment
+   ppe_radiosity,         // Radiosity
+   ppe_oneColor
 };
 
 // Post processing information

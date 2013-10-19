@@ -510,9 +510,11 @@ __device__ inline float4 launchRay(
          // ----------
 			// Refraction
 			// ----------
-
 			if( materials[primitives[closestPrimitive].materialId.x].transparency.x != 0.f ) 
 			{
+				// Back of the object? If so, reset refraction to 1.f (air)
+				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
+
 			   // Replace the normal using the intersection color
 			   // r,g,b become x,y,z... What the fuck!!
 			   if( materials[primitives[closestPrimitive].materialId.x].textureMapping.z != TEXTURE_NONE) 
@@ -521,9 +523,6 @@ __device__ inline float4 launchRay(
 				   normal.y *= (colors[iteration].y-0.5f);
 				   normal.z *= (colors[iteration].z-0.5f);
 			   }
-
-				// Back of the object? If so, reset refraction to 1.f (air)
-				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
 
 				// Actual refraction
 				float3 O_E = normalize(rayOrigin.origin - closestIntersection);
@@ -1460,10 +1459,10 @@ __global__ void k_ambiantOcclusion(
 /*
 ________________________________________________________________________________
 
-Post Processing Effect: Cartoon
+Post Processing Effect: Radiosity
 ________________________________________________________________________________
 */
-__global__ void k_enlightment(
+__global__ void k_radiosity(
    const int2            occupancyParameters,
 	SceneInfo             sceneInfo,
 	PostProcessingInfo    postProcessingInfo,
@@ -1502,6 +1501,41 @@ __global__ void k_enlightment(
 
 	localColor.w = 1.f;
 
+	makeColor( sceneInfo, localColor, bitmap, index ); 
+}
+
+/*
+________________________________________________________________________________
+
+Post Processing Effect: Radiosity
+________________________________________________________________________________
+*/
+__global__ void k_oneColor(
+   const int2            occupancyParameters,
+	SceneInfo             sceneInfo,
+	PostProcessingBuffer* postProcessingBuffer,
+	BitmapBuffer*         bitmap) 
+{
+	int x = blockDim.x*blockIdx.x + threadIdx.x;
+	int y = blockDim.y*blockIdx.y + threadIdx.y;
+	int index = y*sceneInfo.width.x+x;
+
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
+
+   float4 localColor = postProcessingBuffer[index]/div;
+   if(fabs(localColor.x-sceneInfo.backgroundColor.x)>sceneInfo.transparentColor.x || 
+      fabs(localColor.y-sceneInfo.backgroundColor.y)>sceneInfo.transparentColor.x ||
+      fabs(localColor.z-sceneInfo.backgroundColor.z)>sceneInfo.transparentColor.x )
+   {
+      float totalColor = (localColor.x+localColor.y+localColor.z)/3.f;
+      localColor.x = totalColor;
+      localColor.y = totalColor;
+      localColor.z = totalColor;
+   }
+   //localColor /= div;
+	localColor.w = 1.f;
 	makeColor( sceneInfo, localColor, bitmap, index ); 
 }
 
@@ -1934,15 +1968,22 @@ extern "C" void cudaRender(
 			   d_randoms[device], 
 			   d_bitmap[device] );
 		   break;
-	   case ppe_enlightment:
+	   case ppe_radiosity:
          step = "ppe_enlightment";
-		   k_enlightment<<<grid,blocks,0,d_streams[device][0]>>>(
+		   k_radiosity<<<grid,blocks,0,d_streams[device][0]>>>(
             occupancyParameters,
 			   sceneInfo, 
 			   postProcessingInfo, 
             d_primitivesXYIds[device],
 			   d_postProcessingBuffer[device],
 			   d_randoms[device], 
+			   d_bitmap[device] );
+		   break;
+	   case ppe_oneColor:
+		   k_oneColor<<<grid,blocks,0,d_streams[device][0]>>>(
+            occupancyParameters,
+			   sceneInfo, 
+			   d_postProcessingBuffer[device],
 			   d_bitmap[device] );
 		   break;
 	   default:

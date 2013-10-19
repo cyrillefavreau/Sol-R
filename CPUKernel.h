@@ -64,7 +64,8 @@ protected:
    void k_3DVisionRenderer();
    void k_depthOfField();
    void k_ambiantOcclusion();
-   void k_enlightment();
+   void k_radiosity();
+   void k_oneColor();
    void k_default();
 
 private:

@@ -795,7 +795,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Consts.h" />
-    <ClInclude Include="CPUKernel.h" />
+    <ClInclude Include="CPUKernel.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Cuda\CudaDataTypes.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
@@ -862,7 +864,9 @@
     <ClInclude Include="tgad.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CPUKernel.cpp" />
+    <ClCompile Include="CPUKernel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Cuda\CudaKernel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">true</ExcludedFromBuild>
