@@ -394,7 +394,9 @@ __device__ float4 primitiveShader(
 #endif
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
-			   if( sceneInfo.graphicsLevel.x>3 && materials[primitive.materialId.x].innerIllumination.x == 0.f ) 
+            if( sceneInfo.graphicsLevel.x>3 && 
+                iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
+                materials[primitive.materialId.x].innerIllumination.x==0.f ) 
 			   {
 				   shadowIntensity = processShadows(
 					   sceneInfo, boundingBoxes, nbActiveBoxes,

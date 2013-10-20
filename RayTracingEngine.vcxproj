@@ -579,7 +579,7 @@
     </PostBuildEvent>
     <CudaCompile>
       <FastMath>true</FastMath>
-      <CodeGeneration>compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_35,sm_35</CodeGeneration>
       <Defines>WIN32</Defines>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-ftz=true -prec-div=false -prec-sqrt=false %(AdditionalOptions)</AdditionalOptions>

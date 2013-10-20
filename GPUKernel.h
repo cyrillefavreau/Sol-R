@@ -145,16 +145,6 @@ public:
    CPUPrimitive* getPrimitive( const unsigned int index );
      
 public:
-   
-   bool updateBoundingBox( CPUBoundingBox& box );
-   bool updateOutterBoundingBox( CPUBoundingBox& box );
-   void resetBoxes( bool resetPrimitives );
-   void resetBox( CPUBoundingBox& box, bool resetPrimitives );
-   CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (m_boundingBoxes)[m_frame][boxIndex]; };
-   int compactBoxes( bool reconstructBoxes, int gridSize=0 );
-   void displayBoxesInfo(  );
-
-public:
 
    // OpenGL
    int  setGLMode( const int& glMode );
@@ -354,11 +344,24 @@ public:
 
    void rotateVector( float3& v, const float3& rotationCenter, const float3& cosAngles, const float3& sinAngles );
 
-protected:
-   
-   int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
-   void processOutterBoxes( const int boxSize );
+public:
 
+   //CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (m_boundingBoxes)[m_frame][boxIndex]; };
+   int compactBoxes( bool reconstructBoxes, int gridSize=0 );
+   void displayBoxesInfo(  );
+   void resetBoxes( bool resetPrimitives );
+
+protected:
+
+   // Bounding boxes management
+   int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
+   void processOutterBoxes( const int boxSize, const int boundingBoxesDepth );
+   bool updateBoundingBox( CPUBoundingBox& box );
+   bool updateOutterBoundingBox( CPUBoundingBox& box, const int depth );
+   void resetBox( CPUBoundingBox& box, bool resetPrimitives );
+
+   void streamDataToGPU(); 
+   void recursiveDataStreamToGPU( const int depth, std::vector<long>& elements );
 
 protected:
  
@@ -437,8 +440,7 @@ protected:
 protected:
 
    // CPU
-	BoxContainer        m_outterBoundingBoxes[NB_MAX_FRAMES];
-	BoxContainer        m_boundingBoxes[NB_MAX_FRAMES];
+	BoxContainer        m_outterBoundingBoxes[NB_MAX_FRAMES][BOUNDING_BOXES_TREE_DEPTH];
 	PrimitiveContainer  m_primitives[NB_MAX_FRAMES];
 	LampContainer       m_lamps[NB_MAX_FRAMES];
    LightInformation*   m_lightInformation;
