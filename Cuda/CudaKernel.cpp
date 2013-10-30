@@ -40,6 +40,8 @@
 const long MAX_SOURCE_SIZE = 65535;
 const long MAX_DEVICES = 10;
 
+long g_perf;
+
 #ifndef WIN32
 typedef struct stBITMAPFILEHEADER
 {
@@ -156,6 +158,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::render_begin( const float timer )
 {
+   //g_perf=GetTickCount();
    GPUKernel::render_begin(timer);
    if( m_refresh )
    {
@@ -364,6 +367,8 @@ void CudaKernel::render_end()
       }
       ::glDisable(GL_TEXTURE_2D);
    }
+
+   //LOG_INFO(1,"Time to render: " << GetTickCount()-g_perf);
 }
 
 void CudaKernel::deviceQuery()

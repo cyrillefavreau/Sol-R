@@ -286,6 +286,7 @@ float3 OBJReader::loadModelFromFile(
    int materialId,
    bool allSpheres)
 {
+   LOG_INFO(1,"Loading OBJ file " << filename );
    std::map<int,float3> vertices;
    std::map<int,float3> normals;
    std::map<int,float3> textureCoordinates;

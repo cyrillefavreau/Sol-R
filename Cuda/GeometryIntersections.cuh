@@ -619,70 +619,72 @@ __device__ inline bool intersectionWithPrimitives(
       if( boxIntersection(box, r, 0.f, minDistance) )
 		{
 			// Intersection with Box
-         if( sceneInfo.renderBoxes.x!=0 && box.nbPrimitives.x==0 ) 
+         if( sceneInfo.renderBoxes.x!=0 /*&& box.nbPrimitives.x==0*/ )  // Box 0 is for light emitting objects
          {
-            colorBox += materials[cptBoxes%NB_MAX_MATERIALS].color/20.f;
+            colorBox += materials[box.startIndex.x%NB_MAX_MATERIALS].color/50.f;
          }
+         else
+         {
+			   // Intersection with primitive within boxes
+			   for( int cptPrimitives = 0; cptPrimitives<box.nbPrimitives.x; ++cptPrimitives )
+			   { 
+				   Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
+               Material& material = materials[primitive.materialId.x];
+               if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
+               {
+                  float3 areas = {0.f,0.f,0.f};
+   #ifdef EXTENDED_GEOMETRY
+				      i = false;
+				      switch( primitive.type.x )
+				      {
+				      case ptEnvironment :
+                  case ptSphere:
+                     {
+						      i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
+						      break;
+					      }
+				      case ptCylinder: 
+					      {
+						      i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
+						      break;
+					      }
+                  case ptEllipsoid:
+                     {
+						      i = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back );
+                        break;
+                     }
+                  case ptTriangle:
+                     {
+						      back = false;
+						      i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
+                        break;
+                     }
+				      default: 
+					      {
+                        back = false;
+						      i = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false); 
+						      break;
+					      }
+				      }
+   #else
+					   back = false;
+					   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
+   #endif // EXTENDED_GEOMETRY
 
-			// Intersection with primitive within boxes
-			for( int cptPrimitives = 0; cptPrimitives<box.nbPrimitives.x; ++cptPrimitives )
-			{ 
-				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
-            Material& material = materials[primitive.materialId.x];
-            if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
-            {
-               float3 areas = {0.f,0.f,0.f};
-#ifdef EXTENDED_GEOMETRY
-				   i = false;
-				   switch( primitive.type.x )
-				   {
-				   case ptEnvironment :
-               case ptSphere:
-                  {
-						   i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
-						   break;
-					   }
-				   case ptCylinder: 
-					   {
-						   i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
-						   break;
-					   }
-               case ptEllipsoid:
-                  {
-						   i = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back );
-                     break;
-                  }
-               case ptTriangle:
-                  {
-						   back = false;
-						   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
-                     break;
-                  }
-				   default: 
-					   {
-                     back = false;
-						   i = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false); 
-						   break;
-					   }
-				   }
-#else
-					back = false;
-					i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
-#endif // EXTENDED_GEOMETRY
-
-				   float distance = length(intersection-r.origin);
-				   if( i && distance>EPSILON && distance<minDistance ) 
-				   {
-					   // Only keep intersection with the closest object
-					   minDistance         = distance;
-					   closestPrimitive    = box.startIndex.x+cptPrimitives;
-					   closestIntersection = intersection;
-					   closestNormal       = normal;
-                  closestAreas        = areas;
-                  intersections       = true;
-				   }
-            }
-			}
+				      float distance = length(intersection-r.origin);
+				      if( i && distance>EPSILON && distance<minDistance ) 
+				      {
+					      // Only keep intersection with the closest object
+					      minDistance         = distance;
+					      closestPrimitive    = box.startIndex.x+cptPrimitives;
+					      closestIntersection = intersection;
+					      closestNormal       = normal;
+                     closestAreas        = areas;
+                     intersections       = true;
+				      }
+               }
+			   }
+         }
          ++cptBoxes;
 		}
       else

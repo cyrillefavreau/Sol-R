@@ -117,6 +117,7 @@ public:
    // Rotation
    void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
 	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
+   void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
    float3 getRotation() { return m_rotation; }
 
    // Translation
@@ -325,20 +326,14 @@ public:
 
 
 public:
-   void setNbFrames(const int nbFrames) { m_nbFrames=nbFrames; };
-   int  getNbFrames() { return m_nbFrames; };
-   void setFrame( const int frame ) { m_frame=frame; };
-   int  getFrame() {return m_frame; };
-   void nextFrame() 
-   {
-      m_frame++; 
-      if(m_frame>=m_nbFrames) m_frame=m_nbFrames-1;
-   };
-   void previousFrame() 
-   { 
-      m_frame--; 
-      if(m_frame<0) m_frame=0; 
-   }
+   
+   // Frames
+   void setNbFrames(const int nbFrames);
+   void setFrame( const int frame );
+   int  getNbFrames();
+   int  getFrame();
+   void nextFrame();
+   void previousFrame();
 
 public:
 
@@ -346,10 +341,11 @@ public:
 
 public:
 
-   //CPUBoundingBox& getBoundingBox( const unsigned int boxIndex ) { return (m_boundingBoxes)[m_frame][boxIndex]; };
    int compactBoxes( bool reconstructBoxes, int gridSize=0 );
    void displayBoxesInfo(  );
    void resetBoxes( bool resetPrimitives );
+
+   void setTreeDepth( const int treeDepth );
 
 protected:
 
@@ -399,6 +395,7 @@ protected:
    int    m_frame;
    int    m_nbFrames;
    float  m_morph;
+   int    m_treeDepth;
 
 protected:
 
@@ -440,7 +437,7 @@ protected:
 protected:
 
    // CPU
-	BoxContainer        m_outterBoundingBoxes[NB_MAX_FRAMES][BOUNDING_BOXES_TREE_DEPTH];
+	BoxContainer        m_boundingBoxes[NB_MAX_FRAMES][BOUNDING_BOXES_TREE_DEPTH];
 	PrimitiveContainer  m_primitives[NB_MAX_FRAMES];
 	LampContainer       m_lamps[NB_MAX_FRAMES];
    LightInformation*   m_lightInformation;

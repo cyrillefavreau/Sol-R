@@ -245,14 +245,10 @@ void RayTracer::glNormal3fv( const GLfloat* n )
 
 void RayTracer::glColor3f (GLfloat red, GLfloat green, GLfloat blue)
 {
-   //gCurrentMaterial = static_cast<int>(red*100.f+green*100.f+blue*100.f);
    int m = RayTracer::gKernel->getCurrentMaterial();
-   Material* material = RayTracer::gKernel->getMaterial(m);
-   //if( material->color.x!=red || material->color.y!=green || material->color.z!=blue )
-   {
-      ++m;
-      RayTracer::gKernel->setMaterialColor( m, red, green, blue );
-   }
+   ++m;
+   RayTracer::gKernel->setMaterialColor( m, red, green, blue );
+   RayTracer::gKernel->setCurrentMaterial(m);
 }
 
 void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
@@ -266,6 +262,7 @@ void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alph
       material = RayTracer::gKernel->getMaterial(m);
       material->transparency.x = alpha;
       material->refraction.x = 1.f+alpha;
+      RayTracer::gKernel->setCurrentMaterial(m);
    }
 }
 
@@ -623,7 +620,7 @@ void RayTracer::render()
 
 void RayTracer::glTranslatef( GLfloat x, GLfloat y, GLfloat z )
 {
-   RayTracer::gKernel->translate(x*gScale,y*gScale,-z*gScale); // Z is inverted!!
+   //RayTracer::gKernel->translate(x*gScale,y*gScale,-z*gScale); // Z is inverted!!
 }
 
 void RayTracer::glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z )

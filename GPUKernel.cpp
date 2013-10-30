@@ -189,7 +189,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes, int platform, int
    m_GLMode(-1),
    m_distortion(0.1f),
    m_frame(0),
-   m_currentMaterial(0)
+   m_currentMaterial(0),
+   m_treeDepth(2)
 {
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
@@ -317,7 +318,7 @@ void GPUKernel::cleanup()
    {
       for( int j(0); j<BOUNDING_BOXES_TREE_DEPTH; ++j)
       {
-         m_outterBoundingBoxes[i][j].clear();
+         m_boundingBoxes[i][j].clear();
       }
       m_nbActiveBoxes[i] = 0;
 
@@ -760,11 +761,19 @@ bool GPUKernel::updateOutterBoundingBox( CPUBoundingBox& outterBox, const int de
 
    bool result(false);
 
+   // Reset box size
+   outterBox.parameters[0].x =  m_sceneInfo.viewDistance.x;
+	outterBox.parameters[0].y =  m_sceneInfo.viewDistance.x;
+	outterBox.parameters[0].z =  m_sceneInfo.viewDistance.x;
+	outterBox.parameters[1].x = -m_sceneInfo.viewDistance.x;
+	outterBox.parameters[1].y = -m_sceneInfo.viewDistance.x;
+	outterBox.parameters[1].z = -m_sceneInfo.viewDistance.x;
+
    // Process box size
    std::vector<long>::const_iterator it = outterBox.primitives.begin();
    while( it != outterBox.primitives.end() )
    {
-      CPUBoundingBox& box = (m_outterBoundingBoxes[m_frame][depth])[*it];
+      CPUBoundingBox& box = (m_boundingBoxes[m_frame][depth])[*it];
       if( outterBox.parameters[0].x>box.parameters[0].x ) outterBox.parameters[0].x=box.parameters[0].x;
 	   if( outterBox.parameters[0].y>box.parameters[0].y ) outterBox.parameters[0].y=box.parameters[0].y;
 	   if( outterBox.parameters[0].z>box.parameters[0].z ) outterBox.parameters[0].z=box.parameters[0].z;
@@ -787,14 +796,14 @@ void GPUKernel::resetBoxes( bool resetPrimitives )
 {
    if( resetPrimitives )
    {
-      for( int i(0); i<m_outterBoundingBoxes[m_frame][0].size(); ++i )
+      for( int i(0); i<m_boundingBoxes[m_frame][0].size(); ++i )
       {
-         resetBox( m_outterBoundingBoxes[m_frame][0][i], resetPrimitives );
+         resetBox( m_boundingBoxes[m_frame][0][i], resetPrimitives );
       }
    }
    else
    {
-      m_outterBoundingBoxes[m_frame][0].clear();
+      m_boundingBoxes[m_frame][0].clear();
    }
 }
 
@@ -804,8 +813,8 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 	if( resetPrimitives ) 
 	{
       box.primitives.clear();
+      box.indexForNextBox = 1;
 	}
-   box.indexForNextBox = 0;
 	box.parameters[0].x =  m_sceneInfo.viewDistance.x;
 	box.parameters[0].y =  m_sceneInfo.viewDistance.x;
 	box.parameters[0].z =  m_sceneInfo.viewDistance.x;
@@ -829,6 +838,8 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    std::map<unsigned int,unsigned int> primitivesPerBox;
 
    int p(0);
+
+   // Add primitives to boxes
    std::map<long,CPUPrimitive>::iterator it = (m_primitives[m_frame]).begin();
    while( it != (m_primitives[m_frame]).end() )
    {
@@ -857,16 +868,27 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          if( primitivesPerBox.find(B) == primitivesPerBox.end() )
          {
             // Box B
-	         m_outterBoundingBoxes[m_frame][0][B].parameters[0].x = m_sceneInfo.viewDistance.x;
-	         m_outterBoundingBoxes[m_frame][0][B].parameters[0].y = m_sceneInfo.viewDistance.x;
-	         m_outterBoundingBoxes[m_frame][0][B].parameters[0].z = m_sceneInfo.viewDistance.x;
-	         m_outterBoundingBoxes[m_frame][0][B].parameters[1].x = -m_sceneInfo.viewDistance.x;
-	         m_outterBoundingBoxes[m_frame][0][B].parameters[1].y = -m_sceneInfo.viewDistance.x;
-	         m_outterBoundingBoxes[m_frame][0][B].parameters[1].z = -m_sceneInfo.viewDistance.x;
-            m_outterBoundingBoxes[m_frame][0][B].indexForNextBox = 1;
+	         m_boundingBoxes[m_frame][0][B].parameters[0].x = m_sceneInfo.viewDistance.x;
+	         m_boundingBoxes[m_frame][0][B].parameters[0].y = m_sceneInfo.viewDistance.x;
+	         m_boundingBoxes[m_frame][0][B].parameters[0].z = m_sceneInfo.viewDistance.x;
+	         m_boundingBoxes[m_frame][0][B].parameters[1].x = -m_sceneInfo.viewDistance.x;
+	         m_boundingBoxes[m_frame][0][B].parameters[1].y = -m_sceneInfo.viewDistance.x;
+	         m_boundingBoxes[m_frame][0][B].parameters[1].z = -m_sceneInfo.viewDistance.x;
+            m_boundingBoxes[m_frame][0][B].indexForNextBox = 1;
          }
-         //LOG_INFO(1, "Adding primitive to box " << B);
-         m_outterBoundingBoxes[m_frame][0][B].primitives.push_back(p);
+         
+         // Lights
+         if( primitive.materialId!=MATERIAL_NONE && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f )
+         {
+            // Lights are added to first box of higher level
+            m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
+            LOG_INFO(3,"Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
+         }
+         else
+         {
+            //LOG_INFO(1, "Adding primitive to box " << B);
+            m_boundingBoxes[m_frame][0][B].primitives.push_back(p);
+         }
       }
       ++p;
       ++it;
@@ -875,8 +897,8 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    if( !simulate )
    {
       // Now update box sizes
-      BoxContainer::iterator itb = m_outterBoundingBoxes[m_frame][0].begin();
-      while( itb != m_outterBoundingBoxes[m_frame][0].end() )
+      BoxContainer::iterator itb = m_boundingBoxes[m_frame][0].begin();
+      while( itb != m_boundingBoxes[m_frame][0].end() )
       {
          updateBoundingBox((*itb).second);
          itb++;
@@ -898,8 +920,10 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
    boxSteps.y = ( boxSteps.y == 0.f ) ? 1 : boxSteps.y;
    boxSteps.z = ( boxSteps.z == 0.f ) ? 1 : boxSteps.z;
 
-   BoxContainer::iterator it=(m_outterBoundingBoxes[m_frame][boundingBoxesDepth-1]).begin();
-   while( it != (m_outterBoundingBoxes[m_frame][boundingBoxesDepth-1]).end() )
+
+   // Create boxes in Rubik's cube mode :-)
+   BoxContainer::iterator it=(m_boundingBoxes[m_frame][boundingBoxesDepth-1]).begin();
+   while( it != (m_boundingBoxes[m_frame][boundingBoxesDepth-1]).end() )
    {
       CPUBoundingBox& box((*it).second);
 
@@ -909,21 +933,23 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
       int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
       int B = (X*boxSize*boxSize + Y*boxSize + Z);
 
+      ++B; // Index 0 is used to store lights
+
       // Box B
-	   m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].x = m_sceneInfo.viewDistance.x;
-	   m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].y = m_sceneInfo.viewDistance.x;
-	   m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].z = m_sceneInfo.viewDistance.x;
-	   m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].x = -m_sceneInfo.viewDistance.x;
-	   m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].y = -m_sceneInfo.viewDistance.x;
-	   m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].z = -m_sceneInfo.viewDistance.x;
-      m_outterBoundingBoxes[m_frame][boundingBoxesDepth][B].primitives.push_back((*it).first);
+	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].x = m_sceneInfo.viewDistance.x;
+	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].y = m_sceneInfo.viewDistance.x;
+	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].z = m_sceneInfo.viewDistance.x;
+	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].x = -m_sceneInfo.viewDistance.x;
+	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].y = -m_sceneInfo.viewDistance.x;
+	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].z = -m_sceneInfo.viewDistance.x;
+      m_boundingBoxes[m_frame][boundingBoxesDepth][B].primitives.push_back((*it).first);
       ++it;
    }
-   LOG_INFO(3,"Depth " << boundingBoxesDepth << ": " << m_outterBoundingBoxes[m_frame][boundingBoxesDepth].size() << " created" );
+   LOG_INFO(3,"Depth " << boundingBoxesDepth << ": " << m_boundingBoxes[m_frame][boundingBoxesDepth].size() << " created" );
 
    // Now update box sizes
-   BoxContainer::iterator itb = m_outterBoundingBoxes[m_frame][boundingBoxesDepth].begin();
-   while( itb != m_outterBoundingBoxes[m_frame][boundingBoxesDepth].end() )
+   BoxContainer::iterator itb = m_boundingBoxes[m_frame][boundingBoxesDepth].begin();
+   while( itb != m_boundingBoxes[m_frame][boundingBoxesDepth].end() )
    {
       updateOutterBoundingBox((*itb).second, boundingBoxesDepth-1);
       itb++;
@@ -933,11 +959,14 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
 int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
 {
 	LOG_INFO(3,"GPUKernel::compactBoxes (frame " << m_frame << ")" );
+
+   // First box of highest level is dedicated to light sources
    int boundingBoxesDepth(0);
    m_primitivesTransfered = false;
    int bestSize = 0;
    if( reconstructBoxes )
    {
+      resetBox(m_boundingBoxes[m_frame][m_treeDepth][0],true);
       int activeBoxes(NB_MAX_BOXES);
       if(gridSize==0)
       {
@@ -945,7 +974,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
          // Bounding boxes
          // Search for best trade-off
          std::map<unsigned int,unsigned int> primitivesPerBox;
-         int boxSize = 1024;
+         int boxSize = 4096;
          bestSize = boxSize;
          int bestActiveBoxes = 0;
          int bestRatio = 10000; 
@@ -957,12 +986,12 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
                bestSize = boxSize;
                bestRatio = ratio;
                bestActiveBoxes = activeBoxes;
-               LOG_INFO(1, "Trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
+               LOG_INFO(3, "Trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
             }
             boxSize/=2;
          }
-         while( boxSize>=2 );
-         LOG_INFO(1, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
+         while( boxSize>=32 );
+         LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
          processBoxes(bestSize, activeBoxes, false );
       }
       else
@@ -970,19 +999,16 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
          processBoxes(gridSize, activeBoxes, false );
       }
 
+      const int sizes[] = {2,16,32,64,128,256,512,1024,2048,4096}; 
       // Now that boxes have been constructed, we need to group them info even bigger boxes
-      bestSize = 128;
-      processOutterBoxes(bestSize,1); // TODO!
-
-      bestSize = 64;
-      processOutterBoxes(bestSize,2); // TODO!
-
-      bestSize = 32;
-      processOutterBoxes(bestSize,3); // TODO!
+      for( int i(1); i<=m_treeDepth; ++i )
+      { 
+         LOG_INFO(3,"Processing boxes for level " << i << "/" << m_treeDepth << ":" << sizes[m_treeDepth-i]);
+         processOutterBoxes(sizes[m_treeDepth-i],i);
+      }
    }
 
    streamDataToGPU();
-
    return static_cast<int>(m_nbActiveBoxes[m_frame]);
 }
 
@@ -997,21 +1023,22 @@ void GPUKernel::recursiveDataStreamToGPU( const int depth, std::vector<long>& el
    while( itob != elements.end() )
    {
       // Create Box
-      CPUBoundingBox& box=m_outterBoundingBoxes[m_frame][depth][(*itob)];
+      CPUBoundingBox& box=m_boundingBoxes[m_frame][depth][(*itob)];
 
       if( box.primitives.size()!=0 && m_nbActiveBoxes[m_frame]<NB_MAX_BOXES )
       {
          int boxIndex = m_nbActiveBoxes[m_frame];
          m_hBoundingBoxes[boxIndex].parameters[0]  = box.parameters[0];
          m_hBoundingBoxes[boxIndex].parameters[1]  = box.parameters[1];
-         m_hBoundingBoxes[boxIndex].nbPrimitives.x = (depth==0) ? box.primitives.size() : 0;
-         m_hBoundingBoxes[boxIndex].startIndex.x = m_nbActivePrimitives[m_frame];
+         m_hBoundingBoxes[boxIndex].nbPrimitives.x = (depth==0) ? static_cast<int>(box.primitives.size()) : 0;
+         m_hBoundingBoxes[boxIndex].startIndex.x = (depth==0) ? m_nbActivePrimitives[m_frame] : depth;
+         LOG_INFO(3,"==> Box " << boxIndex << " Depth [" << depth << "] ++" );
          ++m_nbActiveBoxes[m_frame];
          ++c;
          
          if( depth==0 )
          {
-            //LOG_INFO(1,"Adding " << m_hBoundingBoxes[boxIndex].nbPrimitives.x << "/" << box.primitives.size() << " primitives");
+            LOG_INFO(3,"=== Box " << boxIndex << " Depth [" << depth << "] ... adding " << box.primitives.size() << " primitives");
             // Add primitive for Nodes
             std::vector<long>::const_iterator itp = box.primitives.begin();
             while( itp != box.primitives.end() )
@@ -1033,15 +1060,6 @@ void GPUKernel::recursiveDataStreamToGPU( const int depth, std::vector<long>& el
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].vt0 = primitive.vt0;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].vt1 = primitive.vt1;
                   m_hPrimitives[m_nbActivePrimitives[m_frame]].vt2 = primitive.vt2;
-
-                  // Lights
-                  if( primitive.materialId >= 0 && m_hMaterials[primitive.materialId].innerIllumination.x != 0.f )
-                  {
-                     m_hLamps[m_nbActiveLamps[m_frame]] = m_nbActivePrimitives[m_frame];
-                     (m_lamps[m_frame])[m_nbActiveLamps[m_frame]] = (*itp);
-                     m_nbActiveLamps[m_frame]++;
-                     LOG_INFO(3,"Lamp " << (m_lamps[m_frame])[m_nbActiveLamps[m_frame]] << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
-                  }
                   ++m_nbActivePrimitives[m_frame];
                }
                ++itp;
@@ -1052,7 +1070,8 @@ void GPUKernel::recursiveDataStreamToGPU( const int depth, std::vector<long>& el
             // Resursively continue to build the tree
             recursiveDataStreamToGPU(depth-1, box.primitives);
          }
-         m_hBoundingBoxes[boxIndex].indexForNextBox.x = (depth==0) ? 1 : m_nbActiveBoxes[m_frame]-boxIndex+1;
+         m_hBoundingBoxes[boxIndex].indexForNextBox.x = (depth==0) ? 1 : m_nbActiveBoxes[m_frame]-boxIndex;
+         LOG_INFO(3,"<== Box " << boxIndex << " Depth [" << depth << "] --> " << m_hBoundingBoxes[boxIndex].indexForNextBox.x << " = box " << boxIndex+m_hBoundingBoxes[boxIndex].indexForNextBox.x );
       }
       ++itob;
    }
@@ -1060,6 +1079,7 @@ void GPUKernel::recursiveDataStreamToGPU( const int depth, std::vector<long>& el
 
 void GPUKernel::streamDataToGPU()
 {
+   LOG_INFO(3,"GPUKernel::streamDataToGPU");
    // --------------------------------------------------------------------------------
    // Transform data for ray-tracer
    // CPU -> GPU
@@ -1071,22 +1091,90 @@ void GPUKernel::streamDataToGPU()
 
    // Build boxes tree recursively
    long nbElements(0); // Needed for recursion
-   int maxDepth(3);
-   LOG_INFO(3,"Processing " << m_outterBoundingBoxes[m_frame][maxDepth].size() << " master boxes");
-   BoxContainer::iterator itob=m_outterBoundingBoxes[m_frame][maxDepth].begin();
-   while( itob != m_outterBoundingBoxes[m_frame][maxDepth].end() )
+   int maxDepth(m_treeDepth);
+   LOG_INFO(3,"Processing " << m_boundingBoxes[m_frame][maxDepth].size() << " master boxes");
+   BoxContainer::iterator itob=m_boundingBoxes[m_frame][maxDepth].begin();
+   while( itob != m_boundingBoxes[m_frame][maxDepth].end() )
    {
       // Create Box
       CPUBoundingBox& box=(*itob).second;
-
       int boxIndex = m_nbActiveBoxes[m_frame];
+      LOG_INFO(3,"==> Box " << boxIndex << " Depth [" << maxDepth << "] ++" );
       m_hBoundingBoxes[boxIndex].parameters[0]  = box.parameters[0];
       m_hBoundingBoxes[boxIndex].parameters[1]  = box.parameters[1];
-      m_hBoundingBoxes[boxIndex].nbPrimitives.x = 0;//box.primitives.size();
-      m_hBoundingBoxes[boxIndex].startIndex.x = 0;
+      m_hBoundingBoxes[boxIndex].nbPrimitives.x = 0;
+      m_hBoundingBoxes[boxIndex].startIndex.x = maxDepth;
+
+      if( itob==m_boundingBoxes[m_frame][maxDepth].begin() )
+      {
+         // Box 0 of higher level contains ligths
+         m_lightInformationSize = 0;
+         m_hBoundingBoxes[boxIndex].parameters[0].x = -m_sceneInfo.viewDistance.x;
+         m_hBoundingBoxes[boxIndex].parameters[0].y = -m_sceneInfo.viewDistance.x;
+         m_hBoundingBoxes[boxIndex].parameters[0].z = -m_sceneInfo.viewDistance.x;
+         m_hBoundingBoxes[boxIndex].parameters[1].x = m_sceneInfo.viewDistance.x;
+         m_hBoundingBoxes[boxIndex].parameters[1].y = m_sceneInfo.viewDistance.x;
+         m_hBoundingBoxes[boxIndex].parameters[1].z = m_sceneInfo.viewDistance.x;
+         m_hBoundingBoxes[boxIndex].nbPrimitives.x = box.primitives.size();
+         m_hBoundingBoxes[boxIndex].startIndex.x = 0;
+         std::vector<long>::const_iterator itp = box.primitives.begin();
+         while( itp != box.primitives.end() )
+         {
+            // Add the primitive
+            CPUPrimitive& primitive = (m_primitives[m_frame])[*itp];
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].index.x = (*itp);
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].type.x  = primitive.type;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].p0 = primitive.p0;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].p1 = primitive.p1;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].p2 = primitive.p2;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].n0 = primitive.n0;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].n1 = primitive.n1;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].n2 = primitive.n2;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].size = primitive.size;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].materialId.x = primitive.materialId;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].vt0 = primitive.vt0;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].vt1 = primitive.vt1;
+            m_hPrimitives[m_nbActivePrimitives[m_frame]].vt2 = primitive.vt2;
+            ++m_nbActivePrimitives[m_frame];
+
+            // Add light information related to primitive
+            Material& material = m_hMaterials[primitive.materialId];
+            LightInformation lightInformation;
+            lightInformation.attribute.x = (*itp);
+
+            lightInformation.location.x = primitive.p0.x;
+            lightInformation.location.y = primitive.p0.y;
+            lightInformation.location.z = primitive.p0.z;
+      
+            lightInformation.color.x = material.color.x;
+            lightInformation.color.y = material.color.y;
+            lightInformation.color.z = material.color.z;
+            lightInformation.color.w = material.innerIllumination.x;
+
+            m_lightInformation[m_lightInformationSize] = lightInformation;
+
+            LOG_INFO(3,
+               "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
+               m_lightInformation[m_lightInformationSize].location.x << "," <<
+               m_lightInformation[m_lightInformationSize].location.y << "," <<
+               m_lightInformation[m_lightInformationSize].location.z << " " <<
+               m_lightInformation[m_lightInformationSize].color.x << "," <<
+               m_lightInformation[m_lightInformationSize].color.y << "," <<
+               m_lightInformation[m_lightInformationSize].color.z << " " <<
+               m_lightInformation[m_lightInformationSize].color.w );
+
+            m_hLamps[m_nbActiveLamps[m_frame]] = *itp;
+            ++m_nbActiveLamps[m_frame];
+            ++m_lightInformationSize;
+            ++itp;
+         }
+      }
+
       ++m_nbActiveBoxes[m_frame];
       recursiveDataStreamToGPU(maxDepth-1, box.primitives);
       m_hBoundingBoxes[boxIndex].indexForNextBox.x = m_nbActiveBoxes[m_frame]-boxIndex;
+      LOG_INFO(3,"<== Box " << boxIndex << " Depth [" << maxDepth << "] --> " << m_hBoundingBoxes[boxIndex].indexForNextBox.x << " = box " << boxIndex+m_hBoundingBoxes[boxIndex].indexForNextBox.x );
+      
       LOG_INFO(3,"Master Primitive (" << 
          box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z << "),(" <<
          box.parameters[1].x << "," << box.parameters[1].y << "," << box.parameters[1].z << ")," <<
@@ -1101,9 +1189,16 @@ void GPUKernel::streamDataToGPU()
    LOG_INFO(3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
    if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame].size() )
    {
-      LOG_ERROR("Lost primitives on the way... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame].size() );
+      LOG_ERROR("Lost primitives on the way for frame " << m_frame << "... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame].size() );
    }
 }
+
+void GPUKernel::setTreeDepth( const int treeDepth )
+{
+   LOG_INFO(1,"Tree depth=" << treeDepth);
+   m_treeDepth = treeDepth;
+}
+
 
 void GPUKernel::resetFrame()
 {
@@ -1115,11 +1210,11 @@ void GPUKernel::resetFrame()
 
    for( int i(0);i<BOUNDING_BOXES_TREE_DEPTH;++i)
    {
-      m_outterBoundingBoxes[m_frame][i].clear();
+      m_boundingBoxes[m_frame][i].clear();
    }
-   m_outterBoundingBoxes[m_frame][0].clear();
+   m_boundingBoxes[m_frame][0].clear();
    m_nbActiveBoxes[m_frame] = 0;
-   LOG_INFO(3, "Nb Boxes: " << m_outterBoundingBoxes[m_frame][0].size());
+   LOG_INFO(3, "Nb Boxes: " << m_boundingBoxes[m_frame][0].size());
 
    m_primitives[m_frame].clear();
    m_nbActivePrimitives[m_frame] = 0;
@@ -1177,9 +1272,9 @@ void GPUKernel::resetAll()
 
 void GPUKernel::displayBoxesInfo()
 {
-	for( unsigned int i(0); i<=m_outterBoundingBoxes[m_frame][0].size(); ++i )
+	for( unsigned int i(0); i<=m_boundingBoxes[m_frame][0].size(); ++i )
 	{
-		CPUBoundingBox& box = m_outterBoundingBoxes[m_frame][0][i];
+		CPUBoundingBox& box = m_boundingBoxes[m_frame][0][i];
 		LOG_INFO( 3, "Box " << i );
 		LOG_INFO( 3, "- # of primitives: " << box.primitives.size() );
 		LOG_INFO( 3, "- Corners 1      : " << box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z );
@@ -1203,6 +1298,7 @@ void GPUKernel::displayBoxesInfo()
 void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
+
    m_primitivesTransfered = false;
 	float3 cosAngles, sinAngles;
 	
@@ -1214,20 +1310,8 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
 	sinAngles.y = sin(angles.y);
 	sinAngles.z = sin(angles.z);
 
-   int boundingBoxesDepth(0); // TODO
-
 #pragma omp parallel
-   for( BoxContainer::iterator itb=m_outterBoundingBoxes[m_frame][boundingBoxesDepth].begin(); itb!=m_outterBoundingBoxes[m_frame][boundingBoxesDepth].end(); ++itb )
-   {
-      #pragma omp single nowait
-      {
-         CPUBoundingBox& box = (*itb).second;
-         resetBox(box,false);
-      }
-   }
-
-#pragma omp parallel
-   for( BoxContainer::iterator itb=m_outterBoundingBoxes[m_frame][0].begin(); itb!=m_outterBoundingBoxes[m_frame][0].end(); ++itb )
+   for( BoxContainer::iterator itb=m_boundingBoxes[m_frame][0].begin(); itb!=m_boundingBoxes[m_frame][0].end(); ++itb )
    {
       #pragma omp single nowait
       {
@@ -1273,6 +1357,21 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
                rotatePrimitive( primitive, rotationCenter, cosAngles, sinAngles );
 #endif // 0
             }
+            updateBoundingBox(box);
+         }
+      }
+   }
+
+   // Update bounding boxes
+   for( int b(1); b<BOUNDING_BOXES_TREE_DEPTH; ++b )
+   {
+   #pragma omp parallel
+      for( BoxContainer::iterator itb=m_boundingBoxes[m_frame][b].begin(); itb!=m_boundingBoxes[m_frame][b].end(); ++itb )
+      {
+         #pragma omp single nowait
+         {
+            CPUBoundingBox& box = (*itb).second;
+            updateOutterBoundingBox(box,b-1);
          }
       }
    }
@@ -1283,7 +1382,7 @@ void GPUKernel::translatePrimitives( float3 translation, unsigned int from, unsi
 	LOG_INFO(3,"GPUKernel::translatePrimitives(" << from << "->" << to << ")" );
    m_primitivesTransfered = false;
 #pragma omp parallel
-   for( BoxContainer::iterator itb=m_outterBoundingBoxes[m_frame][0].begin(); itb!=m_outterBoundingBoxes[m_frame][0].end(); ++itb )
+   for( BoxContainer::iterator itb=m_boundingBoxes[m_frame][0].begin(); itb!=m_boundingBoxes[m_frame][0].end(); ++itb )
    {
       #pragma omp single nowait
       {
@@ -1320,66 +1419,65 @@ void GPUKernel::translatePrimitives( float3 translation, unsigned int from, unsi
 
 void GPUKernel::morphPrimitives()
 {
-//#pragma omp parallel
+   LOG_INFO(3,"Morphing frames " << m_nbFrames);
    for( int frame(1); frame<(m_nbFrames-1); ++frame )
    {
-      //#pragma omp single nowait
+      LOG_INFO(3,"Morphing frame " << frame << ", " << m_primitives[0].size() << " primitives");
+      setFrame(frame);
+      resetFrame();
+      PrimitiveContainer::iterator it2=m_primitives[m_nbFrames-1].begin();
+      for( PrimitiveContainer::iterator it1=m_primitives[0].begin(); it1!=m_primitives[0].end() && it2!=m_primitives[m_nbFrames-1].end(); ++it1 )
       {
-         setFrame(frame);
-         PrimitiveContainer::iterator it2=m_primitives[m_nbFrames-1].begin();
-         for( PrimitiveContainer::iterator it1=m_primitives[0].begin(); it1!=m_primitives[0].end() && it2!=m_primitives[m_nbFrames-1].end(); ++it1 )
-         {
-            CPUPrimitive& primitive1((*it1).second);
-            CPUPrimitive& primitive2((*it2).second);
-            float3 p0,p1,p2;
-            float3 n0,n1,n2;
-            float3 size;
-            float r = static_cast<float>(m_frame)/static_cast<float>(m_nbFrames);
-            p0.x = primitive1.p0.x+r*(primitive2.p0.x - primitive1.p0.x);
-            p0.y = primitive1.p0.y+r*(primitive2.p0.y - primitive1.p0.y);
-            p0.z = primitive1.p0.z+r*(primitive2.p0.z - primitive1.p0.z);
+         CPUPrimitive& primitive1((*it1).second);
+         CPUPrimitive& primitive2((*it2).second);
+         float3 p0,p1,p2;
+         float3 n0,n1,n2;
+         float3 size;
+         float r = static_cast<float>(m_frame)/static_cast<float>(m_nbFrames);
+         p0.x = primitive1.p0.x+r*(primitive2.p0.x - primitive1.p0.x);
+         p0.y = primitive1.p0.y+r*(primitive2.p0.y - primitive1.p0.y);
+         p0.z = primitive1.p0.z+r*(primitive2.p0.z - primitive1.p0.z);
 
-            p1.x = primitive1.p1.x+r*(primitive2.p1.x - primitive1.p1.x);
-            p1.y = primitive1.p1.y+r*(primitive2.p1.y - primitive1.p1.y);
-            p1.z = primitive1.p1.z+r*(primitive2.p1.z - primitive1.p1.z);
+         p1.x = primitive1.p1.x+r*(primitive2.p1.x - primitive1.p1.x);
+         p1.y = primitive1.p1.y+r*(primitive2.p1.y - primitive1.p1.y);
+         p1.z = primitive1.p1.z+r*(primitive2.p1.z - primitive1.p1.z);
 
-            p2.x = primitive1.p2.x+r*(primitive2.p2.x - primitive1.p2.x);
-            p2.y = primitive1.p2.y+r*(primitive2.p2.y - primitive1.p2.y);
-            p2.z = primitive1.p2.z+r*(primitive2.p2.z - primitive1.p2.z);
+         p2.x = primitive1.p2.x+r*(primitive2.p2.x - primitive1.p2.x);
+         p2.y = primitive1.p2.y+r*(primitive2.p2.y - primitive1.p2.y);
+         p2.z = primitive1.p2.z+r*(primitive2.p2.z - primitive1.p2.z);
 
-            n0.x = primitive1.n0.x+r*(primitive2.n0.x - primitive1.n0.x);
-            n0.y = primitive1.n0.y+r*(primitive2.n0.y - primitive1.n0.y);
-            n0.z = primitive1.n0.z+r*(primitive2.n0.z - primitive1.n0.z);
+         n0.x = primitive1.n0.x+r*(primitive2.n0.x - primitive1.n0.x);
+         n0.y = primitive1.n0.y+r*(primitive2.n0.y - primitive1.n0.y);
+         n0.z = primitive1.n0.z+r*(primitive2.n0.z - primitive1.n0.z);
 
-            n1.x = primitive1.n1.x+r*(primitive2.n1.x - primitive1.n1.x);
-            n1.y = primitive1.n1.y+r*(primitive2.n1.y - primitive1.n1.y);
-            n1.z = primitive1.n1.z+r*(primitive2.n1.z - primitive1.n1.z);
+         n1.x = primitive1.n1.x+r*(primitive2.n1.x - primitive1.n1.x);
+         n1.y = primitive1.n1.y+r*(primitive2.n1.y - primitive1.n1.y);
+         n1.z = primitive1.n1.z+r*(primitive2.n1.z - primitive1.n1.z);
 
-            n2.x = primitive1.n2.x+r*(primitive2.n2.x - primitive1.n2.x);
-            n2.y = primitive1.n2.y+r*(primitive2.n2.y - primitive1.n2.y);
-            n2.z = primitive1.n2.z+r*(primitive2.n2.z - primitive1.n2.z);
+         n2.x = primitive1.n2.x+r*(primitive2.n2.x - primitive1.n2.x);
+         n2.y = primitive1.n2.y+r*(primitive2.n2.y - primitive1.n2.y);
+         n2.z = primitive1.n2.z+r*(primitive2.n2.z - primitive1.n2.z);
 
-            size.x = primitive1.size.x+r*(primitive2.size.x - primitive1.size.x);
-            size.y = primitive1.size.y+r*(primitive2.size.y - primitive1.size.y);
-            size.z = primitive1.size.z+r*(primitive2.size.z - primitive1.size.z);
+         size.x = primitive1.size.x+r*(primitive2.size.x - primitive1.size.x);
+         size.y = primitive1.size.y+r*(primitive2.size.y - primitive1.size.y);
+         size.z = primitive1.size.z+r*(primitive2.size.z - primitive1.size.z);
 
-            int i = addPrimitive( PrimitiveType(primitive1.type) );
-            setPrimitive(i, 
-               p0.x, p0.y, p0.z,
-               p1.x, p1.y, p1.z,
-               p2.x, p2.y, p2.z,
-               size.x,size.y,size.z,
-               primitive1.materialId );
+         int i = addPrimitive( PrimitiveType(primitive1.type) );
+         setPrimitive(i, 
+            p0.x, p0.y, p0.z,
+            p1.x, p1.y, p1.z,
+            p2.x, p2.y, p2.z,
+            size.x,size.y,size.z,
+            primitive1.materialId );
             
-            setPrimitiveNormals(i, n0,n1,n2);
-            setPrimitiveTextureCoordinates(i, primitive1.vt0,primitive1.vt1,primitive1.vt2);
+         setPrimitiveNormals(i, n0,n1,n2);
+         setPrimitiveTextureCoordinates(i, primitive1.vt0,primitive1.vt1,primitive1.vt2);
 
-            setPrimitiveIsMovable( i, primitive1.movable );
+         setPrimitiveIsMovable( i, primitive1.movable );
 
-            ++it2;
-         }
-         compactBoxes(true);
+         ++it2;
       }
+      compactBoxes(true);
    }
 }
 
@@ -1441,41 +1539,44 @@ void GPUKernel::rotateVector( float3& v, const float3& rotationCenter, const flo
    v.z = result.z + rotationCenter.z;
 }
 
-void GPUKernel::rotatePrimitive( 
-	CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
+void GPUKernel::rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
-   //if( primitive.type == ptTriangle || primitive.type == ptSphere || primitive.type == ptEllipsoid || primitive.type == ptCylinder )
+   rotateVector( box.parameters[0], rotationCenter, cosAngles, sinAngles );
+   rotateVector( box.parameters[1], rotationCenter, cosAngles, sinAngles );
+}
+
+void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
+{
+	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
+   rotateVector( primitive.p0, rotationCenter, cosAngles, sinAngles );
+	if( primitive.type == ptCylinder || primitive.type == ptTriangle )
 	{
-      rotateVector( primitive.p0, rotationCenter, cosAngles, sinAngles );
-		if( primitive.type == ptCylinder || primitive.type == ptTriangle )
-		{
-         rotateVector( primitive.p1, rotationCenter, cosAngles, sinAngles );
-         rotateVector( primitive.p2, rotationCenter, cosAngles, sinAngles );
-         // Rotate Normals
-         float3 zeroCenter = {0.f,0.f,0.f};
-         rotateVector( primitive.n0, zeroCenter, cosAngles, sinAngles );
-         rotateVector( primitive.n1, zeroCenter, cosAngles, sinAngles );
-         rotateVector( primitive.n2, zeroCenter, cosAngles, sinAngles );
-         if( primitive.type == ptCylinder )
+      rotateVector( primitive.p1, rotationCenter, cosAngles, sinAngles );
+      rotateVector( primitive.p2, rotationCenter, cosAngles, sinAngles );
+      // Rotate Normals
+      float3 zeroCenter = {0.f,0.f,0.f};
+      rotateVector( primitive.n0, zeroCenter, cosAngles, sinAngles );
+      rotateVector( primitive.n1, zeroCenter, cosAngles, sinAngles );
+      rotateVector( primitive.n2, zeroCenter, cosAngles, sinAngles );
+      if( primitive.type == ptCylinder )
+      {
+         // Axis
+			float3 axis;
+			axis.x = primitive.p1.x - primitive.p0.x;
+			axis.y = primitive.p1.y - primitive.p0.y;
+			axis.z = primitive.p1.z - primitive.p0.z;
+			float len = sqrtf( axis.x*axis.x + axis.y*axis.y + axis.z*axis.z );
+         if( len != 0 )
          {
-            // Axis
-				float3 axis;
-				axis.x = primitive.p1.x - primitive.p0.x;
-				axis.y = primitive.p1.y - primitive.p0.y;
-				axis.z = primitive.p1.z - primitive.p0.z;
-				float len = sqrtf( axis.x*axis.x + axis.y*axis.y + axis.z*axis.z );
-            if( len != 0 )
-            {
-				   axis.x /= len;
-				   axis.y /= len;
-				   axis.z /= len;
-            }
-				primitive.n1.x = axis.x;
-				primitive.n1.y = axis.y;
-				primitive.n1.z = axis.z;
+				axis.x /= len;
+				axis.y /= len;
+				axis.z /= len;
          }
-		}
+			primitive.n1.x = axis.x;
+			primitive.n1.y = axis.y;
+			primitive.n1.z = axis.z;
+      }
 	}
 }
 
@@ -1956,46 +2057,11 @@ bool GPUKernel::loadTextureFromFile( const int index, const std::string& filenam
 
 void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 {
-   m_lightInformationSize = 0;
-
    // Light from explicit light sources
-   for( int i(0); i<m_nbActiveLamps[m_frame]; ++i )
-   {
-      int idx((m_lamps[m_frame])[i]);
-      CPUPrimitive& lamp = (m_primitives[m_frame])[idx];
-      Material& material = m_hMaterials[lamp.materialId];
-
-      LightInformation lightInformation;
-      lightInformation.attribute.x = idx;
-
-      lightInformation.location.x = lamp.p0.x;
-      lightInformation.location.y = lamp.p0.y;
-      lightInformation.location.z = lamp.p0.z;
-      
-      lightInformation.color.x = material.color.x;
-      lightInformation.color.y = material.color.y;
-      lightInformation.color.z = material.color.z;
-      lightInformation.color.w = material.innerIllumination.x;
-
-      m_lightInformation[m_lightInformationSize] = lightInformation;
-
-      LOG_INFO(3,
-         "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
-         m_lightInformation[m_lightInformationSize].location.x << "," <<
-         m_lightInformation[m_lightInformationSize].location.y << "," <<
-         m_lightInformation[m_lightInformationSize].location.z << " " <<
-         m_lightInformation[m_lightInformationSize].color.x << "," <<
-         m_lightInformation[m_lightInformationSize].color.y << "," <<
-         m_lightInformation[m_lightInformationSize].color.z << " " <<
-         m_lightInformation[m_lightInformationSize].color.w );
-
-      m_lightInformationSize++;
-   }
    float size = m_sceneInfo.viewDistance.x/3.f;
 
    float pi = static_cast<float>(PI);
 #if 1
-   /*
    float x = 0.f;
    for( int i(0); i<index; ++i)
    {
@@ -2012,7 +2078,6 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       m_lightInformationSize++;
 	   x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
    }
-   */
 #else
    /*
    for( float x(0.f); x<2.f*PI; x+=PI/8.f)
@@ -2212,13 +2277,14 @@ void GPUKernel::saveBitmapToFile( const std::string& filename, BitmapBuffer* bit
 
 int GPUKernel::getLight( int index )
 {
-   if( index < m_nbActiveLamps[m_frame] )
+   if( index<=m_nbActiveLamps[m_frame] )
    {
-      return (m_lamps[m_frame])[index];
+      LOG_INFO(3,"getLight(" << index << ")=" << m_hLamps[index] );
+      return m_hLamps[index];
    }
    else
    {
-      LOG_ERROR("getLight(" << index << ") is out of bounds");
+      LOG_ERROR("getLight(" << index << "/" << m_nbActiveLamps[m_frame] << ") is out of bounds");
    }
    return -1;
 }
@@ -2246,7 +2312,7 @@ int GPUKernel::setGLMode( const int& glMode )
                p = addPrimitive( ptSphere);
                setPrimitive(  p,
                   m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
-                  m_pointSize,0.f,0.f,
+                  0.01f /*m_pointSize*/,0.f,0.f,
                   m_currentMaterial);
             }
             LOG_INFO(3, "[OpenGL] Added " << m_vertices.size() << " Points");
@@ -2264,7 +2330,7 @@ int GPUKernel::setGLMode( const int& glMode )
                   setPrimitive(  p,
                      m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
                      m_vertices[i+1].x, m_vertices[i+1].y, m_vertices[i+1].z, 
-                     m_pointSize,0.f,0.f,
+                     0.01f /*m_pointSize*/,0.f,0.f,
                      m_currentMaterial);
                }
             }
@@ -2410,7 +2476,7 @@ void GPUKernel::setOptimalNbOfBoxes( const int optimalNbOfBoxes )
 
 unsigned int GPUKernel::getNbActiveBoxes()      
 { 
-   return static_cast<unsigned int>(m_outterBoundingBoxes[m_frame][0].size());
+   return static_cast<unsigned int>(m_boundingBoxes[m_frame][0].size());
 }
 
 unsigned int GPUKernel::getNbActivePrimitives() 
@@ -2458,6 +2524,38 @@ void GPUKernel::render_begin( const float timer )
       m_sceneInfo.renderingType.x = vt3DVision;
    }
 #endif // USE_OCULUS
+}
+
+void GPUKernel::setNbFrames(const int nbFrames)
+{ 
+   m_nbFrames=nbFrames; 
+}
+
+void GPUKernel::setFrame( const int frame )
+{ 
+   m_frame=frame; 
+}
+
+int GPUKernel::getNbFrames() 
+{ 
+   return m_nbFrames; 
+}
+
+int GPUKernel::getFrame()
+{
+   return m_frame; 
+}
+
+void GPUKernel::nextFrame() 
+{
+   m_frame++; 
+   if(m_frame>=m_nbFrames) m_frame=m_nbFrames-1;
+}
+
+void GPUKernel::previousFrame() 
+{ 
+   m_frame--; 
+   if(m_frame<0) m_frame=0; 
 }
 
 #ifdef USE_OCULUS

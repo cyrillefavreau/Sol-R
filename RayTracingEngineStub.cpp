@@ -104,7 +104,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 	   gKernel->setSceneInfo( gSceneInfoStub );
       gKernel->initBuffers();
       gKernel->setFrame(0);
-      gKernel->setOptimalNbOfBoxes(1600);
+      gKernel->setOptimalNbOfBoxes(16384);
       return 0;
    }
    return -1;
