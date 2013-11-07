@@ -77,7 +77,7 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
-   m_occupancyParameters.x = 1; // GPUs
+   m_occupancyParameters.x = 2; // GPUs
    m_occupancyParameters.y = 1; // Streams per GPU
 
    m_gpuDescription = "CUDA device";
@@ -177,14 +177,14 @@ void CudaKernel::render_begin( const float timer )
 
       if( !m_primitivesTransfered )
       {
-         LOG_INFO(1, "Transfering " << nbBoxes << " boxes, " << nbPrimitives << " primitives and " << nbLamps << " lamps");
+         LOG_INFO(3, "Transfering " << nbBoxes << " boxes, " << nbPrimitives << " primitives and " << nbLamps << " lamps");
 	      h2d_scene( 
             m_occupancyParameters,
             m_hBoundingBoxes, nbBoxes, 
             m_hPrimitives, nbPrimitives, 
             m_hLamps, nbLamps );
 
-         LOG_INFO(1, "Transfering " << m_lightInformationSize << " light elements");
+         LOG_INFO(3, "Transfering " << m_lightInformationSize << " light elements");
          h2d_lightInformation( 
             m_occupancyParameters,
             m_lightInformation, m_lightInformationSize );

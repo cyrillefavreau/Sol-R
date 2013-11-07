@@ -346,52 +346,27 @@ __device__ float4 primitiveShader(
    if( sceneInfo.graphicsLevel.x>0 )
    {
 	   color *= materials[primitive.materialId.x].innerIllumination.x;
-      int activeLamps = (sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS && lightInformationSize!=0) ? nbActiveLamps+1 : nbActiveLamps;
-	   for( int cpt=0; cpt<activeLamps; ++cpt ) 
+      //int activeLamps = (sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS && lightInformationSize!=0) ? nbActiveLamps+1 : nbActiveLamps;
+	   for( int cpt=0; cpt<lightInformationSize /*activeLamps*/; ++cpt ) 
 	   {
-         int cptLamp = (cpt>=nbActiveLamps) ? nbActiveLamps+(sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
+         int cptLamp = cpt; //(cpt>=nbActiveLamps) ? nbActiveLamps+(sceneInfo.pathTracingIteration.x%lightInformationSize) : cpt;
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   float3 center;
    		   // randomize lamp center
-#if 0
-			   float3 size;
-			   switch( primitives[lamps[cptLamps]].type.x )
-			   {
-			   case ptCylinder:
-				   {
-					   center = (primitives[lamps[cptLamps]].p0 + primitives[lamps[cptLamps]].p1)/ 2.f;
-					   size.x = primitives[lamps[cptLamps]].size.y; 
-					   size.y = primitives[lamps[cptLamps]].size.y; 
-					   size.z = primitives[lamps[cptLamps]].size.y; 
-					   break;
-				   }
-			   default:
-				   {
-					   center = primitives[lamps[cptLamps]].p0; 
-					   size=primitives[lamps[cptLamps]].size; 
-					   break;
-				   }
-			   }
-
-            if( sceneInfo.pathTracingIteration.x > NB_MAX_ITERATIONS )
-			   {
-				   int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-				   center.x += materials[primitive.materialId.x].innerIllumination.y*size.x*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				   center.y += materials[primitive.materialId.x].innerIllumination.y*size.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				   center.z += materials[primitive.materialId.x].innerIllumination.y*size.z*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-			   }
-#else
             center.x = lightInformation[cptLamp].location.x;
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
-            Primitive& lamp = primitives[lightInformation[cptLamp].attribute.x];
-				int t = 3*sceneInfo.pathTracingIteration.x + int(10.f*sceneInfo.misc.y)%100;
-            center.x += materials[lamp.materialId.x].innerIllumination.y*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				center.y += materials[lamp.materialId.x].innerIllumination.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-				center.z += materials[lamp.materialId.x].innerIllumination.y*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
-#endif
+            if( lightInformation[cptLamp].attribute.x>=0 && lightInformation[cptLamp].attribute.x<nbActivePrimitives)
+            {
+               Primitive& lamp = primitives[lightInformation[cptLamp].attribute.x];
+				   int t = 3*sceneInfo.misc.y;
+               t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
+               center.x += materials[lamp.materialId.x].innerIllumination.y*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				   center.y += materials[lamp.materialId.x].innerIllumination.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+				   center.z += materials[lamp.materialId.x].innerIllumination.y*randoms[t+2]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+            }
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
             if( sceneInfo.graphicsLevel.x>3 && 
@@ -465,13 +440,9 @@ __device__ float4 primitiveShader(
 					      blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y);
                      blinnTerm *= (1.f-materials[primitive.materialId.x].transparency.x);
 
-#if 0
-					      totalBlinn += material.color * material.innerIllumination.x * blinnTerm;
-#else
 					      totalBlinn.x += lightInformation[cptLamp].color.x * lightInformation[cptLamp].color.w * blinnTerm;
 					      totalBlinn.y += lightInformation[cptLamp].color.y * lightInformation[cptLamp].color.w * blinnTerm;
 					      totalBlinn.z += lightInformation[cptLamp].color.z * lightInformation[cptLamp].color.w * blinnTerm;
-#endif //0
 				      }
 			      }
             }

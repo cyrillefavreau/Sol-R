@@ -580,7 +580,7 @@ __device__ inline float4 launchRay(
             float ratio = materials[primitives[closestPrimitive].materialId.x].color.w;
             ratio *= (materials[primitives[closestPrimitive].materialId.x].transparency.x==0.f) ? 1000.f : 1.f;
 				int rindex = 3*sceneInfo.misc.y + sceneInfo.pathTracingIteration.x;
-				rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+				rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
 				rayOrigin.direction.x += randoms[rindex  ]*ratio;
 				rayOrigin.direction.y += randoms[rindex+1]*ratio;
 				rayOrigin.direction.z += randoms[rindex+2]*ratio;
@@ -768,14 +768,17 @@ __global__ void k_standardRenderer(
    else
 	{
 		// Randomize view for natural depth of field
-      if( sceneInfo.pathTracingIteration.x >= NB_MAX_ITERATIONS )
-      {
-		   int rindex = index + sceneInfo.pathTracingIteration.x;
-		   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
-		   ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		   ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-      }
+		int rindex = 3*(index+sceneInfo.misc.y) + 5000;
+		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
+		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+
+      rindex = 3*(index+sceneInfo.misc.y);
+		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
+		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 	}
 
 	float dof = postProcessingInfo.param1.x;

@@ -882,7 +882,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-            LOG_INFO(3,"Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
+            LOG_INFO(1,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
          }
          else
          {
@@ -967,44 +967,28 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
    if( reconstructBoxes )
    {
       resetBox(m_boundingBoxes[m_frame][m_treeDepth][0],true);
-      int activeBoxes(NB_MAX_BOXES);
-      if(gridSize==0)
+      int gridSize(4);
+      m_treeDepth=0;
+      int nbBoxes = static_cast<int>(m_primitives[m_frame].size());
+      while( nbBoxes>4 )
       {
-         LOG_INFO(3,"Constructing acceleration structures" );
-         // Bounding boxes
-         // Search for best trade-off
-         std::map<unsigned int,unsigned int> primitivesPerBox;
-         int boxSize = 4096;
-         bestSize = boxSize;
-         int bestActiveBoxes = 0;
-         int bestRatio = 10000; 
-         do 
-         {
-            int ratio = processBoxes(  boxSize, activeBoxes, true );
-            if( ratio < bestRatio ) 
-            {
-               bestSize = boxSize;
-               bestRatio = ratio;
-               bestActiveBoxes = activeBoxes;
-               LOG_INFO(3, "Trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
-            }
-            boxSize/=2;
-         }
-         while( boxSize>=32 );
-         LOG_INFO(3, "Best trade off: " << bestSize << "/" << bestActiveBoxes << " boxes" );
-         processBoxes(bestSize, activeBoxes, false );
+         ++m_treeDepth;
+         nbBoxes /= gridSize;
       }
-      else
-      {
-         processBoxes(gridSize, activeBoxes, false );
-      }
+      LOG_INFO(1, "Scene depth=" << m_treeDepth );
 
-      const int sizes[] = {2,16,32,64,128,256,512,1024,2048,4096}; 
-      // Now that boxes have been constructed, we need to group them info even bigger boxes
-      for( int i(1); i<=m_treeDepth; ++i )
-      { 
-         LOG_INFO(3,"Processing boxes for level " << i << "/" << m_treeDepth << ":" << sizes[m_treeDepth-i]);
-         processOutterBoxes(sizes[m_treeDepth-i],i);
+      int activeBoxes(12000);
+      LOG_INFO(3, "1. Nb Boxes=" << nbBoxes );
+      processBoxes(activeBoxes, activeBoxes, false );
+
+      int treeDepth=0;
+      nbBoxes = static_cast<int>(m_primitives[m_frame].size());
+      while( nbBoxes>4 )
+      {
+         ++treeDepth;
+         nbBoxes /= gridSize;
+         LOG_INFO(3,"3. Depth=" << treeDepth << ", NbBoxes=" << nbBoxes );
+         processOutterBoxes(nbBoxes,treeDepth);
       }
    }
 
@@ -1107,7 +1091,7 @@ void GPUKernel::streamDataToGPU()
 
       if( itob==m_boundingBoxes[m_frame][maxDepth].begin() )
       {
-         // Box 0 of higher level contains ligths
+         LOG_INFO(3,"Box 0 of higher level (" << maxDepth << ") contains ligths");
          m_lightInformationSize = 0;
          m_hBoundingBoxes[boxIndex].parameters[0].x = -m_sceneInfo.viewDistance.x;
          m_hBoundingBoxes[boxIndex].parameters[0].y = -m_sceneInfo.viewDistance.x;
@@ -1154,7 +1138,7 @@ void GPUKernel::streamDataToGPU()
             m_lightInformation[m_lightInformationSize] = lightInformation;
 
             LOG_INFO(3,
-               "Lamp " << 
+               "1. Lamp " << 
                m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
                m_lightInformation[m_lightInformationSize].location.x << "," <<
                m_lightInformation[m_lightInformationSize].location.y << "," <<
@@ -1184,7 +1168,7 @@ void GPUKernel::streamDataToGPU()
    }
 
    // Build global illumination structures
-   buildLightInformationFromTexture(4);
+   //buildLightInformationFromTexture(4);
 
    // Done
    LOG_INFO(3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
@@ -2058,7 +2042,7 @@ bool GPUKernel::loadTextureFromFile( const int index, const std::string& filenam
 
 void GPUKernel::reorganizeLights()
 {
-   LOG_INFO(1,"GPUKernel::reorganizeLights()");
+   LOG_INFO(3,"GPUKernel::reorganizeLights()");
    BoxContainer::iterator it=m_boundingBoxes[m_frame][0].begin();
    while( it!=m_boundingBoxes[m_frame][0].end() )
    {
@@ -2087,7 +2071,7 @@ void GPUKernel::reorganizeLights()
 
                if( !found )
                {
-                  LOG_INFO(3,"Adding light information");
+                  LOG_INFO(1,"Adding light information");
                   LightInformation lightInformation;
                   lightInformation.location.x = primitive.p0.x;
                   lightInformation.location.y = primitive.p0.y;

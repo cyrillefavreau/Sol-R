@@ -37,7 +37,7 @@ const int MAX_STREAM_COUNT  = 32;
 const int NB_MAX_ITERATIONS = 20;
 
 const int BOUNDING_BOXES_TREE_DEPTH = 64;
-const int NB_MAX_BOXES      = 65536;
+const int NB_MAX_BOXES      = 2097152;
 const int NB_MAX_PRIMITIVES = 2097152;
 const int NB_MAX_LAMPS      = 16;
 const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
