@@ -177,13 +177,14 @@ void CudaKernel::render_begin( const float timer )
 
       if( !m_primitivesTransfered )
       {
-         LOG_INFO(3, "Transfering " << nbBoxes << " boxes, and " << nbPrimitives << " primitives");
+         LOG_INFO(1, "Transfering " << nbBoxes << " boxes, " << nbPrimitives << " primitives and " << nbLamps << " lamps");
 	      h2d_scene( 
             m_occupancyParameters,
             m_hBoundingBoxes, nbBoxes, 
             m_hPrimitives, nbPrimitives, 
             m_hLamps, nbLamps );
 
+         LOG_INFO(1, "Transfering " << m_lightInformationSize << " light elements");
          h2d_lightInformation( 
             m_occupancyParameters,
             m_lightInformation, m_lightInformationSize );

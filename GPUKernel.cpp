@@ -1115,7 +1115,7 @@ void GPUKernel::streamDataToGPU()
          m_hBoundingBoxes[boxIndex].parameters[1].x = m_sceneInfo.viewDistance.x;
          m_hBoundingBoxes[boxIndex].parameters[1].y = m_sceneInfo.viewDistance.x;
          m_hBoundingBoxes[boxIndex].parameters[1].z = m_sceneInfo.viewDistance.x;
-         m_hBoundingBoxes[boxIndex].nbPrimitives.x = box.primitives.size();
+         m_hBoundingBoxes[boxIndex].nbPrimitives.x = static_cast<int>(box.primitives.size());
          m_hBoundingBoxes[boxIndex].startIndex.x = 0;
          std::vector<long>::const_iterator itp = box.primitives.begin();
          while( itp != box.primitives.end() )
@@ -1154,7 +1154,8 @@ void GPUKernel::streamDataToGPU()
             m_lightInformation[m_lightInformationSize] = lightInformation;
 
             LOG_INFO(3,
-               "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
+               "Lamp " << 
+               m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
                m_lightInformation[m_lightInformationSize].location.x << "," <<
                m_lightInformation[m_lightInformationSize].location.y << "," <<
                m_lightInformation[m_lightInformationSize].location.z << " " <<
@@ -1195,7 +1196,7 @@ void GPUKernel::streamDataToGPU()
 
 void GPUKernel::setTreeDepth( const int treeDepth )
 {
-   LOG_INFO(1,"Tree depth=" << treeDepth);
+   LOG_INFO(3,"Tree depth=" << treeDepth);
    m_treeDepth = treeDepth;
 }
 
@@ -2055,28 +2056,93 @@ bool GPUKernel::loadTextureFromFile( const int index, const std::string& filenam
    return result;
 }
 
+void GPUKernel::reorganizeLights()
+{
+   LOG_INFO(1,"GPUKernel::reorganizeLights()");
+   BoxContainer::iterator it=m_boundingBoxes[m_frame][0].begin();
+   while( it!=m_boundingBoxes[m_frame][0].end() )
+   {
+      CPUBoundingBox& box=(*it).second;
+      std::vector<long>::iterator itp = box.primitives.begin();
+      while( itp!=box.primitives.end() )
+      {
+         Primitive& primitive=m_hPrimitives[*itp];
+         if( primitive.materialId.x!=MATERIAL_NONE)
+         {
+            Material& material = m_hMaterials[primitive.materialId.x];
+            if(material.innerIllumination.x!=0.f )
+            {
+               bool found(false);
+               int i(0);
+               while( !found && i<m_nbActiveLamps[m_frame] )
+               {
+                  LOG_INFO(3,"[Box " << (*it).first << "] Lamp " << i << "/" << m_nbActiveLamps[m_frame] << " = " << m_hLamps[i] << ", Primitive index=" << primitive.index.x );
+                  if( m_hLamps[i]==primitive.index.x)
+                  {
+                     LOG_INFO(3,"Lamp " << i << " FOUND" );
+                     found = true;
+                  }
+                  ++i;
+               }
+
+               if( !found )
+               {
+                  LOG_INFO(3,"Adding light information");
+                  LightInformation lightInformation;
+                  lightInformation.location.x = primitive.p0.x;
+                  lightInformation.location.y = primitive.p0.y;
+                  lightInformation.location.z = primitive.p0.z;
+                  lightInformation.attribute.x = (*itp);
+                  lightInformation.color.x = material.color.x;
+                  lightInformation.color.y = material.color.y;
+                  lightInformation.color.z = material.color.z;
+                  lightInformation.color.w = material.innerIllumination.x;
+
+                  LOG_INFO(1,
+                     "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
+                     m_lightInformation[m_lightInformationSize].location.x << "," <<
+                     m_lightInformation[m_lightInformationSize].location.y << "," <<
+                     m_lightInformation[m_lightInformationSize].location.z << " " <<
+                     m_lightInformation[m_lightInformationSize].color.x << "," <<
+                     m_lightInformation[m_lightInformationSize].color.y << "," <<
+                     m_lightInformation[m_lightInformationSize].color.z << " " <<
+                     m_lightInformation[m_lightInformationSize].color.w );
+
+                  m_lightInformation[m_nbActiveLamps[m_frame]+m_lightInformationSize] = lightInformation;
+                  m_lightInformationSize++;
+               }
+            }
+         }
+         ++itp;
+      }
+      ++it;
+   }
+   LOG_INFO(1,"Reorganized " << m_lightInformationSize << " Lights" );
+}
+
 void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 {
+   LOG_INFO(1,"buildLightInformationFromTexture");
+   m_lightInformationSize=0;
+   reorganizeLights();
+
    // Light from explicit light sources
    float size = m_sceneInfo.viewDistance.x/3.f;
-
    float pi = static_cast<float>(PI);
-#if 1
-   float x = 0.f;
-   for( int i(0); i<index; ++i)
+#if 0
+   for( unsigned int i(0); i<100; ++i)
    {
       LightInformation lightInformation;
       lightInformation.location.x = rand()%10000 - 5000.f;
       lightInformation.location.y = rand()%10000 - 5000.f;
       lightInformation.location.z = rand()%10000 - 5000.f;
       lightInformation.attribute.x = -1;
-      lightInformation.color.x = 0.5f+0.5f*cos(x);
-      lightInformation.color.y = 0.5f+0.5f*sin(x);
-      lightInformation.color.z = 0.5f+0.5f*cos(x+pi);
-      lightInformation.color.w = 1.5f;
-      m_lightInformation[m_lightInformationSize] = lightInformation;
+      lightInformation.color.x = rand()%50/100.f+0.5f;
+      lightInformation.color.y = rand()%50/100.f+0.5f;
+      lightInformation.color.z = rand()%50/100.f+0.5f;
+      lightInformation.color.w = 0.6f;
+      m_lightInformation[m_nbActiveLamps[m_frame]+m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
-	   x += (2.f*pi)/static_cast<float>(m_sceneInfo.maxPathTracingIterations.x/10);
    }
 #else
    /*
@@ -2141,7 +2207,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    }
    */
 #endif // 0
-   LOG_INFO(3, "Light Information Size = " << m_nbActiveLamps << "/" << m_lightInformationSize );
+   LOG_INFO(1, "Light Information Size = " << m_nbActiveLamps[m_frame] << "/" << m_lightInformationSize );
 }
 
 #ifdef USE_KINECT

@@ -364,6 +364,11 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
       static_cast<float>(illuminationPropagation),
       fastTransparency
       );
+   if( innerIllumination!=0.f )
+   {
+      gKernel->reorganizeLights();
+      gKernel->streamDataToGPU();
+   }
    return 0;
 }
 

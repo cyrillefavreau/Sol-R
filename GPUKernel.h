@@ -142,7 +142,7 @@ public:
 
    // Lights
    int getLight( int index );
-
+   void reorganizeLights();
    CPUPrimitive* getPrimitive( const unsigned int index );
      
 public:
@@ -341,7 +341,8 @@ public:
 
 public:
 
-   int compactBoxes( bool reconstructBoxes, int gridSize=0 );
+   int  compactBoxes( bool reconstructBoxes, int gridSize=0 );
+   void streamDataToGPU(); 
    void displayBoxesInfo(  );
    void resetBoxes( bool resetPrimitives );
 
@@ -356,7 +357,6 @@ protected:
    bool updateOutterBoundingBox( CPUBoundingBox& box, const int depth );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives );
 
-   void streamDataToGPU(); 
    void recursiveDataStreamToGPU( const int depth, std::vector<long>& elements );
 
 protected:

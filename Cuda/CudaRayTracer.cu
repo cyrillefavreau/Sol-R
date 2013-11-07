@@ -1749,7 +1749,7 @@ extern "C" void h2d_textures(
 
 extern "C" void h2d_lightInformation( 
    const int2        occupancyParameters,
-   LightInformation* lightInformation , 
+   LightInformation* lightInformation, 
    const int         lightInformationSize)
 {
    for( int device(0); device<occupancyParameters.x; ++device )
