@@ -77,7 +77,7 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
-   m_occupancyParameters.x = 2; // GPUs
+   m_occupancyParameters.x = 1; // GPUs
    m_occupancyParameters.y = 1; // Streams per GPU
 
    m_gpuDescription = "CUDA device";

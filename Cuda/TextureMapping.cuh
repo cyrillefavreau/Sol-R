@@ -145,6 +145,7 @@ __device__ float4 triangleUVMapping(
       default:
          {
 		      int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
+            index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
             BitmapBuffer r,g,b;
 		      r = textures[index  ];
 		      g = textures[index+1];
@@ -191,6 +192,7 @@ __device__ float4 sphereUVMapping(
 	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
 		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
+      index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
 		BitmapBuffer r = textures[index  ];
 		BitmapBuffer g = textures[index+1];
 		BitmapBuffer b = textures[index+2];
@@ -229,6 +231,7 @@ __device__ float4 cubeMapping(
 		if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
 		{
 			int index = (y*gKinectVideoWidth+x)*gKinectVideo;
+         index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
 			BitmapBuffer r = textures[index+2];
 			BitmapBuffer g = textures[index+1];
 			BitmapBuffer b = textures[index+0];
@@ -260,6 +263,7 @@ __device__ float4 cubeMapping(
          default:
             {
          		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
+               index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
 			      BitmapBuffer r = textures[index];
 			      BitmapBuffer g = textures[index+1];
 			      BitmapBuffer b = textures[index+2];

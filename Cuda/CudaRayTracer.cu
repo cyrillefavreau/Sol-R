@@ -403,7 +403,7 @@ __device__ inline float4 launchRay(
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
 	float3 closestIntersection = {0.f,0.f,0.f};
-	float3 firstIntersection   = {0.f,0.f,0.f};
+   float3 firstIntersection   = {0.f,0.f,0.f};
 	float3 normal              = {0.f,0.f,0.f};
 	int    closestPrimitive  = -1;
 	bool   carryon           = true;
@@ -469,7 +469,7 @@ __device__ inline float4 launchRay(
 		{
          currentMaterialId = primitives[closestPrimitive].materialId.x;
 
-			if ( iteration==0 )
+			if( iteration==0 )
 			{
             colors[iteration].x = 0.f;
             colors[iteration].y = 0.f;
@@ -1721,6 +1721,7 @@ extern "C" void h2d_textures(
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
+      checkCudaErrors(cudaSetDevice(device));
       int totalSize(0);
       for( int i(0); i<activeTextures; ++i )
       {
@@ -1737,7 +1738,6 @@ extern "C" void h2d_textures(
          LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
 	      checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
 
-         checkCudaErrors(cudaSetDevice(device));
          for( int i(0); i<activeTextures; ++i )
          {
             if( textureInfos[i].buffer != nullptr )
@@ -2018,4 +2018,3 @@ extern "C" void cudaRender(
 	   }
    }
 }
-   

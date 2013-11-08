@@ -308,9 +308,10 @@ float4 CPUKernel::sphereUVMapping(
    if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
    {
       int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-      unsigned char r = m_hTextures[material.textureMapping.z].buffer[index  ];
-      unsigned char g = m_hTextures[material.textureMapping.z].buffer[index+1];
-      unsigned char b = m_hTextures[material.textureMapping.z].buffer[index+2];
+      index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+      BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
+      BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
+      BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
       result.x = r/256.f;
       result.y = g/256.f;
       result.z = b/256.f;
@@ -340,8 +341,9 @@ float4 CPUKernel::triangleUVMapping(
    int u = int(T.x*material.textureMapping.x);
    int v = int(T.y*material.textureMapping.y);
 
-   if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
-   if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
+	u = u%material.textureMapping.x;
+	v = v%material.textureMapping.y;
+
    if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
    {
       switch( material.textureMapping.z )
@@ -351,9 +353,10 @@ float4 CPUKernel::triangleUVMapping(
       default:
          {
             int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-            unsigned char r = m_hTextures[material.textureMapping.z].buffer[index  ];
-            unsigned char g = m_hTextures[material.textureMapping.z].buffer[index+1];
-            unsigned char b = m_hTextures[material.textureMapping.z].buffer[index+2];
+            index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+            BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
+            BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
+            BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
             result.x = r/256.f;
             result.y = g/256.f;
             result.z = b/256.f;
@@ -388,9 +391,10 @@ float4 CPUKernel::cubeMapping(
       if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
       {
          int index = (y*gKinectVideoWidth+x)*gKinectVideo;
-         unsigned char r = m_hTextures[material.textureMapping.z].buffer[index+2];
-         unsigned char g = m_hTextures[material.textureMapping.z].buffer[index+1];
-         unsigned char b = m_hTextures[material.textureMapping.z].buffer[index  ];
+         index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+         BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index+2];
+         BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
+         BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index  ];
          result.x = r/256.f;
          result.y = g/256.f;
          result.z = b/256.f;
@@ -419,9 +423,10 @@ float4 CPUKernel::cubeMapping(
          default:
             {
                int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-               unsigned char r = m_hTextures[material.textureMapping.z].buffer[index  ];
-               unsigned char g = m_hTextures[material.textureMapping.z].buffer[index+1];
-               unsigned char b = m_hTextures[material.textureMapping.z].buffer[index+2];
+               index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+               BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
+               BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
+               BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
                result.x = r/256.f;
                result.y = g/256.f;
                result.z = b/256.f;
@@ -951,56 +956,31 @@ bool CPUKernel::triangleIntersection(
    back = false;
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
-   float3 E01;
-   E01.x = triangle.p1.x-triangle.p0.x;
-   E01.y = triangle.p1.y-triangle.p0.y;
-   E01.z = triangle.p1.z-triangle.p0.z;
-
-   float3 E03;
-   E03.x = triangle.p2.x-triangle.p0.x;
-   E03.y = triangle.p2.y-triangle.p0.y;
-   E03.z = triangle.p2.z-triangle.p0.z;
-
+   float3 E01={triangle.p1.x-triangle.p0.x,triangle.p1.y-triangle.p0.y,triangle.p1.z-triangle.p0.z};
+   float3 E03={triangle.p2.x-triangle.p0.x,triangle.p2.y-triangle.p0.y,triangle.p2.z-triangle.p0.z};
    float3 P = crossProduct(ray.direction,E03);
    float det = dot(E01,P);
-
+   
    if (fabs(det) < EPSILON) return false;
-
-   float3 T;
-   T.x = ray.origin.x - triangle.p0.x;
-   T.y = ray.origin.y - triangle.p0.y;
-   T.z = ray.origin.z - triangle.p0.z;
+   
+   float3 T = {ray.origin.x-triangle.p0.x,ray.origin.y-triangle.p0.y,ray.origin.z-triangle.p0.z};
    float a = dot(T,P)/det;
-   if (a < 0.f) return false;
-   if (a > 1.f) return false;
+   if (a < 0.f || a > 1.f) return false;
 
    float3 Q = crossProduct(T,E01);
    float b = dot(ray.direction,Q)/det;
-   if (b < 0.f) return false;
-   if (b > 1.f) return false;
+   if (b < 0.f || b > 1.f) return false;
 
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T′.
    if ((a+b) > 1.f) 
    {
-      float3 E23;
-      E23.x = triangle.p0.x-triangle.p1.x;
-      E23.y = triangle.p0.y-triangle.p1.y;
-      E23.z = triangle.p0.z-triangle.p1.z;
-
-      float3 E21;
-      E21.x = triangle.p1.x-triangle.p1.x;  // WDF!!!!!
-      E21.y = triangle.p1.y-triangle.p1.y;
-      E21.z = triangle.p1.z-triangle.p1.z;
-
+      float3 E23 = {triangle.p0.x-triangle.p1.x,triangle.p0.y-triangle.p1.y,triangle.p0.z-triangle.p1.z};
+      float3 E21 = {triangle.p1.x-triangle.p1.x,triangle.p1.y-triangle.p1.y,triangle.p1.z-triangle.p1.z};
       float3 P_ = crossProduct(ray.direction,E21);
       float det_ = dot(E23,P_);
       if(fabs(det_) < EPSILON) return false;
-      float3 T_;
-      T_.x = ray.origin.x-triangle.p2.x;
-      T_.y = ray.origin.y-triangle.p2.y;
-      T_.z = ray.origin.z-triangle.p2.z;
-
+      float3 T_ = {ray.origin.x-triangle.p2.x,ray.origin.y-triangle.p2.y,ray.origin.z-triangle.p2.z};
       float a_ = dot(T_,P_)/det_;
       if (a_ < 0.f) return false;
       float3 Q_ = crossProduct(T_,E23);
@@ -1014,35 +994,24 @@ bool CPUKernel::triangleIntersection(
    if (t < 0) return false;
 
    // Intersection
-   intersection.x = ray.origin.x + t*ray.direction.x;
-   intersection.y = ray.origin.y + t*ray.direction.y;
-   intersection.z = ray.origin.z + t*ray.direction.z;
+   intersection.x = ray.origin.x+t*ray.direction.x;
+   intersection.y = ray.origin.y+t*ray.direction.y;
+   intersection.z = ray.origin.z+t*ray.direction.z;
 
    // Normal
    normal = triangle.n0;
-   float3 v0;
-   v0.x = triangle.p0.x - intersection.x;
-   v0.y = triangle.p0.y - intersection.y;
-   v0.z = triangle.p0.z - intersection.z;
-
-   float3 v1;
-   v1.x = triangle.p1.x - intersection.x;
-   v1.x = triangle.p1.x - intersection.x;
-   v1.x = triangle.p1.x - intersection.x;
-
-   float3 v2;
-   v2.x = triangle.p2.x - intersection.x;
-   v2.y = triangle.p2.y - intersection.y;
-   v2.z = triangle.p2.z - intersection.z;
+   float3 v0={triangle.p0.x-intersection.x,triangle.p0.y-intersection.y,triangle.p0.z-intersection.z};
+   float3 v1={triangle.p1.x-intersection.x,triangle.p1.y-intersection.y,triangle.p1.z-intersection.z};
+   float3 v2={triangle.p2.x-intersection.x,triangle.p2.y-intersection.y,triangle.p2.z-intersection.z};
 
    areas.x = 0.5f*vectorLength(crossProduct( v1,v2 ));
    areas.y = 0.5f*vectorLength(crossProduct( v0,v2 ));
    areas.z = 0.5f*vectorLength(crossProduct( v0,v1 ));
-
-   normal.x = (triangle.n0.x*areas.x + triangle.n1.x*areas.y + triangle.n2.x*areas.z)/(areas.x+areas.y+areas.z);
-   normal.y = (triangle.n0.y*areas.x + triangle.n1.y*areas.y + triangle.n2.y*areas.z)/(areas.x+areas.y+areas.z);
-   normal.z = (triangle.n0.z*areas.x + triangle.n1.z*areas.y + triangle.n2.z*areas.z)/(areas.x+areas.y+areas.z);
-   normal = normalize(normal);
+   
+   normal.x=(triangle.n0.x*areas.x + triangle.n1.x*areas.y + triangle.n2.x*areas.z)/(areas.x+areas.y+areas.z);
+   normal.y=(triangle.n0.y*areas.x + triangle.n1.y*areas.y + triangle.n2.y*areas.z)/(areas.x+areas.y+areas.z);
+   normal.z=(triangle.n0.z*areas.x + triangle.n1.z*areas.y + triangle.n2.z*areas.z)/(areas.x+areas.y+areas.z);
+   normal=normalize(normal);
 
    float3 dir = normalize(ray.direction);
    float r = dot(dir,normal);
@@ -1077,7 +1046,7 @@ bool CPUKernel::intersectionWithPrimitives(
    const int currentMaterialId)
 {
    bool intersections = false; 
-   float minDistance  = m_sceneInfo.viewDistance.x;
+	float minDistance  = m_sceneInfo.viewDistance.x/iteration;
 
    Ray r;
    r.origin    = ray.origin;
@@ -1091,77 +1060,85 @@ bool CPUKernel::intersectionWithPrimitives(
    bool i = false;
    float shadowIntensity = 0.f;
 
-   for( int cptBoxes = 0; cptBoxes<m_nbActiveBoxes[m_frame]; ++cptBoxes )
-   {
+   int cptBoxes = 0;
+   while(cptBoxes<m_nbActiveBoxes[m_frame])
+	{
       BoundingBox& box = m_hBoundingBoxes[cptBoxes];
-      if( boxIntersection(box, r, 0.f, m_sceneInfo.viewDistance.x) )
+      if( boxIntersection(box, r, 0.f, minDistance) )
       {
          // Intersection with Box
-         if( m_sceneInfo.renderBoxes.x != 0 ) 
+         if( m_sceneInfo.renderBoxes.x!=0 )
          {
-            colorBox.x += m_hMaterials[cptBoxes%NB_MAX_MATERIALS].color.x/20.f;
-            colorBox.y += m_hMaterials[cptBoxes%NB_MAX_MATERIALS].color.y/20.f;
-            colorBox.z += m_hMaterials[cptBoxes%NB_MAX_MATERIALS].color.z/20.f;
+            colorBox.x += m_hMaterials[box.startIndex.x%NB_MAX_MATERIALS].color.x/50.f;
+            colorBox.y += m_hMaterials[box.startIndex.x%NB_MAX_MATERIALS].color.y/50.f;
+            colorBox.z += m_hMaterials[box.startIndex.x%NB_MAX_MATERIALS].color.z/50.f;
          }
-
-         // Intersection with primitive within boxes
-         for( int cptPrimitives = 0; cptPrimitives<box.nbPrimitives.x; ++cptPrimitives )
-         { 
-            Primitive& primitive = m_hPrimitives[box.startIndex.x+cptPrimitives];
-            Material& material = m_hMaterials[primitive.materialId.x];
-            if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
-            {
-               float3 areas = {0.f,0.f,0.f};
-               i = false;
-               switch( primitive.type.x )
+         else
+         {
+            // Intersection with primitive within boxes
+            for( int cptPrimitives=0; cptPrimitives<box.nbPrimitives.x; ++cptPrimitives )
+            { 
+               Primitive& primitive = m_hPrimitives[box.startIndex.x+cptPrimitives];
+               Material& material = m_hMaterials[primitive.materialId.x];
+               if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
                {
-               case ptEnvironment :
-               case ptSphere:
+                  float3 areas = {0.f,0.f,0.f};
+                  i = false;
+                  switch( primitive.type.x )
                   {
-                     i = sphereIntersection  ( primitive, r, intersection, normal, shadowIntensity, back ); 
-                     break;
+                  case ptEnvironment :
+                  case ptSphere:
+                     {
+                        i = sphereIntersection  ( primitive, r, intersection, normal, shadowIntensity, back ); 
+                        break;
+                     }
+                  case ptCylinder: 
+                     {
+                        i = cylinderIntersection( primitive, r, intersection, normal, shadowIntensity, back ); 
+                        break;
+                     }
+                  case ptEllipsoid:
+                     {
+                        i = ellipsoidIntersection( primitive, r, intersection, normal, shadowIntensity, back );
+                        break;
+                     }
+                  case ptTriangle:
+                     {
+                        back = false;
+                        i = triangleIntersection( primitive, r, intersection, normal, areas, shadowIntensity, back ); 
+                        break;
+                     }
+                  default: 
+                     {
+                        back = false;
+                        i = planeIntersection   ( primitive, r, intersection, normal, shadowIntensity, false); 
+                        break;
+                     }
                   }
-               case ptCylinder: 
-                  {
-                     i = cylinderIntersection( primitive, r, intersection, normal, shadowIntensity, back ); 
-                     break;
-                  }
-               case ptEllipsoid:
-                  {
-                     i = ellipsoidIntersection( primitive, r, intersection, normal, shadowIntensity, back );
-                     break;
-                  }
-               case ptTriangle:
-                  {
-                     back = false;
-                     i = triangleIntersection( primitive, r, intersection, normal, areas, shadowIntensity, back ); 
-                     break;
-                  }
-               default: 
-                  {
-                     back = false;
-                     i = planeIntersection   ( primitive, r, intersection, normal, shadowIntensity, false); 
-                     break;
-                  }
-               }
 
-               float3 d;
-               d.x = intersection.x-r.origin.x;
-               d.y = intersection.y-r.origin.y;
-               d.z = intersection.z-r.origin.z;
-               float distance = vectorLength(d);
-               if( i && distance>EPSILON && distance<minDistance ) 
-               {
-                  // Only keep intersection with the closest object
-                  minDistance         = distance;
-                  closestPrimitive    = box.startIndex.x+cptPrimitives;
-                  closestIntersection = intersection;
-                  closestNormal       = normal;
-                  closestAreas        = areas;
-                  intersections       = true;
+                  float3 d;
+                  d.x = intersection.x-r.origin.x;
+                  d.y = intersection.y-r.origin.y;
+                  d.z = intersection.z-r.origin.z;
+                  float distance = vectorLength(d);
+                  if( i && distance>EPSILON && distance<minDistance ) 
+                  {
+                     // Only keep intersection with the closest object
+                     minDistance         = distance;
+                     closestPrimitive    = box.startIndex.x+cptPrimitives;
+                     closestIntersection = intersection;
+                     closestNormal       = normal;
+                     closestAreas        = areas;
+                     intersections       = true;
+                  }
                }
             }
          }
+         ++cptBoxes;
+		}
+      else
+      {
+         cptBoxes += box.indexForNextBox.x;
       }
    }
    return intersections;
@@ -1438,9 +1415,10 @@ float4 CPUKernel::primitiveShader(
    float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
    // Lamp Impact
-   shadowIntensity    = 0.f;
+   shadowIntensity=0.f;
 
-   if( m_hMaterials[primitive.materialId.x].innerIllumination.x != 0.f || m_hMaterials[primitive.materialId.x].attributes.z == 2 )
+   if( m_hMaterials[primitive.materialId.x].innerIllumination.x!=0.f || 
+       m_hMaterials[primitive.materialId.x].attributes.z==2 )
    {
       // Wireframe returns constant color
       return color; 
@@ -1457,11 +1435,9 @@ float4 CPUKernel::primitiveShader(
       color.x *= m_hMaterials[primitive.materialId.x].innerIllumination.x;
       color.y *= m_hMaterials[primitive.materialId.x].innerIllumination.x;
       color.z *= m_hMaterials[primitive.materialId.x].innerIllumination.x;
-      int activeLamps = m_nbActiveLamps[m_frame];
-      for( int cpt=0; cpt<activeLamps; ++cpt ) 
+      for( int cpt=0; cpt<m_lightInformationSize; ++cpt ) 
       {
-         //int cptLamp = (m_sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS && m_sceneInfo.pathTracingIteration.x%2==0) ? (m_sceneInfo.pathTracingIteration.x%m_lightInformationSize) : cpt;
-         int cptLamp = (m_sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (m_sceneInfo.pathTracingIteration.x%m_lightInformationSize) : cpt;
+         int cptLamp = cpt;
          if(m_lightInformation[cptLamp].attribute.x != primitive.index.x)
          {
             float3 center;
@@ -1470,21 +1446,21 @@ float4 CPUKernel::primitiveShader(
             center.y = m_lightInformation[cptLamp].location.y;
             center.z = m_lightInformation[cptLamp].location.z;
 
-            //if( m_lightInformation[cptLamp].attribute.x != -1 )
+            if( m_lightInformation[cptLamp].attribute.x>=0 && 
+                m_lightInformation[cptLamp].attribute.x<m_nbActivePrimitives[m_frame])
             {
                Primitive& lamp = m_hPrimitives[m_lightInformation[cptLamp].attribute.x];
-
-               //if( m_sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS /*&& m_sceneInfo.pathTracingIteration.x%2!=0*/ )
-               {
-                  int t = 3*m_sceneInfo.pathTracingIteration.x + int(10.f*m_sceneInfo.misc.y)%100;
-                  center.x += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t  ]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
-                  center.y += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t+1]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
-                  center.z += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t+2]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
-               }
+               int t = 3*m_sceneInfo.misc.y;
+               t = t%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+               center.x += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t  ]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
+               center.y += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t+1]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
+               center.z += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t+2]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
             }
 
             float4 shadowColor = {0.f,0.f,0.f,0.f};
-            if( m_sceneInfo.graphicsLevel.x>3 && m_hMaterials[primitive.materialId.x].innerIllumination.x == 0.f ) 
+            if( m_sceneInfo.graphicsLevel.x>3 &&
+                iteration<4 && 
+                m_hMaterials[primitive.materialId.x].innerIllumination.x==0.f ) 
             {
                shadowIntensity = processShadows(
                   center, intersection, m_lightInformation[cptLamp].attribute.x, iteration, shadowColor );
@@ -1929,15 +1905,17 @@ void CPUKernel::k_standardRenderer()
          }
          else
          {
-            // Randomize view for natural depth of field
-            if( m_sceneInfo.pathTracingIteration.x >= NB_MAX_ITERATIONS )
-            {
-               int rindex = index + m_sceneInfo.pathTracingIteration.x;
-               rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x);
-               ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param2.x*float(m_sceneInfo.pathTracingIteration.x)/float(m_sceneInfo.maxPathTracingIterations.x);
-               ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param2.x*float(m_sceneInfo.pathTracingIteration.x)/float(m_sceneInfo.maxPathTracingIterations.x);
-               ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param2.x*float(m_sceneInfo.pathTracingIteration.x)/float(m_sceneInfo.maxPathTracingIterations.x);
-            }
+		      int rindex = 3*(index+m_sceneInfo.misc.y) + 5000;
+		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+
+            rindex = 3*(index+m_sceneInfo.misc.y);
+		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
          }
 
          float dof = m_postProcessingInfo.param1.x;
@@ -2054,15 +2032,17 @@ void CPUKernel::k_fishEyeRenderer()
          }
          else
          {
-            // Randomize view for natural depth of field
-            if( m_sceneInfo.pathTracingIteration.x >= NB_MAX_ITERATIONS )
-            {
-               int rindex = index + m_sceneInfo.pathTracingIteration.x;
-               rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x);
-               ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param2.x*float(m_sceneInfo.pathTracingIteration.x)/float(m_sceneInfo.maxPathTracingIterations.x);
-               ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param2.x*float(m_sceneInfo.pathTracingIteration.x)/float(m_sceneInfo.maxPathTracingIterations.x);
-               ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param2.x*float(m_sceneInfo.pathTracingIteration.x)/float(m_sceneInfo.maxPathTracingIterations.x);
-            }
+		      int rindex = 3*(index+m_sceneInfo.misc.y) + 5000;
+		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+
+            rindex = 3*(index+m_sceneInfo.misc.y);
+		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		      ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
          }
 
          float dof = m_postProcessingInfo.param1.x;
@@ -2432,10 +2412,10 @@ void CPUKernel::k_ambiantOcclusion()
 /*
 ________________________________________________________________________________
 
-Post Processing Effect: Cartoon
+Post Processing Effect: Radiosity
 ________________________________________________________________________________
 */
-void CPUKernel::k_enlightment()
+void CPUKernel::k_radiosity()
 {
    int x;
 #pragma omp parallel for
@@ -2481,6 +2461,15 @@ void CPUKernel::k_enlightment()
    }
 }
 
+/*
+________________________________________________________________________________
+
+Post Processing Effect: Radiosity
+________________________________________________________________________________
+*/
+void CPUKernel::k_oneColor()
+{
+}
 /*
 ________________________________________________________________________________
 
