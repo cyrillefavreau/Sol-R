@@ -1578,7 +1578,6 @@ float4 CPUKernel::launchRay(
    float4 intersectionColor   = {0.f,0.f,0.f,0.f};
 
    float3 closestIntersection = {0.f,0.f,0.f};
-   float3 firstIntersection   = {0.f,0.f,0.f};
    float3 normal              = {0.f,0.f,0.f};
    int    closestPrimitive  = 0;
    bool   carryon           = true;
@@ -1644,7 +1643,7 @@ float4 CPUKernel::launchRay(
             colors[iteration].w = 0.f;
             colorContributions[iteration]=1.f;
 
-            firstIntersection = closestIntersection;
+            intersection = closestIntersection;
             primitiveXYId.x = m_hPrimitives[closestPrimitive].index.x;
          }
 
@@ -1825,9 +1824,9 @@ float4 CPUKernel::launchRay(
 
    Primitive& primitive=m_hPrimitives[closestPrimitive];
    float3 l;
-   l.x = firstIntersection.x - ray.origin.x;
-   l.y = firstIntersection.y - ray.origin.y;
-   l.z = firstIntersection.z - ray.origin.z;
+   l.x = intersection.x - ray.origin.x;
+   l.y = intersection.y - ray.origin.y;
+   l.z = intersection.z - ray.origin.z;
    float len = vectorLength(l);
    if( m_hMaterials[primitive.materialId.x].attributes.z == 0 ) // Wireframe
    {
@@ -1882,6 +1881,7 @@ ________________________________________________________________________________
 void CPUKernel::k_standardRenderer()
 {
    int x;
+   float3 intersection;
 #pragma omp parallel for
    for( x=0; x<m_sceneInfo.width.x; ++x )
    {
@@ -1905,21 +1905,34 @@ void CPUKernel::k_standardRenderer()
          }
          else
          {
-		      int rindex = 3*(index+m_sceneInfo.misc.y) + 5000;
-		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
-		      ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		      ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		      ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+            if( m_sceneInfo.pathTracingIteration.x%2==0)
+            {
+               int light=0;//m_sceneInfo.pathTracingIteration.x%m_lightInformationSize;
+               ray.origin.x = m_lightInformation[light].location.x;
+               ray.origin.y = m_lightInformation[light].location.y;
+               ray.origin.z = m_lightInformation[light].location.z;
 
-            rindex = 3*(index+m_sceneInfo.misc.y);
-		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
-		      ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		      ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		      ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+               ray.direction.x = intersection.x;
+               ray.direction.y = intersection.y;
+               ray.direction.z = intersection.z;
+            }
+            else 
+            {
+		         int rindex = 3*(index+m_sceneInfo.misc.y) + 5000;
+		         rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		         ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		         ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		         ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+
+               rindex = 3*(index+m_sceneInfo.misc.y);
+		         rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		         ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		         ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		         ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+            }
          }
 
          float dof = m_postProcessingInfo.param1.x;
-         float3 intersection;
 
 
          if( m_sceneInfo.misc.w == 1 ) // Isometric 3D
