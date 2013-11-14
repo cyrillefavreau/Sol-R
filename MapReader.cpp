@@ -45,7 +45,7 @@ int3 readInt3( const std::string& value )
    return returnValue;
 }
 
-float3 MapReader::loadFromFile(
+Vertex MapReader::loadFromFile(
    const std::string& filename,
    GPUKernel& kernel)
 {
@@ -54,8 +54,8 @@ float3 MapReader::loadFromFile(
    std::map<int,MapBlock> blocks;
    std::map<int,MapJewel> jewels;
 
-   float3 minPos = { 100000.f, 100000.f, 100000.f };
-   float3 maxPos = {-100000.f,-100000.f,-100000.f };
+   Vertex minPos = { 100000.f, 100000.f, 100000.f };
+   Vertex maxPos = {-100000.f,-100000.f,-100000.f };
 
    // Load Map
    LOG_INFO( 3, "Loading " << filename.c_str() );
@@ -134,14 +134,14 @@ float3 MapReader::loadFromFile(
       file.close();
    }
 
-   float3 blockSize = { 500.f, 500.f, 500.f };
+   Vertex blockSize = { 500.f, 500.f, 500.f };
 
    // Jewels
    std::map<int,MapJewel>::const_iterator itj = jewels.begin();
    while( itj != jewels.end() )
    {
       MapJewel jewel = (*itj).second;
-      float3 position;
+      Vertex position;
       position.x = jewel.location.x*blockSize.x;
       position.y = jewel.location.y*blockSize.y;
       position.z = jewel.location.z*blockSize.z;
@@ -160,12 +160,12 @@ float3 MapReader::loadFromFile(
    while( itz != zones.end() )
    {
       MapZone zone = (*itz).second;
-      float3 position;
+      Vertex position;
       position.x = zone.location.x*blockSize.x;
       position.y = zone.location.y*blockSize.y - 50.f;
       position.z = zone.location.z*blockSize.z;
 
-      float3 dimension;
+      Vertex dimension;
       dimension.x = zone.dimension.x*blockSize.x;
       dimension.y = zone.dimension.y*blockSize.y;
       dimension.z = zone.dimension.z*blockSize.z;
@@ -194,12 +194,12 @@ float3 MapReader::loadFromFile(
    while( it != blocks.end() )
    {
       MapBlock block = (*it).second;
-      float3 position;
+      Vertex position;
       position.x = block.location.x*blockSize.x;
       position.y = block.location.y*blockSize.y + block.type;
       position.z = block.location.z*blockSize.z;
 
-      float3 dimension;
+      Vertex dimension;
       dimension.x = block.dimension.x*blockSize.x;
       dimension.y = block.dimension.y*blockSize.y;
       dimension.z = block.dimension.z*blockSize.z;
@@ -330,7 +330,7 @@ float3 MapReader::loadFromFile(
 
       ++it;
    }
-   float3 objectSize;
+   Vertex objectSize;
    objectSize.x = (maxPos.x - minPos.x);
    objectSize.y = (maxPos.y - minPos.y);
    objectSize.z = (maxPos.z - minPos.z);

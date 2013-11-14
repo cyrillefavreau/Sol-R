@@ -93,8 +93,8 @@ __device__ inline bool ellipsoidIntersection(
    const Primitive& ellipsoid,
 	Material*  materials, 
    const Ray& ray, 
-   float3& intersection,
-   float3& normal,
+   Vertex& intersection,
+   Vertex& normal,
 	float& shadowIntensity,
    bool& back) 
 {
@@ -102,8 +102,8 @@ __device__ inline bool ellipsoidIntersection(
 	shadowIntensity = 1.f;
 
    // solve the equation sphere-ray to find the intersections
-	float3 O_C = ray.origin-ellipsoid.p0;
-	float3 dir = normalize(ray.direction);
+	Vertex O_C = ray.origin-ellipsoid.p0;
+	Vertex dir = normalize(ray.direction);
 
    float a = 
         ((dir.x*dir.x)/(ellipsoid.size.x*ellipsoid.size.x))
@@ -165,15 +165,15 @@ __device__ inline bool sphereIntersection(
 	const Primitive& sphere, 
 	Material*  materials, 
 	const Ray& ray, 
-	float3&    intersection,
-	float3&    normal,
+	Vertex&    intersection,
+	Vertex&    normal,
 	float&     shadowIntensity,
 	bool&      back
 	) 
 {
 	// solve the equation sphere-ray to find the intersections
-	float3 O_C = ray.origin-sphere.p0;
-	float3 dir = normalize(ray.direction); 
+	Vertex O_C = ray.origin-sphere.p0;
+	Vertex dir = normalize(ray.direction); 
 
 	float a = 2.f*dot(dir,dir);
 	float b = 2.f*dot(O_C,dir);
@@ -211,7 +211,7 @@ __device__ inline bool sphereIntersection(
 	else
 	{
 		// Procedural texture
-		float3 newCenter;
+		Vertex newCenter;
       newCenter.x = sphere.p0.x + 0.008f*sphere.size.x*cos(sceneInfo.misc.y + intersection.x );
 		newCenter.y = sphere.p0.y + 0.008f*sphere.size.y*sin(sceneInfo.misc.y + intersection.y );
 		newCenter.z = sphere.p0.z + 0.008f*sphere.size.z*sin(cos(sceneInfo.misc.y + intersection.z ));
@@ -228,7 +228,7 @@ __device__ inline bool sphereIntersection(
 	// Power textures
 	if (materials[sphere.materialId.x].textureInfo.y != TEXTURE_NONE && materials[sphere.materialId.x].transparency.x != 0 ) 
 	{
-		float3 color = sphereUVMapping(sphere, materials, textures, intersection, timer );
+		Vertex color = sphereUVMapping(sphere, materials, textures, intersection, timer );
 		return ((color.x+color.y+color.z) >= sceneInfo.transparentColor.x ); 
 	}
 #endif // 0
@@ -247,15 +247,15 @@ __device__ inline bool cylinderIntersection(
 	const Primitive& cylinder,
 	Material*  materials, 
 	const Ray& ray,
-	float3&    intersection,
-	float3&    normal,
+	Vertex&    intersection,
+	Vertex&    normal,
 	float&     shadowIntensity,
 	bool&      back) 
 {
 	back = false;
-	float3 O_C = ray.origin-cylinder.p0;
-	float3 dir = ray.direction;
-	float3 n   = crossProduct(dir, cylinder.n1);
+	Vertex O_C = ray.origin-cylinder.p0;
+	Vertex dir = ray.direction;
+	Vertex n   = crossProduct(dir, cylinder.n1);
 
 	float ln = length(n);
 
@@ -268,7 +268,7 @@ __device__ inline bool cylinderIntersection(
 	float d = fabs(dot(O_C,n));
 	if (d>cylinder.size.y) return false;
 
-	float3 O = crossProduct(O_C,cylinder.n1);
+	Vertex O = crossProduct(O_C,cylinder.n1);
 	float t = -dot(O, n)/ln;
 	O = normalize(crossProduct(n,cylinder.n1));
 	float s=fabs( sqrtf(cylinder.size.x*cylinder.size.x-d*d) / dot( dir,O ) );
@@ -307,8 +307,8 @@ __device__ inline bool cylinderIntersection(
 			// Calculate intersection point
 			intersection = ray.origin+t*dir;
 
-			float3 HB1 = intersection-cylinder.p0;
-			float3 HB2 = intersection-cylinder.p1;
+			Vertex HB1 = intersection-cylinder.p0;
+			Vertex HB2 = intersection-cylinder.p1;
 
 			float scale1 = dot(HB1,cylinder.n1);
 			float scale2 = dot(HB2,cylinder.n1);
@@ -319,7 +319,7 @@ __device__ inline bool cylinderIntersection(
 			if( materials[cylinder.materialId.x].attributes.y == 1) 
 			{
 				// Procedural texture
-				float3 newCenter;
+				Vertex newCenter;
 				newCenter.x = cylinder.p0.x + 0.01f*cylinder.size.x*cos(sceneInfo.misc.y/100.f+intersection.x);
 				newCenter.y = cylinder.p0.y + 0.01f*cylinder.size.y*sin(sceneInfo.misc.y/100.f+intersection.y);
 				newCenter.z = cylinder.p0.z + 0.01f*cylinder.size.z*sin(cos(sceneInfo.misc.y/100.f+intersection.z));
@@ -350,8 +350,8 @@ __device__ inline bool planeIntersection(
 	Material*        materials,
 	BitmapBuffer*    textures,
 	const Ray&       ray, 
-	float3&          intersection,
-	float3&          normal,
+	Vertex&          intersection,
+	Vertex&          normal,
 	float&           shadowIntensity,
 	bool             reverse
 	)
@@ -506,27 +506,27 @@ __device__ inline bool triangleIntersection(
 	const Primitive& triangle, 
 	Material*        materials,
 	const Ray&       ray,
-	float3&          intersection,
-	float3&          normal,
-	float3&          areas,
+	Vertex&          intersection,
+	Vertex&          normal,
+	Vertex&          areas,
 	float&           shadowIntensity,
 	bool&            back )
 {
    back = false;
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
-   float3 E01=triangle.p1-triangle.p0;
-   float3 E03=triangle.p2-triangle.p0;
-   float3 P = crossProduct(ray.direction,E03);
+   Vertex E01=triangle.p1-triangle.p0;
+   Vertex E03=triangle.p2-triangle.p0;
+   Vertex P = crossProduct(ray.direction,E03);
    float det = dot(E01,P);
    
    if (fabs(det) < EPSILON) return false;
    
-   float3 T = ray.origin-triangle.p0;
+   Vertex T = ray.origin-triangle.p0;
    float a = dot(T,P)/det;
    if (a < 0.f || a > 1.f) return false;
 
-   float3 Q = crossProduct(T,E01);
+   Vertex Q = crossProduct(T,E01);
    float b = dot(ray.direction,Q)/det;
    if (b < 0.f || b > 1.f) return false;
 
@@ -534,15 +534,15 @@ __device__ inline bool triangleIntersection(
    // the intersection point with respect to T′.
    if ((a+b) > 1.f) 
    {
-      float3 E23 = triangle.p0-triangle.p1;
-      float3 E21 = triangle.p1-triangle.p1;
-      float3 P_ = crossProduct(ray.direction,E21);
+      Vertex E23 = triangle.p0-triangle.p1;
+      Vertex E21 = triangle.p1-triangle.p1;
+      Vertex P_ = crossProduct(ray.direction,E21);
       float det_ = dot(E23,P_);
       if(fabs(det_) < EPSILON) return false;
-      float3 T_ = ray.origin-triangle.p2;
+      Vertex T_ = ray.origin-triangle.p2;
       float a_ = dot(T_,P_)/det_;
       if (a_ < 0.f) return false;
-      float3 Q_ = crossProduct(T_,E23);
+      Vertex Q_ = crossProduct(T_,E23);
       float b_ = dot(ray.direction,Q_)/det_;
       if (b_ < 0.f) return false;
    }
@@ -557,15 +557,15 @@ __device__ inline bool triangleIntersection(
 
    // Normal
    normal = triangle.n0;
-   float3 v0 = triangle.p0 - intersection;
-   float3 v1 = triangle.p1 - intersection;
-   float3 v2 = triangle.p2 - intersection;
+   Vertex v0 = triangle.p0 - intersection;
+   Vertex v1 = triangle.p1 - intersection;
+   Vertex v2 = triangle.p2 - intersection;
    areas.x = 0.5f*length(crossProduct( v1,v2 ));
    areas.y = 0.5f*length(crossProduct( v0,v2 ));
    areas.z = 0.5f*length(crossProduct( v0,v1 ));
    normal = normalize((triangle.n0*areas.x + triangle.n1*areas.y + triangle.n2*areas.z)/(areas.x+areas.y+areas.z));
 
-   float3 dir = normalize(ray.direction);
+   Vertex dir = normalize(ray.direction);
    float r = dot(dir,normal);
 
    if( r>0.f )
@@ -592,9 +592,9 @@ __device__ inline bool intersectionWithPrimitives(
 	const Ray& ray, 
 	const int& iteration,
    int&    closestPrimitive, 
-	float3& closestIntersection,
-	float3& closestNormal,
-   float3& closestAreas,
+	Vertex& closestIntersection,
+	Vertex& closestNormal,
+   Vertex& closestAreas,
 	float4& colorBox,
 	bool&   back,
    const int currentMaterialId)
@@ -607,8 +607,8 @@ __device__ inline bool intersectionWithPrimitives(
 	r.direction = ray.direction-ray.origin;
 	computeRayAttributes( r );
 
-   float3 intersection = {0.f,0.f,0.f};
-	float3 normal       = {0.f,0.f,0.f};
+   Vertex intersection = {0.f,0.f,0.f};
+	Vertex normal       = {0.f,0.f,0.f};
 	bool i = false;
 	float shadowIntensity = 0.f;
 
@@ -632,7 +632,7 @@ __device__ inline bool intersectionWithPrimitives(
                Material& material = materials[primitive.materialId.x];
                if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
                {
-                  float3 areas = {0.f,0.f,0.f};
+                  Vertex areas = {0.f,0.f,0.f};
    #ifdef EXTENDED_GEOMETRY
 				      i = false;
 				      switch( primitive.type.x )

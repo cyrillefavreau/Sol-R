@@ -35,7 +35,7 @@
 /*
 ________________________________________________________________________________
 
-Convert float3 into OpenGL RGB color
+Convert Vertex into OpenGL RGB color
 ________________________________________________________________________________
 */
 __device__ void makeColor(
@@ -90,7 +90,7 @@ We do not consider the object from which the ray is launched...
 This object cannot shadow itself !
 
 We now have to find the intersection between the considered object and the ray 
-which origin is the considered 3D float3 and which direction is defined by the 
+which origin is the considered 3D Vertex and which direction is defined by the 
 light source center.
 .
 . * Lamp                     Ray = Origin -> Light Source Center
@@ -113,8 +113,8 @@ __device__ float processShadows(
 	Material*     materials,
 	BitmapBuffer* textures,
 	const int&    nbPrimitives, 
-	const float3& lampCenter, 
-	const float3& origin, 
+	const Vertex& lampCenter, 
+	const Vertex& origin, 
 	const int&    objectId,
 	const int&    iteration,
    float4&       color)
@@ -138,9 +138,9 @@ __device__ float processShadows(
 			int cptPrimitives = 0;
 			while( result<sceneInfo.shadowIntensity.x && cptPrimitives<box.nbPrimitives.x)
 			{
-				float3 intersection = {0.f,0.f,0.f};
-				float3 normal       = {0.f,0.f,0.f};
-            float3 areas        = {0.f,0.f,0.f};
+				Vertex intersection = {0.f,0.f,0.f};
+				Vertex normal       = {0.f,0.f,0.f};
+            Vertex areas        = {0.f,0.f,0.f};
 				float  shadowIntensity = 0.f;
 
 				Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
@@ -164,8 +164,8 @@ __device__ float processShadows(
                if( triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ))
 #endif
 					{
-						float3 O_I = intersection-r.origin;
-						float3 O_L = r.direction;
+						Vertex O_I = intersection-r.origin;
+						Vertex O_L = r.direction;
 						float l = length(O_I);
 						if( l>EPSILON && l<length(O_L) )
 						{
@@ -211,8 +211,8 @@ __device__ float4 intersectionShader(
 	const Primitive& primitive, 
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const float3&    intersection,
-	const float3&    areas)
+	const Vertex&    intersection,
+	const Vertex&    areas)
 {
 	float4 colorAtIntersection = materials[primitive.materialId.x].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
@@ -312,11 +312,11 @@ __device__ float4 primitiveShader(
 	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
 	Material* materials, BitmapBuffer* textures,
 	RandomBuffer* randoms,
-	const float3& origin,
-	const float3& normal, 
+	const Vertex& origin,
+	const Vertex& normal, 
 	const int&    objectId, 
-	const float3& intersection,
-   const float3& areas,
+	const Vertex& intersection,
+   const Vertex& areas,
 	const int&    iteration,
 	float4&       refractionFromColor,
 	float&        shadowIntensity,
@@ -351,7 +351,7 @@ __device__ float4 primitiveShader(
          int cptLamp = cpt;
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
-			   float3 center;
+			   Vertex center;
    		   // randomize lamp center
             center.x = lightInformation[cptLamp].location.x;
             center.y = lightInformation[cptLamp].location.y;
@@ -382,7 +382,7 @@ __device__ float4 primitiveShader(
 
             if( sceneInfo.graphicsLevel.x>0 )
             {
-		         float3 lightRay = center - intersection;
+		         Vertex lightRay = center - intersection;
                lightRay = normalize(lightRay);
 #if 0
                // Lightning intensity decreases with distance
@@ -426,8 +426,8 @@ __device__ float4 primitiveShader(
 				      // --------------------------------------------------------------------------------
 				      // Blinn - Phong
 				      // --------------------------------------------------------------------------------
-				      float3 viewRay = normalize(intersection - origin);
-				      float3 blinnDir = lightRay - viewRay;
+				      Vertex viewRay = normalize(intersection - origin);
+				      Vertex blinnDir = lightRay - viewRay;
 				      float temp = sqrt(dot(blinnDir,blinnDir));
 				      if (temp != 0.f ) 
 				      {

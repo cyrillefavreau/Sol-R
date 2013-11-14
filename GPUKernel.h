@@ -43,27 +43,27 @@
 struct CPUPrimitive
 {
    bool   movable;
-	float3 p0;
-	float3 p1;
-	float3 p2;
-	float3 n0;
-	float3 n1;
-	float3 n2;
-	float3 size;
+	Vertex p0;
+	Vertex p1;
+	Vertex p2;
+	Vertex n0;
+	Vertex n1;
+	Vertex n2;
+	Vertex size;
 	int    type;
 	int    materialId;
-   float3 vt0; // Texture coordinates
-   float3 vt1; 
-   float3 vt2; 
-   float3 speed0;
-   float3 speed1;
-   float3 speed2;
+   Vertex vt0; // Texture coordinates
+   Vertex vt1; 
+   Vertex vt2; 
+   Vertex speed0;
+   Vertex speed1;
+   Vertex speed2;
 };
 
 struct CPUBoundingBox
 {
-   float3 parameters[2];
-   float3 center;
+   Vertex parameters[2];
+   Vertex center;
    std::vector<long> primitives;
    long indexForNextBox;
 };
@@ -71,7 +71,7 @@ struct CPUBoundingBox
 typedef std::map<long,CPUBoundingBox> BoxContainer;
 typedef std::map<long,CPUPrimitive>   PrimitiveContainer;
 typedef std::map<long,Lamp>           LampContainer;
-typedef std::vector<float3> Vertices;
+typedef std::vector<Vertex> Vertices;
 
 class RAYTRACINGENGINE_API GPUKernel
 {
@@ -115,14 +115,14 @@ public:
    void scalePrimitives( float scale, unsigned int from, unsigned int to );
 
    // Rotation
-   void rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to );
-	void rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
-   void rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles );
-   float3 getRotation() { return m_rotation; }
+   void rotatePrimitives( Vertex rotationCenter, Vertex angles, unsigned int from, unsigned int to );
+	void rotatePrimitive( CPUPrimitive& primitive, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles );
+   void rotateBox( CPUBoundingBox& box, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles );
+   Vertex getRotation() { return m_rotation; }
 
    // Translation
-   void translatePrimitives( float3 translation, unsigned int from, unsigned int to );
-   float3 getTranslation() { return m_translation; }
+   void translatePrimitives( Vertex translation, unsigned int from, unsigned int to );
+   Vertex getTranslation() { return m_translation; }
 
    // Morphing
    void morphPrimitives();
@@ -130,15 +130,15 @@ public:
    // Material
 	void setPrimitiveMaterial( unsigned int index, int materialId); 
 	int  getPrimitiveMaterial( unsigned int index); 
-	float3 getPrimitiveCenter( unsigned int index );
-	void getPrimitiveOtherCenter( unsigned int index, float3& otherCenter );
-	void setPrimitiveCenter( unsigned int index, const float3& center );
+	Vertex getPrimitiveCenter( unsigned int index );
+	void getPrimitiveOtherCenter( unsigned int index, Vertex& otherCenter );
+	void setPrimitiveCenter( unsigned int index, const Vertex& center );
 
    // Texture coordinates
-   void setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 );
+   void setPrimitiveTextureCoordinates( unsigned int index, Vertex vt0, Vertex vt1, Vertex vt2 );
 
    // Normals
-	void setPrimitiveNormals( unsigned int index, float3 n0, float3 n1, float3 n2 );
+	void setPrimitiveNormals( unsigned int index, Vertex n0, Vertex n1, Vertex n2 );
 
    // Lights
    int getLight( int index );
@@ -212,7 +212,7 @@ public:
 
 	// ---------- Camera ----------
 	void setCamera( 
-		float3 eye, float3 dir, float3 angles );
+		Vertex eye, Vertex dir, Vertex angles );
 
 public:
 
@@ -256,10 +256,10 @@ public:
 public:
 
    // Vector Utilities
-   float vectorLength( const float3& vector );
-   void normalizeVector( float3& v );
-   float3 crossProduct( const float3& b, const float3& c );
-   float dotProduct( const float3& a, const float3& b );
+   float vectorLength( const Vertex& vector );
+   void normalizeVector( Vertex& v );
+   Vertex crossProduct( const Vertex& b, const Vertex& c );
+   float dotProduct( const Vertex& a, const Vertex& b );
      
    // Bitmap export
    void saveBitmapToFile( const std::string& filename, BitmapBuffer* bitmap, const int width, const int height, const int depth );
@@ -286,14 +286,14 @@ public:
 
 	int updateSkeletons( 
       unsigned int primitiveIndex,
-		float3 skeletonPosition, 
+		Vertex skeletonPosition, 
 		float size,
 		float radius,       int materialId,
 		float head_radius,  int head_materialId,
 		float hands_radius, int hands_materialId,
 		float feet_radius,  int feet_materialId);
 
-	bool getSkeletonPosition( int index, float3& position );
+	bool getSkeletonPosition( int index, Vertex& position );
    BitmapBuffer* getDepthBitmap() { return m_hDepth; }
    BitmapBuffer* getVideoBitmap() { return m_hVideo; }
 #endif // USE_KINECT
@@ -337,7 +337,7 @@ public:
 
 public:
 
-   void rotateVector( float3& v, const float3& rotationCenter, const float3& cosAngles, const float3& sinAngles );
+   void rotateVector( Vertex& v, const Vertex& rotationCenter, const Vertex& cosAngles, const Vertex& sinAngles );
 
 public:
 
@@ -381,9 +381,9 @@ protected:
 	int m_nbActiveMaterials;
    int m_nbActiveTextures;
    int m_lightInformationSize;
-	float3		 m_viewPos;
-	float3		 m_viewDir;
-	float3		 m_angles;
+	Vertex		 m_viewPos;
+	Vertex		 m_viewDir;
+	Vertex		 m_angles;
 
    bool         m_doneWithAdding;
    int          m_addingIndex;
@@ -409,8 +409,8 @@ protected:
 	bool	 m_materialsTransfered;
 	bool	 m_texturesTransfered;
    // Scene Size
-   float3 m_minPos[NB_MAX_FRAMES];
-   float3 m_maxPos[NB_MAX_FRAMES];
+   Vertex m_minPos[NB_MAX_FRAMES];
+   Vertex m_maxPos[NB_MAX_FRAMES];
 
 protected:
 
@@ -451,8 +451,8 @@ protected:
    Vertices m_vertices;
    Vertices m_normals;
    Vertices m_textCoords;
-   float3   m_translation;
-   float3   m_rotation;
+   Vertex   m_translation;
+   Vertex   m_rotation;
    int      m_currentMaterial;
    float    m_pointSize;
 

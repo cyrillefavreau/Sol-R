@@ -43,14 +43,14 @@ public:
 
 public:
 
-   float3 loadAtomsFromFile( 
+   Vertex loadAtomsFromFile( 
       const std::string& filename,
       GPUKernel&   cudaKernel,
       GeometryType geometryType,
       const float  defaultAtomSize,
       const float  defaultStickSize,
       const int    materialType,
-      const float3 scale,
+      const Vertex scale,
       const bool   useModels = false);
 
    int getNbBoxes() { return m_nbBoxes; }

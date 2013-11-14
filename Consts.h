@@ -34,7 +34,7 @@
 // Consts
 const int MAX_GPU_COUNT     = 32;
 const int MAX_STREAM_COUNT  = 32;
-const int NB_MAX_ITERATIONS = 20;
+const int NB_MAX_ITERATIONS = 10;
 
 const int BOUNDING_BOXES_TREE_DEPTH = 64;
 const int NB_MAX_BOXES      = 2097152;

@@ -34,7 +34,7 @@
 #include "OpenCLKernel.h"
 #include "../Logging.h"
 
-const long MAX_SOURCE_SIZE = 65535;
+const long MAX_SOURCE_SIZE = 2*65535;
 const long MAX_DEVICES = 10;
 
 #ifdef USE_DIRECTX
@@ -145,8 +145,8 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
    m_kFishEyeRenderer(0),
    m_kDefault(0),
    m_kDepthOfField(0),
-   m_kAmbiantOcclusion(0),
-   m_kEnlightment(0)
+   m_kAmbientOcclusion(0),
+   m_kRadiosity(0)
 {
 	int  status(0);
 	cl_platform_id   platforms[MAX_DEVICES];
@@ -194,6 +194,7 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, platforms, &ret_num_platforms));
    s << ret_num_platforms << " platorm(s) detected" << "\n";
 
+#if 1
 	//for( int p=0;p<ret_num_platforms;++p)
    int p=platform;
 	{
@@ -214,8 +215,8 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 
 		// Devices
 		//for( int d=0; d<ret_num_devices; ++d)
-      int d = device;
 		{
+         int d=device;
 			s << "  Device " << d << ":\n";
 
 			CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
@@ -269,6 +270,9 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 	}
    s << "--------------------------------------------------------------------------------\n";
 	LOG_INFO(1, s.str().c_str() );
+#else
+	CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, 1, m_hDevices, &ret_num_devices));
+#endif // 0
 
 	m_hContext = clCreateContext(NULL, ret_num_devices, &m_hDevices[0], NULL, NULL, &status );
 	m_hQueue = clCreateCommandQueue(m_hContext, m_hDevices[0], CL_QUEUE_PROFILING_ENABLE, &status);
@@ -368,10 +372,10 @@ void OpenCLKernel::compileKernels(
       m_kDepthOfField = clCreateKernel( hProgram, "k_depthOfField", &status );
 		CHECKSTATUS(status);
 
-      m_kAmbiantOcclusion = clCreateKernel( hProgram, "k_ambiantOcclusion", &status );
+      m_kAmbientOcclusion = clCreateKernel( hProgram, "k_ambientOcclusion", &status );
 		CHECKSTATUS(status);
 
-      m_kEnlightment = clCreateKernel( hProgram, "k_enlightment", &status );
+      m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
 		CHECKSTATUS(status);
 
       cl_int computeUnits;
@@ -526,8 +530,8 @@ void OpenCLKernel::releaseDevice()
    // Post processing kernels
 	if( m_kDefault )          CHECKSTATUS(clReleaseKernel(m_kDefault));
 	if( m_kDepthOfField )     CHECKSTATUS(clReleaseKernel(m_kDepthOfField));
-	if( m_kAmbiantOcclusion ) CHECKSTATUS(clReleaseKernel(m_kAmbiantOcclusion));
-	if( m_kEnlightment )      CHECKSTATUS(clReleaseKernel(m_kEnlightment));
+	if( m_kAmbientOcclusion ) CHECKSTATUS(clReleaseKernel(m_kAmbientOcclusion));
+	if( m_kRadiosity )      CHECKSTATUS(clReleaseKernel(m_kRadiosity));
 
    // Queue and context
    if( m_hQueue ) CHECKSTATUS(clReleaseCommandQueue(m_hQueue));
@@ -548,7 +552,7 @@ void OpenCLKernel::render_begin( const float timer )
       int nbPrimitives = m_nbActivePrimitives[m_frame];
       int nbLamps      = m_nbActiveLamps[m_frame];
       int nbMaterials  = m_nbActiveMaterials+1;
-      LOG_INFO( 3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
+      LOG_INFO(3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
          
       if( !m_primitivesTransfered )
       {
@@ -784,24 +788,27 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDepthOfField, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
 		   break;
 	   case ppe_ambientOcclusion:
-         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
-         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
-	      CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
-	      CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
-         CHECKSTATUS(clSetKernelArg( m_kAmbiantOcclusion, 5, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbiantOcclusion, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+         CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+	      CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+	      CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 5, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbientOcclusion, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
 		   break;
-	   case ppe_enlightment:
-         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
-         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
-         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 3, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
-	      CHECKSTATUS(clSetKernelArg( m_kEnlightment, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
-	      CHECKSTATUS(clSetKernelArg( m_kEnlightment, 5, sizeof(cl_mem),   (void*)&m_dRandoms ));
-         CHECKSTATUS(clSetKernelArg( m_kEnlightment, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kEnlightment, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	   case ppe_radiosity:
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 3, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 5, sizeof(cl_mem),   (void*)&m_dRandoms ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
 		   break;
+	   case ppe_oneColor:
+         // TODO!
+         break;
 	   default:
          CHECKSTATUS(clSetKernelArg( m_kDefault, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
          CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
@@ -921,7 +928,7 @@ void OpenCLKernel::initBuffers()
 	LOG_INFO(3,"OpenCLKernel::initBuffers");
    GPUKernel::initBuffers();
 	initializeDevice();
-   compileKernels( kst_file, "resource.dll", "", "-cl-fast-relaxed-math" );
+   compileKernels( kst_file, "RayTracer.cl", "", "-cl-fast-relaxed-math" );
 }
 
 OpenCLKernel::~OpenCLKernel()

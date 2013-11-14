@@ -29,9 +29,9 @@
 struct MaterialMTL
 {
    unsigned int index;
-   float3 Ka;
-   float3 Kd;
-   float3 Ks;
+   Vertex Ka;
+   Vertex Kd;
+   Vertex Ks;
    float  Ns;
    float  reflection;
    float  transparency;
@@ -51,12 +51,12 @@ public:
       GPUKernel& GPUKernel,
       int materialId);
 
-   float3 loadModelFromFile( 
+   Vertex loadModelFromFile( 
       const std::string& filename,
       GPUKernel& cudaKernel,
-      const float3& center,
+      const Vertex& center,
       const bool autoScale,
-      const float3& scale, 
+      const Vertex& scale, 
       bool loadMaterials,
       int  materialId,
       bool allSpheres);

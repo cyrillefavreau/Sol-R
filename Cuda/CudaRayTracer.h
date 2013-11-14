@@ -72,9 +72,9 @@ extern "C" void cudaRender(
    const SceneInfo          sceneInfo,
    const int4               objects,
    const PostProcessingInfo PostProcessingInfo,
-   const float3             origin, 
-   const float3             direction, 
-   const float3             angles);
+   const Vertex             origin, 
+   const Vertex             direction, 
+   const Vertex             angles);
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 

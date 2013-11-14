@@ -124,13 +124,13 @@ __device__ float4 triangleUVMapping(
 	const Primitive& primitive,
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const float3&    intersection,
-   const float3&    areas)
+	const Vertex&    intersection,
+   const Vertex&    areas)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
 
-	float3 T = (primitive.vt0*areas.x+primitive.vt1*areas.y+primitive.vt2*areas.z)/(areas.x+areas.y+areas.z);
+	Vertex T = (primitive.vt0*areas.x+primitive.vt1*areas.y+primitive.vt2*areas.z)/(areas.x+areas.y+areas.z);
    int u = T.x*material.textureMapping.x;
 	int v = T.y*material.textureMapping.y;
 
@@ -178,12 +178,12 @@ __device__ float4 sphereUVMapping(
 	const Primitive& primitive,
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const float3&    intersection)
+	const Vertex&    intersection)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
 
-	float3 d = normalize(primitive.p0-intersection);
+	Vertex d = normalize(primitive.p0-intersection);
 	int u = primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2*PI);
 	int v = primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2*PI));
 
@@ -214,7 +214,7 @@ __device__ float4 cubeMapping(
 	const Primitive& primitive, 
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const float3&    intersection)
+	const Vertex&    intersection)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;

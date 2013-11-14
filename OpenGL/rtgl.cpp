@@ -47,15 +47,15 @@ PostProcessingInfo gPostProcessingInfo;
 const int DEFAULT_LIGHT_MATERIAL = NB_MAX_MATERIALS-1;
 const int gTotalPathTracingIterations = 1;
 int4      gMisc = {otOpenGL,0,0,0};
-float3    gRotationCenter = { 0.f, 0.f, 0.f };
+Vertex    gRotationCenter = { 0.f, 0.f, 0.f };
 float     gScale=1.0f;
 // Current Material
 int       gCurrentTexture(-1);
 bool      gLighting(false);
 // Camera. THIS IS UGLY
-float3 gEye = {gScale/10.f,0.f, -20.f*gScale};
-float3 gDir = {gScale/10.f,0.f, -20.f*gScale+5000.f};
-float3 gAngles = {0.f,0.f,0.f};
+Vertex gEye = {gScale/10.f,0.f, -20.f*gScale};
+Vertex gDir = {gScale/10.f,0.f, -20.f*gScale+5000.f};
+Vertex gAngles = {0.f,0.f,0.f};
 
 // Utils
 int RGBToInt(float r, float g, float b)
@@ -107,7 +107,7 @@ void RayTracer::InitializeRaytracer( const int width, const int height )
    // Kernel
    if(!gKernel) 
    {
-      gKernel = new GenericGPUKernel(0, 480, 1, 0);
+      gKernel = new GenericGPUKernel(0, 480, 0, 0);
       gSceneInfo.pathTracingIteration.x = 0; 
       gKernel->setSceneInfo( gSceneInfo );
       gKernel->initBuffers();
@@ -146,7 +146,7 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 		float refraction   = 0.f;
 		float transparency = 0.f;
 		int   textureId = TEXTURE_NONE;
-      float3 innerIllumination = { 0.f, 40000.f, gSceneInfo.viewDistance.x };
+      Vertex innerIllumination = { 0.f, 40000.f, gSceneInfo.viewDistance.x };
 		bool procedural = false;
 		bool wireframe = false;
 		int  wireframeDepth = 0;
@@ -443,7 +443,7 @@ void RayTracer::glutSwapBuffers( void )
 void RayTracer::gluSphere(void *, GLfloat radius, GLint , GLint)
 {
    int p = RayTracer::gKernel->addPrimitive(ptSphere);
-   float3 translation = RayTracer::gKernel->getTranslation();
+   Vertex translation = RayTracer::gKernel->getTranslation();
    int m = RayTracer::gKernel->getCurrentMaterial();
    RayTracer::gKernel->setPrimitive(p, translation.x*gScale, translation.y*gScale, translation.z*gScale, radius*gScale, 0.f, 0.f, m );
 }
@@ -451,7 +451,7 @@ void RayTracer::gluSphere(void *, GLfloat radius, GLint , GLint)
 void RayTracer::glutWireSphere(GLdouble radius, GLint , GLint )
 {
    int p = RayTracer::gKernel->addPrimitive(ptSphere);
-   float3 translation = RayTracer::gKernel->getTranslation();
+   Vertex translation = RayTracer::gKernel->getTranslation();
    int m = RayTracer::gKernel->getCurrentMaterial();
    RayTracer::gKernel->setPrimitive(p, translation.x*gScale, translation.y*gScale, translation.z*gScale, static_cast<float>(radius)*gScale, 0.f, 0.f, m );
 }
@@ -594,7 +594,7 @@ void RayTracer::glOrtho(	GLdouble  	left,
 
 void RayTracer::render()
 {
-   float3 rotation = RayTracer::gKernel->getRotation();
+   Vertex rotation = RayTracer::gKernel->getRotation();
    RayTracer::gKernel->setCamera(gEye,gDir,rotation);
    RayTracer::gKernel->setSceneInfo(gSceneInfo);
    RayTracer::gKernel->setPostProcessingInfo(gPostProcessingInfo);
@@ -625,7 +625,7 @@ void RayTracer::glTranslatef( GLfloat x, GLfloat y, GLfloat z )
 
 void RayTracer::glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z )
 {
-   float3 angles = {angle*x*PI/180.f,angle*y*PI/180.f,angle*z*PI/180.f};
+   Vertex angles = {angle*x*PI/180.f,angle*y*PI/180.f,angle*z*PI/180.f};
    RayTracer::gKernel->rotate(angles.x,angles.y,angles.z);
 }
 

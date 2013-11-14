@@ -91,8 +91,8 @@ private:
    // Post processing kernels
 	cl_kernel        m_kDefault;
 	cl_kernel        m_kDepthOfField;
-	cl_kernel        m_kAmbiantOcclusion;
-	cl_kernel        m_kEnlightment;
+	cl_kernel        m_kAmbientOcclusion;
+	cl_kernel        m_kRadiosity;
 
 private:
 

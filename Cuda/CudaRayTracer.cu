@@ -72,19 +72,19 @@ __device__ inline float4 recursiveRay(
 	const SceneInfo&          sceneInfo,
 	const PostProcessingInfo& postProcessingInfo,
    const int                 initialRefraction,
-   float3&                   firstIntersection,
+   Vertex&                   firstIntersection,
    PrimitiveXYIdBuffer&      primitiveXYId,
    int&                      currentMaterialId )
 {
    float4 color = {0.f,0.f,0.f,0.f};
    if( iteration>=currentMaxIteration ) return color;
 
-	float3 normal = {0.f,0.f,0.f};
+	Vertex normal = {0.f,0.f,0.f};
    float4 colorBox;
-   float3 closestIntersection;
+   Vertex closestIntersection;
    bool   back;
    float  colorContribution = 1.f;
-   float3 areas = {0.f,0.f,0.f};
+   Vertex areas = {0.f,0.f,0.f};
    int    closestPrimitive  = -1;
 	if( intersectionWithPrimitives(
 		sceneInfo,
@@ -154,9 +154,9 @@ __device__ inline float4 recursiveRay(
          // Actual refraction
          Ray reflectedRay;
          reflectedRay.origin = closestIntersection;
-			float3 O_E = normalize(rayOrigin.origin - closestIntersection);
+			Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
 			vectorRefraction( reflectedRay.direction, O_E, refraction, normal, initialRefraction );
-			float3 reflectedTarget = closestIntersection - rayOrigin.direction;
+			Vertex reflectedTarget = closestIntersection - rayOrigin.direction;
 
          colorContribution = materials[primitives[closestPrimitive].materialId.x].transparency.x;
 
@@ -174,9 +174,9 @@ __device__ inline float4 recursiveRay(
 		{
          Ray reflectedRay;
          reflectedRay.origin = closestIntersection;
-			float3 O_E = rayOrigin.origin - closestIntersection;
+			Vertex O_E = rayOrigin.origin - closestIntersection;
          vectorReflection( reflectedRay.direction, O_E, normal );
-			float3 reflectedTarget = closestIntersection - rayOrigin.direction;
+			Vertex reflectedTarget = closestIntersection - rayOrigin.direction;
          colorContribution = materials[primitives[closestPrimitive].materialId.x].reflection.x;
 
 		   // Noise management
@@ -203,8 +203,8 @@ __device__ inline float4 recursiveRay(
 	{
 #ifdef GRADIANT_BACKGROUND
       // Background
-      float3 normal = {0.f, 1.f, 0.f };
-      float3 dir = normalize(rayOrigin.direction-rayOrigin.origin);
+      Vertex normal = {0.f, 1.f, 0.f };
+      Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
       float angle = 0.5f*fabs(dot( normal, dir));
       angle = (angle>1.f) ? 1.f: angle;
 		color = (1.f-angle)*sceneInfo.backgroundColor;
@@ -232,7 +232,7 @@ colours
 ------------------------------------------------------------------------------ 
 We now have to know the colour of this intersection                                        
 Color_from_object will compute the amount of light received by the
-intersection float3 and  will also compute the shadows. 
+intersection Vertex and  will also compute the shadows. 
 The resulted color is stored in result.                     
 The first parameter is the closest object to the intersection (following 
 the ray). It can  be considered as a light source if its inner light rate 
@@ -248,13 +248,13 @@ __device__ inline float4 launchRay(
 	const Ray&       ray, 
 	const SceneInfo& sceneInfo,
 	const PostProcessingInfo& postProcessingInfo,
-	float3&          intersection,
+	Vertex&          intersection,
 	float&           depthOfField,
 	PrimitiveXYIdBuffer& primitiveXYId)
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
 
-	float3 firstIntersection   = {0.f,0.f,0.f};
+	Vertex firstIntersection   = {0.f,0.f,0.f};
 	float  initialRefraction = 1.f;
 	int    iteration         = 0;
 	primitiveXYId.x = -1;
@@ -288,7 +288,7 @@ __device__ inline float4 launchRay(
 #ifdef DODGY_REFRACTIONS
    if( sceneInfo.graphicsLevel.x>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
    {
-      float3 areas = {0.f,0.f,0.f};
+      Vertex areas = {0.f,0.f,0.f};
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
 			sceneInfo,
@@ -381,7 +381,7 @@ colours
 ------------------------------------------------------------------------------ 
 We now have to know the colour of this intersection                                        
 Color_from_object will compute the amount of light received by the
-intersection float3 and  will also compute the shadows. 
+intersection Vertex and  will also compute the shadows. 
 The resulted color is stored in result.                     
 The first parameter is the closest object to the intersection (following 
 the ray). It can  be considered as a light source if its inner light rate 
@@ -397,14 +397,14 @@ __device__ inline float4 launchRay(
 	const Ray&       ray, 
 	const SceneInfo& sceneInfo,
 	const PostProcessingInfo& postProcessingInfo,
-	float3&          intersection,
+	Vertex&          intersection,
 	float&           depthOfField,
 	PrimitiveXYIdBuffer& primitiveXYId)
 {
 	float4 intersectionColor   = {0.f,0.f,0.f,0.f};
-	float3 closestIntersection = {0.f,0.f,0.f};
-   float3 firstIntersection   = {0.f,0.f,0.f};
-	float3 normal              = {0.f,0.f,0.f};
+	Vertex closestIntersection = {0.f,0.f,0.f};
+   Vertex firstIntersection   = {0.f,0.f,0.f};
+	Vertex normal              = {0.f,0.f,0.f};
 	int    closestPrimitive  = -1;
 	bool   carryon           = true;
 	Ray    rayOrigin         = ray;
@@ -426,7 +426,7 @@ __device__ inline float4 launchRay(
 	// Variable declarations
 	float  shadowIntensity = 0.f;
 	float4 refractionFromColor;
-	float3 reflectedTarget;
+	Vertex reflectedTarget;
 	float4 colorBox = {0.f,0.f,0.f,0.f};
 	bool   back = false;
 
@@ -450,7 +450,7 @@ __device__ inline float4 launchRay(
 	while( iteration<currentMaxIteration && carryon ) 
 #endif // PHOTON_ENERGY
 	{
-      float3 areas = {0.f,0.f,0.f};
+      Vertex areas = {0.f,0.f,0.f};
       // If no intersection with lamps detected. Now compute intersection with Primitives
 		if( carryon ) 
 		{
@@ -525,7 +525,7 @@ __device__ inline float4 launchRay(
 			   }
 
 				// Actual refraction
-				float3 O_E = normalize(rayOrigin.origin - closestIntersection);
+				Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
 				vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
 				reflectedTarget = closestIntersection - rayOrigin.direction;
 
@@ -537,7 +537,7 @@ __device__ inline float4 launchRay(
 				if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f )
             {
 					vectorReflection( reflectedRay.direction, O_E, normal );
-					float3 rt = closestIntersection - reflectedRay.direction;
+					Vertex rt = closestIntersection - reflectedRay.direction;
 
                reflectedRay.origin    = closestIntersection + rt*0.00001f;
 					reflectedRay.direction = rt;
@@ -552,7 +552,7 @@ __device__ inline float4 launchRay(
 				// ----------
 				if( materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f ) 
 				{
-					float3 O_E = rayOrigin.origin - closestIntersection;
+					Vertex O_E = rayOrigin.origin - closestIntersection;
 					vectorReflection( rayOrigin.direction, O_E, normal );
 					reflectedTarget = closestIntersection - rayOrigin.direction;
                colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].reflection.x;
@@ -590,8 +590,8 @@ __device__ inline float4 launchRay(
 		{
 #ifdef GRADIANT_BACKGROUND
          // Background
-         float3 normal = {0.f, 1.f, 0.f };
-         float3 dir = normalize(rayOrigin.direction-rayOrigin.origin);
+         Vertex normal = {0.f, 1.f, 0.f };
+         Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
          float angle = 0.5f*fabs(dot( normal, dir));
          angle = (angle>1.f) ? 1.f: angle;
 			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
@@ -605,7 +605,7 @@ __device__ inline float4 launchRay(
 
    if( sceneInfo.graphicsLevel.x>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
    {
-      float3 areas = {0.f,0.f,0.f};
+      Vertex areas = {0.f,0.f,0.f};
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
 			sceneInfo,
@@ -726,9 +726,9 @@ __global__ void k_standardRenderer(
    Material*    materials,
 	BitmapBuffer* textures,
 	RandomBuffer* randoms,
-	float3        origin,
-	float3        direction,
-	float3        angles,
+	Vertex        origin,
+	Vertex        direction,
+	Vertex        angles,
 	SceneInfo     sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	PostProcessingBuffer* postProcessingBuffer,
@@ -750,7 +750,7 @@ __global__ void k_standardRenderer(
 	ray.origin = origin;
 	ray.direction = direction;
 
-   float3 rotationCenter = {0.f,0.f,0.f};
+   Vertex rotationCenter = {0.f,0.f,0.f};
    if( sceneInfo.renderingType.x==vt3DVision)
    {
       rotationCenter = origin;
@@ -782,7 +782,7 @@ __global__ void k_standardRenderer(
 	}
 
 	float dof = postProcessingInfo.param1.x;
-	float3 intersection;
+	Vertex intersection;
 
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
@@ -914,9 +914,9 @@ __global__ void k_fishEyeRenderer(
 	Material*     materials,
 	BitmapBuffer* textures,
 	RandomBuffer* randoms,
-	float3        origin,
-	float3        direction,
-	float3        angles,
+	Vertex        origin,
+	Vertex        direction,
+	Vertex        angles,
 	SceneInfo     sceneInfo,
 	PostProcessingInfo    postProcessingInfo,
 	PostProcessingBuffer* postProcessingBuffer,
@@ -959,7 +959,7 @@ __global__ void k_fishEyeRenderer(
 	}
 
 	float dof = postProcessingInfo.param1.x;
-	float3 intersection;
+	Vertex intersection;
 
    // Normal Y axis
    float2 step;
@@ -970,7 +970,7 @@ __global__ void k_fishEyeRenderer(
    step.x = 2.f*PI/sceneInfo.width.x;
    step.y = 2.f*PI/sceneInfo.height.x;
 
-   float3 fishEyeAngles = {0.f,0.f,0.f};
+   Vertex fishEyeAngles = {0.f,0.f,0.f};
    fishEyeAngles.y = angles.y + step.x*(float)x;
    //fishEyeAngles.x = angles.x + step.y*(float)y;
 
@@ -1046,9 +1046,9 @@ __global__ void k_anaglyphRenderer(
 	Material*     materials,
 	BitmapBuffer* textures,
 	RandomBuffer* randoms,
-	float3        origin,
-	float3        direction,
-	float3        angles,
+	Vertex        origin,
+	Vertex        direction,
+	Vertex        angles,
 	SceneInfo     sceneInfo,
 	PostProcessingInfo postProcessingInfo,
 	PostProcessingBuffer* postProcessingBuffer,
@@ -1066,7 +1066,7 @@ __global__ void k_anaglyphRenderer(
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
-   float3 rotationCenter = {0.f,0.f,0.f};
+   Vertex rotationCenter = {0.f,0.f,0.f};
    if( sceneInfo.renderingType.x==vt3DVision)
    {
       rotationCenter = origin;
@@ -1081,7 +1081,7 @@ __global__ void k_anaglyphRenderer(
 	}
 
 	float dof = postProcessingInfo.param1.x;
-	float3 intersection;
+	Vertex intersection;
 	Ray eyeRay;
 
    float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
@@ -1193,9 +1193,9 @@ __global__ void k_3DVisionRenderer(
 	Material*     materials,
 	BitmapBuffer* textures,
 	RandomBuffer* randoms,
-	float3        origin,
-	float3        direction,
-	float3        angles,
+	Vertex        origin,
+	Vertex        direction,
+	Vertex        angles,
 	SceneInfo     sceneInfo,
 	PostProcessingInfo    postProcessingInfo,
 	PostProcessingBuffer* postProcessingBuffer,
@@ -1216,7 +1216,7 @@ __global__ void k_3DVisionRenderer(
    float focus = fabs(postProcessingBuffer[sceneInfo.width.x/2*sceneInfo.height.x/2].w - origin.z);
    float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
-   float3 rotationCenter = {0.f,0.f,0.f};
+   Vertex rotationCenter = {0.f,0.f,0.f};
    if( sceneInfo.renderingType.x==vt3DVision)
    {
       rotationCenter = origin;
@@ -1231,7 +1231,7 @@ __global__ void k_3DVisionRenderer(
 	}
 
 	float dof = postProcessingInfo.param1.x;
-	float3 intersection;
+	Vertex intersection;
 	int halfWidth  = sceneInfo.width.x/2;
 
    float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
@@ -1820,9 +1820,9 @@ extern "C" void cudaRender(
 	const SceneInfo          sceneInfo,
 	const int4               objects,
 	const PostProcessingInfo postProcessingInfo,
-	const float3             origin, 
-	const float3             direction, 
-	const float3             angles)
+	const Vertex             origin, 
+	const Vertex             direction, 
+	const Vertex             angles)
 {
    LOG_INFO(3, "CPU PostProcessingBuffer: " << sizeof(PostProcessingBuffer));
    LOG_INFO(3, "CPU PrimitiveXYIdBuffer : " << sizeof(PrimitiveXYIdBuffer));

@@ -147,14 +147,14 @@ PDBReader::~PDBReader(void)
 {
 }
 
-float3 PDBReader::loadAtomsFromFile(
+Vertex PDBReader::loadAtomsFromFile(
 	const std::string& filename,
 	GPUKernel&   cudaKernel,
 	GeometryType geometryType,
 	const float  defaultAtomSize,
 	const float  defaultStickSize,
 	const int    materialType,
-	const float3 scale,
+	const Vertex scale,
 	const bool   useModels)
 {
 	int frame(0);
@@ -275,7 +275,7 @@ float3 PDBReader::loadAtomsFromFile(
 		file.close();
 	}
 
-	float3 objectSize;
+	Vertex objectSize;
 	objectSize.x = (maxPos.x-minPos.x);
 	objectSize.y = (maxPos.y-minPos.y);
 	objectSize.z = (maxPos.z-minPos.z);
@@ -285,7 +285,7 @@ float3 PDBReader::loadAtomsFromFile(
 	center.y = (minPos.y+maxPos.y)/2.f;
 	center.z = (minPos.z+maxPos.z)/2.f;
 
-   float3 objectScale;
+   Vertex objectScale;
 	objectScale.x = scale.x/( maxPos.x - minPos.x);
 	objectScale.y = scale.y/( maxPos.y - minPos.y);
 	objectScale.z = scale.z/( maxPos.z - minPos.z);

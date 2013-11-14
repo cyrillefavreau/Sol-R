@@ -142,9 +142,9 @@ extern "C" RAYTRACINGENGINE_API
    double dir_x,   double dir_y,   double dir_z,
    double angle_x, double angle_y, double angle_z )
 {
-   float3 eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z)};
-   float3 dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z)};
-   float3 angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z)};
+   Vertex eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z)};
+   Vertex dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z)};
+   Vertex angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z)};
    gKernel->setCamera( eye, dir, angles );
 }
 
@@ -222,7 +222,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y )
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z)
 {
-   float3 center = gKernel->getPrimitiveCenter( index );
+   Vertex center = gKernel->getPrimitiveCenter( index );
    x = static_cast<double>(center.x);
    y = static_cast<double>(center.y);
    z = static_cast<double>(center.z);
@@ -248,8 +248,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
 {
    try
    {
-      float3 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz) };
-      float3 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az) };
+      Vertex rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz) };
+      Vertex angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az) };
 
       gKernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
       gKernel->compactBoxes(false);
@@ -284,7 +284,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
    double feet_radius,  int feet_materialId)
 {
 #if USE_KINECT
-   float3 position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z) };
+   Vertex position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z) };
    return gKernel->updateSkeletons(
       index,
       position,
@@ -433,8 +433,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    // PDB
 	PDBReader prbReader;
    float s(static_cast<float>(scale));
-   float3 objectScale = {s,s,s};
-	float3 minPos = prbReader.loadAtomsFromFile(
+   Vertex objectScale = {s,s,s};
+	Vertex minPos = prbReader.loadAtomsFromFile(
       filename, *gKernel,
       static_cast<GeometryType>(geometryType),
       static_cast<float>(defaultAtomSize), 
@@ -451,12 +451,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
    int    materialId,
    double scale)
 {
-   float3 center={0.f,0.f,0.f};
+   Vertex center={0.f,0.f,0.f};
    // PDB
 	OBJReader objReader;
    float s(static_cast<float>(scale));
-   float3 objectScale = {s,s,s};
-	float3 minPos = objReader.loadModelFromFile(
+   Vertex objectScale = {s,s,s};
+	Vertex minPos = objReader.loadModelFromFile(
       filename,
       *gKernel,
       center,
@@ -479,7 +479,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, double scale )
 {
-   float3 center = { 0.f,0.f,0.f };
+   Vertex center = { 0.f,0.f,0.f };
    FileMarshaller fm;
    fm.loadFromFile( *gKernel, filename, center, static_cast<float>(scale) );
    return gKernel->getNbActivePrimitives();

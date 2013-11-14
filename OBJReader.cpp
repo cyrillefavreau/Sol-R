@@ -42,9 +42,9 @@ OBJReader::~OBJReader(void)
 {
 }
 
-float3 readfloat3( const std::string& value )
+Vertex readVertex( const std::string& value )
 {
-   float3 returnValue = {0.f,0.f,0.f};
+   Vertex returnValue = {0.f,0.f,0.f};
    int item(0);
    std::string tmp;
    for( int i(0); i<value.length(); ++i)
@@ -66,7 +66,7 @@ float3 readfloat3( const std::string& value )
    return returnValue;
 }
 
-int4 readVertex( const std::string& face )
+int4 readFloat3( const std::string& face )
 {
    int4 returnValue = {0,0,0,0};
    int item(0);
@@ -181,14 +181,14 @@ unsigned int OBJReader::loadMaterialsFromFile(
          {
             // RGB Color
             line = line.substr(3);
-            materials[id].Kd = readfloat3(line);
+            materials[id].Kd = readVertex(line);
          }
 
          if( line.find("Ks") == 0 )
          {
             // Specular values
             line = line.substr(3);
-            materials[id].Ks = readfloat3(line);
+            materials[id].Ks = readVertex(line);
          }
 
          if( line.find("map_Kd") == 0 )
@@ -276,24 +276,24 @@ unsigned int OBJReader::loadMaterialsFromFile(
    return 0;
 }
 
-float3 OBJReader::loadModelFromFile(
+Vertex OBJReader::loadModelFromFile(
    const std::string& filename,
    GPUKernel& kernel,
-   const float3& center,
+   const Vertex& center,
    const bool autoScale,
-   const float3& scale,
+   const Vertex& scale,
    bool loadMaterials,
    int materialId,
    bool allSpheres)
 {
    LOG_INFO(1,"Loading OBJ file " << filename );
-   std::map<int,float3> vertices;
-   std::map<int,float3> normals;
-   std::map<int,float3> textureCoordinates;
+   std::map<int,Vertex> vertices;
+   std::map<int,Vertex> normals;
+   std::map<int,Vertex> textureCoordinates;
    std::map<std::string,MaterialMTL> materials;
 
-   float3 minPos = { 100000.f, 100000.f, 100000.f };
-   float3 maxPos = {-100000.f,-100000.f,-100000.f };
+   Vertex minPos = { 100000.f, 100000.f, 100000.f };
+   Vertex maxPos = {-100000.f,-100000.f,-100000.f };
 
    std::string noExtFilename(filename);
    size_t pos(noExtFilename.find(".obj"));
@@ -328,7 +328,7 @@ float3 OBJReader::loadModelFromFile(
             if( line[0] == 'v' )
             {
                // Vertices
-               float3 vertex = {0.f,0.f,0.f};
+               Vertex vertex = {0.f,0.f,0.f};
                std::string value("");
 
                size_t i(1);
@@ -429,8 +429,8 @@ float3 OBJReader::loadModelFromFile(
       file.close();
    }
 
-   float3 objectCenter = center;
-   float3 objectScale  = scale;
+   Vertex objectCenter = center;
+   Vertex objectScale  = scale;
    if( autoScale )
    {
       float os = std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z ));
@@ -504,12 +504,12 @@ float3 OBJReader::loadModelFromFile(
                int nbPrimitives(0);
                if( allSpheres )
                {
-                  float3 sphereCenter;
+                  Vertex sphereCenter;
                   sphereCenter.x = (vertices[face[f].x].x + vertices[face[f+1].x].x + vertices[face[f+2].x].x)/3.f;
                   sphereCenter.y = (vertices[face[f].x].y + vertices[face[f+1].x].y + vertices[face[f+2].x].y)/3.f;
                   sphereCenter.z = (vertices[face[f].x].z + vertices[face[f+1].x].z + vertices[face[f+2].x].z)/3.f;
 
-                  float3 sphereRadius;
+                  Vertex sphereRadius;
                   sphereRadius.x = sphereCenter.x - vertices[face[f].x].x;
                   sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
                   sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
@@ -550,12 +550,12 @@ float3 OBJReader::loadModelFromFile(
                {
                   if( allSpheres )
                   {
-                     float3 sphereCenter;
+                     Vertex sphereCenter;
                      sphereCenter.x = (vertices[face[f+3].x].x + vertices[face[f+2].x].x + vertices[face[f].x].x)/3.f;
                      sphereCenter.y = (vertices[face[f+3].x].y + vertices[face[f+2].x].y + vertices[face[f].x].y)/3.f;
                      sphereCenter.z = (vertices[face[f+3].x].z + vertices[face[f+2].x].z + vertices[face[f].x].z)/3.f;
 
-                     float3 sphereRadius;
+                     Vertex sphereRadius;
                      sphereRadius.x = sphereCenter.x - vertices[face[f].x].x;
                      sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
                      sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
@@ -594,7 +594,7 @@ float3 OBJReader::loadModelFromFile(
       }
       file.close();
    }
-   float3 objectSize;
+   Vertex objectSize;
    objectSize.x = (maxPos.x - minPos.x)*objectScale.x;
    objectSize.y = (maxPos.y - minPos.y)*objectScale.y;
    objectSize.z = (maxPos.z - minPos.z)*objectScale.z;

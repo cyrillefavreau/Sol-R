@@ -127,7 +127,7 @@ void FileMarshaller::readSceneInfo( GPUKernel& kernel, const std::string& line )
    kernel.setSceneInfo( sceneInfo );
 }
 
-void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, float3& min, float3& max, const float3& center )
+void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, Vertex& min, Vertex& max, const Vertex& center )
 {
    Primitive primitive = {0.f};
    std::string value;
@@ -211,7 +211,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
    kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
    kernel.setPrimitiveTextureCoordinates( n, primitive.vt0, primitive.vt1, primitive.vt2 );
 
-   float3 pmin, pmax;
+   Vertex pmin, pmax;
    pmin.x = std::min(std::min( primitive.p0.x, primitive.p1.x ), primitive.p2.x );
    pmin.y = std::min(std::min( primitive.p0.y, primitive.p1.y ), primitive.p2.y );
    pmin.z = std::min(std::min( primitive.p0.z, primitive.p1.z ), primitive.p2.z );
@@ -300,13 +300,13 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       ", Texture ID= " << material.textureMapping.z );
 }
 
-float3 FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const float3& center, const float scale )
+Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filename, const Vertex& center, const float scale )
 {
    LOG_INFO(1, "Loading 3D scene from " << filename );
 
-   float3 returnValue;
-   float3 min = {  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x };
-   float3 max = { -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x };
+   Vertex returnValue;
+   Vertex min = {  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x,  kernel.getSceneInfo().viewDistance.x };
+   Vertex max = { -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x, -kernel.getSceneInfo().viewDistance.x };
 
    std::ifstream myfile;
    myfile.open(filename.c_str());

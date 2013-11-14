@@ -54,32 +54,32 @@
 
 const unsigned int MAX_SOURCE_SIZE = 65535*2;
 
-float3 min4( const float3 a, const float3 b, const float3 c )
+Vertex min4( const Vertex a, const Vertex b, const Vertex c )
 {
-   float3 r;
+   Vertex r;
    r.x = std::min(std::min(a.x,b.x),c.x);
    r.y = std::min(std::min(a.y,b.y),c.y);
    r.z = std::min(std::min(a.z,b.z),c.z);
    return r;
 }
 
-float3 max4( const float3 a, const float3 b, const float3 c )
+Vertex max4( const Vertex a, const Vertex b, const Vertex c )
 {
-   float3 r;
+   Vertex r;
    r.x = std::max(std::max(a.x,b.x),c.x);
    r.y = std::max(std::max(a.y,b.y),c.y);
    r.z = std::max(std::max(a.z,b.z),c.z);
    return r;
 }
 
- float GPUKernel::dotProduct( const float3& a, const float3& b )
+ float GPUKernel::dotProduct( const Vertex& a, const Vertex& b )
  {
    return a.x * b.x + a.y * b.y + a.z * b.z;
  }
 
-void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
+void vectorRotation( Vertex& v, const Vertex& rotationCenter, const Vertex& angles )
 { 
-	float3 cosAngles, sinAngles;
+	Vertex cosAngles, sinAngles;
 	
    cosAngles.x = cos(angles.x);
 	cosAngles.y = cos(angles.y);
@@ -90,11 +90,11 @@ void vectorRotation( float3& v, const float3& rotationCenter, const float3& angl
 	sinAngles.z = sin(angles.z);
 
    // Rotate Center
-   float3 vector;
+   Vertex vector;
    vector.x = v.x - rotationCenter.x;
    vector.y = v.y - rotationCenter.y;
    vector.z = v.z - rotationCenter.z;
-   float3 result = vector; 
+   Vertex result = vector; 
 
    /* X axis */ 
    result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 
@@ -118,13 +118,13 @@ void vectorRotation( float3& v, const float3& rotationCenter, const float3& angl
 }
 
 // ________________________________________________________________________________
-float GPUKernel::vectorLength( const float3& vector )
+float GPUKernel::vectorLength( const Vertex& vector )
 {
 	return sqrt( vector.x*vector.x + vector.y*vector.y + vector.z*vector.z );
 }
 
 // ________________________________________________________________________________
-void GPUKernel::normalizeVector( float3& v )
+void GPUKernel::normalizeVector( Vertex& v )
 {
 	float l = vectorLength( v );
    if( l != 0.f )
@@ -135,9 +135,9 @@ void GPUKernel::normalizeVector( float3& v )
    }
 }
 
-float3 GPUKernel::crossProduct( const float3& b, const float3& c )
+Vertex GPUKernel::crossProduct( const Vertex& b, const Vertex& c )
 {
-	float3 a;
+	Vertex a;
 	a.x = b.y*c.z - b.z*c.y;
 	a.y = b.z*c.x - b.x*c.z;
 	a.z = b.x*c.y - b.y*c.x;
@@ -395,7 +395,7 @@ Sets camera
 ________________________________________________________________________________
 */
 void GPUKernel::setCamera( 
-	float3 eye, float3 dir, float3 angles )
+	Vertex eye, Vertex dir, Vertex angles )
 {
 	LOG_INFO(3,"GPUKernel::setCamera(" << 
 		eye.x << "," << eye.y << "," << eye.z << " -> " <<
@@ -472,7 +472,7 @@ void GPUKernel::setPrimitive(
 	int   materialId )
 {
    float scale = 1.f;
-   float3 zero = {0.f,0.f,0.f};
+   Vertex zero = {0.f,0.f,0.f};
    m_primitivesTransfered = false;
    /*
 	LOG_INFO(3,"GPUKernel::setPrimitive( " << 
@@ -524,7 +524,7 @@ void GPUKernel::setPrimitive(
 		case ptCylinder:
 			{
 				// Axis
-				float3 axis;
+				Vertex axis;
 				axis.x = x1*scale - x0*scale;
 				axis.y = y1*scale - y0*scale;
 				axis.z = z1*scale - z0*scale;
@@ -583,7 +583,7 @@ void GPUKernel::setPrimitive(
 			}
 		case ptTriangle:
 			{
-            float3 v0,v1;
+            Vertex v0,v1;
             v0.x = (m_primitives[m_frame])[index].p1.x-(m_primitives[m_frame])[index].p0.x;
             v0.y = (m_primitives[m_frame])[index].p1.y-(m_primitives[m_frame])[index].p0.y;
             v0.z = (m_primitives[m_frame])[index].p1.z-(m_primitives[m_frame])[index].p0.z;
@@ -627,7 +627,7 @@ void GPUKernel::setPrimitiveIsMovable( const int& index, bool movable )
 }
 
 
-void GPUKernel::setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, float3 vt1, float3 vt2 )
+void GPUKernel::setPrimitiveTextureCoordinates( unsigned int index, Vertex vt0, Vertex vt1, Vertex vt2 )
 {
    if( index>=0 && index<m_primitives[m_frame].size()) 
 	{
@@ -647,7 +647,7 @@ void GPUKernel::setPrimitiveTextureCoordinates( unsigned int index, float3 vt0, 
 }
 
 
-void GPUKernel::setPrimitiveNormals( int unsigned index, float3 n0, float3 n1, float3 n2 )
+void GPUKernel::setPrimitiveNormals( int unsigned index, Vertex n0, Vertex n1, Vertex n2 )
 {
    if( index>=0 && index<m_primitives[m_frame].size()) 
 	{
@@ -680,8 +680,8 @@ bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
    bool result(false);
 
    // Process box size
-	float3 corner0;
-	float3 corner1;
+	Vertex corner0;
+	Vertex corner1;
 
    std::vector<long>::const_iterator it = box.primitives.begin();
    while( it != box.primitives.end() )
@@ -705,7 +705,7 @@ bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 		   }
 	   }
 
-	   float3 p0,p1;
+	   Vertex p0,p1;
 	   p0.x = ( corner0.x <= corner1.x ) ? corner0.x : corner1.x;
 	   p0.y = ( corner0.y <= corner1.y ) ? corner0.y : corner1.y;
 	   p0.z = ( corner0.z <= corner1.z ) ? corner0.z : corner1.z;
@@ -825,7 +825,7 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 
 int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate )
 {
-   float3 boxSteps;
+   Vertex boxSteps;
    boxSteps.x = ( m_maxPos[m_frame].x - m_minPos[m_frame].x ) / boxSize;
    boxSteps.y = ( m_maxPos[m_frame].y - m_minPos[m_frame].y ) / boxSize;
    boxSteps.z = ( m_maxPos[m_frame].z - m_minPos[m_frame].z ) / boxSize;
@@ -845,7 +845,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    {
       CPUPrimitive& primitive((*it).second);
 
-      float3 center=primitive.p0;
+      Vertex center=primitive.p0;
       int X = static_cast<int>(( center.x - m_minPos[m_frame].x ) / boxSteps.x);
       int Y = static_cast<int>(( center.y - m_minPos[m_frame].y ) / boxSteps.y);
       int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
@@ -911,7 +911,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
 void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDepth )
 {
    LOG_INFO(3,"processOutterBoxes(" << boxSize << "," << boundingBoxesDepth << ")");
-   float3 boxSteps;
+   Vertex boxSteps;
    boxSteps.x = ( m_maxPos[m_frame].x - m_minPos[m_frame].x ) / boxSize;
    boxSteps.y = ( m_maxPos[m_frame].y - m_minPos[m_frame].y ) / boxSize;
    boxSteps.z = ( m_maxPos[m_frame].z - m_minPos[m_frame].z ) / boxSize;
@@ -927,7 +927,7 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
    {
       CPUBoundingBox& box((*it).second);
 
-      float3 center=box.center;
+      Vertex center=box.center;
       int X = static_cast<int>(( center.x - m_minPos[m_frame].x ) / boxSteps.x);
       int Y = static_cast<int>(( center.y - m_minPos[m_frame].y ) / boxSteps.y);
       int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
@@ -1188,8 +1188,8 @@ void GPUKernel::setTreeDepth( const int treeDepth )
 void GPUKernel::resetFrame()
 {
    LOG_INFO(3, "Resetting frame " << m_frame);
-   memset(&m_translation,0,sizeof(float3));
-   memset(&m_rotation,0,sizeof(float3));
+   memset(&m_translation,0,sizeof(Vertex));
+   memset(&m_rotation,0,sizeof(Vertex));
 
    m_currentMaterial = 0;
 
@@ -1280,12 +1280,12 @@ void GPUKernel::displayBoxesInfo()
 	}
 }
 
-void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned int from, unsigned int to )
+void GPUKernel::rotatePrimitives( Vertex rotationCenter, Vertex angles, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
 
    m_primitivesTransfered = false;
-	float3 cosAngles, sinAngles;
+	Vertex cosAngles, sinAngles;
 	
    cosAngles.x = cos(angles.x);
 	cosAngles.y = cos(angles.y);
@@ -1322,7 +1322,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
                   {
                      primitive.speed0.y = -primitive.speed0.y/1.6f;
                      // Rotate
-                     float3 center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
+                     Vertex center = (primitive.p0.y < primitive.p1.y) ? primitive.p0 : primitive.p1;
                      center = (primitive.p2.y < center.y) ? primitive.p2 : center;
 
 
@@ -1362,7 +1362,7 @@ void GPUKernel::rotatePrimitives( float3 rotationCenter, float3 angles, unsigned
    }
 }
 
-void GPUKernel::translatePrimitives( float3 translation, unsigned int from, unsigned int to )
+void GPUKernel::translatePrimitives( Vertex translation, unsigned int from, unsigned int to )
 {
 	LOG_INFO(3,"GPUKernel::translatePrimitives(" << from << "->" << to << ")" );
    m_primitivesTransfered = false;
@@ -1415,9 +1415,9 @@ void GPUKernel::morphPrimitives()
       {
          CPUPrimitive& primitive1((*it1).second);
          CPUPrimitive& primitive2((*it2).second);
-         float3 p0,p1,p2;
-         float3 n0,n1,n2;
-         float3 size;
+         Vertex p0,p1,p2;
+         Vertex n0,n1,n2;
+         Vertex size;
          float r = static_cast<float>(m_frame)/static_cast<float>(m_nbFrames);
          p0.x = primitive1.p0.x+r*(primitive2.p0.x - primitive1.p0.x);
          p0.y = primitive1.p0.y+r*(primitive2.p0.y - primitive1.p0.y);
@@ -1494,14 +1494,14 @@ void GPUKernel::scalePrimitives( float scale, unsigned int from, unsigned int to
 	}
 }
 
-void GPUKernel::rotateVector( float3& v, const float3& rotationCenter, const float3& cosAngles, const float3& sinAngles )
+void GPUKernel::rotateVector( Vertex& v, const Vertex& rotationCenter, const Vertex& cosAngles, const Vertex& sinAngles )
 {
    // Rotate Center
-   float3 vector;
+   Vertex vector;
    vector.x = v.x - rotationCenter.x;
    vector.y = v.y - rotationCenter.y;
    vector.z = v.z - rotationCenter.z;
-   float3 result = vector; 
+   Vertex result = vector; 
 
    /* X axis */ 
    result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 
@@ -1524,14 +1524,14 @@ void GPUKernel::rotateVector( float3& v, const float3& rotationCenter, const flo
    v.z = result.z + rotationCenter.z;
 }
 
-void GPUKernel::rotateBox( CPUBoundingBox& box, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
+void GPUKernel::rotateBox( CPUBoundingBox& box, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
    rotateVector( box.parameters[0], rotationCenter, cosAngles, sinAngles );
    rotateVector( box.parameters[1], rotationCenter, cosAngles, sinAngles );
 }
 
-void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter, float3 cosAngles, float3 sinAngles )
+void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
    rotateVector( primitive.p0, rotationCenter, cosAngles, sinAngles );
@@ -1540,14 +1540,14 @@ void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter,
       rotateVector( primitive.p1, rotationCenter, cosAngles, sinAngles );
       rotateVector( primitive.p2, rotationCenter, cosAngles, sinAngles );
       // Rotate Normals
-      float3 zeroCenter = {0.f,0.f,0.f};
+      Vertex zeroCenter = {0.f,0.f,0.f};
       rotateVector( primitive.n0, zeroCenter, cosAngles, sinAngles );
       rotateVector( primitive.n1, zeroCenter, cosAngles, sinAngles );
       rotateVector( primitive.n2, zeroCenter, cosAngles, sinAngles );
       if( primitive.type == ptCylinder )
       {
          // Axis
-			float3 axis;
+			Vertex axis;
 			axis.x = primitive.p1.x - primitive.p0.x;
 			axis.y = primitive.p1.y - primitive.p0.y;
 			axis.z = primitive.p1.z - primitive.p0.z;
@@ -1565,10 +1565,10 @@ void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, float3 rotationCenter,
 	}
 }
 
-float3 GPUKernel::getPrimitiveCenter(
+Vertex GPUKernel::getPrimitiveCenter(
    unsigned int index)
 {
-   float3 center = {0.f,0.f,0.f};
+   Vertex center = {0.f,0.f,0.f};
 	if( index>=0 && index<=m_primitives[m_frame].size()) 
 	{
 		center.x = (m_primitives[m_frame])[index].p0.x;
@@ -1579,7 +1579,7 @@ float3 GPUKernel::getPrimitiveCenter(
 }
 
 void GPUKernel::getPrimitiveOtherCenter(
-	unsigned int index, float3& center)
+	unsigned int index, Vertex& center)
 {
 	if( index>=0 && index<=m_primitives[m_frame].size()) 
 	{
@@ -1588,7 +1588,7 @@ void GPUKernel::getPrimitiveOtherCenter(
 }
 
 void GPUKernel::setPrimitiveCenter(
-	unsigned int index, const float3& center)
+	unsigned int index, const Vertex& center)
 {
    m_primitivesTransfered = false;
 
@@ -2213,7 +2213,7 @@ void GPUKernel::initializeKinectTextures()
 
 int GPUKernel::updateSkeletons( 
 	unsigned int primitiveIndex, 
-	float3 skeletonPosition, 
+	Vertex skeletonPosition, 
 	float size,
 	float radius,       int materialId,
 	float head_radius,  int head_materialId,
@@ -2272,7 +2272,7 @@ int GPUKernel::updateSkeletons(
 	return found ? S_OK : S_FALSE;
 }
 
-bool GPUKernel::getSkeletonPosition( int index, float3& position )
+bool GPUKernel::getSkeletonPosition( int index, Vertex& position )
 {
 	bool returnValue(false);
 	if( m_skeletonIndex != -1 ) 
@@ -2469,8 +2469,8 @@ int GPUKernel::setGLMode( const int& glMode )
       m_normals.clear();
       m_textCoords.clear();
 
-      memset(&m_translation,0,sizeof(float3));
-      //memset(&m_rotation,0,sizeof(float3));
+      memset(&m_translation,0,sizeof(Vertex));
+      //memset(&m_rotation,0,sizeof(Vertex));
       m_pointSize = 1.f;
    }
    m_GLMode = glMode;
@@ -2479,19 +2479,19 @@ int GPUKernel::setGLMode( const int& glMode )
 
 void GPUKernel::addVertex( float x, float y, float z)
 {
-   float3 v = {x,y,z};
+   Vertex v = {x,y,z};
    m_vertices.push_back(v);
 }
 
 void GPUKernel::addNormal( float x, float y, float z)
 {
-   float3 v = {x,y,z};
+   Vertex v = {x,y,z};
    m_normals.push_back(v);
 }
 
 void GPUKernel::addTextCoord( float x, float y, float z)
 {
-   float3 v = {x,y,z};
+   Vertex v = {x,y,z};
    m_textCoords.push_back(v);
 }
 
@@ -2571,7 +2571,7 @@ void GPUKernel::render_begin( const float timer )
       m_angles.y = -PI*orientation.y;
       m_angles.z =  PI*orientation.z;
       m_sceneInfo.pathTracingIteration.x=0;
-      m_sceneInfo.renderingType.x = vt3DVision;
+      //m_sceneInfo.renderingType.x = vt3DVision;
    }
 #endif // USE_OCULUS
 }

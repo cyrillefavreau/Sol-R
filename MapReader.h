@@ -36,7 +36,7 @@
 struct MapMaterialScheme
 {
    unsigned int index;
-   float3 material[4];
+   Vertex material[4];
 };
 
 // <BLOCK LOCATION 8 0 0 DIMENSION 53 36 0 NORTH 0 SOUTH 0 EAST 0 WEST 0 SPLIT 0 HOLLOW 0>
@@ -44,8 +44,8 @@ struct MapBlock
 {
    int zone;
    int type;
-   float3 location;
-   float3 dimension;
+   Vertex location;
+   Vertex dimension;
    int north;
    int south;
    int east;
@@ -57,15 +57,15 @@ struct MapBlock
 // <ZONE LOCATION 0 0 0 DIMENSIONS 54 37 23 COLOURSCHEME 0>
 struct MapZone
 {
-   float3 location;
-   float3 dimension;
+   Vertex location;
+   Vertex dimension;
    int    colorScene;
 };
 
 // <JEWEL LOCATION 1 6 0>
 struct MapJewel
 {
-   float3 location;
+   Vertex location;
 };
 
 class RAYTRACINGENGINE_API MapReader
@@ -74,7 +74,7 @@ public:
    MapReader(void);
    ~MapReader(void);
 
-   float3 loadFromFile( 
+   Vertex loadFromFile( 
       const std::string& filename,
       GPUKernel& cudaKernel);
 };

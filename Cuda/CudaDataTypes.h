@@ -24,6 +24,11 @@
 
 #include <vector_types.h>
 
+#ifdef USE_CUDA
+typedef float3        Vertex;
+#else
+typedef float4        Vertex;
+#endif // USE_CUDA
 typedef int4          PrimitiveXYIdBuffer;
 typedef float4        PostProcessingBuffer;
 typedef unsigned char BitmapBuffer;
@@ -72,9 +77,9 @@ struct SceneInfo
 // Ray structure
 struct Ray
 {
-   float3 origin;                    // Origin of the ray
-   float3 direction;                 // Direction of the ray
-   float3 inv_direction;             // Inverted direction( Used for optimal Ray-Box intersection )
+   Vertex origin;                    // Origin of the ray
+   Vertex direction;                 // Direction of the ray
+   Vertex inv_direction;             // Inverted direction( Used for optimal Ray-Box intersection )
    int4   signs;                     // Signs ( Used for optimal Ray-Box intersection )
 };
 
@@ -84,7 +89,7 @@ struct Ray
 struct LightInformation
 {
    int1   attribute;                 // ID of the emitting primitive
-   float3 location;                  // Position in space
+   Vertex location;                  // Position in space
    float4 color;                     // Light
 };
 
@@ -134,7 +139,7 @@ struct Material
 // Bounding Box Structure
 struct BoundingBox
 {
-   float3 parameters[2];     // Bottom-Left and Top-Right corners
+   Vertex parameters[2];     // Bottom-Left and Top-Right corners
    int1   nbPrimitives;      // Number of primitives in the box
    int1   startIndex;        // Index of the first primitive in the box
    int2   indexForNextBox;   // If no intersection, how many of the following boxes can be skipped?
@@ -144,15 +149,15 @@ struct BoundingBox
 struct Primitive
 {
    // Vertices
-   float3 p0;
-   float3 p1;
-   float3 p2;
+   Vertex p0;
+   Vertex p1;
+   Vertex p2;
    // Normals
-   float3 n0;
-   float3 n1;
-   float3 n2;
+   Vertex n0;
+   Vertex n1;
+   Vertex n2;
    // Size( x,y,z )
-   float3 size;
+   Vertex size;
    // Type( See PrimitiveType )
    int1   type;
    // Index
@@ -160,9 +165,9 @@ struct Primitive
    // Material ID
    int1   materialId;
    // Texture coordinates
-   float3 vt0;
-   float3 vt1;
-   float3 vt2;
+   Vertex vt0;
+   Vertex vt1;
+   Vertex vt2;
 };
 
 // Texture information structure
