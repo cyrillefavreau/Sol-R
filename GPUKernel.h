@@ -77,7 +77,7 @@ class RAYTRACINGENGINE_API GPUKernel
 {
 
 public:
-   GPUKernel( bool activeLogging, int optimalNbOfBoxes, int platform, int device );
+   GPUKernel( bool activeLogging, int optimalNbOfBoxes );
    virtual ~GPUKernel();
 
    virtual void initBuffers();

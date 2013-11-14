@@ -160,7 +160,7 @@ typedef struct {
 } BITMAPINFOHEADER;
 #endif
 
-GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes, int platform, int device)
+GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
  : m_optimalNbOfBoxes(optimalNbOfBoxes),
    m_hPrimitives(nullptr), 
 	m_hMaterials(nullptr), 
@@ -1963,14 +1963,7 @@ char* GPUKernel::loadFromFile( const std::string& filename, size_t& length )
 		length = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
 		fclose( fp );
 	}
-
-	/*
-	for( int i(0); i<MAX_SOURCE_SIZE; ++i)
-	{
-	char a = source_str[i];
-	source_str[i] = a >> 2;
-	}
-	*/
+   source_str[length]=0;
 	return source_str;
 }
 

@@ -75,8 +75,9 @@ public:
 
 private:
 	// OpenCL Objects
-	cl_device_id     m_hDevices[100];
-	int              m_hPlatformId;
+   int              m_platform;
+   int              m_device;
+	cl_device_id     m_hDeviceId;
 	cl_context       m_hContext;
 	cl_command_queue m_hQueue;
 	cl_uint          m_preferredWorkGroupSize;
