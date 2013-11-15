@@ -37,7 +37,7 @@
 #define GRADIANT_BACKGROUND
 
 CPUKernel::CPUKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device ) 
-   : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox, platform, device ), 
+   : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox ), 
    m_postProcessingBuffer(nullptr)
 {
 }

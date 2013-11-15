@@ -675,7 +675,8 @@ void OpenCLKernel::render_begin( const float timer )
       LOG_INFO(3, "CPU Primitive           : " << sizeof(Primitive));
       LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
-      size_t szGlobalWorkSize[] = { m_sceneInfo.width.x, m_sceneInfo.height.x };
+      size_t szLocalWorkSize[] = { 1, 1 };
+      size_t szGlobalWorkSize[] = { m_sceneInfo.width.x/szLocalWorkSize[0], m_sceneInfo.height.x/szLocalWorkSize[1] };
       int zero(0);
 	   switch( m_sceneInfo.renderingType.x ) 
 	   {
@@ -702,7 +703,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
-	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAnaglyphRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAnaglyphRenderer, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 			   break;
 		   }
 	   case vt3DVision:
@@ -727,7 +728,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
-	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_k3DVisionRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_k3DVisionRenderer, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 			   break;
 		   }
 	   case vtFishEye:
@@ -752,7 +753,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
-	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kFishEyeRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kFishEyeRenderer, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 			   break;
 		   }
 	   default:
@@ -777,7 +778,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
-	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kStandardRenderer, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kStandardRenderer, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 			   break;
 		   }
       }
@@ -794,7 +795,7 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
          CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 5, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDepthOfField, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDepthOfField, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_ambientOcclusion:
          CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
@@ -803,7 +804,7 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
          CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 5, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbientOcclusion, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbientOcclusion, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_radiosity:
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
@@ -813,7 +814,7 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 5, sizeof(cl_mem),   (void*)&m_dRandoms ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_oneColor:
          // TODO!
@@ -824,7 +825,7 @@ void OpenCLKernel::render_begin( const float timer )
          CHECKSTATUS(clSetKernelArg( m_kDefault, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
 	      CHECKSTATUS(clSetKernelArg( m_kDefault, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
          CHECKSTATUS(clSetKernelArg( m_kDefault, 4, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDefault, 2, NULL, szGlobalWorkSize, 0, 0, 0, 0));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDefault, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   }
    }
