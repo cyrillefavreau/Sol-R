@@ -20,7 +20,7 @@
 *
 */
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+//#pragma OPENCL EXTENSION cl_khr_fp64 : enable
 //#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 // Globals
@@ -55,7 +55,7 @@ __constant const int TEXTURE_JULIA = -3;
 __constant const int gColorDepth = 3;
 
 // Globals
-__constant const int PI=3.14159265358979323846f;
+__constant const float PI=3.14159265358979323846f;
 __constant const int EPSILON=1.f;
 
 // Kinect
