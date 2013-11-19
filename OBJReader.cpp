@@ -224,8 +224,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
             materials[id].reflection   = d; 
-            materials[id].transparency = d; 
-            materials[id].refraction   = 1.66f;
+            materials[id].transparency = (d != 0.f) ? 0.9f: 0.f; 
+            materials[id].refraction   = 1.f;
          }
 
          if( line.find("illum") == 0 )
@@ -377,6 +377,7 @@ Vertex OBJReader::loadModelFromFile(
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
+
                   if( vertex.x<0.f )
                   {
                      int Xa = static_cast<int>(fabs(vertex.x))+1;
@@ -391,14 +392,13 @@ Vertex OBJReader::loadModelFromFile(
                      vertex.y = Yb;
                   }
 
-                  /*
                   if( vertex.z<0.f )
                   {
-                     int Z = fabs(vertex.z)+1;
-                     vertex.z = Z+vertex.z;
+                     int Za = static_cast<int>(fabs(vertex.z))+1;
+                     float Zb = Za-vertex.z;
+                     vertex.z = Zb;
                   }
-                  LOG_INFO(1,"vt=" << vertex.x << "," << vertex.y );
-                  */
+                  //LOG_INFO(1,"vt=" << vertex.x << "," << vertex.y );
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }
