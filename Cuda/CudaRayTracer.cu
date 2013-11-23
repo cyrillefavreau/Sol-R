@@ -1585,52 +1585,52 @@ extern "C" void initialize_scene(
       // Scene resources
       int size(NB_MAX_BOXES*sizeof(BoundingBox));
 	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[device], size));
-      LOG_INFO( 1, "d_boundingBoxes: " << size << " bytes" );
+      LOG_INFO(3, "d_boundingBoxes: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       size=NB_MAX_PRIMITIVES*sizeof(Primitive);
       checkCudaErrors(cudaMalloc( (void**)&d_primitives[device], size));
-      LOG_INFO( 1, "d_primitives: " << size << " bytes" );
+      LOG_INFO(3, "d_primitives: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
       size=NB_MAX_LAMPS*sizeof(Lamp);
       checkCudaErrors(cudaMalloc( (void**)&d_lamps[device], size));
-      LOG_INFO( 1, "d_lamps: " << size << " bytes" );
+      LOG_INFO(3, "d_lamps: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
       size=NB_MAX_MATERIALS*sizeof(Material);
       checkCudaErrors(cudaMalloc( (void**)&d_materials[device], size));
-      LOG_INFO( 1, "d_materials: " << size << " bytes" );
+      LOG_INFO(3, "d_materials: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
       size=NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation);
       checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[device], size));
-      LOG_INFO( 1, "d_lightInformation: " << size << " bytes" );
+      LOG_INFO(3, "d_lightInformation: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
       size=sceneInfo.width.x*sceneInfo.height.x*sizeof(RandomBuffer);
       checkCudaErrors(cudaMalloc( (void**)&d_randoms[device], size));
-      LOG_INFO( 1, "d_randoms: " << size << " bytes" );
+      LOG_INFO(3, "d_randoms: " << size << " bytes" );
       totalMemoryAllocation += size;
 
 	   // Rendering canvas
       size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PostProcessingBuffer)/occupancyParameters.x;
 	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], size));
-      LOG_INFO( 1, "d_postProcessingBuffer: " << size << " bytes" );
+      LOG_INFO(3, "d_postProcessingBuffer: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       size = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
 	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device], size));
-      LOG_INFO( 1, "d_bitmap: " << size << " bytes" );
+      LOG_INFO(3, "d_bitmap: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
       checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device], size));
-      LOG_INFO( 1, "d_primitivesXYIds: " << size << " bytes" );
+      LOG_INFO(3, "d_primitivesXYIds: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       d_textures[device] = nullptr;
-      LOG_INFO( 1, "Total GPU memory allocated on device " << device << ": " << totalMemoryAllocation << " bytes" );
+      LOG_INFO(3, "Total GPU memory allocated on device " << device << ": " << totalMemoryAllocation << " bytes" );
    }
 	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
 	LOG_INFO( 3, "GPU: Ray               : " << sizeof(Ray) );
@@ -1727,7 +1727,7 @@ extern "C" void h2d_textures(
       {
          if( textureInfos[i].buffer )
          {
-            //LOG_INFO( 1, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
+            //LOG_INFO(3, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
             totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
          }
       }
@@ -1735,7 +1735,7 @@ extern "C" void h2d_textures(
       if( totalSize>0 )
       {
          totalSize *= sizeof(BitmapBuffer);
-         LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
+         LOG_INFO(3, "Total GPU texture memory allocated: " << totalSize << " bytes" );
 	      checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
 
          for( int i(0); i<activeTextures; ++i )
