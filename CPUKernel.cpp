@@ -307,11 +307,13 @@ float4 CPUKernel::sphereUVMapping(
    if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
    if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
    {
-      int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-      index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
-      BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
-      BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
-      BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
+      int textureId = material.textureMapping.z;
+      int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+      int B = m_hTextures[textureId].size.x*m_hTextures[textureId].size.y*m_hTextures[textureId].size.z;
+		int index = A%B;
+      BitmapBuffer r = m_hTextures[textureId].buffer[index  ];
+      BitmapBuffer g = m_hTextures[textureId].buffer[index+1];
+      BitmapBuffer b = m_hTextures[textureId].buffer[index+2];
       result.x = r/256.f;
       result.y = g/256.f;
       result.z = b/256.f;
@@ -352,13 +354,13 @@ float4 CPUKernel::triangleUVMapping(
       case TEXTURE_JULIA: juliaSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
       default:
          {
+            int textureId = material.textureMapping.z;
             int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
-            int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+            int B = m_hTextures[textureId].size.x*m_hTextures[textureId].size.y*m_hTextures[textureId].size.z;
 		      int index = A%B;
-            index = material.textureOffset.x + index;
-            BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
-            BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
-            BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
+            BitmapBuffer r = m_hTextures[textureId].buffer[index  ];
+            BitmapBuffer g = m_hTextures[textureId].buffer[index+1];
+            BitmapBuffer b = m_hTextures[textureId].buffer[index+2];
             result.x = r/256.f;
             result.y = g/256.f;
             result.z = b/256.f;
@@ -424,11 +426,13 @@ float4 CPUKernel::cubeMapping(
          case TEXTURE_JULIA: juliaSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
          default:
             {
-               int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-               index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
-               BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
-               BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
-               BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
+               int textureId = material.textureMapping.z;
+               int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+               int B = m_hTextures[textureId].size.x*m_hTextures[textureId].size.y*m_hTextures[textureId].size.z;
+		         int index = A%B;
+               BitmapBuffer r = m_hTextures[textureId].buffer[index  ];
+               BitmapBuffer g = m_hTextures[textureId].buffer[index+1];
+               BitmapBuffer b = m_hTextures[textureId].buffer[index+2];
                result.x = r/256.f;
                result.y = g/256.f;
                result.z = b/256.f;
@@ -2542,12 +2546,6 @@ ________________________________________________________________________________
 */
 void CPUKernel::render_begin( const float timer ) 
 {
-   if( !m_materialsTransfered )
-   {
-      realignTexturesAndMaterials();
-      m_materialsTransfered = true;
-   }
-
    GPUKernel::render_begin(timer);
    if( m_postProcessingBuffer==nullptr )
    {

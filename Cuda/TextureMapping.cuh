@@ -193,11 +193,14 @@ __device__ float4 sphereUVMapping(
    if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
 	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
-		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-      index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
-		BitmapBuffer r = textures[index  ];
-		BitmapBuffer g = textures[index+1];
-		BitmapBuffer b = textures[index+2];
+      int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+      int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+		int index = A%B;
+      index = material.textureOffset.x + index;
+      BitmapBuffer r,g,b;
+		r = textures[index  ];
+		g = textures[index+1];
+		b = textures[index+2];
 		result.x = r/256.f;
 		result.y = g/256.f;
 		result.z = b/256.f;
@@ -264,11 +267,14 @@ __device__ float4 cubeMapping(
          case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;
          default:
             {
-         		int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-               index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
-			      BitmapBuffer r = textures[index];
-			      BitmapBuffer g = textures[index+1];
-			      BitmapBuffer b = textures[index+2];
+               int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+               int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+		         int index = A%B;
+               index = material.textureOffset.x + index;
+               BitmapBuffer r,g,b;
+		         r = textures[index  ];
+		         g = textures[index+1];
+		         b = textures[index+2];
 			      result.x = r/256.f;
 			      result.y = g/256.f;
 			      result.z = b/256.f;

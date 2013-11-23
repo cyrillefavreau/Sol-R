@@ -2124,7 +2124,7 @@ void GPUKernel::realignTexturesAndMaterials()
             m_hMaterials[i].textureMapping.z = m_hTextures[textureId].size.z;
             m_hMaterials[i].textureOffset.x  = m_hTextures[textureId].offset;
          }
-         LOG_INFO(1, "Material " << i << ": " << m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w << " -> Texture [" << textureId << "] offset=" << m_hMaterials[i].textureOffset.x);
+         LOG_INFO(3, "Material " << i << ": " << m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w << " -> Texture [" << textureId << "] offset=" << m_hMaterials[i].textureOffset.x);
       }
    }
 }
