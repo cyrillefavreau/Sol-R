@@ -193,13 +193,24 @@ void CudaKernel::render_begin( const float timer )
 	
       if( !m_materialsTransfered )
 	   {
-		   h2d_materials( 
+         realignTexturesAndMaterials();
+
+		   h2d_materials(
             m_occupancyParameters,
             m_hMaterials, nbMaterials, 
             m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
          LOG_INFO(3, "Transfering " << nbMaterials << " materials");
 		   m_materialsTransfered = true;
 	   }
+
+      if( !m_texturesTransfered )
+	   {
+         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
+         h2d_textures( 
+            m_occupancyParameters,
+            NB_MAX_TEXTURES,  m_hTextures );
+		      m_texturesTransfered = true;
+      }
 
 #if USE_KINECT
    if( m_kinectEnabled )
@@ -242,18 +253,6 @@ void CudaKernel::render_begin( const float timer )
       m_hTextures[0].buffer = m_hVideo;
       m_hTextures[1].buffer = m_hDepth;
    }
-#endif // USE_KINECT
-
-      if( !m_texturesTransfered )
-	   {
-         LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
-         h2d_textures( 
-            m_occupancyParameters,
-            NB_MAX_TEXTURES,  m_hTextures );
-		      m_texturesTransfered = true;
-      }
-
-#ifdef USE_KINECT
       // copy kinect data to GPU
       h2d_kinect(
          m_occupancyParameters,

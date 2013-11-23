@@ -48,7 +48,7 @@ void FileMarshaller::readTexture( GPUKernel& kernel, const std::string& line )
 {
    std::string value;
    size_t i( strlen(TEXTURE.c_str())+1 );
-   int textureId(-1);
+   int textureId(MATERIAL_NONE);
    std::string textureFilename;
    size_t c(0);
    while( i<line.length() )
@@ -73,12 +73,12 @@ void FileMarshaller::readTexture( GPUKernel& kernel, const std::string& line )
       textureFilename = value;
    }
 
-   if( textureId != -1 )
+   if( textureId!=MATERIAL_NONE )
    {
-      LOG_INFO(1, "Loading texture " << textureFilename << " into slot " << textureId );
+      LOG_INFO(3, "Loading texture " << textureFilename << " into slot " << textureId );
       if( !kernel.loadTextureFromFile(textureId, textureFilename) )
       {
-         LOG_ERROR("Failed to load texture " << textureFilename );
+         LOG_ERROR("Failed to load texture " << textureFilename << " into slot " << textureId );
       }
    }
 }
@@ -264,7 +264,21 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 18: material.transparency.x      = static_cast<float>(atof( value.c_str() )); break;
             case 19: material.textureMapping.x  = static_cast<int>(atoi( value.c_str() )); break;
             case 20: material.textureMapping.y  = static_cast<int>(atoi( value.c_str() )); break;
-            case 21: material.textureMapping.z  = static_cast<int>(atoi( value.c_str() )); break;
+            case 21: 
+               material.textureMapping.z  = static_cast<int>(atoi( value.c_str() )); 
+               if( kernel.getTextureInformation(material.textureMapping.z).buffer==nullptr )
+               {
+                  LOG_ERROR("Texture " << material.textureMapping.z << " could not be loaded. Default color will be used for material " << materialId );
+                  material.textureMapping.z = MATERIAL_NONE;
+               }
+               else
+               {
+                  if( material.textureMapping.z!=MATERIAL_NONE)
+                  {
+                     LOG_INFO(1, "Texture " << material.textureMapping.z << " assigned to material " << materialId );
+                  }
+               }
+               break; 
             case 22: material.textureMapping.w  = static_cast<int>(atoi( value.c_str() )); break;
          }
          value = "";

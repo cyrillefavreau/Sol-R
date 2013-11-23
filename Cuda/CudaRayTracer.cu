@@ -1727,7 +1727,7 @@ extern "C" void h2d_textures(
       {
          if( textureInfos[i].buffer )
          {
-            LOG_INFO( 3, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
+            //LOG_INFO( 1, "Texture [" << i << "] memory allocated=" << textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z << " bytes" );
             totalSize += textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
          }
       }
@@ -1742,6 +1742,7 @@ extern "C" void h2d_textures(
          {
             if( textureInfos[i].buffer != nullptr )
             {
+               LOG_INFO( 3, "Texture [" << i << "] transfered=" << textureInfos[i].size.x << "," << textureInfos[i].size.y << "," << textureInfos[i].size.z << ", offset=" << textureInfos[i].offset );
                int textureSize = textureInfos[i].size.x*textureInfos[i].size.y*textureInfos[i].size.z;
                checkCudaErrors(cudaMemcpyAsync( d_textures[device]+textureInfos[i].offset, textureInfos[i].buffer, textureSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
             }

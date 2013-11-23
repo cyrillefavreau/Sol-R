@@ -144,8 +144,10 @@ __device__ float4 triangleUVMapping(
       case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;
       default:
          {
-		      int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-            index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+            int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+            int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+		      int index = A%B;
+            index = material.textureOffset.x + index;
             BitmapBuffer r,g,b;
 		      r = textures[index  ];
 		      g = textures[index+1];

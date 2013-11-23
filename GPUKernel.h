@@ -219,6 +219,7 @@ public:
 	// ---------- Textures ----------
 	void setTexture( const int index, const TextureInformation& textureInfo );
    void setTexturesTransfered(const bool transfered) { m_texturesTransfered=transfered; };
+   void realignTexturesAndMaterials();
 
 	bool loadTextureFromFile( const int index, const std::string& filename );
    void buildLightInformationFromTexture( unsigned int index );
@@ -306,6 +307,8 @@ public:
 	unsigned int getNbActiveMaterials();
 	unsigned int getNbActiveTextures();
    std::string  getTextureFilename( const int index );
+   TextureInformation& getTextureInformation(const int index);
+
 
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };

@@ -352,8 +352,10 @@ float4 CPUKernel::triangleUVMapping(
       case TEXTURE_JULIA: juliaSet( primitive, static_cast<float>(u), static_cast<float>(v), result ); break;
       default:
          {
-            int index = material.textureOffset.x + (v*material.textureMapping.x+u)*material.textureMapping.w;
-            index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+            int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+            int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+		      int index = A%B;
+            index = material.textureOffset.x + index;
             BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index  ];
             BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];
             BitmapBuffer b = m_hTextures[material.textureMapping.z].buffer[index+2];
@@ -2540,6 +2542,12 @@ ________________________________________________________________________________
 */
 void CPUKernel::render_begin( const float timer ) 
 {
+   if( !m_materialsTransfered )
+   {
+      realignTexturesAndMaterials();
+      m_materialsTransfered = true;
+   }
+
    GPUKernel::render_begin(timer);
    if( m_postProcessingBuffer==nullptr )
    {

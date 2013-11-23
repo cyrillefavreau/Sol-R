@@ -142,12 +142,16 @@ bool ImageLoader::loadBMP24(const int index, const std::string& filename, Textur
 bool ImageLoader::loadJPEG(const int index, const std::string& filename, TextureInformation* textureInformations)
 {
    int width, height, actual_comps, req_comps(3);
-   textureInformations[index].buffer = jpgd::decompress_jpeg_image_from_file( filename.c_str(), &width, &height, &actual_comps, req_comps);
-   if( textureInformations[index].buffer != nullptr )
+   BitmapBuffer* buffer = jpgd::decompress_jpeg_image_from_file( filename.c_str(), &width, &height, &actual_comps, req_comps);
+
+   if( buffer != nullptr )
    {
+      if( textureInformations[index].buffer!=nullptr ) delete [] textureInformations[index].buffer;
+      textureInformations[index].buffer = buffer;
       textureInformations[index].size.x = width;
       textureInformations[index].size.y = height;
       textureInformations[index].size.z = actual_comps;
+      textureInformations[index].offset = 0;
 
       processOffset( textureInformations );
 
@@ -261,7 +265,15 @@ void ImageLoader::processOffset( TextureInformation* textureInformations )
    int totalSize=0;
    for( int i(0); i<NB_MAX_TEXTURES; ++i )
    {
-      textureInformations[i].offset = totalSize;
-      totalSize += textureInformations[i].size.x*textureInformations[i].size.y*textureInformations[i].size.z;
+      if( textureInformations[i].buffer!=nullptr )
+      {
+         //LOG_INFO(1,"Texture " << i << ": Offset=" << totalSize );
+         textureInformations[i].offset = totalSize;
+         totalSize += textureInformations[i].size.x*textureInformations[i].size.y*textureInformations[i].size.z;
+      }
+      else
+      {
+         textureInformations[i].offset = 0;
+      }
    }
 }

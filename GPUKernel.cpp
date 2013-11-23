@@ -1726,7 +1726,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureMapping.y = 1;
 		m_hMaterials[index].textureMapping.z = textureId;
 		m_hMaterials[index].textureMapping.w = 0;
-      if( textureId>=0 && textureId<NB_MAX_TEXTURES )
+      if( textureId>=0 && textureId<m_nbActiveTextures )
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[textureId].size.x; // Width
          m_hMaterials[index].textureMapping.y = m_hTextures[textureId].size.y; // Height
@@ -1736,8 +1736,8 @@ void GPUKernel::setMaterial(
       else
       {
          // Computed textures (Mandelbrot, Julia, etc)
-         m_hMaterials[index].textureMapping.x = 40000;
-         m_hMaterials[index].textureMapping.y = 40000;
+         m_hMaterials[index].textureMapping.x = 1024;
+         m_hMaterials[index].textureMapping.y = 1024;
          m_hMaterials[index].textureMapping.w = 3;
          m_hMaterials[index].textureOffset.x  = 0;
       }
@@ -2097,6 +2097,38 @@ void GPUKernel::reorganizeLights()
    LOG_INFO(1,"Reorganized " << m_lightInformationSize << " Lights" );
 }
 
+TextureInformation& GPUKernel::getTextureInformation(const int index)
+{
+   return m_hTextures[index];
+}
+
+void GPUKernel::realignTexturesAndMaterials()
+{
+   for( int i(0);i<m_nbActiveMaterials; ++i)
+   {
+      int textureId = m_hMaterials[i].textureMapping.z;
+      if( textureId!=MATERIAL_NONE )
+      {
+         switch(textureId)
+         {
+         case TEXTURE_MANDELBROT:
+         case TEXTURE_JULIA:
+            m_hMaterials[i].textureMapping.x = 1024;
+            m_hMaterials[i].textureMapping.y = 1024;
+            m_hMaterials[i].textureMapping.z = 3;
+            m_hMaterials[i].textureOffset.x  = 0;
+            break;
+         default:
+            m_hMaterials[i].textureMapping.x = m_hTextures[textureId].size.x;
+            m_hMaterials[i].textureMapping.y = m_hTextures[textureId].size.y;
+            m_hMaterials[i].textureMapping.z = m_hTextures[textureId].size.z;
+            m_hMaterials[i].textureOffset.x  = m_hTextures[textureId].offset;
+         }
+         LOG_INFO(1, "Material " << i << ": " << m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w << " -> Texture [" << textureId << "] offset=" << m_hMaterials[i].textureOffset.x);
+      }
+   }
+}
+
 void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 {
    LOG_INFO(1,"buildLightInformationFromTexture");
@@ -2355,7 +2387,7 @@ int GPUKernel::setGLMode( const int& glMode )
                p = addPrimitive( ptSphere);
                setPrimitive(  p,
                   m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
-                  0.01f /*m_pointSize*/,0.f,0.f,
+                  m_pointSize,0.f,0.f,
                   m_currentMaterial);
             }
             LOG_INFO(3, "[OpenGL] Added " << m_vertices.size() << " Points");
@@ -2373,7 +2405,7 @@ int GPUKernel::setGLMode( const int& glMode )
                   setPrimitive(  p,
                      m_vertices[i].x, m_vertices[i].y, m_vertices[i].z, 
                      m_vertices[i+1].x, m_vertices[i+1].y, m_vertices[i+1].z, 
-                     0.01f /*m_pointSize*/,0.f,0.f,
+                     m_pointSize,0.f,0.f,
                      m_currentMaterial);
                }
             }

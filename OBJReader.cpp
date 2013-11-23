@@ -210,7 +210,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             if( kernel.loadTextureFromFile(idx, folder) )
             {
                materials[id].textureId = idx;
-               LOG_INFO(3, "Texture successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
+               LOG_INFO(3, "Texture " << folder << " successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
             }
             else
             {
@@ -225,7 +225,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             float d=static_cast<float>(atof(line.c_str()));
             materials[id].reflection   = d; 
             materials[id].transparency = (d != 0.f) ? 0.9f: 0.f; 
-            materials[id].refraction   = 1.f;
+            materials[id].refraction   = 1.1f;
          }
 
          if( line.find("illum") == 0 )
@@ -261,7 +261,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Kd.x,m.Kd.y,m.Kd.z,
             0.f,m.reflection,m.refraction, false, false, 0,
             m.transparency, m.textureId,
-            m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
+            m.Ks.x, m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
          LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
@@ -377,17 +377,16 @@ Vertex OBJReader::loadModelFromFile(
                else if( line[1] == 't' )
                {  
                   // Texture coordinates
-
                   if( vertex.x<0.f )
                   {
-                     int Xa = static_cast<int>(fabs(vertex.x))+1;
+                     int Xa = static_cast<int>(fabs(vertex.x));
                      float Xb = Xa-vertex.x;
                      vertex.x = Xb;
                   }
 
                   if( vertex.y<0.f )
                   {
-                     int Ya = static_cast<int>(fabs(vertex.y))+1;
+                     int Ya = static_cast<int>(fabs(vertex.y));
                      float Yb = Ya-vertex.y;
                      vertex.y = Yb;
                   }
@@ -398,7 +397,7 @@ Vertex OBJReader::loadModelFromFile(
                      float Zb = Za-vertex.z;
                      vertex.z = Zb;
                   }
-                  //LOG_INFO(1,"vt=" << vertex.x << "," << vertex.y );
+                  //LOG_INFO(1,"[2] vt=" << vertex.x << "," << vertex.y );
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }
