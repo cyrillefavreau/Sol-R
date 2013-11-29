@@ -30,6 +30,12 @@
 #include "../Consts.h"
 #include "TextureMapping.cuh"
 
+
+__device__ inline Vertex project( const Vertex& A, const Vertex& B) 
+{
+   return B*(dot(A,B)/dot(B,B));
+}
+
 /*
 ________________________________________________________________________________
 
@@ -240,6 +246,7 @@ __device__ inline bool sphereIntersection(
 ________________________________________________________________________________
 
 Cylinder intersection
+ref: http://courses.cms.caltech.edu/cs11/material/advcpp/lab7/index.html
 ________________________________________________________________________________
 */
 __device__ inline bool cylinderIntersection( 
@@ -270,70 +277,60 @@ __device__ inline bool cylinderIntersection(
 
 	Vertex O = crossProduct(O_C,cylinder.n1);
 	float t = -dot(O, n)/ln;
+	if( t<0.f ) return false;
+
 	O = normalize(crossProduct(n,cylinder.n1));
 	float s=fabs( sqrtf(cylinder.size.x*cylinder.size.x-d*d) / dot( dir,O ) );
 
 	float in=t-s;
 	float out=t+s;
 
-	if (in<-EPSILON)
+	if(out<-EPSILON)
 	{
-		if(out<-EPSILON)
-			return false;
-		else 
+		t=in;
+	}
+	else
+	{
+		if(in<out)
+			t=in;
+		else
 		{
 			t=out;
 			back = true;
 		}
-	}
-	else
-	{
-		if(out<-EPSILON)
+
+
+		// Calculate intersection point
+		intersection = ray.origin+t*dir;
+
+		Vertex HB1 = intersection-cylinder.p0;
+		Vertex HB2 = intersection-cylinder.p1;
+
+		float scale1 = dot(HB1,cylinder.n1);
+		float scale2 = dot(HB2,cylinder.n1);
+
+		// Cylinder length
+		if( scale1 < EPSILON || scale2 > EPSILON ) return false;
+
+		if( materials[cylinder.materialId.x].attributes.y == 1) 
 		{
-			t=in;
+			// Procedural texture
+			Vertex newCenter;
+			newCenter.x = cylinder.p0.x + 0.01f*cylinder.size.x*cos(sceneInfo.misc.y/100.f+intersection.x);
+			newCenter.y = cylinder.p0.y + 0.01f*cylinder.size.y*sin(sceneInfo.misc.y/100.f+intersection.y);
+			newCenter.z = cylinder.p0.z + 0.01f*cylinder.size.z*sin(cos(sceneInfo.misc.y/100.f+intersection.z));
+			HB1 = intersection - newCenter;
 		}
-		else
-		{
-			if(in<out)
-				t=in;
-			else
-			{
-				t=out;
-				back = true;
-			}
 
-			if( t<0.f ) return false;
+      Vertex V = intersection-cylinder.p2;
+      normal = V-project(V,cylinder.n1);
+		normal = normalize(normal);
 
-			// Calculate intersection point
-			intersection = ray.origin+t*dir;
-
-			Vertex HB1 = intersection-cylinder.p0;
-			Vertex HB2 = intersection-cylinder.p1;
-
-			float scale1 = dot(HB1,cylinder.n1);
-			float scale2 = dot(HB2,cylinder.n1);
-
-			// Cylinder length
-			if( scale1 < EPSILON || scale2 > EPSILON ) return false;
-
-			if( materials[cylinder.materialId.x].attributes.y == 1) 
-			{
-				// Procedural texture
-				Vertex newCenter;
-				newCenter.x = cylinder.p0.x + 0.01f*cylinder.size.x*cos(sceneInfo.misc.y/100.f+intersection.x);
-				newCenter.y = cylinder.p0.y + 0.01f*cylinder.size.y*sin(sceneInfo.misc.y/100.f+intersection.y);
-				newCenter.z = cylinder.p0.z + 0.01f*cylinder.size.z*sin(cos(sceneInfo.misc.y/100.f+intersection.z));
-				HB1 = intersection - newCenter;
-			}
-
-			normal = normalize(HB1-cylinder.n1*scale1);
-
-         // Shadow management
-         dir = normalize(dir);
-         float r = dot(dir,normal);
-         shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-         return true;
-		}
+      // Shadow management
+      dir = normalize(dir);
+      float r = dot(dir,normal);
+      shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+      return true;
 	}
    return false;
 }

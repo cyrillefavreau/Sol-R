@@ -54,7 +54,25 @@
 
 const unsigned int MAX_SOURCE_SIZE = 65535*2;
 
-Vertex min4( const Vertex a, const Vertex b, const Vertex c )
+Vertex min2( const Vertex a, const Vertex b)
+{
+   Vertex r;
+   r.x = std::min(a.x,b.x);
+   r.y = std::min(a.y,b.y);
+   r.z = std::min(a.z,b.z);
+   return r;
+}
+
+Vertex max2( const Vertex a, const Vertex b)
+{
+   Vertex r;
+   r.x = std::max(a.x,b.x);
+   r.y = std::max(a.y,b.y);
+   r.z = std::max(a.z,b.z);
+   return r;
+}
+
+Vertex min3( const Vertex a, const Vertex b, const Vertex c )
 {
    Vertex r;
    r.x = std::min(std::min(a.x,b.x),c.x);
@@ -63,7 +81,7 @@ Vertex min4( const Vertex a, const Vertex b, const Vertex c )
    return r;
 }
 
-Vertex max4( const Vertex a, const Vertex b, const Vertex c )
+Vertex max3( const Vertex a, const Vertex b, const Vertex c )
 {
    Vertex r;
    r.x = std::max(std::max(a.x,b.x),c.x);
@@ -539,6 +557,12 @@ void GPUKernel::setPrimitive(
 				(m_primitives[m_frame])[index].n1.y = axis.y;
 				(m_primitives[m_frame])[index].n1.z = axis.z;
 
+            // Center
+            (m_primitives[m_frame])[index].p2.x = (x0*scale+x1*scale)/2.f;
+				(m_primitives[m_frame])[index].p2.y = (y0*scale+y1*scale)/2.f;
+				(m_primitives[m_frame])[index].p2.z = (z0*scale+z1*scale)/2.f;
+
+            // Length
             (m_primitives[m_frame])[index].size.x = w*scale; //(x1 - x0)/2.f;
             (m_primitives[m_frame])[index].size.y = w*scale; //(y1 - y0)/2.f;
             (m_primitives[m_frame])[index].size.z = w*scale; // (z1 - z0)/2.f;
@@ -691,10 +715,15 @@ bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 	   switch( primitive.type )
 	   {
 	   case ptTriangle: 
+		   {
+			   corner0 = min3(primitive.p0,primitive.p1,primitive.p2);
+			   corner1 = max3(primitive.p0,primitive.p1,primitive.p2);
+			   break;
+		   }
 	   case ptCylinder: 
 		   {
-			   corner0 = min4(primitive.p0,primitive.p1,primitive.p2);
-			   corner1 = max4(primitive.p0,primitive.p1,primitive.p2);
+			   corner0 = min2(primitive.p0,primitive.p1);
+			   corner1 = max2(primitive.p0,primitive.p1);
 			   break;
 		   }
 	   default:
@@ -882,7 +911,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-            LOG_INFO(1,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
+            LOG_INFO(3,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
          }
          else
          {
@@ -975,7 +1004,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
          ++m_treeDepth;
          nbBoxes /= gridSize;
       }
-      LOG_INFO(1, "Scene depth=" << m_treeDepth );
+      LOG_INFO(3, "Scene depth=" << m_treeDepth );
 
       int activeBoxes(12000);
       LOG_INFO(3, "1. Nb Boxes=" << nbBoxes );
@@ -1730,15 +1759,17 @@ void GPUKernel::setMaterial(
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[textureId].size.x; // Width
          m_hMaterials[index].textureMapping.y = m_hTextures[textureId].size.y; // Height
+         m_hMaterials[index].textureMapping.z = textureId;
          m_hMaterials[index].textureMapping.w = m_hTextures[textureId].size.z; // Depth
          m_hMaterials[index].textureOffset.x  = m_hTextures[textureId].offset; // Offset
       }
       else
       {
          // Computed textures (Mandelbrot, Julia, etc)
-         m_hMaterials[index].textureMapping.x = 1024;
-         m_hMaterials[index].textureMapping.y = 1024;
-         m_hMaterials[index].textureMapping.w = 3;
+         m_hMaterials[index].textureMapping.x = 40000;
+         m_hMaterials[index].textureMapping.y = 40000;
+         m_hMaterials[index].textureMapping.z = MATERIAL_NONE;
+         m_hMaterials[index].textureMapping.w = 1;
          m_hMaterials[index].textureOffset.x  = 0;
       }
 
@@ -2113,9 +2144,9 @@ void GPUKernel::realignTexturesAndMaterials()
          {
          case TEXTURE_MANDELBROT:
          case TEXTURE_JULIA:
-            m_hMaterials[i].textureMapping.x = 1024;
-            m_hMaterials[i].textureMapping.y = 1024;
-            m_hMaterials[i].textureMapping.z = 3;
+            m_hMaterials[i].textureMapping.x = 40000;
+            m_hMaterials[i].textureMapping.y = 40000;
+            m_hMaterials[i].textureMapping.w = MATERIAL_NONE;
             m_hMaterials[i].textureOffset.x  = 0;
             break;
          default:

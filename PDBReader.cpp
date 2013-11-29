@@ -62,7 +62,7 @@ struct Connection
 
 const int NB_ELEMENTS = 70;
 const float DEFAULT_ATOM_DISTANCE = 30.f;
-const float DEFAULT_STICK_DISTANCE = 1.67f;
+const float DEFAULT_STICK_DISTANCE = 1.7f;
 const Element elements[NB_ELEMENTS] =
 {
 	{ "C"  , 67.f,  1 },
@@ -168,6 +168,8 @@ Vertex PDBReader::loadAtomsFromFile(
 	float4 minPos = {  100000.f,  100000.f,  100000.f, 0.f };
 	float4 maxPos = { -100000.f, -100000.f, -100000.f, 0.f };
 
+   LOG_INFO(1,"--------------------------------------------------------------------------------" );
+   LOG_INFO(1,"Loading PDB File: " << filename );
 	int index(0);
 	std::ifstream file(filename.c_str());
 	if( file.is_open() )
@@ -275,6 +277,8 @@ Vertex PDBReader::loadAtomsFromFile(
 		file.close();
 	}
 
+   LOG_INFO(1,"Number of elements: " << atoms.size());
+   LOG_INFO(1,"Building internal structures");
 	Vertex objectSize;
 	objectSize.x = (maxPos.x-minPos.x);
 	objectSize.y = (maxPos.y-minPos.y);
@@ -407,5 +411,6 @@ Vertex PDBReader::loadAtomsFromFile(
 	objectSize.z *= objectScale.z*distanceRatio*atomDistance;
    LOG_INFO(1, "Loaded " << filename << " into frame " << cudaKernel.getFrame() << " [" << cudaKernel.getNbActivePrimitives() << " primitives]" );
    LOG_INFO(1, "Object size after scaling: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
+   LOG_INFO(1,"--------------------------------------------------------------------------------" );
 	return objectSize;
 }

@@ -313,7 +313,7 @@ __device__ float4 primitiveShader(
 	Material* materials, BitmapBuffer* textures,
 	RandomBuffer* randoms,
 	const Vertex& origin,
-	const Vertex& normal, 
+	Vertex&       normal, 
 	const int&    objectId, 
 	const Vertex& intersection,
    const Vertex& areas,
@@ -345,6 +345,21 @@ __device__ float4 primitiveShader(
 
    if( sceneInfo.graphicsLevel.x>0 )
    {
+		// Final color
+		float4 intersectionColor = 
+			intersectionShader( sceneInfo, primitive, materials, textures,
+			intersection, areas );
+
+      // TODO: Bump effect
+      if( materials[primitive.materialId.x].textureMapping.z != MATERIAL_NONE)
+      {
+         normal.x = normal.x*0.7f+intersectionColor.x*0.3f;
+         normal.y = normal.y*0.7f+intersectionColor.y*0.3f;
+         normal.z = normal.z*0.7f+intersectionColor.z*0.3f;
+         normalize(normal);
+      }
+
+
 	   color *= materials[primitive.materialId.x].innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
@@ -447,11 +462,6 @@ __device__ float4 primitiveShader(
 			      }
             }
 		   }
-
-		   // Final color
-		   float4 intersectionColor = 
-			   intersectionShader( sceneInfo, primitive, materials, textures,
-			   intersection, areas );
 
          // Light impact on material
 		   color += intersectionColor*lampsColor;

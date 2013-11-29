@@ -210,7 +210,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             if( kernel.loadTextureFromFile(idx, folder) )
             {
                materials[id].textureId = idx;
-               LOG_INFO(3, "Texture " << folder << " successfully loaded into slot " << idx << " and assigned to material " << id << "(" << materials[id].index << ")" );
+               LOG_INFO(1, "[Slot " << idx  << "] Texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
             }
             else
             {

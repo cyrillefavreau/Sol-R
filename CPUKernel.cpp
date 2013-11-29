@@ -294,6 +294,7 @@ float4 CPUKernel::sphereUVMapping(
    Material& material=m_hMaterials[primitive.materialId.x];
    float4 result = material.color;
 
+#if 0
    Vertex d;
    d.x = primitive.p0.x-intersection.x;
    d.y = primitive.p0.y-intersection.y;
@@ -302,6 +303,28 @@ float4 CPUKernel::sphereUVMapping(
 
    int u = int(primitive.size.x * (0.5f - atan2f(d.z, d.x) / 2.f*PI));
    int v = int(primitive.size.y * (0.5f - 2.f*(asinf(d.y) / 2.f*PI)));
+#else
+   float len,U,V;
+   float z = intersection.z;
+   len = sqrt(intersection.x*intersection.x+intersection.y*intersection.y+intersection.z*intersection.z);
+   if(len>0.0f) 
+   {     
+      if(intersection.x==0.0f && intersection.y==0.0f) 
+      {
+         U = 0.f;
+      }
+      else
+      {
+         U = (1.f - atan2(intersection.x,intersection.y)/PI)/2.f;
+      }
+
+      z/=len;
+      V = 1.f- acos(z)/PI;
+   }
+
+   int u = material.textureMapping.x*U;
+   int v = material.textureMapping.y*V;
+#endif
 
    if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
    if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;

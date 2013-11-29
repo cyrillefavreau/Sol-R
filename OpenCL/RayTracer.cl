@@ -62,12 +62,12 @@ __constant const int EPSILON=1.f;
 __constant const int gKinectVideoWidth  = 640;
 __constant const int gKinectVideoHeight = 480;
 __constant const int gKinectVideo       = 4;
-__constant const int gKinectVideoSize   = gKinectVideoWidth*gKinectVideoHeight*gKinectVideo;
+__constant const int gKinectVideoSize   = 640*480*4;
 
 __constant const int gKinectDepthWidth  = 320;
 __constant const int gKinectDepthHeight = 240;
 __constant const int gKinectDepth       = 2;
-__constant const int gKinectDepthSize   = gKinectDepthWidth*gKinectDepthHeight*gKinectDepth;
+__constant const int gKinectDepthSize   = 320*240*2;
 
 // 3D vision type
 enum VisionType
@@ -432,7 +432,7 @@ void mandelbrotSet(
    float  MinIm		= -1.2f;
    float  MaxIm		=	MinIm + (MaxRe - MinRe) * H/W;
    float  Re_factor	=	(MaxRe - MinRe) / (W - 1.f);
-   double Im_factor	=	(MaxIm - MinIm) / (H - 1.f);
+   float  Im_factor	=	(MaxIm - MinIm) / (H - 1.f);
    float  maxIterations = NB_MAX_ITERATIONS+(*sceneInfo).pathTracingIteration;
 
    float c_im = MaxIm - y*Im_factor;
@@ -574,8 +574,8 @@ float4 triangleUVMapping(
       case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, &result ); break;
       default:
          {
-		      int index = ((v*material.textureMapping.x+u)*material.textureMapping.w)%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
-            index = material.textureOffset.x + index;
+		      int index = ((v*(*material).textureMapping.x+u)*(*material).textureMapping.w)%((*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w);
+            index = (*material).textureOffset + index;
             BitmapBuffer r = textures[index  ];
             BitmapBuffer g = textures[index+1];
             BitmapBuffer b = textures[index+2];
