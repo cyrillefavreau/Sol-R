@@ -766,12 +766,12 @@ __device__ inline bool intersectionWithPrimitives(
 					   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
    #endif // EXTENDED_GEOMETRY
 
-                  if( i )
+                  if( i && sceneInfo.transparentColor.x!=0.f )
                   {
 		               closestColor = intersectionShader( 
 			               sceneInfo, primitive, materials, textures, 
 			               intersection, areas );
-                     i = ((closestColor.x+closestColor.y+closestColor.z)<sceneInfo.transparentColor.x);
+                     i = ((closestColor.x+closestColor.y+closestColor.z)>sceneInfo.transparentColor.x);
                   }
 
 				      float distance = length(intersection-r.origin);

@@ -159,10 +159,18 @@ __device__ float processShadows(
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
-					if( hit )
 #else
-               if( triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ))
+               hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back );
 #endif
+               if( hit && sceneInfo.transparentColor.x!=0.f)
+               {
+		            float4 closestColor = intersectionShader( 
+			            sceneInfo, primitive, materials, textures, 
+			            intersection, areas );
+                  hit = ((closestColor.x+closestColor.y+closestColor.z)>sceneInfo.transparentColor.x);
+               }
+
+               if( hit )
 					{
 						Vertex O_I = intersection-r.origin;
 						Vertex O_L = r.direction;
