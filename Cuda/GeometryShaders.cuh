@@ -203,104 +203,6 @@ __device__ float processShadows(
 /*
 ________________________________________________________________________________
 
-Intersection Shader
-________________________________________________________________________________
-*/
-__device__ float4 intersectionShader( 
-	const SceneInfo& sceneInfo,
-	const Primitive& primitive, 
-	Material*        materials,
-	BitmapBuffer*    textures,
-	const Vertex&    intersection,
-	const Vertex&    areas)
-{
-	float4 colorAtIntersection = materials[primitive.materialId.x].color;
-   colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
-
-#ifdef EXTENDED_GEOMETRY
-	switch( primitive.type.x ) 
-	{
-	case ptCylinder:
-		{
-			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
-			{
-				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
-			}
-			break;
-		}
-	case ptEnvironment:
-	case ptSphere:
-   case ptEllipsoid:
-		{
-			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
-			{
-				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
-			}
-			break;
-		}
-	case ptCheckboard :
-		{
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
-			{
-				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
-			}
-			else 
-			{
-				int x = sceneInfo.viewDistance.x + ((intersection.x - primitive.p0.x)/primitive.size.x);
-				int z = sceneInfo.viewDistance.x + ((intersection.z - primitive.p0.z)/primitive.size.x);
-				if(x%2==0) 
-				{
-					if (z%2==0) 
-					{
-						colorAtIntersection.x = 1.f-colorAtIntersection.x;
-						colorAtIntersection.y = 1.f-colorAtIntersection.y;
-						colorAtIntersection.z = 1.f-colorAtIntersection.z;
-					}
-				}
-				else 
-				{
-					if (z%2!=0) 
-					{
-						colorAtIntersection.x = 1.f-colorAtIntersection.x;
-						colorAtIntersection.y = 1.f-colorAtIntersection.y;
-						colorAtIntersection.z = 1.f-colorAtIntersection.z;
-					}
-				}
-			}
-			break;
-		}
-	case ptXYPlane:
-	case ptYZPlane:
-	case ptXZPlane:
-	case ptCamera:
-		{
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
-			{
-				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
-			}
-			break;
-		}
-	case ptTriangle:
-      {
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
-			{
-            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
-			}
-			break;
-      }
-   }
-#else
-	if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
-	{
-      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
-	}
-#endif // EXTENDED_GEOMETRY
-	return colorAtIntersection;
-}
-
-/*
-________________________________________________________________________________
-
 Primitive shader
 ________________________________________________________________________________
 */
@@ -317,13 +219,14 @@ __device__ float4 primitiveShader(
 	const int&    objectId, 
 	const Vertex& intersection,
    const Vertex& areas,
+   float4&       closestColor,
 	const int&    iteration,
 	float4&       refractionFromColor,
 	float&        shadowIntensity,
 	float4&       totalBlinn)
 {
 	Primitive primitive = primitives[objectId];
-	float4 color = materials[primitive.materialId.x].color;
+	closestColor = materials[primitive.materialId.x].color;
 	float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
 	// Lamp Impact
@@ -332,16 +235,8 @@ __device__ float4 primitiveShader(
 	if( materials[primitive.materialId.x].innerIllumination.x != 0.f || materials[primitive.materialId.x].attributes.z == 2 )
    {
       // Wireframe returns constant color
-		return color; 
+		return closestColor; 
    }
-
-   if( materials[primitive.materialId.x].attributes.z == 1 )
-	{
-		// Sky box returns color with constant lightning
-		return intersectionShader( 
-			sceneInfo, primitive, materials, textures, 
-			intersection, areas );
-	}
 
    if( sceneInfo.graphicsLevel.x>0 )
    {
@@ -360,7 +255,7 @@ __device__ float4 primitiveShader(
       }
 
 
-	   color *= materials[primitive.materialId.x].innerIllumination.x;
+	   closestColor *= materials[primitive.materialId.x].innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
          int cptLamp = cpt;
@@ -464,15 +359,15 @@ __device__ float4 primitiveShader(
 		   }
 
          // Light impact on material
-		   color += intersectionColor*lampsColor;
+		   closestColor += intersectionColor*lampsColor;
 
          // Saturate color
-		   saturateVector(color);
+		   saturateVector(closestColor);
 
 		   refractionFromColor = intersectionColor; // Refraction depending on color;
 		   saturateVector( totalBlinn );
 	   }
    }
-	return color;
+	return closestColor;
 }
 

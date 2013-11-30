@@ -427,6 +427,7 @@ __device__ inline float4 launchRay(
 	float  shadowIntensity = 0.f;
 	float4 refractionFromColor;
 	Vertex reflectedTarget;
+   float4 closestColor = {0.f,0.f,0.f,0.f};
 	float4 colorBox = {0.f,0.f,0.f,0.f};
 	bool   back = false;
 
@@ -462,7 +463,7 @@ __device__ inline float4 launchRay(
 				rayOrigin,
 				iteration,  
 				closestPrimitive, closestIntersection, 
-				normal, areas, colorBox, back, currentMaterialId);
+				normal, areas, closestColor, colorBox, back, currentMaterialId);
 		}
 
 		if( carryon ) 
@@ -499,7 +500,7 @@ __device__ inline float4 launchRay(
                lightInformation, lightInformationSize, nbActiveLamps,
                materials, textures, 
                randoms, rayOrigin.origin, normal, 
-               closestPrimitive, closestIntersection, areas, 
+               closestPrimitive, closestIntersection, areas, closestColor,
 			      iteration, refractionFromColor, shadowIntensity, rBlinn );
 
          // Primitive illumination
@@ -615,7 +616,7 @@ __device__ inline float4 launchRay(
 			reflectedRay,
 			reflectedRays,  
 			closestPrimitive, closestIntersection, 
-			normal, areas, colorBox, back, currentMaterialId) )
+         normal, areas, closestColor, colorBox, back, currentMaterialId) )
       {
          float4 color = primitiveShader( 
 				sceneInfo, postProcessingInfo,
@@ -624,7 +625,7 @@ __device__ inline float4 launchRay(
             lightInformation, lightInformationSize, nbActiveLamps, 
             materials, textures, randoms, 
             reflectedRay.origin, normal, closestPrimitive, 
-            closestIntersection, areas, 
+            closestIntersection, areas, closestColor, 
 			   reflectedRays, 
             refractionFromColor, shadowIntensity, rBlinn );
 

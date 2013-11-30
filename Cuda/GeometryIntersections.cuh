@@ -30,7 +30,6 @@
 #include "../Consts.h"
 #include "TextureMapping.cuh"
 
-
 __device__ inline Vertex project( const Vertex& A, const Vertex& B) 
 {
    return B*(dot(A,B)/dot(B,B));
@@ -578,6 +577,104 @@ __device__ inline bool triangleIntersection(
 /*
 ________________________________________________________________________________
 
+Intersection Shader
+________________________________________________________________________________
+*/
+__device__ float4 intersectionShader( 
+	const SceneInfo& sceneInfo,
+	const Primitive& primitive, 
+	Material*        materials,
+	BitmapBuffer*    textures,
+	const Vertex&    intersection,
+	const Vertex&    areas)
+{
+	float4 colorAtIntersection = materials[primitive.materialId.x].color;
+   colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
+
+#ifdef EXTENDED_GEOMETRY
+	switch( primitive.type.x ) 
+	{
+	case ptCylinder:
+		{
+			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
+			{
+				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
+			}
+			break;
+		}
+	case ptEnvironment:
+	case ptSphere:
+   case ptEllipsoid:
+		{
+			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
+			{
+				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
+			}
+			break;
+		}
+	case ptCheckboard :
+		{
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+			{
+				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
+			}
+			else 
+			{
+				int x = sceneInfo.viewDistance.x + ((intersection.x - primitive.p0.x)/primitive.size.x);
+				int z = sceneInfo.viewDistance.x + ((intersection.z - primitive.p0.z)/primitive.size.x);
+				if(x%2==0) 
+				{
+					if (z%2==0) 
+					{
+						colorAtIntersection.x = 1.f-colorAtIntersection.x;
+						colorAtIntersection.y = 1.f-colorAtIntersection.y;
+						colorAtIntersection.z = 1.f-colorAtIntersection.z;
+					}
+				}
+				else 
+				{
+					if (z%2!=0) 
+					{
+						colorAtIntersection.x = 1.f-colorAtIntersection.x;
+						colorAtIntersection.y = 1.f-colorAtIntersection.y;
+						colorAtIntersection.z = 1.f-colorAtIntersection.z;
+					}
+				}
+			}
+			break;
+		}
+	case ptXYPlane:
+	case ptYZPlane:
+	case ptXZPlane:
+	case ptCamera:
+		{
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+			{
+				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
+			}
+			break;
+		}
+	case ptTriangle:
+      {
+			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+			{
+            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
+			}
+			break;
+      }
+   }
+#else
+	if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+	{
+      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
+	}
+#endif // EXTENDED_GEOMETRY
+	return colorAtIntersection;
+}
+
+/*
+________________________________________________________________________________
+
 Intersections with primitives
 ________________________________________________________________________________
 */
@@ -592,6 +689,7 @@ __device__ inline bool intersectionWithPrimitives(
 	Vertex& closestIntersection,
 	Vertex& closestNormal,
    Vertex& closestAreas,
+   float4& closestColor,
 	float4& colorBox,
 	bool&   back,
    const int currentMaterialId)
@@ -667,6 +765,14 @@ __device__ inline bool intersectionWithPrimitives(
 					   back = false;
 					   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
    #endif // EXTENDED_GEOMETRY
+
+                  if( i )
+                  {
+		               closestColor = intersectionShader( 
+			               sceneInfo, primitive, materials, textures, 
+			               intersection, areas );
+                     i = ((closestColor.x+closestColor.y+closestColor.z)<sceneInfo.transparentColor.x);
+                  }
 
 				      float distance = length(intersection-r.origin);
 				      if( i && distance>EPSILON && distance<minDistance ) 
