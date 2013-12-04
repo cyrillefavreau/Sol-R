@@ -210,7 +210,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             if( kernel.loadTextureFromFile(idx, folder) )
             {
                materials[id].textureId = idx;
-               LOG_INFO(1, "[Slot " << idx  << "] Texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+               LOG_INFO(3, "[Slot " << idx  << "] Texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
             }
             else
             {
@@ -224,7 +224,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
             materials[id].reflection   = 1.f; 
-            materials[id].transparency = d; 
+            materials[id].transparency = 0.8f+d*0.2f;
             materials[id].refraction   = 1.1f;
          }
 
