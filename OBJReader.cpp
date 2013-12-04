@@ -159,7 +159,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                kernel.setMaterial(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
-                  0.f,m.reflection,m.refraction, false, false, 0,
+                  m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, m.textureId,
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 40000.f, 10.f*kernel.getSceneInfo().viewDistance.x,
@@ -174,6 +174,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             memset( &material, 0, sizeof(MaterialMTL));
             material.index = static_cast<unsigned int>(materials.size()+materialId);
             material.textureId = MATERIAL_NONE;
+            material.noise = 10.f;
             materials[id] = material;
          }
 
@@ -226,6 +227,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             materials[id].reflection   = 1.f; 
             materials[id].transparency = 0.8f+d*0.2f;
             materials[id].refraction   = 1.1f;
+            materials[id].noise = 0.f;
          }
 
          if( line.find("illum") == 0 )
@@ -259,7 +261,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
          kernel.setMaterial(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
-            0.f,m.reflection,m.refraction, false, false, 0,
+            m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, m.textureId,
             m.Ks.x, m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,

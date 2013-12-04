@@ -23,6 +23,10 @@
 #pragma once
 
 // Defines
+
+//CUDA Specific
+#undef USE_MANAGED_MEMORY
+
 // #define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND
 #define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc

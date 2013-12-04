@@ -25,6 +25,7 @@
 
 // Cuda
 #include <cuda_runtime_api.h>
+#include <cuda_runtime.h>
 #include <helper_cuda.h>
 
 // Project
@@ -35,8 +36,10 @@
 #include "GeometryShaders.cuh"
 
 // Device resources
-Primitive*            d_primitives[MAX_GPU_COUNT];
+#ifndef USE_MANAGED_MEMORY
 BoundingBox*          d_boundingBoxes[MAX_GPU_COUNT]; 
+Primitive*            d_primitives[MAX_GPU_COUNT];
+#endif
 Lamp*                 d_lamps[MAX_GPU_COUNT];
 Material*             d_materials[MAX_GPU_COUNT];
 BitmapBuffer*         d_textures[MAX_GPU_COUNT];
@@ -120,6 +123,7 @@ __device__ inline float4 recursiveRay(
 
 		// Get object color
       color = primitiveShader( 
+            index,
 				sceneInfo, postProcessingInfo,
 				boundingBoxes, nbActiveBoxes, 
 			   primitives, nbActivePrimitives, 
@@ -239,7 +243,8 @@ the ray). It can  be considered as a light source if its inner light rate
 is > 0.                            
 ________________________________________________________________________________
 */
-__device__ inline float4 launchRay( 
+__device__ inline float4 launchRay(
+   const int& index,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
 	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
@@ -300,7 +305,8 @@ __device__ inline float4 launchRay(
 			closestPrimitive, closestIntersection, 
 			normal, areas, colorBox, back, currentMaterialId) )
       {
-         float4 color = primitiveShader( 
+         float4 color = primitiveShader(
+            index,
 				sceneInfo, postProcessingInfo,
 				boundingBoxes, nbActiveBoxes, 
 			   primitives, nbActivePrimitives, 
@@ -388,7 +394,8 @@ the ray). It can  be considered as a light source if its inner light rate
 is > 0.                            
 ________________________________________________________________________________
 */
-__device__ inline float4 launchRay( 
+__device__ inline float4 launchRay(
+   const int& index,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
 	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
@@ -494,6 +501,7 @@ __device__ inline float4 launchRay(
 			// Get object color
          colors[iteration] =
             primitiveShader( 
+               index,
 				   sceneInfo, postProcessingInfo,
 				   boundingBoxes, nbActiveBoxes, 
 			      primitives, nbActivePrimitives, 
@@ -619,6 +627,7 @@ __device__ inline float4 launchRay(
          normal, areas, closestColor, colorBox, back, currentMaterialId) )
       {
          float4 color = primitiveShader( 
+            index,
 				sceneInfo, postProcessingInfo,
 				boundingBoxes, nbActiveBoxes, 
 			   primitives, nbActivePrimitives, 
@@ -824,6 +833,7 @@ __global__ void k_standardRenderer(
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
 	      float4 c = launchRay(
+            index,
 		      BoundingBoxes, nbActiveBoxes,
 		      primitives, nbActivePrimitives,
             lightInformation, lightInformationSize, nbActiveLamps,
@@ -838,6 +848,7 @@ __global__ void k_standardRenderer(
       }
    }
    color += launchRay(
+      index,
 		BoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
       lightInformation, lightInformationSize, nbActiveLamps,
@@ -984,6 +995,7 @@ __global__ void k_fishEyeRenderer(
 
    float4 color = {0.f,0.f,0.f,0.f};
    color += launchRay(
+      index,
 		BoundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lightInformation, lightInformationSize, nbActiveLamps,
@@ -1103,6 +1115,7 @@ __global__ void k_anaglyphRenderer(
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 colorLeft = launchRay(
+      index,
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lightInformation, lightInformationSize, nbActiveLamps,
@@ -1127,6 +1140,7 @@ __global__ void k_anaglyphRenderer(
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 	
    float4 colorRight = launchRay(
+      index,
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lightInformation, lightInformationSize, nbActiveLamps,
@@ -1270,6 +1284,7 @@ __global__ void k_3DVisionRenderer(
 	vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 color = launchRay(
+      index,
 		boundingBoxes, nbActiveBoxes,
 		primitives, nbActivePrimitives,
 		lightInformation, lightInformationSize, nbActiveLamps,
@@ -1554,7 +1569,12 @@ extern "C" void initialize_scene(
 	const SceneInfo& sceneInfo,
    const int        nbPrimitives, 
    const int        nbLamps, 
-   const int        nbMaterials )
+   const int        nbMaterials
+#ifdef USE_MANAGED_MEMORY
+   ,BoundingBox*&    boundingBoxes
+   ,Primitive*&      primitives
+#endif
+   )
 {
    // Multi GPU initialization
    int nbGPUs;
@@ -1584,14 +1604,24 @@ extern "C" void initialize_scene(
       LOG_INFO(1, "Created " << occupancyParameters.y << " streams on device " << device );
 
       // Scene resources
+      // Scene resources
       int size(NB_MAX_BOXES*sizeof(BoundingBox));
-	   checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[device], size));
-      LOG_INFO(3, "d_boundingBoxes: " << size << " bytes" );
+
+#ifdef USE_MANAGED_MEMORY
+	   checkCudaErrors(cudaMallocManaged( &boundingBoxes, size, cudaMemAttachHost));
+#else
+      checkCudaErrors(cudaMalloc( (void**)&d_boundingBoxes[device], size));
+#endif 
+      LOG_INFO( 1, "d_boundingBoxes: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       size=NB_MAX_PRIMITIVES*sizeof(Primitive);
+#ifdef USE_MANAGED_MEMORY
+	   checkCudaErrors(cudaMallocManaged( &primitives, size, cudaMemAttachHost));
+#else
       checkCudaErrors(cudaMalloc( (void**)&d_primitives[device], size));
-      LOG_INFO(3, "d_primitives: " << size << " bytes" );
+#endif 
+      LOG_INFO( 1, "d_primitives: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
       size=NB_MAX_LAMPS*sizeof(Lamp);
@@ -1651,14 +1681,24 @@ GPU finalization
 ________________________________________________________________________________
 */
 extern "C" void finalize_scene( 
-   const int2 occupancyParameters )
+   const int2 occupancyParameters
+#ifdef USE_MANAGED_MEMORY
+	,BoundingBox* boundingBoxes
+   ,Primitive*   primitives
+#endif
+   )
 {
    LOG_INFO(1 ,"Releasing device resources");
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
+#ifdef USE_MANAGED_MEMORY
+	   FREECUDARESOURCE(boundingBoxes);
+	   FREECUDARESOURCE(primitives);
+#else
 	   FREECUDARESOURCE(d_boundingBoxes[device]);
 	   FREECUDARESOURCE(d_primitives[device]);
+#endif
       FREECUDARESOURCE(d_lamps[device]);
 	   FREECUDARESOURCE(d_materials[device]);
       FREECUDARESOURCE(d_textures[device]);
@@ -1694,8 +1734,10 @@ extern "C" void h2d_scene(
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
+#ifndef USE_MANAGED_MEMORY
 	   checkCudaErrors(cudaMemcpyAsync( d_boundingBoxes[device],      boundingBoxes,      nbActiveBoxes*sizeof(BoundingBox), cudaMemcpyHostToDevice, d_streams[device][0] ));
 	   checkCudaErrors(cudaMemcpyAsync( d_primitives[device],         primitives,         nbPrimitives*sizeof(Primitive),    cudaMemcpyHostToDevice, d_streams[device][0] ));
+#endif
 	   checkCudaErrors(cudaMemcpyAsync( d_lamps[device],              lamps,              nbLamps*sizeof(Lamp),              cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
@@ -1824,7 +1866,12 @@ extern "C" void cudaRender(
 	const PostProcessingInfo postProcessingInfo,
 	const Vertex             origin, 
 	const Vertex             direction, 
-	const Vertex             angles)
+	const Vertex             angles
+#ifdef USE_MANAGED_MEMORY
+   ,BoundingBox*            boundingBoxes
+	,Primitive*              primitives
+#endif
+   )
 {
    LOG_INFO(3, "CPU PostProcessingBuffer: " << sizeof(PostProcessingBuffer));
    LOG_INFO(3, "CPU PrimitiveXYIdBuffer : " << sizeof(PrimitiveXYIdBuffer));
@@ -1861,8 +1908,18 @@ extern "C" void cudaRender(
                step = "vtAnaglyph";
 			      k_anaglyphRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
-				      d_boundingBoxes[device], objects.x, 
-                  d_primitives[device], objects.y,  
+#ifndef USE_MANAGED_MEMORY
+				      d_boundingBoxes[device],
+#else
+				      boundingBoxes, 
+#endif
+                  objects.x,
+#ifndef USE_MANAGED_MEMORY
+                  d_primitives[device], 
+#else
+				      primitives,
+#endif
+                  objects.y,  
                   d_lightInformation[device], objects.w, objects.z,
                   d_materials[device], d_textures[device], 
 				      d_randoms[device], origin, direction, angles, sceneInfo, 
@@ -1874,8 +1931,18 @@ extern "C" void cudaRender(
                step = "vt3DVision";
 			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
-				      d_boundingBoxes[device], objects.x, 
-                  d_primitives[device], objects.y,  
+#ifndef USE_MANAGED_MEMORY
+				      d_boundingBoxes[device],
+#else
+				      boundingBoxes, 
+#endif
+                  objects.x, 
+#ifndef USE_MANAGED_MEMORY
+                  d_primitives[device], 
+#else
+				      primitives,
+#endif
+                  objects.y,  
                   d_lightInformation[device], objects.w, objects.z,
                   d_materials[device], d_textures[device], 
 				      d_randoms[device], origin, direction, angles, sceneInfo, 
@@ -1888,8 +1955,18 @@ extern "C" void cudaRender(
 			      k_fishEyeRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
                   device*stream*size.y,
-				      d_boundingBoxes[device], objects.x, 
-                  d_primitives[device], objects.y,  
+#ifndef USE_MANAGED_MEMORY
+				      d_boundingBoxes[device],
+#else
+				      boundingBoxes, 
+#endif
+                  objects.x, 
+#ifndef USE_MANAGED_MEMORY
+                  d_primitives[device], 
+#else
+				      primitives,
+#endif
+                  objects.y,  
                   d_lightInformation[device], objects.w, objects.z,
                   d_materials[device], d_textures[device], 
 				      d_randoms[device], origin, direction, angles, sceneInfo, 
@@ -1903,8 +1980,18 @@ extern "C" void cudaRender(
                   occupancyParameters,
                   device*(sceneInfo.height.x/occupancyParameters.x),
                   stream*size.y,
-				      d_boundingBoxes[device], objects.x, 
-                  d_primitives[device], objects.y,  
+#ifndef USE_MANAGED_MEMORY
+				      d_boundingBoxes[device],
+#else
+				      boundingBoxes, 
+#endif
+				      objects.x, 
+#ifndef USE_MANAGED_MEMORY
+                  d_primitives[device], 
+#else
+				      primitives,
+#endif
+                  objects.y,  
                   d_lightInformation[device], objects.w, objects.z,
                   d_materials[device], d_textures[device], 
 				      d_randoms[device], origin, direction, angles, sceneInfo, 

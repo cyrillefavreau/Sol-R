@@ -36,7 +36,8 @@ struct MaterialMTL
    float  reflection;
    float  transparency;
    float  refraction;
-   int textureId;
+   float  noise;
+   int    textureId;
 };
 
 class RAYTRACINGENGINE_API OBJReader

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include "../Consts.h"
 #include "CudaDataTypes.h"
 
 extern "C" void initialize_scene( 
@@ -29,10 +30,20 @@ extern "C" void initialize_scene(
    const SceneInfo sceneInfo,
    const int       nbPrimitives, 
    const int       nbLamps, 
-   const int       nbMaterials );
+   const int       nbMaterials
+#ifdef USE_MANAGED_MEMORY
+   ,BoundingBox*&   boundingBoxes
+   ,Primitive*&     primitives
+#endif
+   );
 
 extern "C" void finalize_scene(
-   const int2   occupancyParameters );
+   const int2   occupancyParameters
+#ifdef USE_MANAGED_MEMORY
+   ,BoundingBox* boundingBoxes
+   ,Primitive*   primitives
+#endif
+   );
 
 extern "C" void h2d_scene(
    const int2   occupancyParameters,
@@ -74,7 +85,12 @@ extern "C" void cudaRender(
    const PostProcessingInfo PostProcessingInfo,
    const Vertex             origin, 
    const Vertex             direction, 
-   const Vertex             angles);
+   const Vertex             angles
+#ifdef USE_MANAGED_MEMORY
+   ,BoundingBox*            boundingBoxes
+	,Primitive*              primitives
+#endif
+   );
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 

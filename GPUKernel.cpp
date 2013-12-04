@@ -295,13 +295,17 @@ void GPUKernel::initBuffers()
    m_hPrimitivesXYIds = new PrimitiveXYIdBuffer[size];
    memset(m_hPrimitivesXYIds,0,size*sizeof(PrimitiveXYIdBuffer));
 
-	m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];
-	memset(m_hPrimitives,0,NB_MAX_PRIMITIVES*sizeof(Primitive) ); 
 	m_hMaterials = new Material[NB_MAX_MATERIALS+1];
 	memset(m_hMaterials,0,NB_MAX_MATERIALS*sizeof(Material) ); 
+
+#ifndef USE_MANAGED_MEMORY
 	m_hBoundingBoxes = new BoundingBox[NB_MAX_BOXES];
 	memset(m_hBoundingBoxes,0,NB_MAX_BOXES*sizeof(BoundingBox));
-	m_hLamps = new Lamp[NB_MAX_LAMPS];
+	m_hPrimitives = new Primitive[NB_MAX_PRIMITIVES];
+	memset(m_hPrimitives,0,NB_MAX_PRIMITIVES*sizeof(Primitive) ); 
+#endif 
+
+   m_hLamps = new Lamp[NB_MAX_LAMPS];
 	memset(m_hLamps,0,NB_MAX_LAMPS*sizeof(Lamp));
 
    // Randoms
@@ -375,8 +379,10 @@ void GPUKernel::cleanup()
 
    if( m_hRandoms ) delete m_hRandoms; m_hRandoms = nullptr;
    if( m_bitmap ) delete [] m_bitmap; m_bitmap = nullptr;
+#ifndef USE_MANAGED_MEMORY
    if(m_hBoundingBoxes) delete m_hBoundingBoxes; m_hBoundingBoxes = nullptr;
 	if(m_hPrimitives) delete m_hPrimitives; m_hPrimitives = nullptr;
+#endif
 	if(m_hLamps) delete m_hLamps; m_hLamps = nullptr;
    if(m_hMaterials) delete m_hMaterials; m_hMaterials = nullptr;
 	if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds; m_hPrimitivesXYIds = nullptr;
@@ -1736,7 +1742,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].color.x     = r;
 		m_hMaterials[index].color.y     = g;
 		m_hMaterials[index].color.z     = b;
-		m_hMaterials[index].color.w     = noise;
+		m_hMaterials[index].color.w     = 0.f; //noise;
 		m_hMaterials[index].specular.x  = specValue;
 		m_hMaterials[index].specular.y  = specPower;
 		m_hMaterials[index].specular.z  = 0.f; // Not used
@@ -1744,6 +1750,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].innerIllumination.x = innerIllumination;
 		m_hMaterials[index].innerIllumination.y = illuminationDiffusion;
 		m_hMaterials[index].innerIllumination.z = illuminationPropagation;
+		m_hMaterials[index].innerIllumination.w = noise;
 		m_hMaterials[index].reflection.x  = reflection;
 		m_hMaterials[index].refraction.x  = refraction;
 		m_hMaterials[index].transparency.x= transparency;

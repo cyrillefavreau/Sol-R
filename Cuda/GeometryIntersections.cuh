@@ -229,7 +229,7 @@ __device__ inline bool sphereIntersection(
    r = dot(dir,normal);
 	shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
 
-#if EXTENDED_FEATURES
+#ifdef EXTENDED_FEATURES
 	// Power textures
 	if (materials[sphere.materialId.x].textureInfo.y != TEXTURE_NONE && materials[sphere.materialId.x].transparency.x != 0 ) 
 	{
@@ -766,6 +766,7 @@ __device__ inline bool intersectionWithPrimitives(
 					   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
    #endif // EXTENDED_GEOMETRY
 
+#ifdef EXTENDED_FEATURES
                   if( i && sceneInfo.transparentColor.x!=0.f )
                   {
 		               closestColor = intersectionShader( 
@@ -773,6 +774,7 @@ __device__ inline bool intersectionWithPrimitives(
 			               intersection, areas );
                      i = ((closestColor.x+closestColor.y+closestColor.z)>sceneInfo.transparentColor.x);
                   }
+#endif // EXTENDED_FEATURES
 
 				      float distance = length(intersection-r.origin);
 				      if( i && distance>EPSILON && distance<minDistance ) 

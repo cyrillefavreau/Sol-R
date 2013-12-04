@@ -162,6 +162,8 @@ __device__ float processShadows(
 #else
                hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back );
 #endif
+
+#ifdef EXTENDED_FEATURES
                if( hit && sceneInfo.transparentColor.x!=0.f)
                {
 		            float4 closestColor = intersectionShader( 
@@ -169,6 +171,7 @@ __device__ float processShadows(
 			            intersection, areas );
                   hit = ((closestColor.x+closestColor.y+closestColor.z)>sceneInfo.transparentColor.x);
                }
+#endif // EXTENDED_FEATURES
 
                if( hit )
 					{
@@ -215,6 +218,7 @@ Primitive shader
 ________________________________________________________________________________
 */
 __device__ float4 primitiveShader(
+   const int& index,
 	const SceneInfo&   sceneInfo,
 	const PostProcessingInfo&   postProcessingInfo,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes, 
@@ -253,6 +257,7 @@ __device__ float4 primitiveShader(
 			intersectionShader( sceneInfo, primitive, materials, textures,
 			intersection, areas );
 
+#ifdef EXTENDED_FEATURES
       // TODO: Bump effect
       if( materials[primitive.materialId.x].textureMapping.z != MATERIAL_NONE)
       {
@@ -261,7 +266,7 @@ __device__ float4 primitiveShader(
          normal.z = normal.z*0.7f+intersectionColor.z*0.3f;
          normalize(normal);
       }
-
+#endif // EXTENDED_FEATURES
 
 	   closestColor *= materials[primitive.materialId.x].innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
@@ -275,11 +280,11 @@ __device__ float4 primitiveShader(
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
+            int t = (index*3+sceneInfo.misc.y)%(sceneInfo.width.x*sceneInfo.height.x);
             if( lightInformation[cptLamp].attribute.x>=0 &&
                 lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
                Primitive& lamp = primitives[lightInformation[cptLamp].attribute.x];
-				   int t = 3*sceneInfo.misc.y;
                t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
                center.x += materials[lamp.materialId.x].innerIllumination.y*randoms[t  ]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
 				   center.y += materials[lamp.materialId.x].innerIllumination.y*randoms[t+1]*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
@@ -302,26 +307,6 @@ __device__ float4 primitiveShader(
             {
 		         Vertex lightRay = center - intersection;
                lightRay = normalize(lightRay);
-#if 0
-               // Lightning intensity decreases with distance
-			      Material& material = materials[primitives[lamps[cptLamps]].materialId.x];
-               float lampIntensity = 1.f-length(lightRay)/material.innerIllumination.z;
-               lampIntensity = (lampIntensity<0.f) ? 0.f : lampIntensity;
-
-			      // --------------------------------------------------------------------------------
-			      // Lambert
-			      // --------------------------------------------------------------------------------
-	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-               // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
-               // depends on the transparency rate.
-               lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : lambert;
-			      lambert *= (materials[primitive.materialId.x].refraction.x == 0.f) ? material.innerIllumination.x : 1.f;
-			      lambert *= (1.f-shadowIntensity);
-               lambert *= lampIntensity;
-
-               // Lighted object, not in the shades
-			      lampsColor += lambert*material.color*material.innerIllumination.x - shadowColor;
-#else
 			      // --------------------------------------------------------------------------------
 			      // Lambert
 			      // --------------------------------------------------------------------------------
@@ -330,14 +315,13 @@ __device__ float4 primitiveShader(
                // depends on the transparency rate.
                lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : lambert;
 			      lambert *= lightInformation[cptLamp].color.w;
+               lambert *= (1.f+randoms[t]*materials[primitive.materialId.x].innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
 			      lambert *= (1.f-shadowIntensity);
 
                // Lighted object, not in the shades
-
 			      lampsColor.x += lambert*lightInformation[cptLamp].color.x*lightInformation[cptLamp].color.w - shadowColor.x;
 			      lampsColor.y += lambert*lightInformation[cptLamp].color.y*lightInformation[cptLamp].color.w - shadowColor.y;
 			      lampsColor.z += lambert*lightInformation[cptLamp].color.z*lightInformation[cptLamp].color.w - shadowColor.z;
-#endif
 
 			      if( sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x )
 			      {

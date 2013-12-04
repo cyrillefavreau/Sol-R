@@ -131,7 +131,17 @@ ________________________________________________________________________________
 void CudaKernel::initializeDevice()
 {
    LOG_INFO(1,"CudaKernel::initializeDevice");
-	initialize_scene( m_occupancyParameters, m_sceneInfo, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS );
+	initialize_scene( 
+      m_occupancyParameters, 
+      m_sceneInfo, 
+      NB_MAX_PRIMITIVES, 
+      NB_MAX_LAMPS, 
+      NB_MAX_MATERIALS
+#ifdef USE_MANAGED_MEMORY
+      ,m_hBoundingBoxes
+      ,m_hPrimitives
+#endif 
+   );
 }
 
 void CudaKernel::resetBoxesAndPrimitives()
@@ -147,7 +157,13 @@ ________________________________________________________________________________
 */
 void CudaKernel::releaseDevice()
 {
-	finalize_scene( m_occupancyParameters );
+	finalize_scene( 
+      m_occupancyParameters
+#ifdef USE_MANAGED_MEMORY
+      ,m_hBoundingBoxes
+      ,m_hPrimitives
+#endif
+   );
 }
 
 /*
@@ -274,7 +290,12 @@ void CudaKernel::render_begin( const float timer )
          m_postProcessingInfo,
          m_viewPos,
 		   m_viewDir, 
-         m_angles );
+         m_angles
+#ifdef USE_MANAGED_MEMORY
+         ,m_hBoundingBoxes
+         ,m_hPrimitives
+#endif
+         );
    }
    m_refresh = (m_sceneInfo.pathTracingIteration.x<m_sceneInfo.maxPathTracingIterations.x);
 }
