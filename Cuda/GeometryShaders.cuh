@@ -253,10 +253,11 @@ __device__ float4 primitiveShader(
    if( sceneInfo.graphicsLevel.x>0 )
    {
 		// Final color
+      Vertex bumpNormal={0.f,0.f,0.f};
 		float4 intersectionColor = 
 			intersectionShader( sceneInfo, primitive, materials, textures,
-			intersection, areas );
-
+			intersection, areas, bumpNormal );
+      normal += bumpNormal;
 #ifdef EXTENDED_FEATURES
       // TODO: Bump effect
       if( materials[primitive.materialId.x].textureMapping.z != MATERIAL_NONE)
@@ -264,9 +265,9 @@ __device__ float4 primitiveShader(
          normal.x = normal.x*0.7f+intersectionColor.x*0.3f;
          normal.y = normal.y*0.7f+intersectionColor.y*0.3f;
          normal.z = normal.z*0.7f+intersectionColor.z*0.3f;
-         normalize(normal);
       }
 #endif // EXTENDED_FEATURES
+      normalize(normal);
 
 	   closestColor *= materials[primitive.materialId.x].innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 

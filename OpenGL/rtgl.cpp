@@ -174,7 +174,7 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 			material, r, g, b, noise,
 			reflection, refraction, procedural, 
 			wireframe, wireframeDepth,
-			transparency, textureId,
+			transparency, textureId, MATERIAL_NONE,
 			specular.x, specular.y, specular.w, 
          innerIllumination.x, innerIllumination.y, innerIllumination.z,
 			fastTransparency);
@@ -245,23 +245,40 @@ void RayTracer::glNormal3fv( const GLfloat* n )
 
 void RayTracer::glColor3f (GLfloat red, GLfloat green, GLfloat blue)
 {
-   int m = RayTracer::gKernel->getCurrentMaterial();
-   ++m;
-   RayTracer::gKernel->setMaterialColor( m, red, green, blue );
-   RayTracer::gKernel->setCurrentMaterial(m);
+   glColor4f(red,green,blue, 0.f);
 }
 
 void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
-   int m = RayTracer::gKernel->getCurrentMaterial();
-   Material* material = RayTracer::gKernel->getMaterial(m);
-   //if( material->color.x!=red || material->color.y!=green || material->color.z!=blue )
+   bool found(false);
+   unsigned int i(0);
+   while( i<RayTracer::gKernel->getNbActiveMaterials() && !found )
    {
+      Material* mat=RayTracer::gKernel->getMaterial(i);
+      if (mat->color.x==red && mat->color.x==green && mat->color.x==blue && mat->transparency.x==alpha)
+      {
+         found=true;
+      }
+      else
+      {
+         ++i;
+      }
+   }
+   if( found )
+   {
+      RayTracer::gKernel->setMaterialColor(i,red,green,blue);
+   }
+   else
+   {
+      int m = RayTracer::gKernel->getCurrentMaterial();
       ++m;
-      RayTracer::gKernel->setMaterialColor( m, red, green, blue );
-      material = RayTracer::gKernel->getMaterial(m);
-      material->transparency.x = alpha;
-      material->refraction.x = 1.f+alpha;
+      RayTracer::gKernel->setMaterial( m, 
+         red, green, blue,
+         10.f, 0.f, 1.2f, 
+         false, 0.f, 0, alpha, 
+         MATERIAL_NONE, MATERIAL_NONE,
+         1.f, 200.f, 1000.f, 
+         0.f, 0.f, 0.f, false);
       RayTracer::gKernel->setCurrentMaterial(m);
    }
 }

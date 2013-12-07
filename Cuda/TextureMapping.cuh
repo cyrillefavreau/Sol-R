@@ -125,7 +125,8 @@ __device__ float4 triangleUVMapping(
 	Material*        materials,
 	BitmapBuffer*    textures,
 	const Vertex&    intersection,
-   const Vertex&    areas)
+   const Vertex&    areas,
+   Vertex&          normal)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -147,11 +148,13 @@ __device__ float4 triangleUVMapping(
             int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
             int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
 		      int index = A%B;
-            index = material.textureOffset.x + index;
+
+            // Diffuse
+            int i = material.textureOffset.x + index;
             BitmapBuffer r,g,b;
-		      r = textures[index  ];
-		      g = textures[index+1];
-		      b = textures[index+2];
+		      r = textures[i  ];
+		      g = textures[i+1];
+		      b = textures[i+2];
 #ifdef USE_KINECT
             if( material.textureMapping.z==0 )
             {
@@ -163,6 +166,18 @@ __device__ float4 triangleUVMapping(
 		      result.x = r/256.f;
 		      result.y = g/256.f;
 		      result.z = b/256.f;
+
+            if( material.textureIds.y!=TEXTURE_NONE)
+            {
+               // Bump
+               i = material.textureOffset.y + index;
+		         r = textures[i  ];
+		         g = textures[i+1];
+		         b = textures[i+2];
+		         normal.x = r/256.f-0.5f;
+		         normal.y = g/256.f-0.5f;
+		         normal.z = 0.f; //b/256.f-0.5f;
+            }
          }
       }
 	}
@@ -180,7 +195,8 @@ __device__ float4 sphereUVMapping(
 	const Primitive& primitive,
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const Vertex&    intersection)
+	const Vertex&    intersection,
+   Vertex&          normal)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -217,14 +233,28 @@ __device__ float4 sphereUVMapping(
       int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
       int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
 		int index = A%B;
-      index = material.textureOffset.x + index;
+
+      // Diffuse
+      int i = material.textureOffset.x + index;
       BitmapBuffer r,g,b;
-		r = textures[index  ];
-		g = textures[index+1];
-		b = textures[index+2];
+		r = textures[i  ];
+		g = textures[i+1];
+		b = textures[i+2];
 		result.x = r/256.f;
 		result.y = g/256.f;
 		result.z = b/256.f;
+
+      if( material.textureIds.y!=TEXTURE_NONE)
+      {
+         // Bump
+         i = material.textureOffset.y + index;
+		   r = textures[i  ];
+		   g = textures[i+1];
+		   b = textures[i+2];
+		   normal.x = r/256.f-0.5f;
+		   normal.y = g/256.f-0.5f;
+		   normal.z = 0.f; //b/256.f-0.5f;
+      }
 	}
 	return result; 
 }
@@ -240,7 +270,8 @@ __device__ float4 cubeMapping(
 	const Primitive& primitive, 
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const Vertex&    intersection)
+	const Vertex&    intersection,
+   Vertex&          normal)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -291,14 +322,26 @@ __device__ float4 cubeMapping(
                int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
                int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
 		         int index = A%B;
-               index = material.textureOffset.x + index;
+               int i = material.textureOffset.x + index;
                BitmapBuffer r,g,b;
-		         r = textures[index  ];
-		         g = textures[index+1];
-		         b = textures[index+2];
+		         r = textures[i  ];
+		         g = textures[i+1];
+		         b = textures[i+2];
 			      result.x = r/256.f;
 			      result.y = g/256.f;
 			      result.z = b/256.f;
+
+               if( material.textureIds.y!=TEXTURE_NONE)
+               {
+                  // Bump
+                  i = material.textureOffset.y + index;
+		            r = textures[i  ];
+		            g = textures[i+1];
+		            b = textures[i+2];
+		            normal.x = r/256.f-0.5f;
+		            normal.y = g/256.f-0.5f;
+		            normal.z = 0.f; //b/256.f-0.5f;
+               }
             }
             break;
          }

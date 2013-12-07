@@ -180,7 +180,8 @@ public:
 		bool  procedural,
       bool  wireframe, int wireframeWidth,
 		float transparency,
-		int   textureId,
+	   int   diffuseTextureId,
+	   int   bumpTextureId,
 		float specValue, float specPower, float specCoef,
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
       bool  fastTransparency);
@@ -199,7 +200,8 @@ public:
       bool&  wireframe,
       int&   wireframeDepth,
 		float& transparency,
-		int&   textureId,
+      int&   diffuseTextureId,
+      int&   bumpTextureId,
 		float& specValue, float& specPower, float& specCoef,
       float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
       bool& fastTransparency);

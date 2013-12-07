@@ -160,20 +160,21 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   m.noise,m.reflection,m.refraction, false, false, 0,
-                  m.transparency, m.textureId,
+                  m.transparency, m.diffuseTextureId, m.bumpTextureId,
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 40000.f, 10.f*kernel.getSceneInfo().viewDistance.x,
                   false );
                LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
-                  ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
+                  ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
             }
             id = line.substr(7);
             MaterialMTL material;
             memset( &material, 0, sizeof(MaterialMTL));
             material.index = static_cast<unsigned int>(materials.size()+materialId);
-            material.textureId = MATERIAL_NONE;
+            material.diffuseTextureId = MATERIAL_NONE;
+            material.bumpTextureId = MATERIAL_NONE;
             material.noise = 10.f;
             materials[id] = material;
          }
@@ -192,9 +193,12 @@ unsigned int OBJReader::loadMaterialsFromFile(
             materials[id].Ks = readVertex(line);
          }
 
-         if( line.find("map_Kd") == 0 )
+         bool diffuseMap=(line.find("map_Kd")==0);
+         bool bumpMap=(line.find("map_bump")==0);
+         if( diffuseMap || bumpMap )
          {
-            line = line.substr(7);
+            if(diffuseMap) line = line.substr(7);
+            if(bumpMap) line = line.substr(9);
             std::string folder(filename);
             size_t backSlashPos = filename.rfind('/');
             if( backSlashPos==-1 )
@@ -210,8 +214,16 @@ unsigned int OBJReader::loadMaterialsFromFile(
             int idx = kernel.getNbActiveTextures();
             if( kernel.loadTextureFromFile(idx, folder) )
             {
-               materials[id].textureId = idx;
-               LOG_INFO(3, "[Slot " << idx  << "] Texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+               if(diffuseMap) 
+               {
+                  materials[id].diffuseTextureId = idx;
+                  LOG_INFO(1, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+               }
+               if(bumpMap)
+               {
+                  materials[id].bumpTextureId = idx;
+                  LOG_INFO(1, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+               }
             }
             else
             {
@@ -262,7 +274,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
             m.noise,m.reflection,m.refraction, false, false, 0,
-            m.transparency, m.textureId,
+            m.transparency, m.diffuseTextureId, m.bumpTextureId,
             m.Ks.x, m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
@@ -270,7 +282,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
-            ", Texture [" << m.textureId << "]=" << kernel.getTextureFilename(m.textureId));
+            ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
       }
 
       file.close();

@@ -108,7 +108,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    bool   procedural,
    bool   wireframe, int wireframeDepth,
    double transparency,
-   int    textureId,
+   int    diffuseTextureId,
+   int    bumpTextureId,
    double specValue, double specPower, double specCoef, 
    double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
    bool   fastTransparency);
@@ -122,7 +123,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int&    procedural,
    int&    wireframe, int& wireframeDepth,
    double& transparency,
-   int&    textureId,
+   int&    diffuseTextureId,
+   int&    bumpTextureId,
    double& specValue, double& specPower, double& specCoef,
    double& innerIllumination, double& illuminationDiffusion, double& illuminationPropagation,
    int&    fastTransparency);
