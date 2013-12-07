@@ -175,7 +175,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             material.index = static_cast<unsigned int>(materials.size()+materialId);
             material.diffuseTextureId = MATERIAL_NONE;
             material.bumpTextureId = MATERIAL_NONE;
-            material.noise = 10.f;
+            material.noise = 1.f;
             materials[id] = material;
          }
 

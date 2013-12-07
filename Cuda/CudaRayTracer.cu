@@ -145,7 +145,7 @@ __device__ inline float4 recursiveRay(
 		{
 			// Replace the normal using the intersection color
 			// r,g,b become x,y,z... What the fuck!!
-			if( materials[primitives[closestPrimitive].materialId.x].textureMapping.z != TEXTURE_NONE) 
+			if( materials[primitives[closestPrimitive].materialId.x].textureIds.x != TEXTURE_NONE) 
 			{
 				normal.x *= (color.x-0.5f);
 				normal.y *= (color.y-0.5f);
@@ -526,7 +526,7 @@ __device__ inline float4 launchRay(
 
 			   // Replace the normal using the intersection color
 			   // r,g,b become x,y,z... What the fuck!!
-			   if( materials[primitives[closestPrimitive].materialId.x].textureMapping.z != TEXTURE_NONE) 
+			   if( materials[primitives[closestPrimitive].materialId.x].textureIds.x != TEXTURE_NONE) 
 			   {
 				   normal.x *= (colors[iteration].x-0.5f);
 				   normal.y *= (colors[iteration].y-0.5f);

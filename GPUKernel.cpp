@@ -197,6 +197,9 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
 	m_pVideoStreamHandle(0), m_pDepthStreamHandle(0),
 	m_skeletonsBody(-1), m_skeletonsLamp(-1), m_skeletonIndex(-1),
 #endif // USE_KINECT
+#ifdef USE_OCULUS
+   m_sensorFusion(nullptr),
+#endif // USE_OCULUS
    m_primitivesTransfered(false),
 	m_materialsTransfered(false),
    m_texturesTransfered(false),
@@ -1016,6 +1019,8 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
       LOG_INFO(3, "1. Nb Boxes=" << nbBoxes );
       processBoxes(activeBoxes, activeBoxes, false );
 
+      // TODO: Parallelize!!
+
       int treeDepth=0;
       nbBoxes = static_cast<int>(m_primitives[m_frame].size());
       while( nbBoxes>4 )
@@ -1250,9 +1255,9 @@ void GPUKernel::resetAll()
 	LOG_INFO(3,"Resetting frames" );
 
 #ifdef USE_OCULUS
-   if( m_sensorFusion.IsAttachedToSensor() )
+   if( m_sensorFusion->IsAttachedToSensor() )
    {
-      m_sensorFusion.Reset();
+      m_sensorFusion->Reset();
    }
 #endif // USE_OCULUS
 
@@ -1758,34 +1763,34 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].transparency.x= transparency;
       m_hMaterials[index].attributes.x = fastTransparency ? 1 : 0;
 		m_hMaterials[index].attributes.y = procedural ? 1 : 0;
-		m_hMaterials[index].attributes.z = wireframe ? ((wireframeWidth == 0 ) ? 1 : 2) : 0;
+		m_hMaterials[index].attributes.z = wireframe ? ((wireframeWidth==0 ) ? 1 : 2) : 0;
 		m_hMaterials[index].attributes.w = wireframeWidth;
 		m_hMaterials[index].textureMapping.x = 1;
 		m_hMaterials[index].textureMapping.y = 1;
-		m_hMaterials[index].textureMapping.z = diffuseTextureId;  // Deprecated
+		m_hMaterials[index].textureMapping.z = TEXTURE_NONE;  // Deprecated
 		m_hMaterials[index].textureMapping.w = 0;
 		m_hMaterials[index].textureIds.x     = diffuseTextureId;
-		m_hMaterials[index].textureIds.y     = bumpTextureId;
-      if( diffuseTextureId!=MATERIAL_NONE && diffuseTextureId<m_nbActiveTextures )
+		m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
+      if( diffuseTextureId!=TEXTURE_NONE && diffuseTextureId<m_nbActiveTextures )
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[diffuseTextureId].size.x; // Width
          m_hMaterials[index].textureMapping.y = m_hTextures[diffuseTextureId].size.y; // Height
-         m_hMaterials[index].textureMapping.z = diffuseTextureId; // Deprecated
+         m_hMaterials[index].textureMapping.w = m_hTextures[diffuseTextureId].size.z; // Depth
+         m_hMaterials[index].textureMapping.z = TEXTURE_NONE; // Deprecated
          m_hMaterials[index].textureIds.x     = diffuseTextureId;
          m_hMaterials[index].textureIds.y     = bumpTextureId;
-         m_hMaterials[index].textureMapping.w = m_hTextures[diffuseTextureId].size.z; // Depth
          m_hMaterials[index].textureOffset.x  = m_hTextures[diffuseTextureId].offset; // Offset
-         m_hMaterials[index].textureOffset.y  = m_hTextures[bumpTextureId].offset; // Offset
+         m_hMaterials[index].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset; // Offset
       }
       else
       {
          // Computed textures (Mandelbrot, Julia, etc)
          m_hMaterials[index].textureMapping.x = 40000;
          m_hMaterials[index].textureMapping.y = 40000;
-         m_hMaterials[index].textureMapping.z = MATERIAL_NONE;
-         m_hMaterials[index].textureIds.x     = MATERIAL_NONE;
-         m_hMaterials[index].textureIds.y     = MATERIAL_NONE;
+         m_hMaterials[index].textureMapping.z = TEXTURE_NONE; // Deprecated
          m_hMaterials[index].textureMapping.w = 1;
+         m_hMaterials[index].textureIds.x     = TEXTURE_NONE;
+         m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
          m_hMaterials[index].textureOffset.x  = 0;
          m_hMaterials[index].textureOffset.y  = 0;
       }
@@ -1830,10 +1835,10 @@ void GPUKernel::setMaterialTextureId( unsigned int textureId )
       m_hMaterials[m_currentMaterial].transparency.x   = 0.f;
       m_hMaterials[m_currentMaterial].textureMapping.x = m_hTextures[textureId].size.x;
       m_hMaterials[m_currentMaterial].textureMapping.y = m_hTextures[textureId].size.x;
-      m_hMaterials[m_currentMaterial].textureMapping.z = textureId; // Deprecated
-      m_hMaterials[m_currentMaterial].textureIds.x     = textureId;
-      m_hMaterials[m_currentMaterial].textureIds.y     = MATERIAL_NONE;
+      m_hMaterials[m_currentMaterial].textureMapping.z = TEXTURE_NONE; // Deprecated
       m_hMaterials[m_currentMaterial].textureMapping.w = m_hTextures[textureId].size.z;
+      m_hMaterials[m_currentMaterial].textureIds.x     = textureId;
+      m_hMaterials[m_currentMaterial].textureIds.y     = TEXTURE_NONE;
 		m_materialsTransfered = false;
    }
 }
@@ -1913,15 +1918,6 @@ void GPUKernel::setTexture(
 	   m_hTextures[index].size.y = textureInfo.size.y;
 	   m_hTextures[index].size.z = textureInfo.size.z;
       memcpy(m_hTextures[index].buffer,textureInfo.buffer,textureInfo.size.x*textureInfo.size.y*textureInfo.size.z);
-      /*
-	   int j(0);
-      for( int i(0); i<textureInfo.size.x*textureInfo.size.y*textureInfo.size.z; i+=textureInfo.size.z ) {
-         m_hTextures[index].buffer[j]   = textureInfo.buffer[i+2];
-		   m_hTextures[index].buffer[j+1] = textureInfo.buffer[i+1];
-		   m_hTextures[index].buffer[j+2] = textureInfo.buffer[i];
-		   j+=textureInfo.size.z;
-	   }
-      */
    }
 }
 
@@ -2158,29 +2154,42 @@ void GPUKernel::realignTexturesAndMaterials()
 {
    for( int i(0);i<m_nbActiveMaterials; ++i)
    {
-      int textureId = m_hMaterials[i].textureIds.x;
-      if( textureId!=MATERIAL_NONE )
+      int diffuseTextureId = m_hMaterials[i].textureIds.x;
+      int bumpTextureId = m_hMaterials[i].textureIds.y;
+      //if( diffuseTextureId!=TEXTURE_NONE )
       {
-         switch(textureId)
+         switch(diffuseTextureId)
          {
          case TEXTURE_MANDELBROT:
          case TEXTURE_JULIA:
             m_hMaterials[i].textureMapping.x = 40000;
             m_hMaterials[i].textureMapping.y = 40000;
-            m_hMaterials[i].textureMapping.z = MATERIAL_NONE;
-            m_hMaterials[i].textureIds.x     = MATERIAL_NONE;
-            m_hMaterials[i].textureIds.y     = MATERIAL_NONE;
+            m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
+            m_hMaterials[i].textureIds.x     = TEXTURE_NONE;
+            m_hMaterials[i].textureIds.y     = TEXTURE_NONE;
             m_hMaterials[i].textureOffset.x  = 0;
             m_hMaterials[i].textureOffset.y  = 0;
             break;
          default:
-            m_hMaterials[i].textureMapping.x = m_hTextures[textureId].size.x;
-            m_hMaterials[i].textureMapping.y = m_hTextures[textureId].size.y;
-            m_hMaterials[i].textureMapping.w = m_hTextures[textureId].size.z;
-            m_hMaterials[i].textureOffset.x  = m_hTextures[textureId].offset;
-            m_hMaterials[i].textureOffset.y  = m_hTextures[m_hMaterials[i].textureIds.y].offset;
+            m_hMaterials[i].textureMapping.x = m_hTextures[diffuseTextureId].size.x;
+            m_hMaterials[i].textureMapping.y = m_hTextures[diffuseTextureId].size.y;
+            m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
+            m_hMaterials[i].textureMapping.w = m_hTextures[diffuseTextureId].size.z;
+            m_hMaterials[i].textureIds.x     = diffuseTextureId;
+            m_hMaterials[i].textureIds.y     = bumpTextureId;
+            m_hMaterials[i].textureOffset.x  = (diffuseTextureId==TEXTURE_NONE) ? 0: m_hTextures[diffuseTextureId].offset;
+            m_hMaterials[i].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
          }
-         LOG_INFO(3, "Material " << i << ": " << m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w << " -> Texture [" << textureId << "] offset=" << m_hMaterials[i].textureOffset.x);
+
+         if(diffuseTextureId!=TEXTURE_NONE)
+         {
+            LOG_INFO(3, "Material " << i << ": " << 
+               m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w 
+               << ", Wireframe: " << m_hMaterials[i].attributes.z
+               << ", diffuseTextureId [" << diffuseTextureId << "] offset=" << m_hMaterials[i].textureOffset.x
+               << ", bumpTextureId [" << bumpTextureId << "] offset=" << m_hMaterials[i].textureOffset.y
+               );
+         }
       }
    }
 }
@@ -2643,9 +2652,9 @@ void GPUKernel::setPointSize( const float pointSize )
 void GPUKernel::render_begin( const float timer )
 {
  #ifdef USE_OCULUS
-   if( m_sensorFusion.IsAttachedToSensor() )
+   if( m_oculus && m_sensorFusion && m_sensorFusion->IsAttachedToSensor() )
    {
-      OVR::Quatf orientation = m_sensorFusion.GetOrientation();
+      OVR::Quatf orientation = m_sensorFusion->GetOrientation();
       m_viewPos.y = 2000.f;
       m_viewDir.y = m_viewPos.y;
       m_angles.x = -PI*orientation.x;
@@ -2690,6 +2699,11 @@ void GPUKernel::previousFrame()
 }
 
 #ifdef USE_OCULUS
+void GPUKernel::switchOculusVR()
+{
+   m_oculus = !m_oculus;
+}
+
 void GPUKernel::initializeOVR()
 {
    LOG_INFO(1, "----------------------------" );
@@ -2719,12 +2733,15 @@ void GPUKernel::initializeOVR()
       m_sensor = *m_manager->EnumerateDevices<OVR::SensorDevice>().CreateDevice();
    }
 
-   if(m_sensor)
+   if( m_sensorFusion==nullptr )
    {
-      m_sensorFusion.AttachToSensor(m_sensor);
-      m_sensorFusion.Reset();
-      m_oculus = true;
-      m_sceneInfo.renderingType.x = vt3DVision;
+      m_sensorFusion = new OVR::SensorFusion();
+   }
+
+   if(m_sensor && m_sensorFusion!=nullptr)
+   {
+      m_sensorFusion->AttachToSensor(m_sensor);
+      m_sensorFusion->Reset();
    }
    else
    {
@@ -2735,6 +2752,7 @@ void GPUKernel::initializeOVR()
 
 void GPUKernel::finializeOVR()
 {
+   if( m_sensorFusion ) delete m_sensorFusion;
 	m_sensor.Clear();
    m_HMD.Clear();
 	m_manager.Clear();

@@ -139,7 +139,7 @@ __device__ float4 triangleUVMapping(
 	v = v%material.textureMapping.y;
 	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
-      switch( material.textureMapping.z )
+      switch( material.textureIds.x )
       {
       case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, result ); break;
       case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;
@@ -156,7 +156,7 @@ __device__ float4 triangleUVMapping(
 		      g = textures[i+1];
 		      b = textures[i+2];
 #ifdef USE_KINECT
-            if( material.textureMapping.z==0 )
+            if( material.textureIds.x==0 )
             {
 		         r = textures[index+2];
 		         g = textures[index+1];
@@ -313,7 +313,7 @@ __device__ float4 cubeMapping(
 
 		if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.x )
 		{
-         switch( material.textureMapping.z )
+         switch( material.textureIds.x )
          {
          case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, result ); break;
          case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;

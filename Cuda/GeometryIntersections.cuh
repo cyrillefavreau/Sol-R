@@ -476,7 +476,7 @@ __device__ inline bool planeIntersection(
 		shadowIntensity = 1.f; //sceneInfo.shadowIntensity.x*(1.f-materials[primitive.materialId.x].transparency.x);
 
 		float4 color = materials[primitive.materialId.x].color;
-		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE )
+		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE )
 		{
 			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal );
          shadowIntensity = color.w;
@@ -597,7 +597,7 @@ __device__ float4 intersectionShader(
 	{
 	case ptCylinder:
 		{
-			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
+			if(materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
 			{
 				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal );
 			}
@@ -607,7 +607,7 @@ __device__ float4 intersectionShader(
 	case ptSphere:
    case ptEllipsoid:
 		{
-			if(materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE)
+			if(materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
 			{
 				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal );
 			}
@@ -615,7 +615,7 @@ __device__ float4 intersectionShader(
 		}
 	case ptCheckboard :
 		{
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
 				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal );
 			}
@@ -649,7 +649,7 @@ __device__ float4 intersectionShader(
 	case ptXZPlane:
 	case ptCamera:
 		{
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
 				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal );
 			}
@@ -657,7 +657,7 @@ __device__ float4 intersectionShader(
 		}
 	case ptTriangle:
       {
-			if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
             colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal );
 			}
@@ -665,7 +665,7 @@ __device__ float4 intersectionShader(
       }
    }
 #else
-	if( materials[primitive.materialId.x].textureMapping.z != TEXTURE_NONE ) 
+	if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 	{
       colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
 	}

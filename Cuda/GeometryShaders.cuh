@@ -238,36 +238,34 @@ __device__ float4 primitiveShader(
 	float4&       totalBlinn)
 {
 	Primitive primitive = primitives[objectId];
-	closestColor = materials[primitive.materialId.x].color;
 	float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
 	// Lamp Impact
 	shadowIntensity    = 0.f;
 
-	if( materials[primitive.materialId.x].innerIllumination.x != 0.f || materials[primitive.materialId.x].attributes.z == 2 )
+   Vertex bumpNormal={0.f,0.f,0.f};
+   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal );
+   normal += bumpNormal;
+   normalize(normal);
+
+	if( materials[primitive.materialId.x].innerIllumination.x!=0.f || materials[primitive.materialId.x].attributes.z!=0 )
    {
       // Wireframe returns constant color
-		return closestColor; 
+		return intersectionColor; 
    }
 
    if( sceneInfo.graphicsLevel.x>0 )
    {
 		// Final color
-      Vertex bumpNormal={0.f,0.f,0.f};
-		float4 intersectionColor = 
-			intersectionShader( sceneInfo, primitive, materials, textures,
-			intersection, areas, bumpNormal );
-      normal += bumpNormal;
 #ifdef EXTENDED_FEATURES
       // TODO: Bump effect
-      if( materials[primitive.materialId.x].textureMapping.z != MATERIAL_NONE)
+      if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
       {
          normal.x = normal.x*0.7f+intersectionColor.x*0.3f;
          normal.y = normal.y*0.7f+intersectionColor.y*0.3f;
          normal.z = normal.z*0.7f+intersectionColor.z*0.3f;
       }
 #endif // EXTENDED_FEATURES
-      normalize(normal);
 
 	   closestColor *= materials[primitive.materialId.x].innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 

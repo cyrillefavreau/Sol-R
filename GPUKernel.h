@@ -268,16 +268,19 @@ public:
    void saveBitmapToFile( const std::string& filename, BitmapBuffer* bitmap, const int width, const int height, const int depth );
 
    // Oculus
+public:
+   void switchOculusVR();
+
 protected:
 #ifdef USE_OCULUS
    void initializeOVR();
    void finializeOVR();
 private:
    // Oculus
-   OVR::SensorFusion            m_sensorFusion;
+   OVR::SensorFusion*           m_sensorFusion;
    OVR::Ptr<OVR::SensorDevice>  m_sensor;
    OVR::Ptr<OVR::DeviceManager> m_manager;
-   OVR::Ptr<OVR::HMDDevice>	  m_HMD;
+   OVR::Ptr<OVR::HMDDevice>     m_HMD;
 #endif //  USE_OCULUS
    bool m_oculus; // True if Oculus is present and active
 
