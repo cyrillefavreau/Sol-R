@@ -133,10 +133,12 @@ struct Material
                              // y: V padding
                              // z: Texture ID
                              // w: Texture color depth
-   int2   textureOffset;     // x: Offset in the diffuse texture buffer
-                             // y: Offset in the bump texture buffer
-   int2   textureIds;        // x: Diffuse texture
-                             // y: Bump texture
+   int4   textureOffset;     // x: Offset in the diffuse map
+                             // y: Offset in the normal map
+                             // z: Offset in the bump map
+   int4   textureIds;        // x: Diffuse map
+                             // y: Normal map
+                             // z: Bump map
 };
 
 // Bounding Box Structure

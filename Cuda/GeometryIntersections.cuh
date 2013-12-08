@@ -585,7 +585,7 @@ __device__ float4 intersectionShader(
 	const Primitive& primitive, 
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const Vertex&    intersection,
+	Vertex&          intersection,
 	const Vertex&    areas,
    Vertex&          normal)
 {

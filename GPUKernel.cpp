@@ -1723,8 +1723,7 @@ void GPUKernel::setMaterial(
 	bool  procedural,
 	bool  wireframe, int wireframeWidth,
 	float transparency,
-	int   diffuseTextureId,
-	int   bumpTextureId,
+	int diffuseTextureId, int normalTextureId, int bumpTextureId,
 	float specValue, float specPower, float specCoef, 
    float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
    bool fastTransparency)
@@ -1738,6 +1737,7 @@ void GPUKernel::setMaterial(
 		"procedural=" << (procedural ? "true" : "false") << "," <<
 		"wireframe=" << (wireframe ? "true" : "false") << "," <<
 		"diffuseTextureId=" << diffuseTextureId << "," <<
+		"normalTextureId=" << normalTextureId << "," <<
 		"bumpTextureId=" << bumpTextureId << "," <<
 		"specular=(" << specValue << "," << specPower << "," << specCoef << ")," << 
 		"innerIllumination=" << innerIllumination << "," 
@@ -1771,6 +1771,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureMapping.w = 0;
 		m_hMaterials[index].textureIds.x     = diffuseTextureId;
 		m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
+		m_hMaterials[index].textureIds.z     = TEXTURE_NONE;
       if( diffuseTextureId!=TEXTURE_NONE && diffuseTextureId<m_nbActiveTextures )
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[diffuseTextureId].size.x; // Width
@@ -1778,9 +1779,11 @@ void GPUKernel::setMaterial(
          m_hMaterials[index].textureMapping.w = m_hTextures[diffuseTextureId].size.z; // Depth
          m_hMaterials[index].textureMapping.z = TEXTURE_NONE; // Deprecated
          m_hMaterials[index].textureIds.x     = diffuseTextureId;
-         m_hMaterials[index].textureIds.y     = bumpTextureId;
+         m_hMaterials[index].textureIds.y     = normalTextureId;
+         m_hMaterials[index].textureIds.z     = bumpTextureId;
          m_hMaterials[index].textureOffset.x  = m_hTextures[diffuseTextureId].offset; // Offset
-         m_hMaterials[index].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset; // Offset
+         m_hMaterials[index].textureOffset.y  = (normalTextureId==TEXTURE_NONE) ? 0: m_hTextures[normalTextureId].offset;
+         m_hMaterials[index].textureOffset.z  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
       }
       else
       {
@@ -1791,8 +1794,10 @@ void GPUKernel::setMaterial(
          m_hMaterials[index].textureMapping.w = 1;
          m_hMaterials[index].textureIds.x     = TEXTURE_NONE;
          m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
+         m_hMaterials[index].textureIds.z     = TEXTURE_NONE;
          m_hMaterials[index].textureOffset.x  = 0;
          m_hMaterials[index].textureOffset.y  = 0;
+         m_hMaterials[index].textureOffset.z  = 0;
       }
 
 		m_materialsTransfered = false;
@@ -1839,6 +1844,7 @@ void GPUKernel::setMaterialTextureId( unsigned int textureId )
       m_hMaterials[m_currentMaterial].textureMapping.w = m_hTextures[textureId].size.z;
       m_hMaterials[m_currentMaterial].textureIds.x     = textureId;
       m_hMaterials[m_currentMaterial].textureIds.y     = TEXTURE_NONE;
+      m_hMaterials[m_currentMaterial].textureIds.z     = TEXTURE_NONE;
 		m_materialsTransfered = false;
    }
 }
@@ -1851,8 +1857,7 @@ int GPUKernel::getMaterialAttributes(
 	bool&  procedural,
 	bool&  wireframe, int& wireframeDepth,
 	float& transparency,
-	int&   diffuseTextureId,
-	int&   bumpTextureId,
+	int& diffuseTextureId, int& normalTextureId, int& bumpTextureId,
 	float& specValue, float& specPower, float& specCoef,
    float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
    bool& fastTransparency)
@@ -1865,11 +1870,12 @@ int GPUKernel::getMaterialAttributes(
 		g = m_hMaterials[index].color.y;
 		b = m_hMaterials[index].color.z;
       noise = m_hMaterials[index].color.w;
-		reflection = m_hMaterials[index].reflection.x;
-		refraction = m_hMaterials[index].refraction.x;
+		reflection   = m_hMaterials[index].reflection.x;
+		refraction   = m_hMaterials[index].refraction.x;
 		transparency = m_hMaterials[index].transparency.x;
 		diffuseTextureId = m_hMaterials[index].textureIds.x;
-		bumpTextureId    = m_hMaterials[index].textureIds.y;
+		normalTextureId  = m_hMaterials[index].textureIds.y;
+		bumpTextureId    = m_hMaterials[index].textureIds.z;
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;
@@ -2155,41 +2161,43 @@ void GPUKernel::realignTexturesAndMaterials()
    for( int i(0);i<m_nbActiveMaterials; ++i)
    {
       int diffuseTextureId = m_hMaterials[i].textureIds.x;
-      int bumpTextureId = m_hMaterials[i].textureIds.y;
-      //if( diffuseTextureId!=TEXTURE_NONE )
+      int normalTextureId = m_hMaterials[i].textureIds.y;
+      int bumpTextureId = m_hMaterials[i].textureIds.z;
+      switch(diffuseTextureId)
       {
-         switch(diffuseTextureId)
-         {
-         case TEXTURE_MANDELBROT:
-         case TEXTURE_JULIA:
-            m_hMaterials[i].textureMapping.x = 40000;
-            m_hMaterials[i].textureMapping.y = 40000;
-            m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
-            m_hMaterials[i].textureIds.x     = TEXTURE_NONE;
-            m_hMaterials[i].textureIds.y     = TEXTURE_NONE;
-            m_hMaterials[i].textureOffset.x  = 0;
-            m_hMaterials[i].textureOffset.y  = 0;
-            break;
-         default:
-            m_hMaterials[i].textureMapping.x = m_hTextures[diffuseTextureId].size.x;
-            m_hMaterials[i].textureMapping.y = m_hTextures[diffuseTextureId].size.y;
-            m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
-            m_hMaterials[i].textureMapping.w = m_hTextures[diffuseTextureId].size.z;
-            m_hMaterials[i].textureIds.x     = diffuseTextureId;
-            m_hMaterials[i].textureIds.y     = bumpTextureId;
-            m_hMaterials[i].textureOffset.x  = (diffuseTextureId==TEXTURE_NONE) ? 0: m_hTextures[diffuseTextureId].offset;
-            m_hMaterials[i].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
-         }
+      case TEXTURE_MANDELBROT:
+      case TEXTURE_JULIA:
+         m_hMaterials[i].textureMapping.x = 40000;
+         m_hMaterials[i].textureMapping.y = 40000;
+         m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
+         m_hMaterials[i].textureIds.x     = TEXTURE_NONE;
+         m_hMaterials[i].textureIds.y     = TEXTURE_NONE;
+         m_hMaterials[i].textureIds.z     = TEXTURE_NONE;
+         m_hMaterials[i].textureOffset.x  = 0;
+         m_hMaterials[i].textureOffset.y  = 0;
+         m_hMaterials[i].textureOffset.z  = 0;
+         break;
+      default:
+         m_hMaterials[i].textureMapping.x = m_hTextures[diffuseTextureId].size.x;
+         m_hMaterials[i].textureMapping.y = m_hTextures[diffuseTextureId].size.y;
+         m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
+         m_hMaterials[i].textureMapping.w = m_hTextures[diffuseTextureId].size.z;
+         m_hMaterials[i].textureIds.x     = diffuseTextureId;
+         m_hMaterials[i].textureIds.y     = normalTextureId;
+         m_hMaterials[i].textureIds.z     = bumpTextureId;
+         m_hMaterials[i].textureOffset.x  = (diffuseTextureId==TEXTURE_NONE) ? 0: m_hTextures[diffuseTextureId].offset;
+         m_hMaterials[i].textureOffset.y  = (normalTextureId==TEXTURE_NONE) ? 0: m_hTextures[normalTextureId].offset;
+         m_hMaterials[i].textureOffset.z  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
+      }
 
-         if(diffuseTextureId!=TEXTURE_NONE)
-         {
-            LOG_INFO(3, "Material " << i << ": " << 
-               m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w 
-               << ", Wireframe: " << m_hMaterials[i].attributes.z
-               << ", diffuseTextureId [" << diffuseTextureId << "] offset=" << m_hMaterials[i].textureOffset.x
-               << ", bumpTextureId [" << bumpTextureId << "] offset=" << m_hMaterials[i].textureOffset.y
-               );
-         }
+      if(diffuseTextureId!=TEXTURE_NONE)
+      {
+         LOG_INFO(3, "Material " << i << ": " << 
+            m_hMaterials[i].textureMapping.x << "x" << m_hMaterials[i].textureMapping.y << "x" << m_hMaterials[i].textureMapping.w 
+            << ", Wireframe: " << m_hMaterials[i].attributes.z
+            << ", diffuseTextureId [" << diffuseTextureId << "] offset=" << m_hMaterials[i].textureOffset.x
+            << ", bumpTextureId [" << bumpTextureId << "] offset=" << m_hMaterials[i].textureOffset.y
+            );
       }
    }
 }

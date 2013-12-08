@@ -174,7 +174,8 @@ void RayTracer::createRandomMaterials( bool update, bool lightsOnly )
 			material, r, g, b, noise,
 			reflection, refraction, procedural, 
 			wireframe, wireframeDepth,
-			transparency, textureId, MATERIAL_NONE,
+			transparency, 
+         textureId, MATERIAL_NONE, MATERIAL_NONE,
 			specular.x, specular.y, specular.w, 
          innerIllumination.x, innerIllumination.y, innerIllumination.z,
 			fastTransparency);
@@ -276,7 +277,7 @@ void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alph
          red, green, blue,
          10.f, 0.f, 1.2f, 
          false, 0.f, 0, alpha, 
-         MATERIAL_NONE, MATERIAL_NONE,
+         MATERIAL_NONE, MATERIAL_NONE, MATERIAL_NONE,
          1.f, 200.f, 1000.f, 
          0.f, 0.f, 0.f, false);
       RayTracer::gKernel->setCurrentMaterial(m);

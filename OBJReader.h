@@ -38,6 +38,7 @@ struct MaterialMTL
    float  refraction;
    float  noise;
    int    diffuseTextureId;
+   int    normalTextureId;
    int    bumpTextureId;
 };
 

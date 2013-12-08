@@ -177,14 +177,13 @@ public:
 		float r, float g, float b, float noise,
 		float reflection, 
 		float refraction,
-		bool  procedural,
-      bool  wireframe, int wireframeWidth,
+		bool procedural,
+      bool wireframe, int wireframeWidth,
 		float transparency,
-	   int   diffuseTextureId,
-	   int   bumpTextureId,
+	   int diffuseTextureId, int normalTextureId, int bumpTextureId,
 		float specValue, float specPower, float specCoef,
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
-      bool  fastTransparency);
+      bool fastTransparency);
 
 	void setMaterialColor(
 		unsigned int index,
@@ -196,12 +195,11 @@ public:
 		float& r, float& g, float& b, float& noise,
 		float& reflection, 
 		float& refraction,
-		bool&  procedural,
-      bool&  wireframe,
-      int&   wireframeDepth,
+		bool& procedural,
+      bool& wireframe,
+      int& wireframeDepth,
 		float& transparency,
-      int&   diffuseTextureId,
-      int&   bumpTextureId,
+      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId,
 		float& specValue, float& specPower, float& specCoef,
       float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
       bool& fastTransparency);

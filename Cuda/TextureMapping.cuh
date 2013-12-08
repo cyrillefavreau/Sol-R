@@ -26,6 +26,44 @@
 #include "../Consts.h"
 #include "VectorUtils.cuh"
 
+
+// ----------
+// Normal mapping
+// --------------------
+__device__ inline void normalMap(
+   const int&       index,
+	const Material&  material,
+	BitmapBuffer*    textures,
+   Vertex&          normal)
+{
+   int i = material.textureOffset.y + index;
+   BitmapBuffer r,g;
+	r = textures[i  ];
+	g = textures[i+1];
+	normal.x = 2.f*(r/256.f-0.5f);
+	normal.y = 2.f*(g/256.f-0.5f);
+	normal.z = 0.f;
+}
+
+// ----------
+// Normal mapping
+// --------------------
+__device__ inline void bumpMap(
+   const int&       index,
+	const Material&  material,
+	BitmapBuffer*    textures,
+   Vertex&          intersection)
+{
+   int i = material.textureOffset.z + index;
+   BitmapBuffer r,g,b;
+	r = textures[i  ];
+	g = textures[i+1];
+	b = textures[i+2];
+	intersection.x += 10.f*(r/256.f-0.5f);
+	intersection.y += 10.f*(g/256.f-0.5f);
+	intersection.z += 10.f*(b/256.f-0.5f);
+}
+
 __device__ void juliaSet( 
 	const Primitive& primitive,
 	Material*        materials,
@@ -124,7 +162,7 @@ __device__ float4 triangleUVMapping(
 	const Primitive& primitive,
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const Vertex&    intersection,
+	Vertex&          intersection,
    const Vertex&    areas,
    Vertex&          normal)
 {
@@ -167,17 +205,10 @@ __device__ float4 triangleUVMapping(
 		      result.y = g/256.f;
 		      result.z = b/256.f;
 
-            if( material.textureIds.y!=TEXTURE_NONE)
-            {
-               // Bump
-               i = material.textureOffset.y + index;
-		         r = textures[i  ];
-		         g = textures[i+1];
-		         b = textures[i+2];
-		         normal.x = 2.f*(r/256.f-0.5f);
-		         normal.y = 2.f*(g/256.f-0.5f);
-		         normal.z = 0.f; //b/256.f-0.5f;
-            }
+            // Normal mapping
+            if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+            // Bump mapping
+            if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
          }
       }
 	}
@@ -195,7 +226,7 @@ __device__ float4 sphereUVMapping(
 	const Primitive& primitive,
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const Vertex&    intersection,
+	Vertex&          intersection,
    Vertex&          normal)
 {
    Material& material=materials[primitive.materialId.x];
@@ -244,17 +275,10 @@ __device__ float4 sphereUVMapping(
 		result.y = g/256.f;
 		result.z = b/256.f;
 
-      if( material.textureIds.y!=TEXTURE_NONE)
-      {
-         // Bump
-         i = material.textureOffset.y + index;
-		   r = textures[i  ];
-		   g = textures[i+1];
-		   b = textures[i+2];
-		   normal.x = 2.f*(r/256.f-0.5f);
-		   normal.y = 2.f*(g/256.f-0.5f);
-		   normal.z = 0.f; //b/256.f-0.5f;
-      }
+      // Normal mapping
+      if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+      // Bump mapping
+      if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
 	}
 	return result; 
 }
@@ -270,7 +294,7 @@ __device__ float4 cubeMapping(
 	const Primitive& primitive, 
 	Material*        materials,
 	BitmapBuffer*    textures,
-	const Vertex&    intersection,
+	Vertex&          intersection,
    Vertex&          normal)
 {
    Material& material=materials[primitive.materialId.x];
@@ -331,17 +355,10 @@ __device__ float4 cubeMapping(
 			      result.y = g/256.f;
 			      result.z = b/256.f;
 
-               if( material.textureIds.y!=TEXTURE_NONE)
-               {
-                  // Bump  
-                  i = material.textureOffset.y + index;
-		            r = textures[i  ];
-		            g = textures[i+1];
-		            b = textures[i+2];
-		            normal.x = 2.f*(r/256.f-0.5f);
-		            normal.y = 2.f*(g/256.f-0.5f);
-		            normal.z = 0.f; //b/256.f-0.5f;
-               }
+               // Normal mapping
+               if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+               // Bump mapping
+               if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
             }
             break;
          }

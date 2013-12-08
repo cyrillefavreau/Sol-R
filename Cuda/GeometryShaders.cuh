@@ -229,7 +229,7 @@ __device__ float4 primitiveShader(
 	const Vertex& origin,
 	Vertex&       normal, 
 	const int&    objectId, 
-	const Vertex& intersection,
+	Vertex&       intersection,
    const Vertex& areas,
    float4&       closestColor,
 	const int&    iteration,

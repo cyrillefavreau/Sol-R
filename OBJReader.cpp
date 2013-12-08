@@ -160,7 +160,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   m.noise,m.reflection,m.refraction, false, false, 0,
-                  m.transparency, m.diffuseTextureId, m.bumpTextureId,
+                  m.transparency, 
+                  m.diffuseTextureId, m.normalTextureId, m.bumpTextureId,
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
                   0.f, 40000.f, 10.f*kernel.getSceneInfo().viewDistance.x,
                   false );
@@ -174,7 +175,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             memset( &material, 0, sizeof(MaterialMTL));
             material.index = static_cast<unsigned int>(materials.size()+materialId);
             material.diffuseTextureId = MATERIAL_NONE;
-            material.bumpTextureId = MATERIAL_NONE;
+            material.normalTextureId  = MATERIAL_NONE;
+            material.bumpTextureId    = MATERIAL_NONE;
             material.noise = 1.f;
             materials[id] = material;
          }
@@ -274,7 +276,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
             m.noise,m.reflection,m.refraction, false, false, 0,
-            m.transparency, m.diffuseTextureId, m.bumpTextureId,
+            m.transparency, 
+            m.diffuseTextureId, m.normalTextureId, m.bumpTextureId,
             m.Ks.x, m.Ks.y, m.Ks.z,
             0.f, 10.f, 100000.f,
             false );
