@@ -174,8 +174,8 @@ __device__ float4 triangleUVMapping(
 		         r = textures[i  ];
 		         g = textures[i+1];
 		         b = textures[i+2];
-		         normal.x = r/256.f-0.5f;
-		         normal.y = g/256.f-0.5f;
+		         normal.x = 2.f*(r/256.f-0.5f);
+		         normal.y = 2.f*(g/256.f-0.5f);
 		         normal.z = 0.f; //b/256.f-0.5f;
             }
          }
@@ -251,8 +251,8 @@ __device__ float4 sphereUVMapping(
 		   r = textures[i  ];
 		   g = textures[i+1];
 		   b = textures[i+2];
-		   normal.x = r/256.f-0.5f;
-		   normal.y = g/256.f-0.5f;
+		   normal.x = 2.f*(r/256.f-0.5f);
+		   normal.y = 2.f*(g/256.f-0.5f);
 		   normal.z = 0.f; //b/256.f-0.5f;
       }
 	}
@@ -333,13 +333,13 @@ __device__ float4 cubeMapping(
 
                if( material.textureIds.y!=TEXTURE_NONE)
                {
-                  // Bump
+                  // Bump  
                   i = material.textureOffset.y + index;
 		            r = textures[i  ];
 		            g = textures[i+1];
 		            b = textures[i+2];
-		            normal.x = r/256.f-0.5f;
-		            normal.y = g/256.f-0.5f;
+		            normal.x = 2.f*(r/256.f-0.5f);
+		            normal.y = 2.f*(g/256.f-0.5f);
 		            normal.z = 0.f; //b/256.f-0.5f;
                }
             }
