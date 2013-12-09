@@ -589,6 +589,7 @@ typedef int bool;
    void RAYTRACINGENGINE_API glColor3f(GLfloat red, GLfloat green, GLfloat blue);
    void RAYTRACINGENGINE_API glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
    void RAYTRACINGENGINE_API glRasterPos2f (GLfloat x, GLfloat y);
+   void RAYTRACINGENGINE_API glRasterPos3f (GLfloat x, GLfloat y, GLfloat z);
    void RAYTRACINGENGINE_API glTexParameterf (GLenum target, GLenum pname, GLfloat param);
    void RAYTRACINGENGINE_API glTexCoord2f (GLfloat s, GLfloat t);
    void RAYTRACINGENGINE_API glTexCoord3f( GLfloat x, GLfloat y, GLfloat z );
