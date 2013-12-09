@@ -223,7 +223,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
                }
                if(bumpMap)
                {
-                  materials[id].bumpTextureId = idx;
+                  //materials[id].bumpTextureId = idx;
+                  materials[id].normalTextureId = idx;
                   LOG_INFO(1, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
             }
