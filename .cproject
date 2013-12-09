@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?fileVersion 4.0.0?>
-
-<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="com.nvidia.cuda.ide.configuration.debug.825005067">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.nvidia.cuda.ide.configuration.debug.825005067" moduleId="org.eclipse.cdt.core.settings" name="Debug">
 				<externalSettings>
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RaytracingEngine"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RayTracingEngine"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RaytracingEngine/Debug"/>
-						<entry flags="RESOLVED" kind="libraryFile" name="RaytracingEngine"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RayTracingEngine/Debug"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="RaytracingEngine" srcPrefixMapping="" srcRootPath=""/>
+						<entry flags="RESOLVED" kind="libraryFile" name="RayTracingEngine" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<extensions>
@@ -28,20 +29,22 @@
 					<folderInfo id="com.nvidia.cuda.ide.configuration.debug.825005067." name="/" resourcePath="">
 						<toolChain id="com.nvidia.cuda.tools.toolchain.exe.debug.511634286" name="CUDA Toolkit 5.0" superClass="com.nvidia.cuda.tools.toolchain.exe.debug">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.794945672" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/RaytracingEngine/Debug}" id="com.nvidia.cuda.ide.builder.1083913758" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 5.0 Builder" superClass="com.nvidia.cuda.ide.builder"/>
+							<builder buildPath="${workspace_loc:/RaytracingEngine/Debug}" id="com.nvidia.cuda.ide.builder.1083913758" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 5.5 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
 							<tool id="nvcc.compiler.base.667218174" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.deviceDebug.1023183567" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug" value="true" valueType="boolean"/>
 								<option id="nvcc.compiler.option.level.1805877595" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level" value="true" valueType="boolean"/>
 								<option defaultValue="nvcc.compiler.optimization.level.none" id="nvcc.compiler.optimization.level.58380431" name="Optimization Level" superClass="nvcc.compiler.optimization.level" valueType="enumerated"/>
 								<option id="nvcc.compiler.pic.1983155030" name="Position Independent Code (-fPIC)" superClass="nvcc.compiler.pic"/>
 								<option id="nvcc.compiler.include.paths.1603968571" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="/home/geek/NVIDIA_GPU_Computing_SDK/C/common/inc"/>
+									<listOptionValue builtIn="false" value="/usr/local/cuda-5.5/samples/common/inc"/>
 								</option>
 								<option id="nvcc.compiler.def.symbols.832975216" name="Defined symbols (-D)" superClass="nvcc.compiler.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="RAYTRACINGENGINE_EXPORTS"/>
 									<listOptionValue builtIn="false" value="USE_CUDA"/>
 								</option>
+								<option id="nvcc.compiler.maxregcount.1027521646" superClass="nvcc.compiler.maxregcount" value="32" valueType="string"/>
+								<option id="nvcc.compiler.machine.1910141028" superClass="nvcc.compiler.machine" value="nvcc.compiler.machine64" valueType="enumerated"/>
+								<option id="nvcc.compiler.usefastmath.856988594" superClass="nvcc.compiler.usefastmath" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.27435480" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.833553396" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.1350239936" superClass="nvcc.compiler.input.c"/>
@@ -58,14 +61,19 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="CPU|Max|OpenCL" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="com.nvidia.cuda.ide.build.project.ICudaProjectConfiguration">
 				<executable devicelink="false">
-					<sass major="1" minor="3"/>
-					<ptx major="1" minor="3"/>
+					<ptx major="3" minor="0"/>
+					<ptx major="3" minor="5"/>
+					<sass major="3" minor="0"/>
+					<sass major="3" minor="5"/>
 				</executable>
-				<editor-arch major="1" minor="3"/>
+				<editor-arch major="3" minor="0"/>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
@@ -74,8 +82,11 @@
 				<externalSettings>
 					<externalSetting>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RaytracingEngine"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="includePath" name="/RayTracingEngine"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RaytracingEngine/Release"/>
-						<entry flags="RESOLVED" kind="libraryFile" name="RaytracingEngine"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="libraryPath" name="/RayTracingEngine/Release"/>
+						<entry flags="RESOLVED" kind="libraryFile" name="RaytracingEngine" srcPrefixMapping="" srcRootPath=""/>
+						<entry flags="RESOLVED" kind="libraryFile" name="RayTracingEngine" srcPrefixMapping="" srcRootPath=""/>
 					</externalSetting>
 				</externalSettings>
 				<extensions>
@@ -94,7 +105,7 @@
 					<folderInfo id="com.nvidia.cuda.ide.configuration.release.2011066401." name="/" resourcePath="">
 						<toolChain id="com.nvidia.cuda.ide.toolchain.exe.release.985888315" name="CUDA Toolkit 5.0" superClass="com.nvidia.cuda.ide.toolchain.exe.release">
 							<targetPlatform archList="all" binaryParser="com.nvidia.cuda.ide.elf;com.nvidia.cuda.ide.macho;com.nvidia.cuda.ide.cubin" id="com.nvidia.cuda.ide.targetPlatform.1971667764" isAbstract="false" name="Debug Platform" osList="linux,macosx" superClass="com.nvidia.cuda.ide.targetPlatform"/>
-							<builder buildPath="${workspace_loc:/RaytracingEngine/Release}" id="com.nvidia.cuda.ide.builder.1843812032" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 5.0 Builder" superClass="com.nvidia.cuda.ide.builder"/>
+							<builder buildPath="${workspace_loc:/RaytracingEngine/Release}" id="com.nvidia.cuda.ide.builder.1843812032" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="CUDA Toolkit 5.5 Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="com.nvidia.cuda.ide.builder"/>
 							<tool id="nvcc.compiler.base.482443553" name="NVCC Compiler" superClass="nvcc.compiler.base">
 								<option id="nvcc.compiler.deviceDebug.1145715964" name="Generate device debug information (-G)" superClass="nvcc.compiler.deviceDebug"/>
 								<option id="nvcc.compiler.option.level.986256581" name="Generate host debug information (-g)" superClass="nvcc.compiler.option.level"/>
@@ -105,9 +116,11 @@
 									<listOptionValue builtIn="false" value="USE_CUDA"/>
 								</option>
 								<option id="nvcc.compiler.include.paths.1725140474" name="Include paths (-I)" superClass="nvcc.compiler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="/home/geek/NVIDIA_GPU_Computing_SDK/C/common/inc"/>
+									<listOptionValue builtIn="false" value="/usr/local/cuda/samples/common/inc"/>
 								</option>
+								<option id="nvcc.compiler.maxregcount.106024747" superClass="nvcc.compiler.maxregcount" value="32" valueType="string"/>
+								<option id="nvcc.compiler.machine.377626327" superClass="nvcc.compiler.machine" value="nvcc.compiler.machine64" valueType="enumerated"/>
+								<option id="nvcc.compiler.usefastmath.900404971" superClass="nvcc.compiler.usefastmath" value="true" valueType="boolean"/>
 								<inputType id="nvcc.compiler.input.cu.604936492" superClass="nvcc.compiler.input.cu"/>
 								<inputType id="nvcc.compiler.input.cpp.1100271315" superClass="nvcc.compiler.input.cpp"/>
 								<inputType id="nvcc.compiler.input.c.403452541" superClass="nvcc.compiler.input.c"/>
@@ -131,31 +144,19 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<folderInfo id="com.nvidia.cuda.ide.configuration.release.2011066401.1828764730" name="/" resourcePath="Release">
-						<toolChain id="com.nvidia.cuda.ide.toolchain.exe.release.509575174" name="CUDA Toolkit 5.0" superClass="com.nvidia.cuda.ide.toolchain.exe.release" unusedChildren="">
-							<tool id="nvcc.compiler.base.1331720046" name="NVCC Compiler" superClass="nvcc.compiler.base.482443553">
-								<inputType id="nvcc.compiler.input.cu.358439357" superClass="nvcc.compiler.input.cu"/>
-								<inputType id="nvcc.compiler.input.cpp.514142221" superClass="nvcc.compiler.input.cpp"/>
-								<inputType id="nvcc.compiler.input.c.538034919" superClass="nvcc.compiler.input.c"/>
-							</tool>
-							<tool id="nvcc.linker.base.1274438729" name="NVCC Linker" superClass="nvcc.linker.base.637331521"/>
-							<tool id="nvcc.archiver.base.1235627376" name="NVCC Archiver" superClass="nvcc.archiver.base.1334699953"/>
-							<tool id="com.nvidia.host.assembler.1006744734" name="Host Assembler" superClass="com.nvidia.host.assembler.468200901">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2009587740" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-							</tool>
-						</toolChain>
-					</folderInfo>
 					<sourceEntries>
-						<entry excluding="OpenCL|src/OpenCL" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="CPU|Max|OpenCL|src/OpenCL" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="com.nvidia.cuda.ide.build.project.ICudaProjectConfiguration">
 				<executable devicelink="false">
-					<sass major="1" minor="3"/>
-					<ptx major="1" minor="3"/>
+					<ptx major="3" minor="0"/>
+					<ptx major="3" minor="5"/>
+					<sass major="3" minor="0"/>
+					<sass major="3" minor="5"/>
 				</executable>
-				<editor-arch major="1" minor="3"/>
+				<editor-arch major="3" minor="0"/>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
@@ -163,21 +164,27 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="RaytracingEngine.com.nvidia.cuda.ide.exe.1402883032" name="Executable" projectType="com.nvidia.cuda.ide.exe"/>
 	</storageModule>
-	<storageModule moduleId="refreshScope" versionNumber="1">
-		<resource resourceType="PROJECT" workspacePath="/RaytracingEngine"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/RaytracingEngine"/>
+		</configuration>
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/RaytracingEngine"/>
+		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.debug.825005067;com.nvidia.cuda.ide.configuration.debug.825005067.;nvcc.compiler.base.667218174;nvcc.compiler.input.cu.27435480">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.;nvcc.compiler.base.482443553;nvcc.compiler.input.c.403452541">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
-		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.debug.825005067;com.nvidia.cuda.ide.configuration.debug.825005067.;nvcc.compiler.base.667218174;nvcc.compiler.input.c.1350239936">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.1828764730;nvcc.compiler.base.1331720046;nvcc.compiler.input.cu.358439357">
+		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.debug.825005067;com.nvidia.cuda.ide.configuration.debug.825005067.;nvcc.compiler.base.667218174;nvcc.compiler.input.cu.27435480">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.1828764730;nvcc.compiler.base.1331720046;nvcc.compiler.input.c.538034919">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.;nvcc.compiler.base.482443553;nvcc.compiler.input.c.403452541">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.;nvcc.compiler.base.482443553;nvcc.compiler.input.cu.604936492">
@@ -186,10 +193,10 @@
 		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.;nvcc.compiler.base.482443553;nvcc.compiler.input.cpp.1100271315">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.1828764730;nvcc.compiler.base.1331720046;nvcc.compiler.input.c.538034919">
+		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.debug.825005067;com.nvidia.cuda.ide.configuration.debug.825005067.;nvcc.compiler.base.667218174;nvcc.compiler.input.cpp.833553396">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.debug.825005067;com.nvidia.cuda.ide.configuration.debug.825005067.;nvcc.compiler.base.667218174;nvcc.compiler.input.cpp.833553396">
+		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.1828764730;nvcc.compiler.base.1331720046;nvcc.compiler.input.cu.358439357">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.nvidia.cuda.ide.build.NVCCPerProjectProfile"/>
 		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="com.nvidia.cuda.ide.configuration.release.2011066401;com.nvidia.cuda.ide.configuration.release.2011066401.1828764730;nvcc.compiler.base.1331720046;nvcc.compiler.input.cpp.514142221">

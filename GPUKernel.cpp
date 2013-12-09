@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <stdio.h>
 #endif
 #include <math.h>
 
@@ -191,6 +192,10 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
    m_lightInformationSize(0),
 	m_activeLogging(activeLogging),
    m_lightInformation(nullptr),
+   m_oculus(false),
+   m_pointSize(1.f),
+   m_morph(0.f),
+   m_nbFrames(0),
 #if USE_KINECT
 	m_hVideo(0), m_hDepth(0), 
 	m_skeletons(0), m_hNextDepthFrameEvent(0), m_hNextVideoFrameEvent(0), m_hNextSkeletonEvent(0),
@@ -1285,7 +1290,7 @@ void GPUKernel::resetAll()
          delete [] m_hTextures[i].buffer;
          m_hTextures[i].buffer = 0;
       }
-#endif USE_KINECT
+#endif // USE_KINECT
    }
    memset(&m_hTextures[0],0,NB_MAX_TEXTURES*sizeof(TextureInformation));
    m_nbActiveTextures = 0;
@@ -2706,12 +2711,12 @@ void GPUKernel::previousFrame()
    if(m_frame<0) m_frame=0; 
 }
 
-#ifdef USE_OCULUS
 void GPUKernel::switchOculusVR()
 {
    m_oculus = !m_oculus;
 }
 
+#ifdef USE_OCULUS
 void GPUKernel::initializeOVR()
 {
    LOG_INFO(1, "----------------------------" );

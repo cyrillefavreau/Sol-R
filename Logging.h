@@ -30,18 +30,24 @@
 		#include <sstream>
 	#endif
 	#include <windows.h>
+#else
+#include <string>
 #endif // WIN32
 
 #include <time.h>
 
 inline std::string getTimestamp()
 {
+#ifdef WIN32
   char buffer[80] = {'\0'} ;    
   time_t now = time( &now ) ;
   struct tm local_time; 
   localtime_s( &local_time, &now ) ;
   strftime( buffer, BUFSIZ, "%m/%d/%Y", &local_time ) ;    
   return std::string(buffer);
+#else
+  return "";
+#endif // WIN32
 }
 
 #ifdef WIN32

@@ -30,7 +30,7 @@
 
 // Cuda
 #include <cuda_runtime_api.h>
-#include <helper_cuda.h>
+#include <vector_functions.h>
 
 /*
 ________________________________________________________________________________

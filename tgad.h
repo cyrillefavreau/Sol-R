@@ -1,8 +1,11 @@
 #ifndef __TGA_H__
 #define __TGA_H__
 
+#ifdef WIN32
 #include <windows.h>									// Standard windows header
+#else
 #include <stdio.h>										// Standard I/O header 
+#endif // WIN32
 
 typedef	struct									
 {

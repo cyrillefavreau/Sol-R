@@ -26,7 +26,7 @@
 // Cuda
 #include <cuda_runtime_api.h>
 #include <cuda_runtime.h>
-#include <helper_cuda.h>
+//#include <helper_cuda.h>
 
 // Project
 #include "../Consts.h"
@@ -1250,11 +1250,11 @@ GPU initialization
 ________________________________________________________________________________
 */
 extern "C" void initialize_scene( 
-   int2&            occupancyParameters,
-	const SceneInfo& sceneInfo,
-   const int        nbPrimitives, 
-   const int        nbLamps, 
-   const int        nbMaterials
+   int2             occupancyParameters,
+   SceneInfo sceneInfo,
+   int        nbPrimitives,
+   int        nbLamps,
+   int        nbMaterials
 #ifdef USE_MANAGED_MEMORY
    ,BoundingBox*&    boundingBoxes
    ,Primitive*&      primitives
@@ -1366,7 +1366,7 @@ GPU finalization
 ________________________________________________________________________________
 */
 extern "C" void finalize_scene( 
-   const int2 occupancyParameters
+   int2 occupancyParameters
 #ifdef USE_MANAGED_MEMORY
 	,BoundingBox* boundingBoxes
    ,Primitive*   primitives
@@ -1408,13 +1408,13 @@ CPU -> GPU data transfers
 ________________________________________________________________________________
 */
 extern "C" void h2d_scene( 
-   const int2   occupancyParameters,
+   int2   occupancyParameters,
    BoundingBox* boundingBoxes, 
-   const int    nbActiveBoxes,
+   int    nbActiveBoxes,
 	Primitive*   primitives, 
-   const int    nbPrimitives,
+   int    nbPrimitives,
 	Lamp*        lamps, 
-   const int    nbLamps )
+   int    nbLamps )
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1428,11 +1428,11 @@ extern "C" void h2d_scene(
 }
 
 extern "C" void h2d_materials( 
-   const int2 occupancyParameters,
+   int2 occupancyParameters,
 	Material*  materials, 
-   const int  nbActiveMaterials,
+   int  nbActiveMaterials,
 	float*     randoms,   
-   const int  nbRandoms)
+   int  nbRandoms)
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1443,8 +1443,8 @@ extern "C" void h2d_materials(
 }
 
 extern "C" void h2d_textures( 
-   const int2          occupancyParameters,
-	const int           activeTextures, 
+   int2          occupancyParameters,
+	int           activeTextures,
    TextureInformation* textureInfos )
 {
    for( int device(0); device<occupancyParameters.x; ++device )
@@ -1480,9 +1480,9 @@ extern "C" void h2d_textures(
 }
 
 extern "C" void h2d_lightInformation( 
-   const int2        occupancyParameters,
+   int2        occupancyParameters,
    LightInformation* lightInformation, 
-   const int         lightInformationSize)
+   int         lightInformationSize)
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1493,7 +1493,7 @@ extern "C" void h2d_lightInformation(
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
-   const int2    occupancyParameters,
+   int2    occupancyParameters,
 	BitmapBuffer* kinectVideo, 
    BitmapBuffer* kinectDepth )
 {
@@ -1512,8 +1512,8 @@ GPU -> CPU data transfers
 ________________________________________________________________________________
 */
 extern "C" void d2h_bitmap( 
-   const int2           occupancyParameters,
-   const SceneInfo      sceneInfo,
+   int2           occupancyParameters,
+   SceneInfo      sceneInfo,
    BitmapBuffer*        bitmap, 
    PrimitiveXYIdBuffer* primitivesXYIds )
 {
@@ -1544,14 +1544,14 @@ Kernel launcher
 ________________________________________________________________________________
 */
 extern "C" void cudaRender(
-   const int2               occupancyParameters,
-	const int4               blockSize,
-	const SceneInfo          sceneInfo,
-	const int4               objects,
-	const PostProcessingInfo postProcessingInfo,
-	const Vertex             origin, 
-	const Vertex             direction, 
-	const Vertex             angles
+   int2               occupancyParameters,
+	int4               blockSize,
+	SceneInfo          sceneInfo,
+	int4               objects,
+	PostProcessingInfo postProcessingInfo,
+	Vertex             origin,
+	Vertex             direction,
+	Vertex             angles
 #ifdef USE_MANAGED_MEMORY
    ,BoundingBox*            boundingBoxes
 	,Primitive*              primitives

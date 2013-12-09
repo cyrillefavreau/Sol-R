@@ -27,7 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
-#include <string>
+#include <string.h>
+#include <math.h>
 
 #include "Logging.h"
 
@@ -136,7 +137,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
    materialsFilename += ".mtl";
 
    std::string id("");
-   std::ifstream file(materialsFilename);
+   std::ifstream file(materialsFilename.c_str());
    if( file.is_open() )
    {
       while( file.good() )

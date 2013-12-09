@@ -26,11 +26,11 @@
 #include "CudaDataTypes.h"
 
 extern "C" void initialize_scene( 
-   int2&           occupancyParameters,
-   const SceneInfo sceneInfo,
-   const int       nbPrimitives, 
-   const int       nbLamps, 
-   const int       nbMaterials
+   int2            occupancyParameters,
+   SceneInfo sceneInfo,
+   int       nbPrimitives,
+   int       nbLamps,
+   int       nbMaterials
 #ifdef USE_MANAGED_MEMORY
    ,BoundingBox*&   boundingBoxes
    ,Primitive*&     primitives
@@ -38,7 +38,7 @@ extern "C" void initialize_scene(
    );
 
 extern "C" void finalize_scene(
-   const int2   occupancyParameters
+   int2   occupancyParameters
 #ifdef USE_MANAGED_MEMORY
    ,BoundingBox* boundingBoxes
    ,Primitive*   primitives
@@ -46,46 +46,46 @@ extern "C" void finalize_scene(
    );
 
 extern "C" void h2d_scene(
-   const int2   occupancyParameters,
+   int2   occupancyParameters,
    BoundingBox* boundingBoxes, 
-   const int    nbActiveBoxes,
+   int    nbActiveBoxes,
 	Primitive*   primitives, 
-   const int    nbPrimitives,
+   int    nbPrimitives,
 	Lamp*        lamps, 
-   const int    nbLamps );
+   int    nbLamps );
 
 extern "C" void h2d_materials( 
-   const int2    occupancyParameters,
+   int2    occupancyParameters,
 	Material*     materials, 
-   const int     nbActiveMaterials,
+   int     nbActiveMaterials,
    RandomBuffer* randoms,   
-   const int     nbRandoms );
+   int     nbRandoms );
 
 extern "C" void h2d_textures( 
-   const int2          occupancyParameters,
-	const int           activeTextures, 
+   int2          occupancyParameters,
+	int           activeTextures,
    TextureInformation* textureInfos );
 
 extern "C" void h2d_lightInformation( 
-   const int2        occupancyParameters,
+   int2        occupancyParameters,
 	LightInformation* lightInformation, 
    int               lightInformationSize);
 
 extern "C" void d2h_bitmap( 
-   const int2           occupancyParameters,
-   const SceneInfo      sceneInfo,
+   int2           occupancyParameters,
+   SceneInfo      sceneInfo,
    BitmapBuffer*        bitmap, 
    PrimitiveXYIdBuffer* primitivesXYIds);
 
 extern "C" void cudaRender(
-   const int2               occupancyParameters,
-   const int4               blockSize,
-   const SceneInfo          sceneInfo,
-   const int4               objects,
-   const PostProcessingInfo PostProcessingInfo,
-   const Vertex             origin, 
-   const Vertex             direction, 
-   const Vertex             angles
+   int2               occupancyParameters,
+   int4               blockSize,
+   SceneInfo          sceneInfo,
+   int4               objects,
+   PostProcessingInfo PostProcessingInfo,
+   Vertex             origin,
+   Vertex             direction,
+   Vertex             angles
 #ifdef USE_MANAGED_MEMORY
    ,BoundingBox*            boundingBoxes
 	,Primitive*              primitives
@@ -94,7 +94,7 @@ extern "C" void cudaRender(
 
 #ifdef USE_KINECT
 extern "C" void h2d_kinect( 
-   const int2    occupancyParameters,
+   int2    occupancyParameters,
    BitmapBuffer* video, 
    BitmapBuffer* depth );
 #endif // USE_KINECT

@@ -26,7 +26,6 @@
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
 #include <helper_math.h>
-
 // ________________________________________________________________________________
 __device__ inline void saturateVector( float4& v )
 {

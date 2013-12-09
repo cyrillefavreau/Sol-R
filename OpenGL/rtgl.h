@@ -63,7 +63,7 @@ typedef int bool;
 #define GL_LIGHT7                         0x4007
 
 /* ErrorCode */
-#define GL_NO_ERROR                       0
+//#define GL_NO_ERROR                       0
 #define GL_INVALID_ENUM                   0x0500
 #define GL_INVALID_VALUE                  0x0501
 #define GL_INVALID_OPERATION              0x0502
@@ -72,8 +72,8 @@ typedef int bool;
 #define GL_OUT_OF_MEMORY                  0x0505
 
 /* Boolean */
-#define GL_TRUE                           1
-#define GL_FALSE                          0
+//#define GL_TRUE                           1
+//#define GL_FALSE                          0
 
 /* MatrixMode */
 #define GL_MODELVIEW                      0x1700
@@ -87,8 +87,8 @@ typedef int bool;
 #define GL_EXTENSIONS                     0x1F03
 
 /* BlendingFactorDest */
-#define GL_ZERO                           0
-#define GL_ONE                            1
+//#define GL_ZERO                           0
+//#define GL_ONE                            1
 #define GL_SRC_COLOR                      0x0300
 #define GL_ONE_MINUS_SRC_COLOR            0x0301
 #define GL_SRC_ALPHA                      0x0302
@@ -219,7 +219,7 @@ typedef int bool;
 #define GL_BLEND                          0x0BE2
 #define GL_LOGIC_OP_MODE                  0x0BF0
 #define GL_INDEX_LOGIC_OP                 0x0BF1
-#define GL_LOGIC_OP                       GL_INDEX_LOGIC_OP
+//#define GL_LOGIC_OP                       GL_INDEX_LOGIC_OP
 #define GL_COLOR_LOGIC_OP                 0x0BF2
 #define GL_AUX_BUFFERS                    0x0C00
 #define GL_DRAW_BUFFER                    0x0C01
@@ -471,10 +471,10 @@ typedef int bool;
 #define GL_LIST_BIT                       0x00020000
 #define GL_TEXTURE_BIT                    0x00040000
 #define GL_SCISSOR_BIT                    0x00080000
-#define GL_ALL_ATTRIB_BITS                0x000fffff
+//#define GL_ALL_ATTRIB_BITS                0x000fffff
 
    /* DrawBufferMode */
-#define GL_NONE                           0
+//#define GL_NONE                           0
 #define GL_FRONT_LEFT                     0x0400
 #define GL_FRONT_RIGHT                    0x0401
 #define GL_BACK_LEFT                      0x0402

@@ -45,10 +45,10 @@ struct MaterialMTL
 class RAYTRACINGENGINE_API OBJReader
 {
 public:
-   OBJReader(void);
-   ~OBJReader(void);
+   OBJReader();
+   ~OBJReader();
 
-   unsigned int OBJReader::loadMaterialsFromFile(
+   unsigned int loadMaterialsFromFile(
       const std::string& filename,
       std::map<std::string,MaterialMTL>& m_materials,
       GPUKernel& GPUKernel,

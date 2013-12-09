@@ -12,7 +12,7 @@
 * Library General Public License for more details.
 *
 * You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+* auint32 with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*
@@ -28,6 +28,34 @@
 
 #include "jpgd.h"
 #include "tgad.h"
+
+#ifndef WIN32
+#define uint16 unsigned short
+#define uint32 unsigned long
+#define uint8  unsigned char
+typedef struct
+{
+ uint16 bfType;  //specifies the file type "BM" 0x424d
+ uint32 bfSize;  //specifies the size in bytes of the bitmap file
+ uint16 bfReserved1;  //reserved; must be 0
+ uint16 bfReserved2;  //reserved; must be 0
+ uint32 bfOffBits;
+} BITMAPFILEHEADER;
+
+typedef struct tagBITMAPINFOHEADER {
+  uint32 biSize;
+  uint32  biWidth;
+  uint32  biHeight;
+  uint16  biPlanes;
+  uint16  biBitCount;
+  uint32 biCompression;
+  uint32 biSizeImage;
+  uint32  biXPelsPerMeter;
+  uint32  biYPelsPerMeter;
+  uint32 biClrUsed;
+  uint32 biClrImportant;
+} BITMAPINFOHEADER, *PBITMAPINFOHEADER;
+#endif // WIN32
 
 ImageLoader::ImageLoader(void)
 {
@@ -173,7 +201,7 @@ bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureI
    FILE* filePtr;
    unsigned char ucharBad;
    short int sintBad;
-   long imageSize;
+   uint32 imageSize;
    int colorMode;
    unsigned char colorSwap;
 

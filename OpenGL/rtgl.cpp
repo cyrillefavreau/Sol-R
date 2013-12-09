@@ -23,6 +23,8 @@
 #include <GL/freeglut.h>
 #include <iostream>
 #include <time.h>
+#include <math.h>
+#include <stdlib.h>
 
 #include "../Logging.h"
 #include "rtgl.h"
@@ -56,27 +58,6 @@ bool      gLighting(false);
 Vertex gEye = {gScale/10.f,0.f, -20.f*gScale};
 Vertex gDir = {gScale/10.f,0.f, -20.f*gScale+5000.f};
 Vertex gAngles = {0.f,0.f,0.f};
-
-// Utils
-int RGBToInt(float r, float g, float b)
-{
-   int R=int(r*255.f) << 16;
-   int G=int(g*255.f) << 8;
-   int B=int(b*255.f);
-   return (R+G+B);
-}
-
-void IntToRGB(int v, float& r, float& g, float& b)
-{
-   int V = v;
-   int R=(V & 0x00FF0000) >> 16;
-   int G=(V & 0x0000FF00) >> 8;
-   int B=(V & 0x000000FF);
-
-   r = R/255.f;
-   g = G/255.f;
-   b = B/255.f;
-}
 
 void RayTracer::InitializeRaytracer( const int width, const int height )
 {

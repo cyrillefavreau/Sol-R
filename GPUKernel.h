@@ -30,6 +30,9 @@
    #ifdef USE_KINECT
       #include <NuiApi.h>
    #endif // USE_KINECT
+#else
+#include <string>
+#include <string.h>
 #endif // WIN32
 
 #ifdef USE_OCULUS
@@ -410,7 +413,6 @@ protected:
 
 protected:
 
-	int	 m_draft;
    bool   m_primitivesTransfered;
 	bool	 m_materialsTransfered;
 	bool	 m_texturesTransfered;
