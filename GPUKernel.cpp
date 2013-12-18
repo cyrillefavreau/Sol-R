@@ -925,7 +925,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-            LOG_INFO(3,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << ")" );
+            LOG_INFO(3,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
          }
          else
          {
@@ -1169,7 +1169,9 @@ void GPUKernel::streamDataToGPU()
             // Add light information related to primitive
             Material& material = m_hMaterials[primitive.materialId];
             LightInformation lightInformation;
+            LOG_INFO(3, "LightInformation " << (*itp) << ", MaterialId=" << primitive.materialId );
             lightInformation.attribute.x = (*itp);
+            lightInformation.attribute.y = primitive.materialId;
 
             lightInformation.location.x = primitive.p0.x;
             lightInformation.location.y = primitive.p0.y;
@@ -1178,13 +1180,14 @@ void GPUKernel::streamDataToGPU()
             lightInformation.color.x = material.color.x;
             lightInformation.color.y = material.color.y;
             lightInformation.color.z = material.color.z;
-            lightInformation.color.w = material.innerIllumination.x;
+            lightInformation.color.w = 0.f; // not used
 
             m_lightInformation[m_lightInformationSize] = lightInformation;
 
             LOG_INFO(3,
                "1. Lamp " << 
-               m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
+               m_lightInformation[m_lightInformationSize].attribute.x << "," <<
+               m_lightInformation[m_lightInformationSize].attribute.y << ":" <<
                m_lightInformation[m_lightInformationSize].location.x << "," <<
                m_lightInformation[m_lightInformationSize].location.y << "," <<
                m_lightInformation[m_lightInformationSize].location.z << " " <<
@@ -1796,8 +1799,8 @@ void GPUKernel::setMaterial(
          m_hMaterials[index].textureMapping.x = 40000;
          m_hMaterials[index].textureMapping.y = 40000;
          m_hMaterials[index].textureMapping.z = TEXTURE_NONE; // Deprecated
-         m_hMaterials[index].textureMapping.w = 1;
-         m_hMaterials[index].textureIds.x     = TEXTURE_NONE;
+         m_hMaterials[index].textureMapping.w = 3;
+         m_hMaterials[index].textureIds.x     = diffuseTextureId;
          m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
          m_hMaterials[index].textureIds.z     = TEXTURE_NONE;
          m_hMaterials[index].textureOffset.x  = 0;
@@ -2123,19 +2126,21 @@ void GPUKernel::reorganizeLights()
 
                if( !found )
                {
-                  LOG_INFO(1,"Adding light information");
+                  LOG_INFO(1,"Add light information");
                   LightInformation lightInformation;
                   lightInformation.location.x = primitive.p0.x;
                   lightInformation.location.y = primitive.p0.y;
                   lightInformation.location.z = primitive.p0.z;
                   lightInformation.attribute.x = (*itp);
+                  lightInformation.attribute.y = primitive.materialId.x;
                   lightInformation.color.x = material.color.x;
                   lightInformation.color.y = material.color.y;
                   lightInformation.color.z = material.color.z;
-                  lightInformation.color.w = material.innerIllumination.x;
+                  lightInformation.color.w = 0.f; // not used
 
                   LOG_INFO(1,
-                     "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << ":" <<
+                     "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << "," <<
+                     m_lightInformation[m_lightInformationSize].attribute.y << ":" <<
                      m_lightInformation[m_lightInformationSize].location.x << "," <<
                      m_lightInformation[m_lightInformationSize].location.y << "," <<
                      m_lightInformation[m_lightInformationSize].location.z << " " <<
@@ -2175,7 +2180,8 @@ void GPUKernel::realignTexturesAndMaterials()
          m_hMaterials[i].textureMapping.x = 40000;
          m_hMaterials[i].textureMapping.y = 40000;
          m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
-         m_hMaterials[i].textureIds.x     = TEXTURE_NONE;
+         m_hMaterials[i].textureMapping.w = 3;
+         m_hMaterials[i].textureIds.x     = diffuseTextureId;
          m_hMaterials[i].textureIds.y     = TEXTURE_NONE;
          m_hMaterials[i].textureIds.z     = TEXTURE_NONE;
          m_hMaterials[i].textureOffset.x  = 0;

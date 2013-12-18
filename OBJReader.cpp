@@ -164,9 +164,9 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId,
                   m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
-                  0.f, 40000.f, 10.f*kernel.getSceneInfo().viewDistance.x,
+                  0.f, 10000.f, kernel.getSceneInfo().viewDistance.x,
                   false );
-               LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+               LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
@@ -220,13 +220,15 @@ unsigned int OBJReader::loadMaterialsFromFile(
                if(diffuseMap) 
                {
                   materials[id].diffuseTextureId = idx;
-                  LOG_INFO(1, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+                  //materials[id].normalTextureId = idx;
+                  materials[id].bumpTextureId = idx;
+                  LOG_INFO(3, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
                if(bumpMap)
                {
                   //materials[id].bumpTextureId = idx;
                   materials[id].normalTextureId = idx;
-                  LOG_INFO(1, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+                  LOG_INFO(3, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
             }
             else
@@ -281,11 +283,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId,
             m.Ks.x, m.Ks.y, m.Ks.z,
-            0.f, 10.f, 100000.f,
+            0.f, 0.f, 0.f,
             false );
-         LOG_INFO(3, "Added material [" << id << "] index=" << m.index << "/" << materialId << " " << 
+         LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
-            "( " << m.reflection << ", " << m.transparency << ", " << m.refraction << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
             ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
       }

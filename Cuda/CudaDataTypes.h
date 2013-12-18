@@ -68,7 +68,7 @@ struct SceneInfo
    int1    renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
    int1    pathTracingIteration;     // Current iteration for current frame
    int1    maxPathTracingIterations; // Maximum number of iterations for current frame
-   int4    misc;                     // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
+   int4    misc;                     // x: Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
                                      // y: Timer
                                      // z: Fog( 0: disabled, 1: enabled )
                                      // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
@@ -88,7 +88,8 @@ struct Ray
 // very structure, in order to simulate global illumination
 struct LightInformation
 {
-   int1   attribute;                 // ID of the emitting primitive
+   int2   attribute;                 // x: ID of the emitting primitive
+                                     // y: Material ID
    Vertex location;                  // Position in space
    float4 color;                     // Light
 };

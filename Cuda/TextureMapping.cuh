@@ -59,9 +59,9 @@ __device__ inline void bumpMap(
 	r = textures[i  ];
 	g = textures[i+1];
 	b = textures[i+2];
-	intersection.x += 10.f*(r/256.f-0.5f);
-	intersection.y += 10.f*(g/256.f-0.5f);
-	intersection.z += 10.f*(b/256.f-0.5f);
+	intersection.x += (r/256.f-0.5f);
+	intersection.y += (g/256.f-0.5f);
+	intersection.z += (b/256.f-0.5f);
 }
 
 __device__ void juliaSet( 
