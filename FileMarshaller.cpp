@@ -336,7 +336,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       (material.attributes.z==1), 
       material.attributes.w,
       material.transparency.x,
-      material.textureIds.x, material.textureIds.y, material.textureIds.z,
+      material.textureIds.x, material.textureIds.y, material.textureIds.z, material.textureIds.w,
       material.specular.x, material.specular.y, material.specular.z,
       material.innerIllumination.x,material.innerIllumination.y,material.innerIllumination.z,
       (material.attributes.x==1));

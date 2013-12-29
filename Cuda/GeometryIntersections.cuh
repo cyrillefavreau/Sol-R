@@ -266,8 +266,7 @@ __device__ inline bool cylinderIntersection(
 	float ln = length(n);
 
 	// Parallel? (?)
-	if((ln<EPSILON)&&(ln>-EPSILON))
-		return false;
+	if((ln<EPSILON)&&(ln>-EPSILON)) return false;
 
 	n = normalize(n);
 
@@ -281,57 +280,59 @@ __device__ inline bool cylinderIntersection(
 	O = normalize(crossProduct(n,cylinder.n1));
 	float s=fabs( sqrtf(cylinder.size.x*cylinder.size.x-d*d) / dot( dir,O ) );
 
-	float in=t-s;
-	float out=t+s;
+	float t1=t-s;
+	float t2=t+s;
 
-	if(out<-EPSILON)
-	{
+   /*
+   if(in<out)
 		t=in;
-	}
 	else
 	{
-		if(in<out)
-			t=in;
-		else
-		{
-			t=out;
-			back = true;
-		}
-
-
-		// Calculate intersection point
-		intersection = ray.origin+t*dir;
-
-		Vertex HB1 = intersection-cylinder.p0;
-		Vertex HB2 = intersection-cylinder.p1;
-
-		float scale1 = dot(HB1,cylinder.n1);
-		float scale2 = dot(HB2,cylinder.n1);
-
-		// Cylinder length
-		if( scale1 < EPSILON || scale2 > EPSILON ) return false;
-
-		if( materials[cylinder.materialId.x].attributes.y == 1) 
-		{
-			// Procedural texture
-			Vertex newCenter;
-			newCenter.x = cylinder.p0.x + 0.01f*cylinder.size.x*cos(sceneInfo.misc.y/100.f+intersection.x);
-			newCenter.y = cylinder.p0.y + 0.01f*cylinder.size.y*sin(sceneInfo.misc.y/100.f+intersection.y);
-			newCenter.z = cylinder.p0.z + 0.01f*cylinder.size.z*sin(cos(sceneInfo.misc.y/100.f+intersection.z));
-			HB1 = intersection - newCenter;
-		}
-
-      Vertex V = intersection-cylinder.p2;
-      normal = V-project(V,cylinder.n1);
-		normal = normalize(normal);
-
-      // Shadow management
-      dir = normalize(dir);
-      float r = dot(dir,normal);
-      shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
-      return true;
+		t=out;
+		back = true;
 	}
-   return false;
+   */
+   
+	// Calculate intersection point
+	intersection = ray.origin+t1*dir;
+	Vertex HB1 = intersection-cylinder.p0;
+	Vertex HB2 = intersection-cylinder.p1;
+	float scale1 = dot(HB1,cylinder.n1);
+	float scale2 = dot(HB2,cylinder.n1);
+	// Cylinder length
+	if( scale1 < EPSILON || scale2 > EPSILON ) 
+   {
+	   intersection = ray.origin+t2*dir;
+      back = true;
+      HB1 = intersection-cylinder.p0;
+	   HB2 = intersection-cylinder.p1;
+	   scale1 = dot(HB1,cylinder.n1);
+	   scale2 = dot(HB2,cylinder.n1);
+	   // Cylinder length
+	   if( scale1 < EPSILON || scale2 > EPSILON ) return false;
+   }
+
+   /*
+	if( materials[cylinder.materialId.x].attributes.y == 1) 
+	{
+		// Procedural texture
+		Vertex newCenter;
+		newCenter.x = cylinder.p0.x + 0.01f*cylinder.size.x*cos(sceneInfo.misc.y/100.f+intersection.x);
+		newCenter.y = cylinder.p0.y + 0.01f*cylinder.size.y*sin(sceneInfo.misc.y/100.f+intersection.y);
+		newCenter.z = cylinder.p0.z + 0.01f*cylinder.size.z*sin(cos(sceneInfo.misc.y/100.f+intersection.z));
+	}
+   */
+
+   Vertex V = intersection-cylinder.p2;
+   normal = V-project(V,cylinder.n1);
+	normal = normalize(normal);
+   if(back) normal*=-1.f; 
+
+   // Shadow management
+   dir = normalize(dir);
+   float r = dot(dir,normal);
+   shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+   return true;
 }
 
 /*
@@ -348,7 +349,7 @@ __device__ inline bool planeIntersection(
 	const Ray&       ray, 
 	Vertex&          intersection,
 	Vertex&          normal,
-	float&           shadowIntensity,
+   float&           shadowIntensity,
 	bool             reverse
 	)
 { 
@@ -478,7 +479,8 @@ __device__ inline bool planeIntersection(
 		float4 color = materials[primitive.materialId.x].color;
 		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE )
 		{
-			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal );
+         Vertex specular = {0.f,0.f,0.f}; // TODO?
+			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal, specular );
          shadowIntensity = color.w;
 		}
 
@@ -587,7 +589,8 @@ __device__ float4 intersectionShader(
 	BitmapBuffer*    textures,
 	Vertex&          intersection,
 	const Vertex&    areas,
-   Vertex&          normal)
+   Vertex&          normal,
+   Vertex&          specular)
 {
 	float4 colorAtIntersection = materials[primitive.materialId.x].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
@@ -596,20 +599,13 @@ __device__ float4 intersectionShader(
 	switch( primitive.type.x ) 
 	{
 	case ptCylinder:
-		{
-			if(materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
-			{
-				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal );
-			}
-			break;
-		}
 	case ptEnvironment:
 	case ptSphere:
    case ptEllipsoid:
 		{
 			if(materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
 			{
-				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal );
+				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular );
 			}
 			break;
 		}
@@ -617,7 +613,7 @@ __device__ float4 intersectionShader(
 		{
 			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
-				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal );
+				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular );
 			}
 			else 
 			{
@@ -651,7 +647,7 @@ __device__ float4 intersectionShader(
 		{
 			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
-				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal );
+				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular );
 			}
 			break;
 		}
@@ -659,7 +655,7 @@ __device__ float4 intersectionShader(
       {
 			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
-            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal );
+            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular );
 			}
 			break;
       }

@@ -183,7 +183,7 @@ public:
 		bool procedural,
       bool wireframe, int wireframeWidth,
 		float transparency,
-	   int diffuseTextureId, int normalTextureId, int bumpTextureId,
+	   int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId,
 		float specValue, float specPower, float specCoef,
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
       bool fastTransparency);
@@ -202,7 +202,7 @@ public:
       bool& wireframe,
       int& wireframeDepth,
 		float& transparency,
-      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId,
+      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId,
 		float& specValue, float& specPower, float& specCoef,
       float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
       bool& fastTransparency);
@@ -390,6 +390,7 @@ protected:
 	int m_nbActiveMaterials;
    int m_nbActiveTextures;
    int m_lightInformationSize;
+   int m_maxPrimitivesPerBox;
 	Vertex		 m_viewPos;
 	Vertex		 m_viewDir;
 	Vertex		 m_angles;

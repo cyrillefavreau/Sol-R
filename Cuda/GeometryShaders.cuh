@@ -226,7 +226,7 @@ __device__ float4 primitiveShader(
 	LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
 	Material* materials, BitmapBuffer* textures,
 	RandomBuffer* randoms,
-	const Vertex& origin,
+   const Vertex& origin,
 	Vertex&       normal, 
 	const int&    objectId, 
 	Vertex&       intersection,
@@ -237,18 +237,28 @@ __device__ float4 primitiveShader(
 	float&        shadowIntensity,
 	float4&       totalBlinn)
 {
-	Primitive primitive = primitives[objectId];
+	Primitive& primitive = primitives[objectId];
+   Material& material = materials[primitive.materialId.x];
 	float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
 	// Lamp Impact
 	shadowIntensity    = 0.f;
 
+   // Bump
    Vertex bumpNormal={0.f,0.f,0.f};
-   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal );
+
+   // Specular
+   Vertex specular;
+   specular.x=material.specular.x;
+   specular.y=material.specular.y;
+   specular.z=material.specular.z;
+
+   // Intersection color
+   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular );
    normal += bumpNormal;
    normalize(normal);
 
-	if( materials[primitive.materialId.x].innerIllumination.x!=0.f || materials[primitive.materialId.x].attributes.z!=0 )
+	if( material.innerIllumination.x!=0.f || material.attributes.z!=0 )
    {
       // Wireframe returns constant color
 		return intersectionColor; 
@@ -267,7 +277,7 @@ __device__ float4 primitiveShader(
       }
 #endif // EXTENDED_FEATURES
 
-	   closestColor *= materials[primitive.materialId.x].innerIllumination.x;
+	   closestColor *= material.innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
          int cptLamp = cpt;
@@ -294,7 +304,7 @@ __device__ float4 primitiveShader(
             float4 shadowColor = {0.f,0.f,0.f,0.f};
             if( sceneInfo.graphicsLevel.x>3 && 
                 iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
-                materials[primitive.materialId.x].innerIllumination.x==0.f ) 
+                material.innerIllumination.x==0.f ) 
 			   {
 				   shadowIntensity = processShadows(
 					   sceneInfo, boundingBoxes, nbActiveBoxes,
@@ -313,7 +323,7 @@ __device__ float4 primitiveShader(
 	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
                // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
                // depends on the transparency rate.
-               lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : lambert;
+               lambert *= (lambert<0.f) ? -material.transparency.x : lambert;
 
                if( lightInformation[cptLamp].attribute.y != MATERIAL_NONE )
                {
@@ -325,7 +335,7 @@ __device__ float4 primitiveShader(
                   lambert *= lightInformation[cptLamp].color.w;
                }
 
-               lambert *= (1.f+randoms[t]*materials[primitive.materialId.x].innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
+               lambert *= (1.f+randoms[t]*material.innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
 			      lambert *= (1.f-shadowIntensity);
 
 #ifdef PHOTON_ENERGY
@@ -352,8 +362,8 @@ __device__ float4 primitiveShader(
 					      float blinnTerm = dot(blinnDir,normal);
 					      blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
-					      blinnTerm = materials[primitive.materialId.x].specular.x * pow(blinnTerm,materials[primitive.materialId.x].specular.y);
-                     blinnTerm *= (1.f-materials[primitive.materialId.x].transparency.x);
+					      blinnTerm = specular.x * pow(blinnTerm,specular.y);
+                     blinnTerm *= (1.f-material.transparency.x);
 
 					      totalBlinn += lightInformation[cptLamp].color * lightInformation[cptLamp].color.w * blinnTerm;
 				      }
@@ -370,6 +380,10 @@ __device__ float4 primitiveShader(
 		   refractionFromColor = intersectionColor; // Refraction depending on color;
 		   saturateVector( totalBlinn );
 	   }
+   }
+   else
+   {
+      closestColor = intersectionColor;
    }
 	return closestColor;
 }

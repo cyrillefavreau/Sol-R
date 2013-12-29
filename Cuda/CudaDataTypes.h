@@ -132,14 +132,16 @@ struct Material
                              // w: Wireframe Width
    int4   textureMapping;    // x: U padding
                              // y: V padding
-                             // z: Texture ID
+                             // z: Texture ID (Deprecated)
                              // w: Texture color depth
    int4   textureOffset;     // x: Offset in the diffuse map
                              // y: Offset in the normal map
                              // z: Offset in the bump map
+                             // w: Offset in the specular map
    int4   textureIds;        // x: Diffuse map
                              // y: Normal map
                              // z: Bump map
+                             // w: Specular map
 };
 
 // Bounding Box Structure

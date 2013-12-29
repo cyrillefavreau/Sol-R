@@ -36,12 +36,12 @@ __device__ inline void normalMap(
 	BitmapBuffer*    textures,
    Vertex&          normal)
 {
-   int i = material.textureOffset.y + index;
+   int i = material.textureOffset.z + index;
    BitmapBuffer r,g;
 	r = textures[i  ];
 	g = textures[i+1];
-	normal.x = 2.f*(r/256.f-0.5f);
-	normal.y = 2.f*(g/256.f-0.5f);
+	normal.x = 0.1f*(r/256.f-0.5f);
+	normal.y = 0.1f*(g/256.f-0.5f);
 	normal.z = 0.f;
 }
 
@@ -54,14 +54,33 @@ __device__ inline void bumpMap(
 	BitmapBuffer*    textures,
    Vertex&          intersection)
 {
-   int i = material.textureOffset.z + index;
+   int i = material.textureOffset.y + index;
    BitmapBuffer r,g,b;
 	r = textures[i  ];
 	g = textures[i+1];
 	b = textures[i+2];
-	intersection.x += (r/256.f-0.5f);
-	intersection.y += (g/256.f-0.5f);
-	intersection.z += (b/256.f-0.5f);
+	intersection.x += (r/256.f);
+	intersection.y += (g/256.f);
+	intersection.z += (b/256.f);
+}
+
+// ----------
+// Normal mapping
+// --------------------
+__device__ inline void specularMap(
+   const int&       index,
+	const Material&  material,
+	BitmapBuffer*    textures,
+   Vertex&          specular)
+{
+   int i = material.textureOffset.w + index;
+   BitmapBuffer r,g,b;
+	r = textures[i  ];
+	g = textures[i+1];
+	b = textures[i+2];
+	specular.x = (r+g+b)/(3.f*256.f);
+	//specular.y = 10.f*(r+g+b);
+	//specular.z = (b/256.f);
 }
 
 __device__ void juliaSet( 
@@ -164,7 +183,8 @@ __device__ float4 triangleUVMapping(
 	BitmapBuffer*    textures,
 	Vertex&          intersection,
    const Vertex&    areas,
-   Vertex&          normal)
+   Vertex&          normal,
+   Vertex&          specular)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -205,10 +225,12 @@ __device__ float4 triangleUVMapping(
 		      result.y = g/256.f;
 		      result.z = b/256.f;
 
-            // Normal mapping
-            if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
             // Bump mapping
-            if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+            if( material.textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+            // Normal mapping
+            if( material.textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+            // Specular mapping
+            if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
          }
       }
 	}
@@ -227,7 +249,8 @@ __device__ float4 sphereUVMapping(
 	Material*        materials,
 	BitmapBuffer*    textures,
 	Vertex&          intersection,
-   Vertex&          normal)
+   Vertex&          normal,
+   Vertex&          specular)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -254,8 +277,8 @@ __device__ float4 sphereUVMapping(
       V = 1.f-acos(z)/PI;
    }
 
-   int u = material.textureMapping.x*U; // TODO
-   int v = material.textureMapping.y*V;
+   int u = material.textureMapping.x*(U*primitive.vt1.x); // TODO
+   int v = material.textureMapping.y*(V*primitive.vt1.y);
 
    if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;
    if( material.textureMapping.y != 0 ) v = v%material.textureMapping.y;
@@ -275,10 +298,12 @@ __device__ float4 sphereUVMapping(
 		result.y = g/256.f;
 		result.z = b/256.f;
 
-      // Normal mapping
-      if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
       // Bump mapping
-      if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+      if( material.textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+      // Normal mapping
+      if( material.textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+      // Specular mapping
+      if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
 	}
 	return result; 
 }
@@ -295,7 +320,8 @@ __device__ float4 cubeMapping(
 	Material*        materials,
 	BitmapBuffer*    textures,
 	Vertex&          intersection,
-   Vertex&          normal)
+   Vertex&          normal,
+   Vertex&          specular)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -355,10 +381,12 @@ __device__ float4 cubeMapping(
 			      result.y = g/256.f;
 			      result.z = b/256.f;
 
-               // Normal mapping
-               if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
                // Bump mapping
-               if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+               if( material.textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+               // Normal mapping
+               if( material.textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+               // Bump mapping
+               if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
             }
             break;
          }

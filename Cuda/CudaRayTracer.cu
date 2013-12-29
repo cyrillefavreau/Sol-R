@@ -211,15 +211,6 @@ __device__ inline float4 launchRay(
 				// Back of the object? If so, reset refraction to 1.f (air)
 				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
 
-			   // Replace the normal using the intersection color
-			   // r,g,b become x,y,z... What the fuck!!
-			   if( materials[primitives[closestPrimitive].materialId.x].textureIds.x != TEXTURE_NONE) 
-			   {
-				   normal.x *= (colors[iteration].x-0.5f);
-				   normal.y *= (colors[iteration].y-0.5f);
-				   normal.z *= (colors[iteration].z-0.5f);
-			   }
-
 				// Actual refraction
 				Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
 				vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
@@ -1532,8 +1523,8 @@ extern "C" void d2h_bitmap(
 
       // Copy results back to host
       LOG_INFO(3, "Copy results back to host: " << device*offsetBitmap << "/" << offsetBitmap << ", " << device*offsetXYIds << "/" << offsetXYIds );
-      checkCudaErrors(cudaMemcpy( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost));
-	   checkCudaErrors(cudaMemcpy( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost));
+      checkCudaErrors(cudaMemcpyAsync( bitmap+device*offsetBitmap,         d_bitmap[device],          offsetBitmap, cudaMemcpyDeviceToHost));
+	   checkCudaErrors(cudaMemcpyAsync( primitivesXYIds+device*offsetXYIds, d_primitivesXYIds[device], offsetXYIds,  cudaMemcpyDeviceToHost));
    }
 }
 

@@ -40,6 +40,7 @@ struct MaterialMTL
    int    diffuseTextureId;
    int    normalTextureId;
    int    bumpTextureId;
+   int    specularTextureId;
 };
 
 class RAYTRACINGENGINE_API OBJReader
