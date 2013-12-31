@@ -184,13 +184,13 @@ __device__ float processShadows(
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
                      {
                         O_L=normalize(O_L);
-                        float a=fabs(dot(O_L,normal));
-                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-0.8f*materials[primitive.materialId.x].transparency.x);
+                        float a=4.f*fabs(dot(O_L,normal));
+                        float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-/*0.8f**/materials[primitive.materialId.x].transparency.x);
                         ratio *= r*a;
                         // Shadow color
-                        color.x  += ratio*(0.3f-0.3f*materials[primitive.materialId.x].color.x);
-                        color.y  += ratio*(0.3f-0.3f*materials[primitive.materialId.x].color.y);
-                        color.z  += ratio*(0.3f-0.3f*materials[primitive.materialId.x].color.z);
+                        color.x  += ratio*(0.1f-0.1f*materials[primitive.materialId.x].color.x);
+                        color.y  += ratio*(0.1f-0.1f*materials[primitive.materialId.x].color.y);
+                        color.z  += ratio*(0.1f-0.1f*materials[primitive.materialId.x].color.z);
                      }
                      result += ratio;
                   }
