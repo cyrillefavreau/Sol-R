@@ -227,7 +227,7 @@ __device__ inline bool sphereIntersection(
 
    // Shadow management
    r = dot(dir,normal);
-	shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+	shadowIntensity = 1.f; //(materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
 
 #ifdef EXTENDED_FEATURES
 	// Power textures
@@ -331,7 +331,7 @@ __device__ inline bool cylinderIntersection(
    // Shadow management
    dir = normalize(dir);
    float r = dot(dir,normal);
-   shadowIntensity = (materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+   shadowIntensity = 1.f; //(materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
    return true;
 }
 

@@ -163,7 +163,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-                  m.Ks.x, 200.f*m.Ks.y, m.Ks.z,
+                  m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
                   0.f, 10000.f, kernel.getSceneInfo().viewDistance.x,
                   false );
                LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
@@ -221,14 +221,14 @@ unsigned int OBJReader::loadMaterialsFromFile(
                {
                   materials[id].diffuseTextureId = idx;
                   //materials[id].normalTextureId = idx;
-                  materials[id].bumpTextureId = idx;
-                  materials[id].specularTextureId = idx;
+                  //materials[id].bumpTextureId = idx;
+                  //materials[id].specularTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
                if(bumpMap)
                {
                   //materials[id].bumpTextureId = idx;
-                  materials[id].normalTextureId = idx;
+                  //materials[id].normalTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
             }
@@ -283,7 +283,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-            m.Ks.x, m.Ks.y, m.Ks.z,
+            m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
             0.f, 0.f, 0.f,
             false );
          LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<

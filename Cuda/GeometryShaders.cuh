@@ -184,7 +184,7 @@ __device__ float processShadows(
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
                      {
                         O_L=normalize(O_L);
-                        float a=4.f*fabs(dot(O_L,normal));
+                        float a=fabs(dot(O_L,normal));
                         float r = (materials[primitive.materialId.x].transparency.x == 0.f ) ? 1.f : (1.f-/*0.8f**/materials[primitive.materialId.x].transparency.x);
                         ratio *= r*a;
                         // Shadow color
@@ -294,8 +294,8 @@ __device__ float4 primitiveShader(
                 lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
                t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
-               Material& m=materials[lightInformation[cptLamp].attribute.y];
                float a=sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+               Material& m=materials[lightInformation[cptLamp].attribute.y];
                center.x += m.innerIllumination.y*randoms[t  ]*a;
 				   center.y += m.innerIllumination.y*randoms[t+1]*a;
 				   center.z += m.innerIllumination.y*randoms[t+2]*a;
@@ -320,10 +320,10 @@ __device__ float4 primitiveShader(
 			      // --------------------------------------------------------------------------------
 			      // Lambert
 			      // --------------------------------------------------------------------------------
-	            float lambert = (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+	            float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
                // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
                // depends on the transparency rate.
-               lambert *= (lambert<0.f) ? -material.transparency.x : lambert;
+               //lambert *= (lambert<0.f) ? -material.transparency.x : lambert;
 
                if( lightInformation[cptLamp].attribute.y != MATERIAL_NONE )
                {
@@ -366,6 +366,9 @@ __device__ float4 primitiveShader(
                      blinnTerm *= (1.f-material.transparency.x);
 
 					      totalBlinn += lightInformation[cptLamp].color * lightInformation[cptLamp].color.w * blinnTerm;
+                     
+                     // Get transparency from specular map
+                     totalBlinn.w = specular.z;
 				      }
 			      }
             }

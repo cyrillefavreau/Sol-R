@@ -186,6 +186,7 @@ __device__ inline float4 launchRay(
 #endif // PHOTON_ENERGY
 
 			// Get object color
+         rBlinn.w = materials[primitives[closestPrimitive].materialId.x].transparency.x;
          colors[iteration] =
             primitiveShader( 
                index,
@@ -207,6 +208,7 @@ __device__ inline float4 launchRay(
 			// Refraction
 			// ----------
 			if( materials[primitives[closestPrimitive].materialId.x].transparency.x != 0.f ) 
+			//if( rBlinn.w != 0.f ) 
 			{
 				// Back of the object? If so, reset refraction to 1.f (air)
 				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
@@ -1116,14 +1118,15 @@ __global__ void k_ambiantOcclusion(
 	float4 localColor = postProcessingBuffer[index];
 	float  depth = localColor.w;
 
-   const int step = 16;
+   int c(0);
+   const int step = 48;
 	for( int X=-step; X<step; X+=2 )
 	{
 		for( int Y=-step; Y<step; Y+=2 )
 		{
 			int xx = x+X;
 			int yy = y+Y;
-			if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+			if( c%2==0 && xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
 			{
 				int localIndex = yy*sceneInfo.width.x+xx;
 				if( postProcessingBuffer[localIndex].w>=depth)
@@ -1132,13 +1135,16 @@ __global__ void k_ambiantOcclusion(
 				}
 			}
 			else
+         {
 				occ += 1.f;
+         }
+         c+=3;
 		}
 	}
-	//occ /= float((2*step)*(2*step));
 	occ /= float(step*step);
 	occ += 0.3f; // Ambient light
-	localColor.x *= occ;
+
+   localColor.x *= occ;
 	localColor.y *= occ;
 	localColor.z *= occ;
 
