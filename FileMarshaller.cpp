@@ -302,7 +302,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
                material.textureIds.z  = static_cast<int>(atoi( value.c_str() )); 
                if( kernel.getTextureInformation(material.textureIds.z).buffer==nullptr )
                {
-                  LOG_ERROR("Bump texture " << material.textureIds.z << " could not be loaded. Default color will be used for material " << materialId );
+                  LOG_ERROR("Normal texture " << material.textureIds.z << " could not be loaded. Default color will be used for material " << materialId );
                   material.textureIds.z = MATERIAL_NONE;
                }
                else
@@ -310,6 +310,22 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
                   if( material.textureIds.z!=MATERIAL_NONE)
                   {
                      LOG_INFO(1, "Texture " << material.textureIds.z << " assigned to material " << materialId );
+                  }
+               }
+               break; 
+            case 25: 
+               // Specular texture
+               material.textureIds.w  = static_cast<int>(atoi( value.c_str() )); 
+               if( kernel.getTextureInformation(material.textureIds.w).buffer==nullptr )
+               {
+                  LOG_ERROR("Specular texture " << material.textureIds.w << " could not be loaded. Default color will be used for material " << materialId );
+                  material.textureIds.w = MATERIAL_NONE;
+               }
+               else
+               {
+                  if( material.textureIds.w!=MATERIAL_NONE)
+                  {
+                     LOG_INFO(1, "Texture " << material.textureIds.w << " assigned to material " << materialId );
                   }
                }
                break; 
@@ -512,6 +528,7 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
          if( material->textureIds.x!=MATERIAL_NONE ) textures[material->textureIds.x] = kernel.getTextureFilename(material->textureIds.z);
          if( material->textureIds.y!=MATERIAL_NONE ) textures[material->textureIds.y] = kernel.getTextureFilename(material->textureIds.y);
          if( material->textureIds.z!=MATERIAL_NONE ) textures[material->textureIds.z] = kernel.getTextureFilename(material->textureIds.z);
+         if( material->textureIds.w!=MATERIAL_NONE ) textures[material->textureIds.w] = kernel.getTextureFilename(material->textureIds.w);
          ++ittiu;
       }
 
@@ -559,7 +576,8 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
             material->textureMapping.w << ";" << 
             material->textureIds.x << ";" << 
             material->textureIds.y << ";" << 
-            material->textureIds.z <<
+            material->textureIds.z << ";" << 
+            material->textureIds.w <<
             std::endl;
          ++itm;
       }

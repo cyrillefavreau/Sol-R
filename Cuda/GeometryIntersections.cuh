@@ -43,9 +43,9 @@ ________________________________________________________________________________
 */
 __device__ inline void computeRayAttributes(Ray& ray)
 {
-	ray.inv_direction.x = 1.f/ray.direction.x;
-	ray.inv_direction.y = 1.f/ray.direction.y;
-	ray.inv_direction.z = 1.f/ray.direction.z;
+   ray.inv_direction.x = ray.direction.x!=0.f ? 1.f/ray.direction.x : 1.f;
+   ray.inv_direction.y = ray.direction.y!=0.f ? 1.f/ray.direction.y : 1.f;
+   ray.inv_direction.z = ray.direction.z!=0.f ? 1.f/ray.direction.z : 1.f;
 	ray.signs.x = (ray.inv_direction.x < 0);
 	ray.signs.y = (ray.inv_direction.y < 0);
 	ray.signs.z = (ray.inv_direction.z < 0);
@@ -692,7 +692,7 @@ __device__ inline bool intersectionWithPrimitives(
    const int currentMaterialId)
 {
 	bool intersections = false; 
-	float minDistance  = sceneInfo.viewDistance.x/iteration;
+	float minDistance  = sceneInfo.viewDistance.x/(iteration+1);
 
 	Ray r;
 	r.origin    = ray.origin;
