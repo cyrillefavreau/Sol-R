@@ -164,9 +164,9 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
                   m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
-                  0.f, 10000.f, kernel.getSceneInfo().viewDistance.x,
+                  m.illumination, 15000.f, kernel.getSceneInfo().viewDistance.x,
                   false );
-               LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
+               LOG_INFO(1, "[" << m.index << "] Added material [" << id << "] " <<
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
@@ -249,6 +249,11 @@ unsigned int OBJReader::loadMaterialsFromFile(
             materials[id].noise = 0.f;
          }
 
+         if( line.find("SoL_R_Light") != -1 )
+         {
+            materials[id].illumination = 0.05f;
+         }
+
          if( line.find("illum") == 0 )
          {
             line = line.substr(6);
@@ -284,9 +289,9 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
             m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
-            0.f, 0.f, 0.f,
+            m.illumination, 15000.f, kernel.getSceneInfo().viewDistance.x,
             false );
-         LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
+         LOG_INFO(1, "[" << m.index << "] Added material [" << id << "] " <<
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
             ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));

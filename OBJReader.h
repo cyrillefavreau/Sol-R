@@ -41,6 +41,7 @@ struct MaterialMTL
    int    normalTextureId;
    int    bumpTextureId;
    int    specularTextureId;
+   float  illumination;
 };
 
 class RAYTRACINGENGINE_API OBJReader
