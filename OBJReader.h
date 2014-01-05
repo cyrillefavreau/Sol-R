@@ -42,6 +42,7 @@ struct MaterialMTL
    int    bumpTextureId;
    int    specularTextureId;
    float  illumination;
+   bool   isSketchupLightMaterial;
 };
 
 class RAYTRACINGENGINE_API OBJReader

@@ -133,6 +133,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
    GPUKernel& kernel,
    int materialId)
 {
+   const float innerDiffusion=500.f;
+
    std::string materialsFilename(filename);
    materialsFilename += ".mtl";
 
@@ -163,8 +165,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-                  m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
-                  m.illumination, 15000.f, kernel.getSceneInfo().viewDistance.x,
+                  m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
+                  m.illumination, innerDiffusion, kernel.getSceneInfo().viewDistance.x,
                   false );
                LOG_INFO(1, "[" << m.index << "] Added material [" << id << "] " <<
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
@@ -178,6 +180,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             material.diffuseTextureId = MATERIAL_NONE;
             material.normalTextureId  = MATERIAL_NONE;
             material.bumpTextureId    = MATERIAL_NONE;
+            materials[id].isSketchupLightMaterial = false;
             material.noise = 1.f;
             materials[id] = material;
          }
@@ -221,13 +224,13 @@ unsigned int OBJReader::loadMaterialsFromFile(
                {
                   materials[id].diffuseTextureId = idx;
                   //materials[id].normalTextureId = idx;
-                  //materials[id].bumpTextureId = idx;
+                  materials[id].bumpTextureId = idx;
                   //materials[id].specularTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
                if(bumpMap)
                {
-                  //materials[id].bumpTextureId = idx;
+                  materials[id].bumpTextureId = idx;
                   //materials[id].normalTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
@@ -251,7 +254,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
 
          if( line.find("SoL_R_Light") != -1 )
          {
-            materials[id].illumination = 0.05f;
+            materials[id].illumination = 0.2f;
+            materials[id].isSketchupLightMaterial = true;
          }
 
          if( line.find("illum") == 0 )
@@ -288,8 +292,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-            m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
-            m.illumination, 15000.f, kernel.getSceneInfo().viewDistance.x,
+            m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
+            m.illumination, innerDiffusion, kernel.getSceneInfo().viewDistance.x,
             false );
          LOG_INFO(1, "[" << m.index << "] Added material [" << id << "] " <<
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
@@ -475,6 +479,7 @@ Vertex OBJReader::loadModelFromFile(
    if( file.is_open() )
    {
       int material = materialId;
+      bool isSketchupLightMaterial=false;
       while( file.good() )
       {
          std::string line;
@@ -490,6 +495,7 @@ Vertex OBJReader::loadModelFromFile(
                {
                   MaterialMTL& m=materials[value];
                   material = m.index;
+                  isSketchupLightMaterial = m.isSketchupLightMaterial;
                   //std::cout << material << std::endl;
                }
                /*
@@ -527,7 +533,7 @@ Vertex OBJReader::loadModelFromFile(
 
                int f(0);
                int nbPrimitives(0);
-               if( allSpheres )
+               if( allSpheres || isSketchupLightMaterial )
                {
                   Vertex sphereCenter;
                   sphereCenter.x = (vertices[face[f].x].x + vertices[face[f+1].x].x + vertices[face[f+2].x].x)/3.f;
@@ -539,7 +545,7 @@ Vertex OBJReader::loadModelFromFile(
                   sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
                   sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
                   
-                  float radius = 100.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
+                  float radius = 5.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
 
                   nbPrimitives = kernel.addPrimitive( ptSphere );
                   kernel.setPrimitive( 

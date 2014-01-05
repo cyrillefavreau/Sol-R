@@ -921,7 +921,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          }
          
          // Lights
-         if( primitive.materialId!=MATERIAL_NONE && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f )
+         if( p%2==0 && primitive.materialId!=MATERIAL_NONE && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f )
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
