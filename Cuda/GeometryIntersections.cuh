@@ -508,9 +508,21 @@ __device__ inline bool triangleIntersection(
 	Vertex&          normal,
 	Vertex&          areas,
 	float&           shadowIntensity,
-	bool&            back )
+	bool&            back,
+   const bool&      processingShadows)
 {
    back = false;
+   // Reject triangles with normal opposite to ray.
+   Vertex N=ray.direction-ray.origin;
+   if( processingShadows )
+   {
+      if( dot(N,triangle.n0)<=0.f ) return false;
+   }
+   else
+   {
+      if( dot(N,triangle.n0)>=0.f ) return false;
+   }
+
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
    Vertex E01=triangle.p1-triangle.p0;
@@ -748,7 +760,7 @@ __device__ inline bool intersectionWithPrimitives(
                   case ptTriangle:
                      {
 						      back = false;
-						      i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
+						      i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, false ); 
                         break;
                      }
 				      default: 

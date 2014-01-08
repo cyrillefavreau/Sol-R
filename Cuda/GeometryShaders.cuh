@@ -155,7 +155,7 @@ __device__ float processShadows(
 					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
                case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
 					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
-					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); break;
+					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, true ); break;
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
@@ -278,9 +278,16 @@ __device__ float4 primitiveShader(
 #endif // EXTENDED_FEATURES
 
 	   closestColor *= material.innerIllumination.x;
+#if 0
+      int i=(lightInformationSize==0) ? 0 : 1;
+	   for( int cpt=0; cpt<nbActiveLamps+i; ++cpt ) 
+	   {
+         int cptLamp = (cpt<nbActiveLamps) ? cpt : sceneInfo.pathTracingIteration.x%lightInformationSize;
+#else
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
          int cptLamp = cpt;
+#endif
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   Vertex center;

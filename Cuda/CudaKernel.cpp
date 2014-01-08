@@ -200,7 +200,7 @@ void CudaKernel::render_begin( const float timer )
             m_hPrimitives, nbPrimitives, 
             m_hLamps, nbLamps );
 
-         LOG_INFO(3, "Transfering " << m_lightInformationSize << " light elements");
+         LOG_INFO(1, "Transfering " << m_lightInformationSize << " light elements");
          h2d_lightInformation( 
             m_occupancyParameters,
             m_lightInformation, m_lightInformationSize );

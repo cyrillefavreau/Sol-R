@@ -67,4 +67,12 @@ public:
       int  materialId,
       bool allSpheres);
 
+private:
+   void addLightComponent(
+      GPUKernel& kernel,
+      std::vector<Vertex>& solrVertices,
+      const Vertex& center,
+      const Vertex& objectCenter,
+      const Vertex& objectScale,
+      const int material);
 };

@@ -133,7 +133,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
    GPUKernel& kernel,
    int materialId)
 {
-   const float innerDiffusion=500.f;
+   const float innerDiffusion=2000.f;
 
    std::string materialsFilename(filename);
    materialsFilename += ".mtl";
@@ -168,7 +168,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
                   m.illumination, innerDiffusion, kernel.getSceneInfo().viewDistance.x,
                   false );
-               LOG_INFO(1, "[" << m.index << "] Added material [" << id << "] " <<
+               LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
                   ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
@@ -190,6 +190,10 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // RGB Color
             line = line.substr(3);
             materials[id].Kd = readVertex(line);
+            if( materials[id].isSketchupLightMaterial )
+            {
+               materials[id].illumination = (materials[id].Kd.x+materials[id].Kd.y+materials[id].Kd.z)/3.f;
+            }
          }
 
          if( line.find("Ks") == 0 )
@@ -224,7 +228,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                {
                   materials[id].diffuseTextureId = idx;
                   //materials[id].normalTextureId = idx;
-                  materials[id].bumpTextureId = idx;
+                  //materials[id].bumpTextureId = idx;
                   //materials[id].specularTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
@@ -241,7 +245,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             }
          }
 
-         if( line.find("d") == 0 || line.find("Tr") == 0 )
+         if( line.find("d")==0 || line.find("Tr")==0 )
          {
             // Specular values
             line = line.substr(2);
@@ -254,7 +258,6 @@ unsigned int OBJReader::loadMaterialsFromFile(
 
          if( line.find("SoL_R_Light") != -1 )
          {
-            materials[id].illumination = 0.2f;
             materials[id].isSketchupLightMaterial = true;
          }
 
@@ -295,7 +298,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
             m.illumination, innerDiffusion, kernel.getSceneInfo().viewDistance.x,
             false );
-         LOG_INFO(1, "[" << m.index << "] Added material [" << id << "] " <<
+         LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
             ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
@@ -304,6 +307,48 @@ unsigned int OBJReader::loadMaterialsFromFile(
       file.close();
    }
    return 0;
+}
+
+void OBJReader::addLightComponent(
+   GPUKernel& kernel,
+   std::vector<Vertex>& solrVertices,
+   const Vertex& center,
+   const Vertex& objectCenter,
+   const Vertex& objectScale,
+   const int material)
+{
+   size_t len=solrVertices.size();
+   if( len!=0 )
+   {
+      Vertex lightCenter={0.f,0.f,0.f};
+      Vertex minPos={ 1000000.f, 1000000.f, 1000000.f};
+      Vertex maxPos={-1000000.f,-1000000.f,-1000000.f};
+      for( size_t i(0); i<len;++i)
+      {
+         minPos.x = std::min(solrVertices[i].x,minPos.x);
+         maxPos.x = std::max(solrVertices[i].x,maxPos.x);
+         minPos.y = std::min(solrVertices[i].y,minPos.y);
+         maxPos.y = std::max(solrVertices[i].y,maxPos.y);
+         minPos.z = std::min(solrVertices[i].z,minPos.z);
+         maxPos.z = std::max(solrVertices[i].z,maxPos.z);
+      }
+      lightCenter.x = (maxPos.x+minPos.x)/2.f;
+      lightCenter.y = (maxPos.y+minPos.y)/2.f;
+      lightCenter.z = (maxPos.z+minPos.z)/2.f;
+      Vertex L={maxPos.x-minPos.x,maxPos.y-minPos.y,maxPos.z-minPos.z};
+      float radius = sqrt(L.x*L.x+L.y*L.y+L.z*L.z)/2.f;
+                  
+      LOG_INFO(1,"Adding SoL-R light (" << lightCenter.x << "," << lightCenter.y << "," << lightCenter.z << ") r=" << radius );
+      int nbPrimitives = kernel.addPrimitive( ptSphere );
+      kernel.setPrimitive( 
+         nbPrimitives,
+         center.x+objectScale.x*(-objectCenter.x+lightCenter.x),
+         center.y+objectScale.y*(-objectCenter.y+lightCenter.y),
+         center.z+objectScale.z*(-objectCenter.z+lightCenter.z),
+         radius, 0.f, 0.f,
+         material);
+   }
+   solrVertices.clear();
 }
 
 Vertex OBJReader::loadModelFromFile(
@@ -338,7 +383,7 @@ Vertex OBJReader::loadModelFromFile(
       loadMaterialsFromFile( noExtFilename, materials, kernel, materialId );
    }
 
-   // Load model
+   // Load model vertices
    std::string modelFilename(noExtFilename);
    modelFilename += ".obj";
 
@@ -475,35 +520,49 @@ Vertex OBJReader::loadModelFromFile(
    }
 
    // Populate ray-tracing engine
+   int sketchupLightCount=0;
+   Vertex sketchupLightPosition;
+
+   // Load model faces
    file.open(modelFilename.c_str());
    if( file.is_open() )
    {
-      int material = materialId;
-      bool isSketchupLightMaterial=false;
+      int material(materialId);
+      bool isSketchupLightMaterial(false);
+      
+      std::vector<Vertex> solrVertices;
+      int indexSolrVertices(0);
       while( file.good() )
       {
+         int nbPrimitives(0);
          std::string line;
+         std::string component;
          std::getline( file, line );
          line.erase( std::remove(line.begin(), line.end(), '\r'), line.end());
          if( line.length() != 0 ) 
          {
+            // Compoment
+            if( line.find("g")==0 )
+            {
+               isSketchupLightMaterial=(line.find("SoL_R")!=-1);
+               if( isSketchupLightMaterial )
+               {
+                  if( line!=component )
+                  {
+                     addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,material);
+                  }
+                  component=line;
+               }
+            }
+
             if( line.find("usemtl") == 0 && line.length()>7)
             {
                std::string value = line.substr(7);
-               //std::cout << "Material [" << value << "]: ";
                if( materials.find(value) != materials.end() )
                {
                   MaterialMTL& m=materials[value];
                   material = m.index;
-                  isSketchupLightMaterial = m.isSketchupLightMaterial;
-                  //std::cout << material << std::endl;
                }
-               /*
-               else
-               {
-                  std::cout << "<undefined>" << std::endl;
-               }
-               */
             }
 
             if( line[0] == 'f' )
@@ -532,7 +591,6 @@ Vertex OBJReader::loadModelFromFile(
                }
 
                int f(0);
-               int nbPrimitives(0);
                if( allSpheres || isSketchupLightMaterial )
                {
                   Vertex sphereCenter;
@@ -540,21 +598,23 @@ Vertex OBJReader::loadModelFromFile(
                   sphereCenter.y = (vertices[face[f].x].y + vertices[face[f+1].x].y + vertices[face[f+2].x].y)/3.f;
                   sphereCenter.z = (vertices[face[f].x].z + vertices[face[f+1].x].z + vertices[face[f+2].x].z)/3.f;
 
-                  Vertex sphereRadius;
-                  sphereRadius.x = sphereCenter.x - vertices[face[f].x].x;
-                  sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
-                  sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
-                  
-                  float radius = 5.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
+                  float radius = 10.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
 
-                  nbPrimitives = kernel.addPrimitive( ptSphere );
-                  kernel.setPrimitive( 
-                     nbPrimitives,
-                     center.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
-                     center.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
-                     center.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
-                     radius, 0.f, 0.f,
-                     material);
+                  if( isSketchupLightMaterial )
+                  {
+                     solrVertices.push_back(sphereCenter);
+                  }
+                  else
+                  {
+                     nbPrimitives = kernel.addPrimitive( ptSphere );
+                     kernel.setPrimitive( 
+                        nbPrimitives,
+                        center.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
+                        center.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
+                        center.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
+                        radius, radius, radius,
+                        material);
+                  }
                }
                else
                {
@@ -624,6 +684,13 @@ Vertex OBJReader::loadModelFromFile(
          }
       }
       file.close();
+
+      // Remaining SoL-R lights
+      if( solrVertices.size()!=0 )
+      {
+         addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,material);
+      }
+
    }
    Vertex objectSize;
    objectSize.x = (maxPos.x - minPos.x)*objectScale.x;

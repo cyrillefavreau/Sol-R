@@ -921,11 +921,11 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          }
          
          // Lights
-         if( p%2==0 && primitive.materialId!=MATERIAL_NONE && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f )
+         if( primitive.materialId!=MATERIAL_NONE && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f )
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-            LOG_INFO(1,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
+            LOG_INFO(3,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
          }
          else
          {
@@ -1016,7 +1016,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
       while( nbBoxes>gridGranularity )
       {
          ++m_treeDepth;
-         nbBoxes /= 4;
+         nbBoxes /= 2;
       }
       LOG_INFO(3, "Scene depth=" << m_treeDepth );
 
@@ -1031,7 +1031,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
       while( nbBoxes>gridGranularity )
       {
          ++treeDepth;
-         nbBoxes /= 4;
+         nbBoxes /= 2;
          LOG_INFO(3,"3. Depth=" << treeDepth << ", NbBoxes=" << nbBoxes );
          processOutterBoxes(nbBoxes,treeDepth);
       }
@@ -2120,6 +2120,7 @@ void GPUKernel::reorganizeLights()
             Material& material = m_hMaterials[primitive.materialId.x];
             if(material.innerIllumination.x!=0.f )
             {
+               // Lights
                bool found(false);
                int i(0);
                while( !found && i<m_nbActiveLamps[m_frame] )
