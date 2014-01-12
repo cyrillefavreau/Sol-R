@@ -1016,7 +1016,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
       while( nbBoxes>gridGranularity )
       {
          ++m_treeDepth;
-         nbBoxes /= 2;
+         nbBoxes /= 4;
       }
       LOG_INFO(3, "Scene depth=" << m_treeDepth );
 
@@ -1031,7 +1031,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes, int gridSize )
       while( nbBoxes>gridGranularity )
       {
          ++treeDepth;
-         nbBoxes /= 2;
+         nbBoxes /= 4;
          LOG_INFO(3,"3. Depth=" << treeDepth << ", NbBoxes=" << nbBoxes );
          processOutterBoxes(nbBoxes,treeDepth);
       }

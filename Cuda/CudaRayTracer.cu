@@ -1563,7 +1563,7 @@ extern "C" void cudaRender(
 
 	int2 size;
 	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x) / (occupancyParameters.x*occupancyParameters.y);
+	size.y = static_cast<int>(sceneInfo.height.x) / 8; //(occupancyParameters.x*occupancyParameters.y);
 
    dim3 grid;
    grid.x = (size.x+blockSize.x-1)/blockSize.x;
@@ -1581,7 +1581,8 @@ extern "C" void cudaRender(
    {
       checkCudaErrors(cudaSetDevice(device));
 
-      for( int stream(0); stream<occupancyParameters.y; ++stream )
+      //for( int stream(0); stream<occupancyParameters.y; ++stream )
+      int stream(occupancyParameters.y-1);
       {
 	      switch( sceneInfo.renderingType.x ) 
 	      {

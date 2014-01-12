@@ -78,7 +78,7 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_blockSize.w = 0;
 
    m_occupancyParameters.x = 1; // GPUs
-   m_occupancyParameters.y = 1; // Streams per GPU
+   m_occupancyParameters.y = 8; // Streams per GPU
 
    m_gpuDescription = "CUDA device";
 
@@ -283,19 +283,29 @@ void CudaKernel::render_begin( const float timer )
       objects.z = nbLamps;
       objects.w = m_lightInformationSize;
 
-      cudaRender(
-         m_occupancyParameters,
-         m_blockSize,
-         m_sceneInfo, objects,
-         m_postProcessingInfo,
-         m_viewPos,
-		   m_viewDir, 
-         m_angles
+      SceneInfo sceneInfo=m_sceneInfo;
+      //sceneInfo.width.x /= 1;
+      sceneInfo.height.x /= 8;
+
+      int2 occupancyParameters = m_occupancyParameters;
+#pragma omp parallel for
+      for( int i=0;i<m_occupancyParameters.y; ++i)
+      {
+         occupancyParameters.y = i+1;
+         cudaRender(
+            occupancyParameters,
+            m_blockSize,
+            m_sceneInfo, objects,
+            m_postProcessingInfo,
+            m_viewPos,
+		      m_viewDir, 
+            m_angles
 #ifdef USE_MANAGED_MEMORY
-         ,m_hBoundingBoxes
-         ,m_hPrimitives
+            ,m_hBoundingBoxes
+            ,m_hPrimitives
 #endif
-         );
+            );
+      }
    }
    m_refresh = (m_sceneInfo.pathTracingIteration.x<m_sceneInfo.maxPathTracingIterations.x);
 }
