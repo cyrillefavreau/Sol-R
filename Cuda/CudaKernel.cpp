@@ -69,8 +69,7 @@ ________________________________________________________________________________
 */
 CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device ) 
  : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox ),
-   m_sharedMemSize(256),
-   m_imageCount(0)
+   m_sharedMemSize(256)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
    m_blockSize.x = 16;
@@ -174,7 +173,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::render_begin( const float timer )
 {
-   //g_perf=GetTickCount();
+   if( m_sceneInfo.pathTracingIteration.x==0 ) m_counter=GetTickCount();
    GPUKernel::render_begin(timer);
    if( m_refresh )
    {
@@ -307,6 +306,10 @@ void CudaKernel::render_begin( const float timer )
 void CudaKernel::render_end()
 {
    // GPU -> CPU Data transfers
+   if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
+   {
+      LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
+   }
    d2h_bitmap( m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds );
    if( m_sceneInfo.misc.x == 0 )
    {

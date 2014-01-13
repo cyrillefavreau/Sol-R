@@ -63,6 +63,6 @@ private:
 private:
 
    // Bitmap output
-   int m_imageCount;
+   long m_counter;
 
 };

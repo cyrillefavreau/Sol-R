@@ -297,89 +297,96 @@ __device__ float4 primitiveShader(
             center.z = lightInformation[cptLamp].location.z;
 
             int t = (index*3+sceneInfo.misc.y)%(sceneInfo.width.x*sceneInfo.height.x);
+            Material& m=materials[lightInformation[cptLamp].attribute.y];
             if( lightInformation[cptLamp].attribute.x>=0 &&
                 lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
                t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
                float a= (sceneInfo.pathTracingIteration.x<sceneInfo.maxPathTracingIterations.x) ? sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x) : 1.f;
-               Material& m=materials[lightInformation[cptLamp].attribute.y];
                center.x += m.innerIllumination.y*randoms[t  ]*a;
 				   center.y += m.innerIllumination.y*randoms[t+1]*a;
 				   center.z += m.innerIllumination.y*randoms[t+2]*a;
             }
 
-            float4 shadowColor = {0.f,0.f,0.f,0.f};
-            if( sceneInfo.graphicsLevel.x>3 && 
-                iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
-                material.innerIllumination.x==0.f ) 
-			   {
-				   shadowIntensity = processShadows(
-					   sceneInfo, boundingBoxes, nbActiveBoxes,
-					   primitives, materials, textures, 
-					   nbActivePrimitives, center, 
-                  intersection, lightInformation[cptLamp].attribute.x, iteration, shadowColor );
-			   }
-
-            if( sceneInfo.graphicsLevel.x>0 )
+		      Vertex lightRay = center - intersection;
+            float lightRayLength=length(lightRay);
+            if( lightRayLength<m.innerIllumination.z )
             {
-		         Vertex lightRay = center - intersection;
-               lightRay = normalize(lightRay);
-			      // --------------------------------------------------------------------------------
-			      // Lambert
-			      // --------------------------------------------------------------------------------
-	            float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-               // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
-               // depends on the transparency rate.
-               //lambert *= (lambert<0.f) ? -material.transparency.x : lambert;
-
-               if( lightInformation[cptLamp].attribute.y != MATERIAL_NONE )
-               {
-                  Material& m=materials[lightInformation[cptLamp].attribute.y];
-                  lambert *= m.innerIllumination.x; // Lamp illumination
-               }
-               else
-               {
-                  lambert *= lightInformation[cptLamp].color.w;
-               }
-
-               lambert *= (1.f+randoms[t]*material.innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
-			      lambert *= (1.f-shadowIntensity);
-
-#ifdef PHOTON_ENERGY
-               float a = 1.f-(length(lightRay)/m.innerIllumination.z);
-               lambert *= (a>0.f) ? a : 0.f;
-#endif // PHOTON_ENERGY
-
-               // Lighted object, not in the shades
-               lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;
-
-			      if( sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x )
+               float4 shadowColor = {0.f,0.f,0.f,0.f};
+               if( sceneInfo.graphicsLevel.x>3 && 
+                   iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
+                   material.innerIllumination.x==0.f ) 
 			      {
-				      // --------------------------------------------------------------------------------
-				      // Blinn - Phong
-				      // --------------------------------------------------------------------------------
-				      Vertex viewRay = normalize(intersection - origin);
-				      Vertex blinnDir = lightRay - viewRay;
-				      float temp = sqrt(dot(blinnDir,blinnDir));
-				      if (temp != 0.f ) 
-				      {
-					      // Specular reflection
-					      blinnDir = (1.f / temp) * blinnDir;
-
-					      float blinnTerm = dot(blinnDir,normal);
-					      blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
-
-					      blinnTerm = specular.x * pow(blinnTerm,specular.y);
-                     blinnTerm *= (1.f-material.transparency.x);
-
-					      totalBlinn += lightInformation[cptLamp].color * lightInformation[cptLamp].color.w * blinnTerm;
-                     
-                     // Get transparency from specular map
-                     totalBlinn.w = specular.z;
-				      }
+				      shadowIntensity = processShadows(
+					      sceneInfo, boundingBoxes, nbActiveBoxes,
+					      primitives, materials, textures, 
+					      nbActivePrimitives, center, 
+                     intersection, lightInformation[cptLamp].attribute.x, iteration, shadowColor );
 			      }
-            }
-		   }
+
+               if( sceneInfo.graphicsLevel.x>0 )
+               {
+//#ifdef PHOTON_ENERGY
+                  float photonEnergy = sqrt(lightRayLength/m.innerIllumination.z);
+                  photonEnergy = (photonEnergy>1.f) ? 1.f : photonEnergy;
+                  photonEnergy = (photonEnergy<0.f) ? 0.f : photonEnergy;
+//#endif // PHOTON_ENERGY
+
+                  lightRay = normalize(lightRay);
+			         // --------------------------------------------------------------------------------
+			         // Lambert
+			         // --------------------------------------------------------------------------------
+	               float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+                  // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
+                  // depends on the transparency rate.
+                  //lambert *= (lambert<0.f) ? -material.transparency.x : lambert;
+
+                  if( lightInformation[cptLamp].attribute.y != MATERIAL_NONE )
+                  {
+                     Material& m=materials[lightInformation[cptLamp].attribute.y];
+                     lambert *= m.innerIllumination.x; // Lamp illumination
+                  }
+                  else
+                  {
+                     lambert *= lightInformation[cptLamp].color.w;
+                  }
+
+                  lambert *= (1.f+randoms[t]*material.innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
+			         lambert *= (1.f-shadowIntensity);
+                  lambert *= (1.f-photonEnergy);
+
+                  // Lighted object, not in the shades
+                  lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;
+
+			         if( sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x )
+			         {
+				         // --------------------------------------------------------------------------------
+				         // Blinn - Phong
+				         // --------------------------------------------------------------------------------
+				         Vertex viewRay = normalize(intersection - origin);
+				         Vertex blinnDir = lightRay - viewRay;
+				         float temp = sqrt(dot(blinnDir,blinnDir));
+				         if (temp != 0.f ) 
+				         {
+					         // Specular reflection
+					         blinnDir = (1.f / temp) * blinnDir;
+
+					         float blinnTerm = dot(blinnDir,normal);
+					         blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
+
+					         blinnTerm = specular.x * pow(blinnTerm,specular.y);
+                        blinnTerm *= (1.f-material.transparency.x);
+                        blinnTerm *= (1.f-photonEnergy);
+
+					         totalBlinn += lightInformation[cptLamp].color * lightInformation[cptLamp].color.w * blinnTerm;
+                     
+                        // Get transparency from specular map
+                        totalBlinn.w = specular.z;
+				         }
+			         }
+               }
+		      }
+         }
 
          // Light impact on material
 		   closestColor += intersectionColor*lampsColor;

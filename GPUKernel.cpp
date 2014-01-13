@@ -2186,20 +2186,6 @@ void GPUKernel::realignTexturesAndMaterials()
       int specularTextureId = m_hMaterials[i].textureIds.w;
       switch(diffuseTextureId)
       {
-      case TEXTURE_NONE:
-         m_hMaterials[i].textureMapping.x = m_hTextures[diffuseTextureId].size.x;
-         m_hMaterials[i].textureMapping.y = m_hTextures[diffuseTextureId].size.y;
-         m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
-         m_hMaterials[i].textureMapping.w = m_hTextures[diffuseTextureId].size.z;
-         m_hMaterials[i].textureIds.x     = diffuseTextureId;
-         m_hMaterials[i].textureIds.y     = bumpTextureId;
-         m_hMaterials[i].textureIds.z     = normalTextureId;
-         m_hMaterials[i].textureIds.w     = specularTextureId;
-         m_hMaterials[i].textureOffset.x  = (diffuseTextureId==TEXTURE_NONE) ? 0: m_hTextures[diffuseTextureId].offset;
-         m_hMaterials[i].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
-         m_hMaterials[i].textureOffset.z  = (normalTextureId==TEXTURE_NONE) ? 0: m_hTextures[normalTextureId].offset;
-         m_hMaterials[i].textureOffset.w  = (specularTextureId==TEXTURE_NONE) ? 0: m_hTextures[specularTextureId].offset;
-         break;
       case TEXTURE_MANDELBROT:
       case TEXTURE_JULIA:
          m_hMaterials[i].textureMapping.x = 40000;
@@ -2216,18 +2202,36 @@ void GPUKernel::realignTexturesAndMaterials()
          m_hMaterials[i].textureOffset.w  = 0;
          break;
       default:
-         m_hMaterials[i].textureMapping.x = 0;
-         m_hMaterials[i].textureMapping.y = 0;
-         m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
-         m_hMaterials[i].textureMapping.w = 0;
-         m_hMaterials[i].textureIds.x     = diffuseTextureId;
-         m_hMaterials[i].textureIds.y     = bumpTextureId;
-         m_hMaterials[i].textureIds.z     = normalTextureId;
-         m_hMaterials[i].textureIds.w     = specularTextureId;
-         m_hMaterials[i].textureOffset.x  = 0;
-         m_hMaterials[i].textureOffset.y  = 0;
-         m_hMaterials[i].textureOffset.z  = 0;
-         m_hMaterials[i].textureOffset.w  = 0;
+         if( diffuseTextureId<m_nbActiveTextures )
+         {
+            m_hMaterials[i].textureMapping.x = m_hTextures[diffuseTextureId].size.x;
+            m_hMaterials[i].textureMapping.y = m_hTextures[diffuseTextureId].size.y;
+            m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
+            m_hMaterials[i].textureMapping.w = m_hTextures[diffuseTextureId].size.z;
+            m_hMaterials[i].textureIds.x     = diffuseTextureId;
+            m_hMaterials[i].textureIds.y     = bumpTextureId;
+            m_hMaterials[i].textureIds.z     = normalTextureId;
+            m_hMaterials[i].textureIds.w     = specularTextureId;
+            m_hMaterials[i].textureOffset.x  = (diffuseTextureId==TEXTURE_NONE) ? 0: m_hTextures[diffuseTextureId].offset;
+            m_hMaterials[i].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
+            m_hMaterials[i].textureOffset.z  = (normalTextureId==TEXTURE_NONE) ? 0: m_hTextures[normalTextureId].offset;
+            m_hMaterials[i].textureOffset.w  = (specularTextureId==TEXTURE_NONE) ? 0: m_hTextures[specularTextureId].offset;
+         }
+         else
+         {
+            m_hMaterials[i].textureMapping.x = 0;
+            m_hMaterials[i].textureMapping.y = 0;
+            m_hMaterials[i].textureMapping.z = TEXTURE_NONE; // Deprecated
+            m_hMaterials[i].textureMapping.w = 0;
+            m_hMaterials[i].textureIds.x     = diffuseTextureId;
+            m_hMaterials[i].textureIds.y     = bumpTextureId;
+            m_hMaterials[i].textureIds.z     = normalTextureId;
+            m_hMaterials[i].textureIds.w     = specularTextureId;
+            m_hMaterials[i].textureOffset.x  = 0;
+            m_hMaterials[i].textureOffset.y  = 0;
+            m_hMaterials[i].textureOffset.z  = 0;
+            m_hMaterials[i].textureOffset.w  = 0;
+         }
       }
 
       if(diffuseTextureId!=TEXTURE_NONE)

@@ -174,8 +174,19 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
 
    if( buffer != nullptr )
    {
+	   //Reverse buffer
+      size_t size=width*height*actual_comps;
+      BitmapBuffer* revBuffer=new BitmapBuffer[size];
+	   for (size_t i(0); i<size; i+=actual_comps)
+	   {
+		   revBuffer[i+2] = buffer[size-1-i];
+		   revBuffer[i+1] = buffer[size-2-i];
+		   revBuffer[i  ] = buffer[size-3-i];
+	   }
+      delete [] buffer;
+
       if( textureInformations[index].buffer!=nullptr ) delete [] textureInformations[index].buffer;
-      textureInformations[index].buffer = buffer;
+      textureInformations[index].buffer = revBuffer;
       textureInformations[index].size.x = width;
       textureInformations[index].size.y = height;
       textureInformations[index].size.z = actual_comps;
