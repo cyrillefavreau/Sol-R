@@ -181,7 +181,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             material.normalTextureId  = MATERIAL_NONE;
             material.bumpTextureId    = MATERIAL_NONE;
             materials[id].isSketchupLightMaterial = false;
-            material.noise = 1.f;
+            material.noise = 5.f;
             materials[id] = material;
          }
 
