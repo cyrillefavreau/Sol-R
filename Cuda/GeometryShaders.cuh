@@ -148,8 +148,8 @@ __device__ float processShadows(
 				{
 
 					bool back;
-#ifdef EXTENDED_GEOMETRY
 					bool hit = false;
+#ifdef EXTENDED_GEOMETRY
 					switch(primitive.type.x)
 					{
 					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
@@ -160,7 +160,7 @@ __device__ float processShadows(
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
 #else
-               hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back );
+               hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, true );
 #endif
 
 #ifdef EXTENDED_FEATURES

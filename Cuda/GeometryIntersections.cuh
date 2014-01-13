@@ -512,8 +512,9 @@ __device__ inline bool triangleIntersection(
    const bool&      processingShadows)
 {
    back = false;
+
    // Reject triangles with normal opposite to ray.
-   Vertex N=ray.direction-ray.origin;
+   Vertex N=ray.direction;//-ray.origin;
    if( processingShadows )
    {
       if( dot(N,triangle.n0)<=0.f ) return false;
@@ -675,7 +676,7 @@ __device__ float4 intersectionShader(
 #else
 	if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 	{
-      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
+      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular );
 	}
 #endif // EXTENDED_GEOMETRY
 	return colorAtIntersection;
@@ -772,7 +773,7 @@ __device__ inline bool intersectionWithPrimitives(
 				      }
    #else
 					   back = false;
-					   i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back ); 
+						i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, false ); 
    #endif // EXTENDED_GEOMETRY
 
 #ifdef EXTENDED_FEATURES

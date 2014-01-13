@@ -30,6 +30,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <vector>
+#include <omp.h>
 
 #include <cuda_runtime.h>
 #include "CudaRayTracer.h"
@@ -78,7 +79,7 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_blockSize.w = 0;
 
    m_occupancyParameters.x = 1; // GPUs
-   m_occupancyParameters.y = 8; // Streams per GPU
+   m_occupancyParameters.y = 1; // Streams per GPU
 
    m_gpuDescription = "CUDA device";
 
@@ -92,7 +93,6 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
 		&GPU_CudaRAYTRACERMODULE_EVENT_WARNING,
 		&GPU_CudaRAYTRACERMODULE_EVENT_ERROR);
 #endif // NDEBUG
-
 }
 
 /*
@@ -284,28 +284,22 @@ void CudaKernel::render_begin( const float timer )
       objects.w = m_lightInformationSize;
 
       SceneInfo sceneInfo=m_sceneInfo;
-      //sceneInfo.width.x /= 1;
-      sceneInfo.height.x /= 8;
+      if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 0;
+      if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
-      int2 occupancyParameters = m_occupancyParameters;
-#pragma omp parallel for
-      for( int i=0;i<m_occupancyParameters.y; ++i)
-      {
-         occupancyParameters.y = i+1;
-         cudaRender(
-            occupancyParameters,
-            m_blockSize,
-            m_sceneInfo, objects,
-            m_postProcessingInfo,
-            m_viewPos,
-		      m_viewDir, 
-            m_angles
+      cudaRender(
+         m_occupancyParameters,
+         m_blockSize,
+         sceneInfo, objects,
+         m_postProcessingInfo,
+         m_viewPos,
+		   m_viewDir, 
+         m_angles
 #ifdef USE_MANAGED_MEMORY
             ,m_hBoundingBoxes
             ,m_hPrimitives
 #endif
-            );
-      }
+         );
    }
    m_refresh = (m_sceneInfo.pathTracingIteration.x<m_sceneInfo.maxPathTracingIterations.x);
 }

@@ -281,7 +281,7 @@ __device__ inline float4 launchRay(
          // Background
          Vertex normal = {0.f, 1.f, 0.f };
          Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
-         float angle = 0.5f*fabs(dot( normal, dir));
+         float angle = 0.5f-dot( normal, dir);
          angle = (angle>1.f) ? 1.f: angle;
 			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
 #else
@@ -373,6 +373,9 @@ __device__ inline float4 launchRay(
 
 	// Depth of field
    intersectionColor -= colorBox;
+   
+   // Ambient light
+   intersectionColor += sceneInfo.backgroundColor.w;
 	saturateVector( intersectionColor );
 	return intersectionColor;
 }
@@ -1563,7 +1566,7 @@ extern "C" void cudaRender(
 
 	int2 size;
 	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x) / 8; //(occupancyParameters.x*occupancyParameters.y);
+	size.y = static_cast<int>(sceneInfo.height.x) / (occupancyParameters.x*occupancyParameters.y);
 
    dim3 grid;
    grid.x = (size.x+blockSize.x-1)/blockSize.x;

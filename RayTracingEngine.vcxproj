@@ -941,14 +941,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">compute_13,sm_13;compute_30,sm_30</CodeGeneration>
-      <GenerateLineInfo Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</GenerateLineInfo>
       <GenerateLineInfo Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">true</GenerateLineInfo>
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">true</FastMath>
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">true</FastMath>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <TargetMachinePlatform Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">64</TargetMachinePlatform>
-      <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">compute_30,sm_30</CodeGeneration>
     </CudaCompile>
     <None Include="Cuda\GeometryIntersections.cuh">
       <FileType>Document</FileType>

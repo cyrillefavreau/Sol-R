@@ -165,7 +165,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-                  m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
+                  m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
                   m.illumination, innerDiffusion, kernel.getSceneInfo().viewDistance.x,
                   false );
                LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
@@ -295,7 +295,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-            m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
+            m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
             m.illumination, innerDiffusion, kernel.getSceneInfo().viewDistance.x,
             false );
          LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
@@ -521,7 +521,6 @@ Vertex OBJReader::loadModelFromFile(
 
    // Populate ray-tracing engine
    int sketchupLightCount=0;
-   Vertex sketchupLightPosition;
 
    // Load model faces
    file.open(modelFilename.c_str());
