@@ -459,7 +459,7 @@ int GPUKernel::addPrimitive( PrimitiveType type )
       memset(&primitive,0,sizeof(CPUPrimitive));
       primitive.type = type;
       int index = static_cast<int>(m_primitives[m_frame].size());
-      (m_primitives[m_frame])[index] = primitive;
+      m_primitives[m_frame][index] = primitive;
       LOG_INFO(3,"m_primitives.size() = " << m_primitives[m_frame].size());
 	   returnValue = index;
    }
@@ -925,7 +925,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-            LOG_INFO(3,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
+            LOG_INFO(1,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
          }
          else
          {

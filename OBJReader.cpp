@@ -171,6 +171,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
                   "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
+                  "( " << m.illumination << ") " <<
                   ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
             }
             id = line.substr(7);
@@ -183,6 +184,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             materials[id].isSketchupLightMaterial = false;
             material.noise = 5.f;
             materials[id] = material;
+            materials[id].Ks.x = 1.f;
+            materials[id].Ks.y = 200.f;
          }
 
          if( line.find("Kd") == 0 )
@@ -251,7 +254,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
             materials[id].reflection   = 1.f; 
-            materials[id].transparency = 0.8f+d*0.2f;
+            materials[id].transparency = 1.f-d;
             materials[id].refraction   = 1.1f;
             materials[id].noise = 0.f;
          }
@@ -301,6 +304,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
          LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
             "( " << m.Ks.x << ", " << m.Ks.y << ", " << m.Ks.z << ") " <<
+            "( " << m.illumination << ") " <<
             ", Textures [" << m.diffuseTextureId << "," << m.bumpTextureId << "]=" << kernel.getTextureFilename(m.diffuseTextureId));
       }
 
@@ -338,8 +342,8 @@ void OBJReader::addLightComponent(
       Vertex L={maxPos.x-minPos.x,maxPos.y-minPos.y,maxPos.z-minPos.z};
       float radius = sqrt(L.x*L.x+L.y*L.y+L.z*L.z)/2.f;
                   
-      LOG_INFO(1,"Adding SoL-R light (" << lightCenter.x << "," << lightCenter.y << "," << lightCenter.z << ") r=" << radius );
       int nbPrimitives = kernel.addPrimitive( ptSphere );
+      LOG_INFO(1,"Adding SoL-R light [" << material << "] to primitive " << nbPrimitives << " (" << lightCenter.x << "," << lightCenter.y << "," << lightCenter.z << ") r=" << radius );
       kernel.setPrimitive( 
          nbPrimitives,
          center.x+objectScale.x*(-objectCenter.x+lightCenter.x),
@@ -527,15 +531,16 @@ Vertex OBJReader::loadModelFromFile(
    if( file.is_open() )
    {
       int material(materialId);
+      int sketchupMaterial(MATERIAL_NONE);
       bool isSketchupLightMaterial(false);
       
       std::vector<Vertex> solrVertices;
       int indexSolrVertices(0);
+      std::string component;
+      std::string line;
       while( file.good() )
       {
          int nbPrimitives(0);
-         std::string line;
-         std::string component;
          std::getline( file, line );
          line.erase( std::remove(line.begin(), line.end(), '\r'), line.end());
          if( line.length() != 0 ) 
@@ -548,7 +553,7 @@ Vertex OBJReader::loadModelFromFile(
                {
                   if( line!=component )
                   {
-                     addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,material);
+                     addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,sketchupMaterial);
                   }
                   component=line;
                }
@@ -561,6 +566,10 @@ Vertex OBJReader::loadModelFromFile(
                {
                   MaterialMTL& m=materials[value];
                   material = m.index;
+                  if( isSketchupLightMaterial )
+                  {
+                     sketchupMaterial=material;
+                  }
                }
             }
 
@@ -687,7 +696,7 @@ Vertex OBJReader::loadModelFromFile(
       // Remaining SoL-R lights
       if( solrVertices.size()!=0 )
       {
-         addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,material);
+         addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,sketchupMaterial);
       }
 
    }
@@ -696,9 +705,6 @@ Vertex OBJReader::loadModelFromFile(
    objectSize.y = (maxPos.y - minPos.y)*objectScale.y;
    objectSize.z = (maxPos.z - minPos.z)*objectScale.z;
    
-
-   //kernel.setNbMaxPrimitivePerBox( 2*static_cast<int>(sqrt(static_cast<float>(kernel.getNbActivePrimitives()))));
-
    LOG_INFO(1,"--------------------------------------------------------------------------------");
    LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
    LOG_INFO(1, "Nb Vertices: " << kernel.getNbActivePrimitives() );
