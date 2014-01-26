@@ -1,4 +1,4 @@
-/* 
+﻿/* 
 * Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
@@ -20,12 +20,6 @@
 *
 */
 
-//#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-//#pragma OPENCL EXTENSION cl_amd_printf : enable
-
-// Globals
-// Defines
-
 // Typedefs
 typedef float4        Vertex;
 typedef int4          PrimitiveXYIdBuffer;
@@ -42,7 +36,7 @@ typedef int           Lamp;
 __constant const int BOUNDING_BOXES_TREE_DEPTH = 64;
 __constant const int NB_MAX_BOXES      = 2097152;
 __constant const int NB_MAX_PRIMITIVES = 2097152;
-__constant const int NB_MAX_LAMPS      = 16;
+__constant const int NB_MAX_LAMPS      = 512;
 __constant const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 __constant const int NB_MAX_TEXTURES   = 512;
 __constant const int NB_MAX_FRAMES     = 128;
@@ -101,7 +95,7 @@ typedef struct
    int    renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
    int    pathTracingIteration;     // Current iteration for current frame
    int    maxPathTracingIterations; // Maximum number of iterations for current frame
-   int4    misc;                     // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
+   int4    misc;                    // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
    // y: Timer
    // z: Fog( 0: disabled, 1: enabled )
    // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
@@ -117,7 +111,7 @@ typedef struct
 
 typedef struct
 {
-   int   attribute;                 // ID of the emitting primitive
+   int2   attribute;                 // ID of the emitting primitive
    Vertex location;                  // Position in space
    float4 color;                     // Light
 } LightInformation;
@@ -149,9 +143,10 @@ typedef struct
    // y: Power
    // z: <not used>
    // w: <not used>
-   float reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
-   float refraction;        // Refraction index( ex: glass=1.33 )
-   float transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
+   float  reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
+   float  refraction;        // Refraction index( ex: glass=1.33 )
+   float  transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
+   float  dummy;             // alignment issues
    int4   attributes;        // x: Fast transparency( off=0, on=1 ). Fast transparency produces no shadows 
    //    and drops intersections if rays intersects primitive with the same material ID
    // y: Procedural textures( off=0, on=1 )
@@ -159,14 +154,21 @@ typedef struct
    // w: Wireframe Width
    int4   textureMapping;    // x: U padding
    // y: V padding
-   // z: Texture ID
+   // z: Texture ID (Deprecated)
    // w: Texture color depth
-   int   textureOffset;     // x: offset in the texture buffer
+   int4   textureOffset;     // x: Offset in the diffuse map
+   // y: Offset in the normal map
+   // z: Offset in the bump map
+   // w: Offset in the specular map
+   int4   textureIds;        // x: Diffuse map
+   // y: Normal map
+   // z: Bump map
+   // w: Specular map
 } Material;
 
 typedef struct
 {
-   float4 parameters[2];     // Bottom-Left and Top-Right corners
+   Vertex parameters[2];     // Bottom-Left and Top-Right corners
    int    nbPrimitives;      // Number of primitives in the box
    int    startIndex;        // Index of the first primitive in the box
    int2   indexForNextBox;   // If no intersection, how many of the following boxes can be skipped?
@@ -284,8 +286,8 @@ ________________________________________________________________________________
 { \
    Vertex __r = __v; \
    /* X axis */ \
-   __r.y = __v.y*half_cos(angles.x) - __v.z*half_sin(__a.x); \
-   __r.z = __v.y*half_sin(angles.x) + __v.z*half_cos(__a.x); \
+   __r.y = __v.y*half_cos(__a.x) - __v.z*half_sin(__a.x); \
+   __r.z = __v.y*half_sin(__a.x) + __v.z*half_cos(__a.x); \
    __v = __r; \
    __r = __v; \
    /* Y axis */ \
@@ -459,6 +461,61 @@ void mandelbrotSet(
    (*color).w = 1.f-(n/maxIterations);
 }
 
+
+// ----------
+// Normal mapping
+// --------------------
+void normalMap(
+   const int        index,
+   __global const Material*  material,
+   __global const BitmapBuffer*    textures,
+   Vertex*          normal)
+{
+   int i = (*material).textureOffset.z + index;
+   BitmapBuffer r,g;
+   r = textures[i  ];
+   g = textures[i+1];
+   (*normal).x = 0.1f*(r/256.f-0.5f);
+   (*normal).y = 0.1f*(g/256.f-0.5f);
+   (*normal).z = 0.f;
+}
+
+// ----------
+// Normal mapping
+// --------------------
+void bumpMap(
+   const int        index,
+   __global const Material*  material,
+   __global const BitmapBuffer*    textures,
+   Vertex*          intersection)
+{
+   int i = (*material).textureOffset.y + index;
+   BitmapBuffer r,g,b;
+   r = textures[i  ];
+   g = textures[i+1];
+   b = textures[i+2];
+   (*intersection).x += (r/256.f);
+   (*intersection).y += (g/256.f);
+   (*intersection).z += (b/256.f);
+}
+
+// ----------
+// Normal mapping
+// --------------------
+void specularMap(
+   const int        index,
+   __global const Material*  material,
+   __global const BitmapBuffer*    textures,
+   Vertex*          specular)
+{
+   int i = (*material).textureOffset.w + index;
+   BitmapBuffer r,g,b;
+   r = textures[i  ];
+   g = textures[i+1];
+   b = textures[i+2];
+   (*specular).x = (r+g+b)/(3.f*256.f);
+}
+
 /*
 ________________________________________________________________________________
 
@@ -469,26 +526,62 @@ float4 sphereUVMapping(
    __global const Primitive* primitive,
    __global const Material*  materials,
    __global const BitmapBuffer* textures,
-   const Vertex intersection)
+   Vertex* intersection,
+   Vertex* normal,
+   Vertex* specular)
 {
    __global const Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
 
-   Vertex d = normalize((*primitive).p0-intersection);
-   int u = (*primitive).size.x * (0.5f - atan2(d.z, d.x) / 2*PI);
-   int v = (*primitive).size.y * (0.5f - 2.f*(asin(d.y) / 2*PI));
+   float len,U,V;
+   Vertex I=(*intersection);
+   vectorRotation(I,(*primitive).p0,(*primitive).vt0);
+   I = I-(*primitive).p0;
+
+   float z = I.z;
+   len = sqrt(I.x*I.x+I.y*I.y+I.z*I.z);
+   if(len>0.0f) 
+   {     
+      if(I.x==0.0f && I.y==0.0f) 
+      {
+         U = 0.f;
+      }
+      else
+      {
+         U = (1.f - atan2(I.x,I.y)/PI)/2.f;
+      }
+
+      z/=len;
+      V = 1.f-acos(z)/PI;
+   }
+
+   int u = (*material).textureMapping.x*(U*(*primitive).vt1.x); // TODO
+   int v = (*material).textureMapping.y*(V*(*primitive).vt1.y);
 
    if( (*material).textureMapping.x != 0 ) u = u%(*material).textureMapping.x;
    if( (*material).textureMapping.y != 0 ) v = v%(*material).textureMapping.y;
    if( u>=0 && u<(*material).textureMapping.x && v>=0 && v<(*material).textureMapping.y )
    {
-      int index = (*material).textureOffset + (v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
-      BitmapBuffer r = textures[index  ];
-      BitmapBuffer g = textures[index+1];
-      BitmapBuffer b = textures[index+2];
+      int A = (v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
+      int B = (*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w;
+      int index = A%B;
+
+      // Diffuse
+      int i = (*material).textureOffset.x + index;
+      BitmapBuffer r,g,b;
+      r = textures[i  ];
+      g = textures[i+1];
+      b = textures[i+2];
       result.x = r/256.f;
       result.y = g/256.f;
       result.z = b/256.f;
+
+      // Bump mapping
+      if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+      // Normal mapping
+      if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+      // Specular mapping
+      if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
    }
    return result; 
 }
@@ -504,42 +597,79 @@ float4 cubeMapping(
    __global const Primitive*    primitive, 
    __global const Material*     materials,
    __global const BitmapBuffer* textures,
-   const Vertex        intersection)
+   Vertex* intersection,
+   Vertex* normal,
+   Vertex* specular)
 {
    __global const Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
 
-   int u = (((*primitive).type == ptCheckboard) || ((*primitive).type == ptXZPlane) || ((*primitive).type == ptXYPlane))  ? 
-      (intersection.x-(*primitive).p0.x+(*primitive).size.x):
-   (intersection.z-(*primitive).p0.z+(*primitive).size.z);
-
-   int v = (((*primitive).type == ptCheckboard) || ((*primitive).type == ptXZPlane)) ? 
-      (intersection.z+(*primitive).p0.z+(*primitive).size.z) :
-   (intersection.y-(*primitive).p0.y+(*primitive).size.y);
-
-   if( (*material).textureMapping.x != 0 ) u = u%(*material).textureMapping.x;
-   if( (*material).textureMapping.y != 0 ) v = v%(*material).textureMapping.y;
-
-   if( u>=0 && u<(*material).textureMapping.x && v>=0 && v<(*material).textureMapping.x )
+#ifdef USE_KINECT
+   if( primitive.type.x == ptCamera )
    {
-      switch( (*material).textureMapping.z )
+      int x = ((*intersection).x-(*primitive).p0.x+(*primitive).size.x)*material.textureMapping.x;
+      int y = gKinectVideoHeight - ((*intersection).y-(*primitive).p0.y+(*primitive).size.y)*material.textureMapping.y;
+
+      x = (x+gKinectVideoWidth)%gKinectVideoWidth;
+      y = (y+gKinectVideoHeight)%gKinectVideoHeight;
+
+      if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
       {
-      case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, &result ); break;
-      case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, &result ); break;
-      default:
-         {
-            int index = (*material).textureOffset + (v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
-            BitmapBuffer r = textures[index];
-            BitmapBuffer g = textures[index+1];
-            BitmapBuffer b = textures[index+2];
-            result.x = r/256.f;
-            result.y = g/256.f;
-            result.z = b/256.f;
-         }
-         break;
+         int index = (y*gKinectVideoWidth+x)*gKinectVideo;
+         index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
+         BitmapBuffer r = textures[index+2];
+         BitmapBuffer g = textures[index+1];
+         BitmapBuffer b = textures[index+0];
+         result.x = r/256.f;
+         result.y = g/256.f;
+         result.z = b/256.f;
       }
    }
+   else
+#endif // USE_KINECT
+   {
+      int u = (((*primitive).type == ptCheckboard) || ((*primitive).type == ptXZPlane) || ((*primitive).type == ptXYPlane))  ? 
+         ((*intersection).x-(*primitive).p0.x+(*primitive).size.x):
+      ((*intersection).z-(*primitive).p0.z+(*primitive).size.z);
 
+      int v = (((*primitive).type == ptCheckboard) || ((*primitive).type == ptXZPlane)) ? 
+         ((*intersection).z+(*primitive).p0.z+(*primitive).size.z) :
+      ((*intersection).y-(*primitive).p0.y+(*primitive).size.y);
+
+      if( (*material).textureMapping.x != 0 ) u = u%(*material).textureMapping.x;
+      if( (*material).textureMapping.y != 0 ) v = v%(*material).textureMapping.y;
+
+      if( u>=0 && u<(*material).textureMapping.x && v>=0 && v<(*material).textureMapping.x )
+      {
+         switch( (*material).textureIds.x )
+         {
+         case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, &result ); break;
+         case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, &result ); break;
+         default:
+            {
+               int A = (v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
+               int B = (*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w;
+               int index = A%B;
+               int i = (*material).textureOffset.x + index;
+               BitmapBuffer r,g,b;
+               r = textures[i  ];
+               g = textures[i+1];
+               b = textures[i+2];
+               result.x = r/256.f;
+               result.y = g/256.f;
+               result.z = b/256.f;
+
+               // Bump mapping
+               if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+               // Normal mapping
+               if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+               // Bump mapping
+               if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
+            }
+            break;
+         }
+      }
+   }
    return result;
 }
 
@@ -554,8 +684,10 @@ float4 triangleUVMapping(
    __global const Primitive* primitive,
    __global const Material*        materials,
    __global const BitmapBuffer*    textures,
-   const Vertex    intersection,
-   const Vertex    areas)
+   Vertex* intersection,
+   const Vertex    areas,
+   Vertex* normal,
+   Vertex* specular)
 {
    __global const Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
@@ -568,20 +700,40 @@ float4 triangleUVMapping(
    v = v%(*material).textureMapping.y;
    if( u>=0 && u<(*material).textureMapping.x && v>=0 && v<(*material).textureMapping.y )
    {
-      switch( (*material).textureMapping.z )
+      switch( (*material).textureIds.x )
       {
       case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, &result ); break;
       case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, &result ); break;
       default:
          {
-		      int index = ((v*(*material).textureMapping.x+u)*(*material).textureMapping.w)%((*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w);
-            index = (*material).textureOffset + index;
-            BitmapBuffer r = textures[index  ];
-            BitmapBuffer g = textures[index+1];
-            BitmapBuffer b = textures[index+2];
+            int A = (v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
+            int B = (*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w;
+            int index = A%B;
+
+            // Diffuse
+            int i = (*material).textureOffset.x + index;
+            BitmapBuffer r,g,b;
+            r = textures[i  ];
+            g = textures[i+1];
+            b = textures[i+2];
+#ifdef USE_KINECT
+            if( (*material).textureIds.x==0 )
+            {
+               r = textures[index+2];
+               g = textures[index+1];
+               b = textures[index  ];
+            }
+#endif // USE_KINECT
             result.x = r/256.f;
             result.y = g/256.f;
             result.z = b/256.f;
+
+            // Bump mapping
+            if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+            // Normal mapping
+            if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+            // Specular mapping
+            if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
          }
       }
    }
@@ -771,6 +923,11 @@ bool sphereIntersection(
    return true;
 }
 
+Vertex project( const Vertex A, const Vertex B) 
+{
+   return B*(dot(A,B)/dot(B,B));
+}
+
 /*
 ________________________________________________________________________________
 
@@ -786,10 +943,10 @@ bool cylinderIntersection(
    Vertex*    normal,
    float*     shadowIntensity) 
 {            
+   bool back = false;
    Vertex O_C = (*ray).origin-(*cylinder).p0;
    Vertex dir = (*ray).direction;
-   Vertex n1  = (*cylinder).n1;
-   Vertex n   = cross(dir, n1);
+   Vertex n   = cross(dir, (*cylinder).n1);
 
    float ln = length(n);
 
@@ -801,72 +958,45 @@ bool cylinderIntersection(
    float d = fabs(dot(O_C,n));
    if (d>(*cylinder).size.y) return false;
 
-   Vertex O = cross(O_C,n1);
+   Vertex O = cross(O_C,(*cylinder).n1);
    float t = -dot(O, n)/ln;
-   O = normalize(cross(n,n1));
+   if( t<0.f ) return false;
+
+   O = normalize(cross(n,(*cylinder).n1));
    float s=fabs( sqrt((*cylinder).size.x*(*cylinder).size.x-d*d) / dot( dir,O ) );
 
-   float in=t-s;
-   float out=t+s;
+   float t1=t-s;
+   float t2=t+s;
 
-   if (in<-EPSILON)
+   // Calculate intersection point
+   (*intersection) = (*ray).origin+t1*dir;
+   Vertex HB1 = (*intersection)-(*cylinder).p0;
+   Vertex HB2 = (*intersection)-(*cylinder).p1;
+   float scale1 = dot(HB1,(*cylinder).n1);
+   float scale2 = dot(HB2,(*cylinder).n1);
+   // Cylinder length
+   if( scale1 < EPSILON || scale2 > EPSILON ) 
    {
-      if(out<-EPSILON)
-         return false;
-      else 
-      {
-         t=out;
-      }
+      (*intersection) = (*ray).origin+t2*dir;
+      back = true;
+      HB1 = (*intersection)-(*cylinder).p0;
+      HB2 = (*intersection)-(*cylinder).p1;
+      scale1 = dot(HB1,(*cylinder).n1);
+      scale2 = dot(HB2,(*cylinder).n1);
+      // Cylinder length
+      if( scale1 < EPSILON || scale2 > EPSILON ) return false;
    }
-   else
-   {
-      if(out<-EPSILON)
-      {
-         t=in;
-      }
-      else
-      {
-         if(in<out)
-            t=in;
-         else
-         {
-            t=out;
-         }
 
-         if( t<0.f ) return false;
+   Vertex V = (*intersection)-(*cylinder).p2;
+   (*normal) = V-project(V,(*cylinder).n1);
+   (*normal) = normalize(*normal);
+   if(back) (*normal) *= -1.f; 
 
-         // Calculate intersection point
-         (*intersection)=(*ray).origin+t*dir;
-
-         Vertex HB1 = (*intersection)-(*cylinder).p0;
-         Vertex HB2 = (*intersection)-(*cylinder).p1;
-
-         float scale1 = dot(HB1,(*cylinder).n1);
-         float scale2 = dot(HB2,(*cylinder).n1);
-
-         // Cylinder length
-         if( scale1 < EPSILON || scale2 > EPSILON ) return false;
-
-         if( materials[(*cylinder).materialId].attributes.y == 1) 
-         {
-            // Procedural texture
-            Vertex newCenter;
-            newCenter.x = (*cylinder).p0.x + 0.01f*(*cylinder).size.x*cos((*sceneInfo).misc.y/100.f+(*intersection).x);
-            newCenter.y = (*cylinder).p0.y + 0.01f*(*cylinder).size.y*sin((*sceneInfo).misc.y/100.f+(*intersection).y);
-            newCenter.z = (*cylinder).p0.z + 0.01f*(*cylinder).size.z*sin(cos((*sceneInfo).misc.y/100.f+(*intersection).z));
-            HB1 = (*intersection) - newCenter;
-         }
-
-         (*normal) = normalize(HB1-(*cylinder).n1*scale1);
-
-         // Shadow management
-         dir = normalize(dir);
-         float r = dot(dir,(*normal));
-         (*shadowIntensity)=(materials[(*cylinder).materialId].transparency != 0.f) ? (1.f-fabs(r)) : 1.f;
-         return true;
-      }
-   }
-   return false;
+   // Shadow management
+   dir = normalize(dir);
+   float r = dot(dir,(*normal));
+   (*shadowIntensity) = 1.f;
+   return true;
 }
 
 /*
@@ -1021,9 +1151,10 @@ bool planeIntersection(
       (*shadowIntensity) = 1.f;
 
       float4 color = materials[(*primitive).materialId].color;
-      if( (*primitive).type == ptCamera || materials[(*primitive).materialId].textureMapping.z != TEXTURE_NONE )
+      if( (*primitive).type == ptCamera || materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE )
       {
-         color = cubeMapping(sceneInfo, primitive, materials, textures, *intersection );
+         Vertex specular = {0.f,0.f,0.f,0.f}; // TODO?
+         color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal, &specular );
          (*shadowIntensity) = color.w;
       }
 
@@ -1049,8 +1180,20 @@ bool triangleIntersection(
    Vertex*          intersection,
    Vertex*          normal,
    Vertex*          areas,
-   float*           shadowIntensity )
+   float*           shadowIntensity,
+   const bool       processingShadows )
 {
+   // Reject triangles with normal opposite to ray.
+   Vertex N=(*ray).direction-(*ray).origin;
+   if( processingShadows )
+   {
+      if( dot(N,(*triangle).n0)<=0.f ) return false;
+   }
+   else
+   {
+      if( dot(N,(*triangle).n0)>=0.f ) return false;
+   }
+
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
    Vertex E01=(*triangle).p1-(*triangle).p0;
@@ -1091,22 +1234,26 @@ bool triangleIntersection(
    if (t < 0) return false;
 
    // Intersection
-   (*intersection) = (*ray).origin+t*(*ray).direction;
+   (*intersection) = (*ray).origin + t*(*ray).direction;
 
    // Normal
-   Vertex v0 = (*triangle).p0-(*intersection);
-   Vertex v1 = (*triangle).p1-(*intersection);
-   Vertex v2 = (*triangle).p2-(*intersection);
-   (*areas).x = 0.5f*length(cross(v1,v2));
-   (*areas).y = 0.5f*length(cross(v0,v2));
-   (*areas).z = 0.5f*length(cross(v0,v1));
-   (*normal) = ((*triangle).n0*(*areas).x + (*triangle).n1*(*areas).y + (*triangle).n2*(*areas).z)/((*areas).x+(*areas).y+(*areas).z);
-   (*normal) = normalize(*normal);
+   Vertex v0 = normalize((*triangle).p0 - (*intersection));
+   Vertex v1 = normalize((*triangle).p1 - (*intersection));
+   Vertex v2 = normalize((*triangle).p2 - (*intersection));
+
+   (*areas).x = 0.5f*length(cross( v1,v2 ));
+   (*areas).y = 0.5f*length(cross( v0,v2 ));
+   (*areas).z = 0.5f*length(cross( v0,v1 ));
+
+   (*normal) = (((*triangle).n0*(*areas).x + (*triangle).n1*(*areas).y + (*triangle).n2*(*areas).z)/((*areas).x+(*areas).y+(*areas).z));
 
    Vertex dir = normalize((*ray).direction);
-   float r = dot(dir,*normal);
+   float r = dot(dir,(*normal));
 
-   if( r>0.f ) (*normal)= -(*normal);
+   if( r>0.f )
+   {
+      (*normal) *= -1.f;
+   }
 
    // Shadow management
    (*shadowIntensity) = 1.f;
@@ -1124,8 +1271,10 @@ float4 intersectionShader(
    __global const Primitive* primitive, 
    __global const Material*  materials,
    __global const BitmapBuffer* textures,
-   const Vertex   intersection,
-   const Vertex   areas)
+   Vertex*        intersection,
+   const Vertex   areas,
+   Vertex*        normal,
+   Vertex*        specular )
 {
    float4 colorAtIntersection = materials[(*primitive).materialId].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
@@ -1134,9 +1283,9 @@ float4 intersectionShader(
    {
    case ptCylinder:
       {
-         if(materials[(*primitive).materialId].textureMapping.z != TEXTURE_NONE)
+         if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
          {
-            colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection );
+            colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular );
          }
          break;
       }
@@ -1144,22 +1293,22 @@ float4 intersectionShader(
    case ptSphere:
    case ptEllipsoid:
       {
-         if(materials[(*primitive).materialId].textureMapping.z != TEXTURE_NONE)
+         if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
          {
-            colorAtIntersection = sphereUVMapping( primitive, materials, textures, intersection );
+            colorAtIntersection = sphereUVMapping( primitive, materials, textures, intersection, normal, specular );
          }
          break;
       }
    case ptCheckboard :
       {
-         if( materials[(*primitive).materialId].textureMapping.z != TEXTURE_NONE ) 
+         if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
          {
-            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
+            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular );
          }
          else 
          {
-            int x = (*sceneInfo).viewDistance + ((intersection.x - (*primitive).p0.x)/(*primitive).size.x);
-            int z = (*sceneInfo).viewDistance + ((intersection.z - (*primitive).p0.z)/(*primitive).size.x);
+            int x = (*sceneInfo).viewDistance + (((*intersection).x - (*primitive).p0.x)/(*primitive).size.x);
+            int z = (*sceneInfo).viewDistance + (((*intersection).z - (*primitive).p0.z)/(*primitive).size.x);
             if(x%2==0) 
             {
                if (z%2==0) 
@@ -1186,17 +1335,17 @@ float4 intersectionShader(
    case ptXZPlane:
    case ptCamera:
       {
-         if( materials[(*primitive).materialId].textureMapping.z != TEXTURE_NONE ) 
+         if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
          {
-            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection );
+            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular );
          }
          break;
       }
    case ptTriangle:
       {
-         if( materials[(*primitive).materialId].textureMapping.z != TEXTURE_NONE ) 
+         if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
          {
-            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas );
+            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular );
          }
          break;
       }
@@ -1269,14 +1418,14 @@ float processShadows(
             __global const Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
             if( (*primitive).index!=objectId && materials[(*primitive).materialId].attributes.x==0)
             {
-
+               bool back = false;
                bool hit = false;
                switch((*primitive).type)
                {
                case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                case ptCylinder : hit=cylinderIntersection ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                case ptCamera   : hit=false; break;
-               case ptTriangle : hit=triangleIntersection ( sceneInfo, primitive, materials, &r, &intersection, &normal, &areas, &shadowIntensity ); break;
+               case ptTriangle : hit=triangleIntersection ( sceneInfo, primitive, materials, &r, &intersection, &normal, &areas, &shadowIntensity, true ); break;
                case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false ); break;
                }
@@ -1321,58 +1470,71 @@ Primitive shader
 ________________________________________________________________________________
 */
 float4 primitiveShader(
+   const int index,
    const SceneInfo*   sceneInfo,
    const PostProcessingInfo*   postProcessingInfo,
-   __global const BoundingBox* boundingBoxes, 
-   const int nbActiveBoxes, 
-   __global const Primitive* primitives, 
-   const int nbActivePrimitives,
-   __global const LightInformation* lightInformation, 
-   const int lightInformationSize, 
-   const int nbActiveLamps,
-   __global const Material* materials, 
-   __global const BitmapBuffer* textures,
+   __global const BoundingBox* boundingBoxes, const int nbActiveBoxes, 
+   __global const Primitive* primitives, const int nbActivePrimitives,
+   __global const LightInformation* lightInformation, const int lightInformationSize, const int nbActiveLamps,
+   __global const Material* materials, __global const BitmapBuffer* textures,
    __global const RandomBuffer* randoms,
    const Vertex origin,
-   const Vertex normal, 
+   Vertex*      normal, 
    const int    objectId, 
-   const Vertex intersection,
+   Vertex*      intersection,
    const Vertex areas,
+   float4*      closestColor,
    const int    iteration,
    float4*      refractionFromColor,
    float*       shadowIntensity,
    float4*      totalBlinn)
 {
    __global const Primitive* primitive = &(primitives[objectId]);
-   float4 color = materials[(*primitive).materialId].color;
+   __global const Material* material = &materials[(*primitive).materialId];
    float4 lampsColor = { 0.f, 0.f, 0.f, 0.f };
 
    // Lamp Impact
    (*shadowIntensity) = 0.f;
 
-   if( materials[(*primitive).materialId].innerIllumination.x != 0.f || materials[(*primitive).materialId].attributes.z == 2 )
+   // Bump
+   Vertex bumpNormal={0.f,0.f,0.f,0.f};
+
+   // Specular
+   Vertex specular;
+   specular.x=(*material).specular.x;
+   specular.y=(*material).specular.y;
+   specular.z=(*material).specular.z;
+
+   // Intersection color
+   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, &bumpNormal, &specular );
+   (*normal) += bumpNormal;
+   (*normal) = normalize((*normal));
+
+   if( (*material).innerIllumination.x!=0.f || (*material).attributes.z!=0 )
    {
       // Wireframe returns constant color
-      return color; 
-   }
-
-   if( materials[(*primitive).materialId].attributes.z==1 )
-   {
-      // Sky box returns color with constant lightning
-      return intersectionShader( 
-         sceneInfo, primitive, materials, textures, 
-         intersection, areas );
+      return intersectionColor; 
    }
 
    if( (*sceneInfo).graphicsLevel>0 )
    {
-      color *= materials[(*primitive).materialId].innerIllumination.x;
-      int activeLamps = nbActiveLamps;
-      for( int cpt=0; cpt<activeLamps; ++cpt ) 
+      // Final color
+#ifdef EXTENDED_FEATURES
+      // TODO: Bump effect
+      if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
       {
-         //int cptLamp = ((*sceneInfo).pathTracingIteration>NB_MAX_ITERATIONS && (*sceneInfo).pathTracingIteration%2==0) ? ((*sceneInfo).pathTracingIteration%lightInformationSize) : cpt;
-         int cptLamp = ((*sceneInfo).pathTracingIteration>NB_MAX_ITERATIONS) ? ((*sceneInfo).pathTracingIteration%lightInformationSize) : cpt;
-         if(lightInformation[cptLamp].attribute != (*primitive).index)
+         (*normal).x = (*normal).x*0.7f+intersectionColor.x*0.3f;
+         (*normal).y = (*normal).y*0.7f+intersectionColor.y*0.3f;
+         (*normal).z = (*normal).z*0.7f+intersectionColor.z*0.3f;
+      }
+#endif // EXTENDED_FEATURES
+
+      (*closestColor) *= (*material).innerIllumination.x;
+      for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
+      {
+         int cptLamp = cpt;
+
+         if(lightInformation[cptLamp].attribute.x != (*primitive).index)
          {
             Vertex center;
             // randomize lamp center
@@ -1380,90 +1542,111 @@ float4 primitiveShader(
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
-            //if( lightInformation[cptLamp].attribute.x != -1 )
-            {
-               Primitive lamp = primitives[lightInformation[cptLamp].attribute];
+            int t = (index*3+(*sceneInfo).misc.y)%((*sceneInfo).width*(*sceneInfo).height);
+            __global const Material* m=&materials[lightInformation[cptLamp].attribute.y];
 
-               //if( (*sceneInfo).pathTracingIteration>NB_MAX_ITERATIONS /*&& (*sceneInfo).pathTracingIteration%2!=0*/ )
+            if( lightInformation[cptLamp].attribute.x>=0 &&
+               lightInformation[cptLamp].attribute.x<nbActivePrimitives)
+            {
+               t = t%((*sceneInfo).width*(*sceneInfo).height-3);
+               float a= ((*sceneInfo).pathTracingIteration<(*sceneInfo).maxPathTracingIterations) ? ((*sceneInfo).pathTracingIteration/(*sceneInfo).maxPathTracingIterations) : 1.f;
+               center.x += (*m).innerIllumination.y*randoms[t  ]*a;
+               center.y += (*m).innerIllumination.y*randoms[t+1]*a;
+               center.z += (*m).innerIllumination.y*randoms[t+2]*a;
+            }
+
+            Vertex lightRay = center - (*intersection);
+            float lightRayLength=length(lightRay);
+
+
+            if( lightRayLength<(*m).innerIllumination.z )
+            {
+               float4 shadowColor = {0.f,0.f,0.f,0.f};
+               if( (*sceneInfo).graphicsLevel>3 && 
+                  iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
+                  (*material).innerIllumination.x==0.f ) 
                {
-                  int t = 3*(*sceneInfo).pathTracingIteration + (int)(10.f*(*sceneInfo).misc.y)%100;
-                  center.x += materials[lamp.materialId].innerIllumination.y*randoms[t  ]*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
-                  center.y += materials[lamp.materialId].innerIllumination.y*randoms[t+1]*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
-                  center.z += materials[lamp.materialId].innerIllumination.y*randoms[t+2]*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
+                  (*shadowIntensity) = processShadows(
+                     sceneInfo, boundingBoxes, nbActiveBoxes,
+                     primitives, materials, textures, 
+                     nbActivePrimitives, center, 
+                     (*intersection), lightInformation[cptLamp].attribute.x, iteration, &shadowColor );
                }
-            }
 
-            float4 shadowColor = {0.f,0.f,0.f,0.f};
-            if( (*sceneInfo).graphicsLevel>3 && materials[(*primitive).materialId].innerIllumination.x == 0.f ) 
-            {
-               (*shadowIntensity) = processShadows(
-                  sceneInfo, boundingBoxes, nbActiveBoxes,
-                  primitives, materials, textures, 
-                  nbActivePrimitives, center, 
-                  intersection, lightInformation[cptLamp].attribute, 
-                  iteration, &shadowColor );
-            }
 
-            if( (*sceneInfo).graphicsLevel>0 )
-            {
-               Vertex lightRay = center - intersection;
-               lightRay = normalize(lightRay);
-               // --------------------------------------------------------------------------------
-               // Lambert
-               // --------------------------------------------------------------------------------
-               float lambert = ((*postProcessingInfo).type==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
-               // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
-               // depends on the transparency rate.
-               lambert *= (lambert<0.f) ? -materials[(*primitive).materialId].transparency : lambert;
-               lambert *= lightInformation[cptLamp].color.w;
-               lambert *= (1.f-(*shadowIntensity));
-
-               // Lighted object, not in the shades
-
-               lampsColor.x += lambert*lightInformation[cptLamp].color.x*lightInformation[cptLamp].color.w - shadowColor.x;
-               lampsColor.y += lambert*lightInformation[cptLamp].color.y*lightInformation[cptLamp].color.w - shadowColor.y;
-               lampsColor.z += lambert*lightInformation[cptLamp].color.z*lightInformation[cptLamp].color.w - shadowColor.z;
-
-               if( (*sceneInfo).graphicsLevel>1 && (*shadowIntensity)<(*sceneInfo).shadowIntensity )
+               if( (*sceneInfo).graphicsLevel>0 )
                {
+                  float photonEnergy = sqrt(lightRayLength/(*m).innerIllumination.z);
+                  photonEnergy = (photonEnergy>1.f) ? 1.f : photonEnergy;
+                  photonEnergy = (photonEnergy<0.f) ? 0.f : photonEnergy;
+
+                  lightRay = normalize(lightRay);
                   // --------------------------------------------------------------------------------
-                  // Blinn - Phong
+                  // Lambert
                   // --------------------------------------------------------------------------------
-                  Vertex viewRay = normalize(intersection - origin);
-                  Vertex blinnDir = lightRay - viewRay;
-                  float temp = sqrt(dot(blinnDir,blinnDir));
-                  if (temp != 0.f ) 
+                  float lambert = dot((*normal),lightRay); 
+                  // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
+                  // depends on the transparency rate.
+                  lambert *= (lambert<0.f) ? -materials[(*primitive).materialId].transparency : 1.f;
+
+                  if( lightInformation[cptLamp].attribute.y != MATERIAL_NONE )
                   {
-                     // Specular reflection
-                     blinnDir = (1.f / temp) * blinnDir;
+                     __global const Material* m=&materials[lightInformation[cptLamp].attribute.y];
+                     lambert *= (*m).innerIllumination.x; // Lamp illumination
+                  }
+                  else
+                  {
+                     lambert *= lightInformation[cptLamp].color.w;
+                  }
 
-                     float blinnTerm = dot(blinnDir,normal);
-                     blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
+                  lambert *= (1.f+randoms[t]*(*material).innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
+                  lambert *= (1.f-(*shadowIntensity));
+                  lambert *= (1.f-photonEnergy);
 
-                     blinnTerm = materials[(*primitive).materialId].specular.x * pow(blinnTerm,materials[(*primitive).materialId].specular.y);
+                  // Lighted object, not in the shades
+                  lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;
 
-                     (*totalBlinn).x += lightInformation[cptLamp].color.x * lightInformation[cptLamp].color.w * blinnTerm;
-                     (*totalBlinn).y += lightInformation[cptLamp].color.y * lightInformation[cptLamp].color.w * blinnTerm;
-                     (*totalBlinn).z += lightInformation[cptLamp].color.z * lightInformation[cptLamp].color.w * blinnTerm;
+                  if( (*sceneInfo).graphicsLevel>1 && (*shadowIntensity)<(*sceneInfo).shadowIntensity )
+                  {
+                     // --------------------------------------------------------------------------------
+                     // Blinn - Phong
+                     // --------------------------------------------------------------------------------
+                     Vertex viewRay = normalize((*intersection) - origin);
+                     Vertex blinnDir = lightRay - viewRay;
+                     float temp = sqrt(dot(blinnDir,blinnDir));
+                     if (temp != 0.f ) 
+                     {
+                        // Specular reflection
+                        blinnDir = (1.f / temp) * blinnDir;
+
+                        float blinnTerm = dot(blinnDir,(*normal));
+                        blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
+
+                        blinnTerm = materials[(*primitive).materialId].specular.x * pow(blinnTerm,materials[(*primitive).materialId].specular.y);
+
+                        (*totalBlinn).x += lightInformation[cptLamp].color.x * lightInformation[cptLamp].color.w * blinnTerm;
+                        (*totalBlinn).y += lightInformation[cptLamp].color.y * lightInformation[cptLamp].color.w * blinnTerm;
+                        (*totalBlinn).z += lightInformation[cptLamp].color.z * lightInformation[cptLamp].color.w * blinnTerm;
+                     }
                   }
                }
             }
          }
 
          // Final color
-         float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas );
+         float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, normal, &specular );
 
          // Light impact on material
-         color += intersectionColor*lampsColor;
+         (*closestColor) += intersectionColor*lampsColor;
 
          // Saturate color
-         saturateVector(&color);
+         saturateVector(closestColor);
 
          (*refractionFromColor) = intersectionColor; // Refraction depending on color;
          saturateVector( totalBlinn );
       }
    }
-   return color;
+   return (*closestColor); // TODO
 }
 
 /*
@@ -1509,14 +1692,8 @@ inline bool intersectionWithPrimitives(
 
       if( boxIntersection(box, &r, 0.f, minDistance) )
       {
-         /*
-         printf("Intersection with box %d (%.0f,%.0f,%.0f / %.0f,%.0f,%.0f)! %d primitives. StartIndex=%d, Next box: %d\n", cptBoxes, 
-         (*box).parameters[0].x,(*box).parameters[0].y,(*box).parameters[0].z,
-         (*box).parameters[1].x,(*box).parameters[1].y,(*box).parameters[1].z,
-         (*box).nbPrimitives,(*box).startIndex,(*box).indexForNextBox.x );
-         */
          // Intersection with Box
-         if( (*sceneInfo).renderBoxes!=0 ) 
+         if( (*sceneInfo).renderBoxes!=0 ) // Box 0 is for light emitting objects
          {
             colorBox[0]+=materials[(*box).startIndex%NB_MAX_MATERIALS].color/50.f;
          }
@@ -1529,24 +1706,15 @@ inline bool intersectionWithPrimitives(
                const __global Material* material = &materials[(*primitive).materialId];
                if( (*material).attributes.x==0 || ((*material).attributes.x==1 && currentMaterialId != (*primitive).materialId)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
                {
-                  /*
-                  printf("Processing primitive %d [%d]: (%.0f,%.0f,%.0f), (%.0f,%.0f,%.0f), (%.0f,%.0f,%.0f), %d\n", 
-                  cptPrimitives, (*primitive).type,
-                  (*primitive).p0.x, (*primitive).p0.y, (*primitive).p0.z,
-                  (*primitive).p1.x, (*primitive).p1.y, (*primitive).p1.z,
-                  (*primitive).p2.x, (*primitive).p2.y, (*primitive).p2.z,
-                  (*primitive).materialId
-                  );
-                  */
                   Vertex areas = {0.f,0.f,0.f,0.f};
                   i = false;
                   switch( (*primitive).type )
                   {
                   case ptEnvironment :
                   case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
-                  case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+                  case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
                   case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-                  case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &areas, &shadowIntensity ); break;
+                  case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
                   default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
                   }
                   float distance = length(intersection-r.origin);
@@ -1604,6 +1772,7 @@ is > 0.
 ________________________________________________________________________________
 */
 inline float4 launchRay( 
+   const int index,
    __global const BoundingBox* boundingBoxes, 
    const int nbActiveBoxes,
    __global const Primitive* primitives, 
@@ -1625,7 +1794,8 @@ inline float4 launchRay(
 
    Vertex closestIntersection = {0.f,0.f,0.f,0.f};
    Vertex firstIntersection   = {0.f,0.f,0.f,0.f};
-   Vertex closestNormal       = {0.f,0.f,0.f,0.f};
+   Vertex normal              = {0.f,0.f,0.f,0.f};
+   float4 closestColor        = {0.f,0.f,0.f,0.f};
    int    closestPrimitive  = 0;
    bool   carryon           = true;
    Ray    rayOrigin         = (*ray);
@@ -1678,7 +1848,7 @@ inline float4 launchRay(
             &rayOrigin,
             iteration,  
             &closestPrimitive, &closestIntersection, 
-            &closestNormal, &areas, &colorBox, currentMaterialId);
+            &normal, &areas, &colorBox, currentMaterialId);
       }
       //printf("Normal=%.2f,%.2f,%.2f\n",normal.x,normal.y,normal.z);
 
@@ -1703,14 +1873,15 @@ inline float4 launchRay(
 
          // Get object color
          colors[iteration] =
-            primitiveShader( 
+            primitiveShader(
+            index, 
             sceneInfo, postProcessingInfo,
             boundingBoxes, nbActiveBoxes, 
             primitives, nbActivePrimitives, 
             lightInformation, lightInformationSize, nbActiveLamps,
             materials, textures, 
-            randoms, rayOrigin.origin, closestNormal, 
-            closestPrimitive, closestIntersection, areas, 
+            randoms, rayOrigin.origin, &normal, 
+            closestPrimitive, &closestIntersection, areas, &closestColor,
             iteration, &refractionFromColor, &shadowIntensity, &rBlinn );
 
          // Primitive illumination
@@ -1724,11 +1895,11 @@ inline float4 launchRay(
             // ----------
             // Replace the normal using the intersection color
             // r,g,b become x,y,z... What the fuck!!
-            if( materials[primitives[closestPrimitive].materialId].textureMapping.z != TEXTURE_NONE) 
+            if( materials[primitives[closestPrimitive].materialId].textureIds.x != TEXTURE_NONE) 
             {
-               closestNormal.x *= (colors[iteration].x-0.5f);
-               closestNormal.y *= (colors[iteration].y-0.5f);
-               closestNormal.z *= (colors[iteration].z-0.5f);
+               normal.x *= (colors[iteration].x-0.5f);
+               normal.y *= (colors[iteration].y-0.5f);
+               normal.z *= (colors[iteration].z-0.5f);
             }
 
             // Back of the object? If so, reset refraction to 1.f (air)
@@ -1736,7 +1907,7 @@ inline float4 launchRay(
 
             // Actual refraction
             Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
-            vectorRefraction( &rayOrigin.direction, O_E, refraction, closestNormal, initialRefraction );
+            vectorRefraction( &rayOrigin.direction, O_E, refraction, normal, initialRefraction );
             reflectedTarget = closestIntersection - rayOrigin.direction;
 
             colorContributions[iteration] = materials[primitives[closestPrimitive].materialId].transparency;
@@ -1746,7 +1917,7 @@ inline float4 launchRay(
 
             if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId].reflection != 0.f )
             {
-               vectorReflection( reflectedRay.direction, O_E, closestNormal );
+               vectorReflection( reflectedRay.direction, O_E, normal );
                Vertex rt = closestIntersection - reflectedRay.direction;
 
                reflectedRay.origin    = closestIntersection + rt*0.00001f;
@@ -1763,7 +1934,7 @@ inline float4 launchRay(
             if( materials[primitives[closestPrimitive].materialId].reflection != 0.f ) 
             {
                Vertex O_E = rayOrigin.origin - closestIntersection;
-               vectorReflection( rayOrigin.direction, O_E, closestNormal );
+               vectorReflection( rayOrigin.direction, O_E, normal );
                reflectedTarget = closestIntersection - rayOrigin.direction;
                colorContributions[iteration] = materials[primitives[closestPrimitive].materialId].reflection;
             }
@@ -1818,18 +1989,18 @@ inline float4 launchRay(
          &reflectedRay,
          reflectedRays,  
          &closestPrimitive, &closestIntersection, 
-         &closestNormal, &areas, &colorBox, currentMaterialId) )
+         &normal, &areas, &colorBox, currentMaterialId) )
       {
          float4 color = primitiveShader( 
+            index,
             sceneInfo, postProcessingInfo,
             boundingBoxes, nbActiveBoxes, 
             primitives, nbActivePrimitives, 
             lightInformation, lightInformationSize, nbActiveLamps, 
             materials, textures, randoms, 
-            reflectedRay.origin, closestNormal, closestPrimitive, 
-            closestIntersection, areas, 
-            reflectedRays, 
-            &refractionFromColor, &shadowIntensity, &rBlinn );
+            reflectedRay.origin, &normal, closestPrimitive, 
+            &closestIntersection, areas, &closestColor,
+            iteration, &refractionFromColor, &shadowIntensity, &rBlinn );
 
          colors[reflectedRays] += color*reflectedRatio;
       }
@@ -1872,6 +2043,10 @@ inline float4 launchRay(
 
    // Depth of field
    intersectionColor -= colorBox;
+
+   // Ambient light
+   intersectionColor += (*sceneInfo).backgroundColor.w;
+
    saturateVector( &intersectionColor );
    return intersectionColor;
 }
@@ -1886,16 +2061,16 @@ __kernel void k_standardRenderer(
    const int2                     occupancyParameters,
    int                            device_split,
    int                            stream_split,
-   __global BoundingBox*          boundingBoxes, 
+   __global const BoundingBox*          boundingBoxes, 
    int                            nbActiveBoxes,
-   __global Primitive*            primitives, 
+   __global const Primitive*            primitives, 
    int                            nbActivePrimitives,
-   __global LightInformation*     lightInformation, 
+   __global const LightInformation*     lightInformation, 
    int                            lightInformationSize, 
    int                            nbActiveLamps,
-   __global Material*             materials,
-   __global BitmapBuffer*         textures,
-   __global RandomBuffer*         randoms,
+   __global const Material*             materials,
+   __global const BitmapBuffer*         textures,
+   __global const RandomBuffer*         randoms,
    Vertex                         origin,
    Vertex                         direction,
    Vertex                         angles,
@@ -1908,8 +2083,20 @@ __kernel void k_standardRenderer(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
+   /*
+   printf("Size of Material %d\n" , sizeof(Material));
+   printf("Size of Primitive %d\n" , sizeof(Primitive));
+   printf("Size of BoundingBox %d\n" , sizeof(BoundingBox));
+   printf("Size of LightInformation %d\n" , sizeof(LightInformation));
+   */
+
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ||
+      (sceneInfo.pathTracingIteration>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration>0 && 
+      sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS)) return;
 
    Ray ray;
    ray.origin = origin;
@@ -1933,19 +2120,21 @@ __kernel void k_standardRenderer(
    else
    {
       // Randomize view for natural depth of field
-      if( sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS )
-      {
-         int rindex = index + sceneInfo.pathTracingIteration;
-         rindex = rindex%(sceneInfo.width*sceneInfo.height);
-         ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2*(float)(sceneInfo.pathTracingIteration)/(float)(sceneInfo.maxPathTracingIterations);
-         ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2*(float)(sceneInfo.pathTracingIteration)/(float)(sceneInfo.maxPathTracingIterations);
-         ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2*(float)(sceneInfo.pathTracingIteration)/(float)(sceneInfo.maxPathTracingIterations);
-      }
+      int rindex = 3*(index+sceneInfo.misc.y) + 5000;
+      rindex = rindex%(sceneInfo.width*sceneInfo.height-3);
+      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1;
+      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1;
+      ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1;
+
+      rindex = 3*(index+sceneInfo.misc.y);
+      rindex = rindex%(sceneInfo.width*sceneInfo.height-3);
+      ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1;
+      ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1;
+      ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1;
    }
 
    float dof = postProcessingInfo.param1;
    Vertex intersection;
-
 
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
@@ -1987,6 +2176,7 @@ __kernel void k_standardRenderer(
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
          float4 c = launchRay(
+            index,
             boundingBoxes, nbActiveBoxes,
             primitives, nbActivePrimitives,
             lightInformation, lightInformationSize, nbActiveLamps,
@@ -2001,6 +2191,7 @@ __kernel void k_standardRenderer(
       }
    }
    color += launchRay(
+      index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
       lightInformation, lightInformationSize, nbActiveLamps,
@@ -2012,12 +2203,12 @@ __kernel void k_standardRenderer(
       &dof,
       &primitiveXYIds[index]);
 
-   /*
+#ifdef ADVANCED_FEATURES
    // Randomize light intensity
    int rindex = index;
-   rindex = rindex%(sceneInfo.width*sceneInfo.height);
+   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
    color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
-   */
+#endif // ADVANCED_FEATURES
 
    if( antialiasingActivated )
    {
@@ -2053,12 +2244,12 @@ __kernel void k_anaglyphRenderer(
    const int2   occupancyParameters,
    int          device_split,
    int          stream_split,
-   __global BoundingBox* boundingBoxes, int nbActiveBoxes,
-   __global Primitive* primitives, int nbActivePrimitives,
-   __global LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
-   __global    Material*    materials,
-   __global BitmapBuffer* textures,
-   __global RandomBuffer* randoms,
+   __global const BoundingBox* boundingBoxes, int nbActiveBoxes,
+   __global const Primitive* primitives, int nbActivePrimitives,
+   __global const LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
+   __global const Material*    materials,
+   __global const BitmapBuffer* textures,
+   __global const RandomBuffer* randoms,
    Vertex        origin,
    Vertex        direction,
    Vertex        angles,
@@ -2113,6 +2304,7 @@ __kernel void k_anaglyphRenderer(
    vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 colorLeft = launchRay(
+      index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
       lightInformation, lightInformationSize, nbActiveLamps,
@@ -2137,6 +2329,7 @@ __kernel void k_anaglyphRenderer(
    vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 colorRight = launchRay(
+      index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
       lightInformation, lightInformationSize, nbActiveLamps,
@@ -2181,12 +2374,12 @@ __kernel void k_3DVisionRenderer(
    const int2   occupancyParameters,
    int          device_split,
    int          stream_split,
-   __global BoundingBox* boundingBoxes, int nbActiveBoxes,
-   __global Primitive* primitives, int nbActivePrimitives,
-   __global LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
-   __global    Material*    materials,
-   __global BitmapBuffer* textures,
-   __global RandomBuffer* randoms,
+   __global const BoundingBox* boundingBoxes, int nbActiveBoxes,
+   __global const Primitive* primitives, int nbActivePrimitives,
+   __global const LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
+   __global const Material*    materials,
+   __global const BitmapBuffer* textures,
+   __global const RandomBuffer* randoms,
    Vertex        origin,
    Vertex        direction,
    Vertex        angles,
@@ -2258,6 +2451,7 @@ __kernel void k_3DVisionRenderer(
    vectorRotation( eyeRay.direction, rotationCenter, angles );
 
    float4 color = launchRay(
+      index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
       lightInformation, lightInformationSize, nbActiveLamps,
@@ -2300,12 +2494,12 @@ __kernel void k_fishEyeRenderer(
    const int2   occupancyParameters,
    int          device_split,
    int          stream_split,
-   __global BoundingBox* boundingBoxes, int nbActiveBoxes,
-   __global Primitive* primitives, int nbActivePrimitives,
-   __global LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
-   __global    Material*    materials,
-   __global BitmapBuffer* textures,
-   __global RandomBuffer* randoms,
+   __global const BoundingBox* boundingBoxes, int nbActiveBoxes,
+   __global const Primitive* primitives, int nbActivePrimitives,
+   __global const LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
+   __global const Material*    materials,
+   __global const BitmapBuffer* textures,
+   __global const RandomBuffer* randoms,
    Vertex        origin,
    Vertex        direction,
    Vertex        angles,

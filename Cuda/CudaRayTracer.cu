@@ -461,15 +461,15 @@ __global__ void k_standardRenderer(
 		// Randomize view for natural depth of field
 		int rindex = 3*(index+sceneInfo.misc.y) + 5000;
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
-		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
+		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
+		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
 
       rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
-		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
-		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
+		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
+		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
+		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
 	}
 
 	float dof = postProcessingInfo.param1.x;

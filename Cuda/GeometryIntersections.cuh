@@ -283,16 +283,6 @@ __device__ inline bool cylinderIntersection(
 	float t1=t-s;
 	float t2=t+s;
 
-   /*
-   if(in<out)
-		t=in;
-	else
-	{
-		t=out;
-		back = true;
-	}
-   */
-   
 	// Calculate intersection point
 	intersection = ray.origin+t1*dir;
 	Vertex HB1 = intersection-cylinder.p0;
@@ -312,17 +302,6 @@ __device__ inline bool cylinderIntersection(
 	   if( scale1 < EPSILON || scale2 > EPSILON ) return false;
    }
 
-   /*
-	if( materials[cylinder.materialId.x].attributes.y == 1) 
-	{
-		// Procedural texture
-		Vertex newCenter;
-		newCenter.x = cylinder.p0.x + 0.01f*cylinder.size.x*cos(sceneInfo.misc.y/100.f+intersection.x);
-		newCenter.y = cylinder.p0.y + 0.01f*cylinder.size.y*sin(sceneInfo.misc.y/100.f+intersection.y);
-		newCenter.z = cylinder.p0.z + 0.01f*cylinder.size.z*sin(cos(sceneInfo.misc.y/100.f+intersection.z));
-	}
-   */
-
    Vertex V = intersection-cylinder.p2;
    normal = V-project(V,cylinder.n1);
 	normal = normalize(normal);
@@ -331,7 +310,7 @@ __device__ inline bool cylinderIntersection(
    // Shadow management
    dir = normalize(dir);
    float r = dot(dir,normal);
-   shadowIntensity = 1.f; //(materials[cylinder.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+   shadowIntensity = 1.f;
    return true;
 }
 
@@ -514,7 +493,7 @@ __device__ inline bool triangleIntersection(
    back = false;
 
    // Reject triangles with normal opposite to ray.
-   Vertex N=ray.direction;//-ray.origin;
+   Vertex N=ray.direction-ray.origin;
    if( processingShadows )
    {
       if( dot(N,triangle.n0)<=0.f ) return false;
@@ -567,7 +546,6 @@ __device__ inline bool triangleIntersection(
    intersection = ray.origin + t*ray.direction;
 
    // Normal
-   normal = triangle.n0;
    Vertex v0 = triangle.p0 - intersection;
    Vertex v1 = triangle.p1 - intersection;
    Vertex v2 = triangle.p2 - intersection;
@@ -724,7 +702,7 @@ __device__ inline bool intersectionWithPrimitives(
       if( boxIntersection(box, r, 0.f, minDistance) )
 		{
 			// Intersection with Box
-         if( sceneInfo.renderBoxes.x!=0 /*&& box.nbPrimitives.x==0*/ )  // Box 0 is for light emitting objects
+         if( sceneInfo.renderBoxes.x!=0 )  // Box 0 is for light emitting objects
          {
             colorBox += materials[box.startIndex.x%NB_MAX_MATERIALS].color/50.f;
          }

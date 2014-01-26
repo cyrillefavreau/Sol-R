@@ -278,16 +278,9 @@ __device__ float4 primitiveShader(
 #endif // EXTENDED_FEATURES
 
 	   closestColor *= material.innerIllumination.x;
-#if 0
-      int i=(lightInformationSize==0) ? 0 : 1;
-	   for( int cpt=0; cpt<nbActiveLamps+i; ++cpt ) 
-	   {
-         int cptLamp = (cpt<nbActiveLamps) ? cpt : sceneInfo.pathTracingIteration.x%lightInformationSize;
-#else
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
          int cptLamp = cpt;
-#endif
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   Vertex center;
@@ -339,7 +332,7 @@ __device__ float4 primitiveShader(
 	               float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
                   // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
                   // depends on the transparency rate.
-                  //lambert *= (lambert<0.f) ? -material.transparency.x : lambert;
+                  lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : 1.f;
 
                   if( lightInformation[cptLamp].attribute.y != MATERIAL_NONE )
                   {

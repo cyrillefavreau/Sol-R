@@ -230,7 +230,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                if(diffuseMap) 
                {
                   materials[id].diffuseTextureId = idx;
-                  //materials[id].normalTextureId = idx;
+                  materials[id].normalTextureId = idx;
                   //materials[id].bumpTextureId = idx;
                   //materials[id].specularTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
@@ -238,7 +238,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                if(bumpMap)
                {
                   materials[id].bumpTextureId = idx;
-                  //materials[id].normalTextureId = idx;
+                  materials[id].normalTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
             }

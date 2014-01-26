@@ -579,6 +579,7 @@ void OpenCLKernel::render_begin( const float timer )
          CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,   CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(RandomBuffer), m_hRandoms,      0, NULL, NULL));
          CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dMaterials, CL_TRUE, 0, nbMaterials*sizeof(Material),   m_hMaterials,    0, NULL, NULL));
 		   m_materialsTransfered = true;
+         LOG_INFO(1, "Transfering " << nbMaterials << " materials");
 	   }
 
 #ifdef USE_KINECT
@@ -676,10 +677,14 @@ void OpenCLKernel::render_begin( const float timer )
       LOG_INFO(3, "CPU Primitive           : " << sizeof(Primitive));
       LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
+      SceneInfo sceneInfo=m_sceneInfo;
+      if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
+      if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
+
       size_t szLocalWorkSize[] = { 1, 1 };
       size_t szGlobalWorkSize[] = { m_sceneInfo.width.x/szLocalWorkSize[0], m_sceneInfo.height.x/szLocalWorkSize[1] };
       int zero(0);
-	   switch( m_sceneInfo.renderingType.x ) 
+	   switch( sceneInfo.renderingType.x ) 
 	   {
 	   case vtAnaglyph:
 		   {
@@ -700,7 +705,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
-            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
@@ -725,7 +730,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
-            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
@@ -750,7 +755,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
-            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
@@ -775,7 +780,7 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
-            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,16, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
@@ -791,7 +796,7 @@ void OpenCLKernel::render_begin( const float timer )
 	   {
 	   case ppe_depthOfField:
          CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
          CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
 	      CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kDepthOfField, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
@@ -800,7 +805,7 @@ void OpenCLKernel::render_begin( const float timer )
 		   break;
 	   case ppe_ambientOcclusion:
          CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
          CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
 	      CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kAmbientOcclusion, 4, sizeof(cl_mem),   (void*)&m_dRandoms ));
@@ -809,7 +814,7 @@ void OpenCLKernel::render_begin( const float timer )
 		   break;
 	   case ppe_radiosity:
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 3, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
@@ -822,7 +827,7 @@ void OpenCLKernel::render_begin( const float timer )
          break;
 	   default:
          CHECKSTATUS(clSetKernelArg( m_kDefault, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(SceneInfo),(void*)&m_sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
          CHECKSTATUS(clSetKernelArg( m_kDefault, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
 	      CHECKSTATUS(clSetKernelArg( m_kDefault, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
          CHECKSTATUS(clSetKernelArg( m_kDefault, 4, sizeof(cl_mem),   (void*)&m_dBitmap ));
