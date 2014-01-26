@@ -125,6 +125,7 @@ struct Material
    float1 reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
    float1 refraction;        // Refraction index( ex: glass=1.33 )
    float1 transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
+   float1 dummy;             // alignment issues
    int4   attributes;        // x: Fast transparency( off=0, on=1 ). Fast transparency produces no shadows 
                              //    and drops intersections if rays intersects primitive with the same material ID
                              // y: Procedural textures( off=0, on=1 )
