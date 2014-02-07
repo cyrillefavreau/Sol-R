@@ -134,6 +134,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
    int materialId)
 {
    const float innerDiffusion=1000.f;
+   const float diffusionRatio=5.f;
 
    std::string materialsFilename(filename);
    materialsFilename += ".mtl";
@@ -166,7 +167,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
                   m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
-                  m.illumination, innerDiffusion, innerDiffusion*2.f,
+                  m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
                   false );
                LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
                   "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<
@@ -299,7 +300,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
             m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
-            m.illumination, innerDiffusion, innerDiffusion*2.f,
+            m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
             false );
          LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
             "( " << m.Kd.x << ", " << m.Kd.y << ", " << m.Kd.z << ") " <<

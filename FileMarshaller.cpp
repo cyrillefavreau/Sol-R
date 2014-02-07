@@ -244,31 +244,37 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       {
          switch(c)
          {
-            case  0: material.color.x   = static_cast<float>(atof( value.c_str() )); break;
-            case  1: material.color.y   = static_cast<float>(atof( value.c_str() )); break;
-            case  2: material.color.z   = static_cast<float>(atof( value.c_str() )); break;
-            case  3: material.color.w   = static_cast<float>(atof( value.c_str() )); break;
-            case  4: material.innerIllumination.x = static_cast<float>(atof( value.c_str() )); break;
-            case  5: material.innerIllumination.y = 40000.f; //static_cast<float>(atof( value.c_str() )); break;
-            case  6: material.innerIllumination.z = 10.f*kernel.getSceneInfo().viewDistance.x; //static_cast<float>(atof( value.c_str() )); break;
-            case  7: material.innerIllumination.w = static_cast<float>(atof( value.c_str() )); break;
-            case  8: material.reflection.x        = static_cast<float>(atof( value.c_str() )); break;
-            case  9: material.refraction.x        = static_cast<float>(atof( value.c_str() )); break;
-            case 10: material.specular.x          = static_cast<float>(atof( value.c_str() )); break;
-            case 11: material.specular.y          = static_cast<float>(atof( value.c_str() )); break;
-            case 12: material.specular.z          = static_cast<float>(atof( value.c_str() )); break;
-            case 13: material.specular.w          = static_cast<float>(atof( value.c_str() )); break;
-            case 14: material.attributes.x       = static_cast<int>(atoi( value.c_str() )); break;
-            case 15: material.attributes.y       = static_cast<int>(atoi( value.c_str() )); break;
-            case 16: material.attributes.z       = static_cast<int>(atoi( value.c_str() )); break;
-            case 17: material.attributes.w       = static_cast<int>(atoi( value.c_str() )); break;
-            case 18: material.transparency.x      = static_cast<float>(atof( value.c_str() )); break;
-            case 19: material.textureMapping.x  = static_cast<int>(atoi( value.c_str() )); break;
-            case 20: material.textureMapping.y  = static_cast<int>(atoi( value.c_str() )); break;
-            case 21: material.textureMapping.w  = static_cast<int>(atoi( value.c_str() )); break;
-            case 22: 
+            case  0: material.innerIllumination.x = static_cast<float>(atof( value.c_str() )); break;
+            case  1: material.innerIllumination.y = 40000.f; //static_cast<float>(atof( value.c_str() )); break;
+            case  2: material.innerIllumination.z = 10.f*kernel.getSceneInfo().viewDistance.x; //static_cast<float>(atof( value.c_str() )); break;
+            case  3: material.innerIllumination.w = static_cast<float>(atof( value.c_str() )); break;
+            case  4: material.color.x   = static_cast<float>(atof( value.c_str() )); break;
+            case  5: material.color.y   = static_cast<float>(atof( value.c_str() )); break;
+            case  6: material.color.z   = static_cast<float>(atof( value.c_str() )); break;
+            case  7: material.color.w   = static_cast<float>(atof( value.c_str() )); break;
+            case  8: material.specular.x          = static_cast<float>(atof( value.c_str() )); break;
+            case  9: material.specular.y          = static_cast<float>(atof( value.c_str() )); break;
+            case 10: material.specular.z          = static_cast<float>(atof( value.c_str() )); break;
+            case 11: material.specular.w          = static_cast<float>(atof( value.c_str() )); break;
+            case 12: material.reflection.x        = static_cast<float>(atof( value.c_str() )); break;
+            case 13: material.refraction.x        = static_cast<float>(atof( value.c_str() )); break;
+            case 14: material.transparency.x      = static_cast<float>(atof( value.c_str() )); break;
+            case 15: material.dummy.x             = static_cast<float>(atof( value.c_str() )); break;
+            case 16: material.attributes.x        = static_cast<int>(atoi( value.c_str() )); break;
+            case 17: material.attributes.y        = static_cast<int>(atoi( value.c_str() )); break;
+            case 18: material.attributes.z        = static_cast<int>(atoi( value.c_str() )); break;
+            case 19: material.attributes.w        = static_cast<int>(atoi( value.c_str() )); break;
+            case 20: material.textureMapping.x    = static_cast<int>(atoi( value.c_str() )); break;
+            case 21: material.textureMapping.y    = static_cast<int>(atoi( value.c_str() )); break;
+            case 22: material.textureMapping.z    = static_cast<int>(atoi( value.c_str() )); break;
+            case 23: material.textureMapping.w    = static_cast<int>(atoi( value.c_str() )); break;
+            case 24: material.textureOffset.x     = static_cast<float>(atof( value.c_str() )); break;
+            case 25: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
+            case 26: material.textureOffset.y     = static_cast<int>(atoi( value.c_str() )); break;
+            case 27: material.textureOffset.w     = static_cast<int>(atoi( value.c_str() )); break;
+            case 28: 
                material.textureIds.x  = static_cast<int>(atoi( value.c_str() )); 
-               if( kernel.getTextureInformation(material.textureMapping.z).buffer==nullptr )
+               if( kernel.getTextureInformation(material.textureMapping.x).buffer==nullptr )
                {
                   LOG_ERROR("Texture " << material.textureIds.x << " could not be loaded. Default color will be used for material " << materialId );
                   material.textureIds.x = MATERIAL_NONE;
@@ -281,7 +287,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
                   }
                }
                break; 
-            case 23: 
+            case 29: 
                // Bump texture
                material.textureIds.y  = static_cast<int>(atoi( value.c_str() )); 
                if( kernel.getTextureInformation(material.textureIds.y).buffer==nullptr )
@@ -297,7 +303,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
                   }
                }
                break; 
-            case 24: 
+            case 30: 
                // Normal texture
                material.textureIds.z  = static_cast<int>(atoi( value.c_str() )); 
                if( kernel.getTextureInformation(material.textureIds.z).buffer==nullptr )
@@ -313,7 +319,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
                   }
                }
                break; 
-            case 25: 
+            case 31: 
                // Specular texture
                material.textureIds.w  = static_cast<int>(atoi( value.c_str() )); 
                if( kernel.getTextureInformation(material.textureIds.w).buffer==nullptr )
@@ -340,7 +346,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
 
    if( value.length() != 0 )
    {
-      material.textureMapping.w = static_cast<int>(atoi( value.c_str() ));
+      material.textureIds.w = static_cast<int>(atoi( value.c_str() ));
    }
 
    // Force sky and ground textures
@@ -551,20 +557,22 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
       {
          Material* material = (*itm).second;
          myfile << MATERIAL << ";" <<
-            material->color.x << ";" <<
-            material->color.y << ";" <<
-            material->color.z << ";" <<
-            material->color.w << ";" <<
             material->innerIllumination.x << ";" <<
             material->innerIllumination.y << ";" <<
             material->innerIllumination.z << ";" <<
             material->innerIllumination.w << ";" <<
-            material->reflection.x << ";" <<
-            material->refraction.x << ";" <<
+            material->color.x << ";" <<
+            material->color.y << ";" <<
+            material->color.z << ";" <<
+            material->color.w << ";" <<
             material->specular.x << ";" <<
             material->specular.y << ";" <<
             material->specular.z << ";" <<
             material->specular.w << ";" <<
+            material->reflection.x << ";" <<
+            material->refraction.x << ";" <<
+            material->transparency.x << ";" <<
+            material->dummy.x << ";" <<
             material->attributes.x << ";" <<
             material->attributes.y << ";" <<
             material->attributes.z << ";" <<
@@ -574,6 +582,10 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
             material->textureMapping.y << ";" <<
             material->textureMapping.z << ";" <<
             material->textureMapping.w << ";" << 
+            material->textureOffset.x << ";" <<
+            material->textureOffset.y << ";" <<
+            material->textureOffset.z << ";" <<
+            material->textureOffset.w << ";" << 
             material->textureIds.x << ";" << 
             material->textureIds.y << ";" << 
             material->textureIds.z << ";" << 
