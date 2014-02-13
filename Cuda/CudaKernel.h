@@ -60,9 +60,4 @@ private:
    int4 m_blockSize;
    int  m_sharedMemSize;
 
-private:
-
-   // Bitmap output
-   long m_counter;
-
 };

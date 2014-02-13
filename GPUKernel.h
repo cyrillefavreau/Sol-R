@@ -465,6 +465,11 @@ protected:
    int      m_currentMaterial;
    float    m_pointSize;
 
+protected:
+
+   // Benchmark
+   long m_counter;
+
 	// Kinect declarations
 #ifdef USE_KINECT
 protected:

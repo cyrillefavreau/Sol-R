@@ -1807,6 +1807,7 @@ inline float4 launchRay(
    int    iteration         = 0;
    (*primitiveXYId).x = -1;
    (*primitiveXYId).z = 0;
+   (*primitiveXYId).w = 0;
    int currentMaterialId=-2;
 
    // TODO
@@ -1890,6 +1891,7 @@ inline float4 launchRay(
 
          // Primitive illumination
          float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
+         (*primitiveXYId).z += 255*materials[currentMaterialId].innerIllumination.x;
          (*primitiveXYId).z += (colorLight>(*sceneInfo).transparentColor) ? 16 : 0;
 
          if( materials[primitives[closestPrimitive].materialId].transparency != 0.f ) 
@@ -2007,6 +2009,7 @@ inline float4 launchRay(
             iteration, &refractionFromColor, &shadowIntensity, &rBlinn );
 
          colors[reflectedRays] += color*reflectedRatio;
+         (*primitiveXYId).w = shadowIntensity*255;
       }
    }
 
@@ -2019,27 +2022,33 @@ inline float4 launchRay(
 
    (*intersection) = closestIntersection;
 
-   Primitive primitive=primitives[closestPrimitive];
    float len = length(firstIntersection - (*ray).origin);
-   if( materials[primitive.materialId].attributes.z == 0 ) // Wireframe
+   if( closestPrimitive != -1 )
    {
-      // --------------------------------------------------
-      // Fog
-      // --------------------------------------------------
-      //intersectionColor += randoms[((int)len + (*sceneInfo).misc.y)%100];
-
-      // --------------------------------------------------
-      // Background color
-      // --------------------------------------------------
-      float D1 = (*sceneInfo).viewDistance*0.95f;
-      if( (*sceneInfo).misc.z==1 && len>D1)
+      if( materials[primitives[closestPrimitive].materialId].attributes.z==1 ) // Wireframe
       {
-         float D2 = (*sceneInfo).viewDistance*0.05f;
-         float a = len - D1;
-         float b = 1.f-(a/D2);
-         intersectionColor = intersectionColor*b + (*sceneInfo).backgroundColor*(1.f-b);
+         len = (*sceneInfo).viewDistance;
       }
+
    }
+
+   // --------------------------------------------------
+   // Fog
+   // --------------------------------------------------
+   //intersectionColor += randoms[((int)len + (*sceneInfo).misc.y)%100];
+
+   // --------------------------------------------------
+   // Background color
+   // --------------------------------------------------
+   float D1 = (*sceneInfo).viewDistance*0.95f;
+   if( (*sceneInfo).misc.z==1 && len>D1)
+   {
+      float D2 = (*sceneInfo).viewDistance*0.05f;
+      float a = len - D1;
+      float b = 1.f-(a/D2);
+      intersectionColor = intersectionColor*b + (*sceneInfo).backgroundColor*(1.f-b);
+   }
+
    (*depthOfField) = (len-(*depthOfField))/(*sceneInfo).viewDistance;
 
    // Primitive information
@@ -2050,7 +2059,6 @@ inline float4 launchRay(
 
    // Ambient light
    intersectionColor += (*sceneInfo).backgroundColor.w;
-
    saturateVector( &intersectionColor );
    return intersectionColor;
 }

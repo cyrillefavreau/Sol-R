@@ -552,6 +552,7 @@ void OpenCLKernel::releaseDevice()
 */
 void OpenCLKernel::render_begin( const float timer )
 {
+   if( m_sceneInfo.pathTracingIteration.x==0 ) m_counter=GetTickCount();
    GPUKernel::render_begin(timer);
 	int status(0);
    if( m_refresh )
@@ -840,6 +841,10 @@ void OpenCLKernel::render_begin( const float timer )
   
 void OpenCLKernel::render_end()
 {
+   if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
+   {
+      LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
+   }
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
