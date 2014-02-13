@@ -338,11 +338,11 @@ void OpenCLKernel::compileKernels(
 
       //saveToFile("encoded.cl", source_str );
 
-		LOG_INFO(1,"clCreateProgramWithSource");
+		LOG_INFO(1,"Create Program With Source");
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
 		CHECKSTATUS(status);
 
-		LOG_INFO(1,"clBuildProgram");
+		LOG_INFO(1,"Build Program");
       status = clBuildProgram(hProgram, 0, NULL, options.c_str(), NULL, NULL);
       if( status!=CL_SUCCESS )
       {
@@ -360,7 +360,7 @@ void OpenCLKernel::compileKernels(
 		}
 
       // Rendering kernels
-		LOG_INFO(1,"Creating Rendering kernels");
+		LOG_INFO(1,"Create kernels");
 		m_kStandardRenderer = clCreateKernel( hProgram, "k_standardRenderer", &status );
 		CHECKSTATUS(status);
 
@@ -843,8 +843,8 @@ void OpenCLKernel::render_end()
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
-	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,          CL_FALSE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(BitmapBuffer)*gColorDepth, m_bitmap, 0, NULL, NULL) );
-   CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitivesXYIds, CL_FALSE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer), m_hPrimitivesXYIds, 0, NULL, NULL) );
+	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,          CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(BitmapBuffer)*gColorDepth, m_bitmap, 0, NULL, NULL) );
+   CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitivesXYIds, CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer), m_hPrimitivesXYIds, 0, NULL, NULL) );
    
 	CHECKSTATUS(clFlush(m_hQueue));
 	CHECKSTATUS(clFinish(m_hQueue));

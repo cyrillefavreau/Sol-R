@@ -1455,8 +1455,12 @@ float processShadows(
             }
             cptPrimitives++;
          }
+         cptBoxes++;
       }
-      cptBoxes++;
+      else
+      {
+         cptBoxes+=(*box).indexForNextBox.x;
+      }   
    }
    result = (result>(*sceneInfo).shadowIntensity) ? (*sceneInfo).shadowIntensity : result;
    result = (result<0.f) ? 0.f : result;
