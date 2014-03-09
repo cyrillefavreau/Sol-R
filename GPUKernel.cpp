@@ -96,46 +96,6 @@ Vertex max3( const Vertex a, const Vertex b, const Vertex c )
    return a.x * b.x + a.y * b.y + a.z * b.z;
  }
 
-void vectorRotation( Vertex& v, const Vertex& rotationCenter, const Vertex& angles )
-{ 
-	Vertex cosAngles, sinAngles;
-	
-   cosAngles.x = cos(angles.x);
-	cosAngles.y = cos(angles.y);
-	cosAngles.z = cos(angles.z);
-	
-   sinAngles.x = sin(angles.x);
-	sinAngles.y = sin(angles.y);
-	sinAngles.z = sin(angles.z);
-
-   // Rotate Center
-   Vertex vector;
-   vector.x = v.x - rotationCenter.x;
-   vector.y = v.y - rotationCenter.y;
-   vector.z = v.z - rotationCenter.z;
-   Vertex result = vector; 
-
-   /* X axis */ 
-   result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 
-   result.z = vector.y*sinAngles.x + vector.z*cosAngles.x; 
-   vector = result; 
-   result = vector; 
-
-   /* Y axis */ 
-   result.z = vector.z*cosAngles.y - vector.x*sinAngles.y; 
-   result.x = vector.z*sinAngles.y + vector.x*cosAngles.y; 
-   vector = result; 
-   result = vector; 
-
-   /* Z axis */ 
-   result.x = vector.x*cosAngles.z - vector.y*sinAngles.z; 
-   result.y = vector.x*sinAngles.z + vector.y*cosAngles.z; 
-
-   v.x = result.x + rotationCenter.x; 
-   v.y = result.y + rotationCenter.y; 
-   v.z = result.z + rotationCenter.z;
-}
-
 // ________________________________________________________________________________
 float GPUKernel::vectorLength( const Vertex& vector )
 {

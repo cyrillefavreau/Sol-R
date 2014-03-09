@@ -86,7 +86,7 @@ struct Ray
 // Light Information Structure used for global illumination
 // When iterating on frames, lights sources are randomly picked from an array of that 
 // very structure, in order to simulate global illumination
-struct LightInformation
+struct __ALIGN16__ LightInformation
 {
    int2   attribute;                 // x: ID of the emitting primitive
                                      // y: Material ID
@@ -111,7 +111,7 @@ enum PrimitiveType
 };
 
 // Material structure
-struct Material
+struct __ALIGN16__ Material
 {
    float4 innerIllumination; // x: Inner illumination
                              // y: Diffusion strength
@@ -146,7 +146,7 @@ struct Material
 };
 
 // Bounding Box Structure
-struct BoundingBox
+struct __ALIGN16__ BoundingBox
 {
    Vertex parameters[2];     // Bottom-Left and Top-Right corners
    int1   nbPrimitives;      // Number of primitives in the box
@@ -155,7 +155,7 @@ struct BoundingBox
 };
 
 // Primitive Structure
-struct Primitive
+struct __ALIGN16__ Primitive
 {
    // Vertices
    Vertex p0;
@@ -180,7 +180,7 @@ struct Primitive
 };
 
 // Texture information structure
-struct TextureInformation
+struct __ALIGN16__ TextureInformation
 {
    unsigned char* buffer; // Pointer to the texture
    int   offset;          // Offset of the texture in the global texture buffer (the one 

@@ -340,7 +340,11 @@ void OpenCLKernel::compileKernels(
       //saveToFile("encoded.cl", source_str );
 
 		LOG_INFO(1,"Create Program With Source");
+#if 1
 		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
+#else
+      hProgram = clCreateProgramWithBinary( m_hContext, 1, m_hDeviceId, len, (const char **)&ptxFileName, (const size_t*)&len, &status );
+#endif // 0
 		CHECKSTATUS(status);
 
 		LOG_INFO(1,"Build Program");

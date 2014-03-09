@@ -26,8 +26,9 @@
 #include <cuda_runtime_api.h>
 #include <helper_cuda.h>
 #include <helper_math.h>
+
 // ________________________________________________________________________________
-__device__ inline void saturateVector( float4& v )
+__device__ __INLINE__ void saturateVector( float4& v )
 {
 	v.x = (v.x<0.f) ? 0.f : v.x;
 	v.y = (v.y<0.f) ? 0.f : v.y; 
@@ -41,7 +42,7 @@ __device__ inline void saturateVector( float4& v )
 }
 
 // ________________________________________________________________________________
-__device__ inline float3 crossProduct( const float3& b, const float3& c )
+__device__ __INLINE__ float3 crossProduct( const float3& b, const float3& c )
 {
 	float3 a;
 	a.x = b.y*c.z - b.z*c.y;
@@ -60,7 +61,7 @@ rayon incident
 reflected : le vecteur normal reflechi
 ________________________________________________________________________________
 */
-__device__ inline void vectorReflection( float3& r, const float3& i, const float3& n )
+__device__ __INLINE__ void vectorReflection( float3& r, const float3& i, const float3& n )
 {
 	r = i-2.f*dot(i,n)*n;
 }
@@ -73,7 +74,7 @@ n1      : index of refraction of original medium
 n2      : index of refraction of new medium
 ________________________________________________________________________________
 */
-__device__ inline void vectorRefraction( 
+__device__ __INLINE__ void vectorRefraction( 
 	float3&      refracted, 
 	const float3 incident, 
 	const float  n1, 
@@ -97,17 +98,17 @@ __c : Center of rotations
 __a : Angles
 ________________________________________________________________________________
 */
-__device__ inline void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
+__device__ __INLINE__ void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
 { 
 	float3 cosAngles, sinAngles;
 	
-   cosAngles.x = cos(angles.x);
-	cosAngles.y = cos(angles.y);
-	cosAngles.z = cos(angles.z);
+   cosAngles.x = cosf(angles.x);
+	cosAngles.y = cosf(angles.y);
+	cosAngles.z = cosf(angles.z);
 	
-   sinAngles.x = sin(angles.x);
-	sinAngles.y = sin(angles.y);
-	sinAngles.z = sin(angles.z);
+   sinAngles.x = sinf(angles.x);
+	sinAngles.y = sinf(angles.y);
+	sinAngles.z = sinf(angles.z);
 
    // Rotate Center
    float3 vector;

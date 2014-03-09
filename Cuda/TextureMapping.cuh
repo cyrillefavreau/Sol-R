@@ -30,7 +30,7 @@
 // ----------
 // Normal mapping
 // --------------------
-__device__ inline void normalMap(
+__device__ __INLINE__ void normalMap(
    const int&       index,
 	const Material&  material,
 	BitmapBuffer*    textures,
@@ -48,7 +48,7 @@ __device__ inline void normalMap(
 // ----------
 // Normal mapping
 // --------------------
-__device__ inline void bumpMap(
+__device__ __INLINE__ void bumpMap(
    const int&       index,
 	const Material&  material,
 	BitmapBuffer*    textures,
@@ -67,7 +67,7 @@ __device__ inline void bumpMap(
 // ----------
 // Normal mapping
 // --------------------
-__device__ inline void specularMap(
+__device__ __INLINE__ void specularMap(
    const int&       index,
 	const Material&  material,
 	BitmapBuffer*    textures,
@@ -83,7 +83,7 @@ __device__ inline void specularMap(
 	//specular.z = (b/256.f);
 }
 
-__device__ void juliaSet( 
+__device__ __INLINE__ void juliaSet( 
 	const Primitive& primitive,
 	Material*        materials,
    const SceneInfo& sceneInfo, 
@@ -126,7 +126,7 @@ __device__ void juliaSet(
    color.w = 1.f-(n/maxIterations);
 }
 
-__device__ void mandelbrotSet( 
+__device__ __INLINE__ void mandelbrotSet( 
 	const Primitive& primitive,
 	Material*        materials,
    const SceneInfo& sceneInfo, 
@@ -176,7 +176,7 @@ ________________________________________________________________________________
 Triangle texture Mapping
 ________________________________________________________________________________
 */
-__device__ float4 triangleUVMapping( 
+__device__ __INLINE__ float4 triangleUVMapping( 
    const SceneInfo& sceneInfo,
 	const Primitive& primitive,
 	Material*        materials,
@@ -244,7 +244,7 @@ ________________________________________________________________________________
 Sphere texture Mapping
 ________________________________________________________________________________
 */
-__device__ float4 sphereUVMapping( 
+__device__ __INLINE__ float4 sphereUVMapping( 
 	const Primitive& primitive,
 	Material*        materials,
 	BitmapBuffer*    textures,
@@ -314,7 +314,7 @@ ________________________________________________________________________________
 Cube texture mapping
 ________________________________________________________________________________
 */
-__device__ float4 cubeMapping(
+__device__ __INLINE__ float4 cubeMapping(
    const SceneInfo& sceneInfo,
 	const Primitive& primitive, 
 	Material*        materials,
@@ -396,7 +396,7 @@ __device__ float4 cubeMapping(
 }
 #endif // EXTENDED_GEOMETRY
 
-__device__ bool wireFrameMapping( float x, float y, int width, const Primitive& primitive )
+__device__ __INLINE__ bool wireFrameMapping( float x, float y, int width, const Primitive& primitive )
 {
 	int X = abs(x);
 	int Y = abs(y);

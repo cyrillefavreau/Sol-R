@@ -30,7 +30,7 @@
 #include "../Consts.h"
 #include "TextureMapping.cuh"
 
-__device__ inline Vertex project( const Vertex& A, const Vertex& B) 
+__device__ __INLINE__ Vertex project( const Vertex& A, const Vertex& B) 
 {
    return B*(dot(A,B)/dot(B,B));
 }
@@ -41,7 +41,7 @@ ________________________________________________________________________________
 Compute ray attributes
 ________________________________________________________________________________
 */
-__device__ inline void computeRayAttributes(Ray& ray)
+__device__ __INLINE__ void computeRayAttributes(Ray& ray)
 {
    ray.inv_direction.x = ray.direction.x!=0.f ? 1.f/ray.direction.x : 1.f;
    ray.inv_direction.y = ray.direction.y!=0.f ? 1.f/ray.direction.y : 1.f;
@@ -57,7 +57,7 @@ ________________________________________________________________________________
 Box intersection
 ________________________________________________________________________________
 */
-__device__ inline bool boxIntersection( 
+__device__ __INLINE__ bool boxIntersection( 
 	const BoundingBox& box, 
 	const Ray&     ray,
 	const float&   t0,
@@ -93,7 +93,7 @@ ________________________________________________________________________________
 Ellipsoid intersection
 ________________________________________________________________________________
 */
-__device__ inline bool ellipsoidIntersection(
+__device__ __INLINE__ bool ellipsoidIntersection(
 	const SceneInfo& sceneInfo,
    const Primitive& ellipsoid,
 	Material*  materials, 
@@ -165,7 +165,7 @@ ________________________________________________________________________________
 Sphere intersection
 ________________________________________________________________________________
 */
-__device__ inline bool sphereIntersection(
+__device__ __INLINE__ bool sphereIntersection(
 	const SceneInfo& sceneInfo,
 	const Primitive& sphere, 
 	Material*  materials, 
@@ -248,7 +248,7 @@ Cylinder intersection
 ref: http://courses.cms.caltech.edu/cs11/material/advcpp/lab7/index.html
 ________________________________________________________________________________
 */
-__device__ inline bool cylinderIntersection( 
+__device__ __INLINE__ bool cylinderIntersection( 
 	const SceneInfo& sceneInfo,
 	const Primitive& cylinder,
 	Material*  materials, 
@@ -320,7 +320,7 @@ ________________________________________________________________________________
 Checkboard intersection
 ________________________________________________________________________________
 */
-__device__ inline bool planeIntersection( 
+__device__ __INLINE__ bool planeIntersection( 
 	const SceneInfo& sceneInfo,
 	const Primitive& primitive,
 	Material*        materials,
@@ -478,7 +478,7 @@ ________________________________________________________________________________
 Triangle intersection
 ________________________________________________________________________________
 */
-__device__ inline bool triangleIntersection( 
+__device__ __INLINE__ bool triangleIntersection( 
     const SceneInfo& sceneInfo,
 	const Primitive& triangle, 
 	Material*        materials,
@@ -666,7 +666,7 @@ ________________________________________________________________________________
 Intersections with primitives
 ________________________________________________________________________________
 */
-__device__ inline bool intersectionWithPrimitives(
+__device__ __INLINE__ bool intersectionWithPrimitives(
 	const SceneInfo& sceneInfo,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,

@@ -27,12 +27,16 @@
 #define nullptr 0
 #endif
 
+// inline
+#define __INLINE__ // inline
+#define __ALIGN16__ //__align__(16)
+
 //CUDA Specific
 #undef USE_MANAGED_MEMORY
 
 // #define PHOTON_ENERGY
 #define GRADIANT_BACKGROUND
-#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  ADVANCED_FEATURES
 #define AUTOFOCUS
 #undef  PHOTON_ENERGY

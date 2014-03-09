@@ -38,7 +38,7 @@ ________________________________________________________________________________
 Convert Vertex into OpenGL RGB color
 ________________________________________________________________________________
 */
-__device__ void makeColor(
+__device__ __INLINE__ void makeColor(
 	const SceneInfo& sceneInfo,
 	float4&          color,
 	BitmapBuffer*    bitmap,
@@ -106,7 +106,7 @@ light source center.
 
 ________________________________________________________________________________
 */
-__device__ float processShadows(
+__device__ __INLINE__ float processShadows(
 	const SceneInfo& sceneInfo,
 	BoundingBox*  boudingBoxes, const int& nbActiveBoxes,
 	Primitive*    primitives,
@@ -217,7 +217,7 @@ ________________________________________________________________________________
 Primitive shader
 ________________________________________________________________________________
 */
-__device__ float4 primitiveShader(
+__device__ __INLINE__ float4 primitiveShader(
    const int& index,
 	const SceneInfo&   sceneInfo,
 	const PostProcessingInfo&   postProcessingInfo,

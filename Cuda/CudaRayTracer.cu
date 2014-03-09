@@ -81,7 +81,7 @@ the ray). It can  be considered as a light source if its inner light rate
 is > 0.                            
 ________________________________________________________________________________
 */
-__device__ inline float4 launchRay(
+__device__ __INLINE__ float4 launchRay(
    const int& index,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
