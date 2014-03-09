@@ -1,6 +1,6 @@
 /* 
 * Raytracing Engine
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -268,16 +268,22 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 21: material.textureMapping.y    = static_cast<int>(atoi( value.c_str() )); break;
             case 22: material.textureMapping.z    = static_cast<int>(atoi( value.c_str() )); break;
             case 23: material.textureMapping.w    = static_cast<int>(atoi( value.c_str() )); break;
+<<<<<<< .mine
+            case 24: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
+            case 25: material.textureOffset.y     = static_cast<int>(atoi( value.c_str() )); break;
+            case 26: material.textureOffset.z     = static_cast<int>(atoi( value.c_str() )); break;
+=======
             case 24: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
             case 25: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
             case 26: material.textureOffset.y     = static_cast<int>(atoi( value.c_str() )); break;
+>>>>>>> .r1140
             case 27: material.textureOffset.w     = static_cast<int>(atoi( value.c_str() )); break;
             case 28: 
                material.textureIds.x  = static_cast<int>(atoi( value.c_str() )); 
-               if( kernel.getTextureInformation(material.textureMapping.x).buffer==nullptr )
+               material.textureIds.x = MATERIAL_NONE;
+               if( material.textureIds.x!=MATERIAL_NONE && kernel.getTextureInformation(material.textureMapping.x).buffer==nullptr )
                {
                   LOG_ERROR("Texture " << material.textureIds.x << " could not be loaded. Default color will be used for material " << materialId );
-                  material.textureIds.x = MATERIAL_NONE;
                }
                else
                {
@@ -290,10 +296,10 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 29: 
                // Bump texture
                material.textureIds.y  = static_cast<int>(atoi( value.c_str() )); 
-               if( kernel.getTextureInformation(material.textureIds.y).buffer==nullptr )
+               material.textureIds.y = MATERIAL_NONE;
+               if( material.textureIds.y!=MATERIAL_NONE && kernel.getTextureInformation(material.textureIds.y).buffer==nullptr )
                {
                   LOG_ERROR("Bump texture " << material.textureIds.y << " could not be loaded. Default color will be used for material " << materialId );
-                  material.textureIds.y = MATERIAL_NONE;
                }
                else
                {
@@ -306,10 +312,10 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 30: 
                // Normal texture
                material.textureIds.z  = static_cast<int>(atoi( value.c_str() )); 
-               if( kernel.getTextureInformation(material.textureIds.z).buffer==nullptr )
+               material.textureIds.z = MATERIAL_NONE;
+               if( material.textureIds.z!=MATERIAL_NONE && kernel.getTextureInformation(material.textureIds.z).buffer==nullptr )
                {
                   LOG_ERROR("Normal texture " << material.textureIds.z << " could not be loaded. Default color will be used for material " << materialId );
-                  material.textureIds.z = MATERIAL_NONE;
                }
                else
                {
@@ -322,7 +328,8 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 31: 
                // Specular texture
                material.textureIds.w  = static_cast<int>(atoi( value.c_str() )); 
-               if( kernel.getTextureInformation(material.textureIds.w).buffer==nullptr )
+               material.textureIds.w = MATERIAL_NONE;
+               if( material.textureIds.w!=MATERIAL_NONE && kernel.getTextureInformation(material.textureIds.w).buffer==nullptr )
                {
                   LOG_ERROR("Specular texture " << material.textureIds.w << " could not be loaded. Default color will be used for material " << materialId );
                   material.textureIds.w = MATERIAL_NONE;
@@ -577,7 +584,6 @@ void FileMarshaller::saveToFile( GPUKernel& kernel, const std::string& filename)
             material->attributes.y << ";" <<
             material->attributes.z << ";" <<
             material->attributes.w << ";" <<
-            material->transparency.x << ";" <<
             material->textureMapping.x << ";" <<
             material->textureMapping.y << ";" <<
             material->textureMapping.z << ";" <<

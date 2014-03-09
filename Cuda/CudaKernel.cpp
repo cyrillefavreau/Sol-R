@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+ * Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -284,7 +284,7 @@ void CudaKernel::render_begin( const float timer )
 
       SceneInfo sceneInfo=m_sceneInfo;
       if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
-      if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
+      if( m_sceneInfo.pathTracingIteration.x>=20 /*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
       cudaRender(
          m_occupancyParameters,
