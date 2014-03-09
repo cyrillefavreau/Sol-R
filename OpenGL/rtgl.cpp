@@ -88,11 +88,7 @@ void RayTracer::InitializeRaytracer( const int width, const int height )
    // Kernel
    if(!gKernel) 
    {
-<<<<<<< .mine
       gKernel = new GenericGPUKernel(0, 480, 1, 0);
-=======
-      gKernel = new GenericGPUKernel(0, 480, 2, 0);
->>>>>>> .r1140
       gSceneInfo.pathTracingIteration.x = 0; 
       gKernel->setSceneInfo( gSceneInfo );
       gKernel->initBuffers();

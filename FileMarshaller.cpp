@@ -268,15 +268,9 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
             case 21: material.textureMapping.y    = static_cast<int>(atoi( value.c_str() )); break;
             case 22: material.textureMapping.z    = static_cast<int>(atoi( value.c_str() )); break;
             case 23: material.textureMapping.w    = static_cast<int>(atoi( value.c_str() )); break;
-<<<<<<< .mine
             case 24: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
             case 25: material.textureOffset.y     = static_cast<int>(atoi( value.c_str() )); break;
             case 26: material.textureOffset.z     = static_cast<int>(atoi( value.c_str() )); break;
-=======
-            case 24: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
-            case 25: material.textureOffset.x     = static_cast<int>(atoi( value.c_str() )); break;
-            case 26: material.textureOffset.y     = static_cast<int>(atoi( value.c_str() )); break;
->>>>>>> .r1140
             case 27: material.textureOffset.w     = static_cast<int>(atoi( value.c_str() )); break;
             case 28: 
                material.textureIds.x  = static_cast<int>(atoi( value.c_str() )); 
