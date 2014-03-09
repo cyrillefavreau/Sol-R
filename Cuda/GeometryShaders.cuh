@@ -1,5 +1,5 @@
 /* 
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -295,7 +295,7 @@ __device__ float4 primitiveShader(
                 lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
                t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
-               float a= (sceneInfo.pathTracingIteration.x<sceneInfo.maxPathTracingIterations.x) ? sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x) : 1.f;
+               float a=(sceneInfo.pathTracingIteration.x<sceneInfo.maxPathTracingIterations.x) ? sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x) : 1.f;
                center.x += m.innerIllumination.y*randoms[t  ]*a;
 				   center.y += m.innerIllumination.y*randoms[t+1]*a;
 				   center.z += m.innerIllumination.y*randoms[t+2]*a;
@@ -329,7 +329,7 @@ __device__ float4 primitiveShader(
 			         // --------------------------------------------------------------------------------
 			         // Lambert
 			         // --------------------------------------------------------------------------------
-	               float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+	               float lambert = 2.f*dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
                   // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
                   // depends on the transparency rate.
                   lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : 1.f;
@@ -347,6 +347,7 @@ __device__ float4 primitiveShader(
                   lambert *= (1.f+randoms[t]*material.innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
 			         lambert *= (1.f-shadowIntensity);
                   lambert *= (1.f-photonEnergy);
+                  lambert += sceneInfo.backgroundColor.w;
 
                   // Lighted object, not in the shades
                   lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;

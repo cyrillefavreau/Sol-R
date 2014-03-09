@@ -1,5 +1,5 @@
 ﻿/* 
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -375,7 +375,7 @@ __device__ inline float4 launchRay(
    intersectionColor -= colorBox;
    
    // Ambient light
-   intersectionColor += sceneInfo.backgroundColor.w;
+   //intersectionColor += sceneInfo.backgroundColor.w;
 	saturateVector( intersectionColor );
 	return intersectionColor;
 }
@@ -1123,9 +1123,9 @@ __global__ void k_ambiantOcclusion(
 
    int c(0);
    const int step = 48;
-	for( int X=-step; X<step; X+=2 )
+	for( int X=-step; X<step; X+=4 )
 	{
-		for( int Y=-step; Y<step; Y+=2 )
+		for( int Y=-step; Y<step; Y+=4 )
 		{
 			int xx = x+X;
 			int yy = y+Y;
@@ -1397,6 +1397,7 @@ extern "C" void finalize_scene(
          checkCudaErrors(cudaStreamDestroy(d_streams[device][stream]));
          d_streams[device][stream] = 0;
       }
+      LOG_INFO(1,"Resetting device");
       cudaDeviceReset();
    }
 }
@@ -1578,21 +1579,18 @@ extern "C" void cudaRender(
    blocks.y = blockSize.y;
    blocks.z = blockSize.z;
 
-   std::string step("Initialization");
-
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
 
-      //for( int stream(0); stream<occupancyParameters.y; ++stream )
-      int stream(occupancyParameters.y-1);
+      for( int stream(0); stream<occupancyParameters.y; ++stream )
+      //int stream(occupancyParameters.y-1);
       {
 	      switch( sceneInfo.renderingType.x ) 
 	      {
 	      case vtAnaglyph:
 		      {
-               step = "vtAnaglyph";
-			      k_anaglyphRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+               k_anaglyphRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
 #ifndef USE_MANAGED_MEMORY
 				      d_boundingBoxes[device],
@@ -1614,8 +1612,7 @@ extern "C" void cudaRender(
 		      }
          case vt3DVision:
 		      {
-               step = "vt3DVision";
-			      k_3DVisionRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+               k_3DVisionRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
 #ifndef USE_MANAGED_MEMORY
 				      d_boundingBoxes[device],
@@ -1637,8 +1634,7 @@ extern "C" void cudaRender(
 		      }
 	      case vtFishEye:
 		      {
-               step = "vtFishEye";
-			      k_fishEyeRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+               k_fishEyeRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
                   device*stream*size.y,
 #ifndef USE_MANAGED_MEMORY
@@ -1661,8 +1657,7 @@ extern "C" void cudaRender(
 		      }
 	      default:
 		      {
-               step = "k_standardRenderer";
-			      k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+               k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
                   device*(sceneInfo.height.x/occupancyParameters.x),
                   stream*size.y,
@@ -1690,7 +1685,6 @@ extern "C" void cudaRender(
 	      {
 		      LOG_ERROR("********************************************************************************");
             LOG_ERROR("Error code : [" << status << "] " << cudaGetErrorString(status));
-		      LOG_ERROR("Step       : " << step);
 		      LOG_ERROR("Device     : " << device);
 		      LOG_ERROR("Stream     : " << stream);
 		      LOG_ERROR("Image size : " << size.x << ", " << size.y);
@@ -1702,7 +1696,6 @@ extern "C" void cudaRender(
 		      LOG_ERROR("********************************************************************************");
 	      }
 	   }
-      //step = "cudaThreadSynchronize";
 	   //checkCudaErrors(cudaThreadSynchronize());
    }
 
@@ -1727,7 +1720,6 @@ extern "C" void cudaRender(
 	   switch( postProcessingInfo.type.x )
 	   {
 	   case ppe_depthOfField:
-         step = "ppe_depthOfField";
 		   k_depthOfField<<<grid,blocks,0,d_streams[device][0]>>>(
             occupancyParameters,
 			   sceneInfo, 
@@ -1737,7 +1729,6 @@ extern "C" void cudaRender(
 			   d_bitmap[device] );
 		   break;
 	   case ppe_ambientOcclusion:
-         step = "ppe_ambientOcclusion";
 		   k_ambiantOcclusion<<<grid,blocks,0,d_streams[device][0]>>>(
             occupancyParameters,
 			   sceneInfo, 
@@ -1747,7 +1738,6 @@ extern "C" void cudaRender(
 			   d_bitmap[device] );
 		   break;
 	   case ppe_radiosity:
-         step = "ppe_enlightment";
 		   k_radiosity<<<grid,blocks,0,d_streams[device][0]>>>(
             occupancyParameters,
 			   sceneInfo, 
@@ -1765,7 +1755,6 @@ extern "C" void cudaRender(
 			   d_bitmap[device] );
 		   break;
 	   default:
-         step = "k_default";
          k_default<<<grid,blocks,0,d_streams[device][0]>>>(
             occupancyParameters,
             sceneInfo,
@@ -1780,7 +1769,6 @@ extern "C" void cudaRender(
 	   {
 		   LOG_ERROR("********************************************************************************");
          LOG_ERROR("Error code : [" << status << "] " << cudaGetErrorString(status));
-		   LOG_ERROR("Step       : " << step);
 		   LOG_ERROR("Device     : " << device);
 		   LOG_ERROR("Stream     : " << 0);
 		   LOG_ERROR("Image size : " << size.x << ", " << size.y);

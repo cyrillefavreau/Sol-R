@@ -1,5 +1,5 @@
 /* 
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -43,7 +43,7 @@ inline std::string getTimestamp()
   time_t now = time( &now ) ;
   struct tm local_time; 
   localtime_s( &local_time, &now ) ;
-  strftime( buffer, BUFSIZ, "%m/%d/%Y", &local_time ) ;    
+  strftime( buffer, BUFSIZ, "%m/%d/%Y %H:%M:%S", &local_time ) ;    
   return std::string(buffer);
 #else
   return "";

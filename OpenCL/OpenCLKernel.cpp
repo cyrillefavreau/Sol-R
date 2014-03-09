@@ -1,6 +1,6 @@
 /* 
 * OpenCL Raytracer
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -215,7 +215,8 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_EXTENSIONS, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
       LOG_INFO(1, "  Extensions : " << buffer);
 
-		CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, devices, &ret_num_devices));
+		//CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, devices, &ret_num_devices));
+      CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices));
 
 		// Devices
 		for( cl_uint device=0; device<ret_num_devices; ++device)
@@ -350,7 +351,7 @@ void OpenCLKernel::compileKernels(
 		   char buffer[MAX_SOURCE_SIZE];
          memset(buffer,0,MAX_SOURCE_SIZE);
          CHECKSTATUS(clGetProgramBuildInfo(hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
-         LOG_ERROR("Program Build failed: " << buffer );
+         LOG_ERROR("Program Build failed [" << status << "]: "  << buffer );
       }
 
 		if( sourceType == kst_file)
@@ -387,37 +388,31 @@ void OpenCLKernel::compileKernels(
       m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
 		CHECKSTATUS(status);
 
-      cl_int computeUnits;
-		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDeviceId, CL_KERNEL_WORK_GROUP_SIZE, sizeof(cl_int), &computeUnits , NULL);
-		LOG_INFO(1,"CL_KERNEL_WORK_GROUP_SIZE=" << computeUnits );
-
-		clGetKernelWorkGroupInfo( m_kStandardRenderer, m_hDeviceId, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(m_preferredWorkGroupSize), &m_preferredWorkGroupSize , NULL);
-		LOG_INFO(1,"CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE=" << m_preferredWorkGroupSize );
-
 #if 0
 		// Generate Binaries!!!
 		// Obtain the length of the binary data that will be queried, for each device
+      LOG_INFO(1,"Get number of devices");
 		size_t ret_num_devices = 1;
+      CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint),&ret_num_devices,NULL));
+      LOG_INFO(1, "  " << ret_num_devices << " device(s) detected");
+
+      LOG_INFO(1,"Get binary sizes");
 		size_t binaries_sizes[MAX_DEVICES];
-		CHECKSTATUS( clGetProgramInfo(
-			hProgram, 
-			CL_PROGRAM_BINARY_SIZES, 
-			ret_num_devices*sizeof(size_t), 
-			binaries_sizes, 
-			0 ));
+		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARY_SIZES,ret_num_devices*sizeof(size_t),binaries_sizes,NULL));
 
 		char **binaries = new char*[MAX_DEVICES];
 		for (size_t i = 0; i < ret_num_devices; i++)
+      {
 			binaries[i] = new char[binaries_sizes[i]+1];
+         LOG_INFO(1,"Binary " << i << ", Size=" << binaries_sizes[i]);
+      }
 
-		CHECKSTATUS( clGetProgramInfo(
-			hProgram, 
-			CL_PROGRAM_BINARIES, 
-			MAX_DEVICES*sizeof(size_t), 
-			binaries, 
-			NULL));                        
+      LOG_INFO(1,"Get binaries");
+		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARIES,ret_num_devices*sizeof(size_t),binaries,NULL));                        
 
-		for (size_t i = 0; i < ret_num_devices; i++) {
+		for (size_t i = 0; i < ret_num_devices; i++) 
+      {
+         LOG_INFO(1,"Writting kernel" << i << ".ptx to disk");
 			binaries[i][binaries_sizes[i]] = '\0';
 			char name[255];
 			sprintf_s(name, 255, "kernel%d.ptx", i );
@@ -427,8 +422,10 @@ void OpenCLKernel::compileKernels(
 			fclose(fp);
 		}
 
-		for (size_t i = 0; i < ret_num_devices; i++)                                
-			delete [] binaries[i];                        
+		for (size_t i = 0; i < ret_num_devices; i++)
+      {
+			delete [] binaries[i];
+      }
 		delete [] binaries;
 #endif // 0
 
@@ -540,7 +537,7 @@ void OpenCLKernel::releaseDevice()
 	if( m_kDefault )          CHECKSTATUS(clReleaseKernel(m_kDefault));
 	if( m_kDepthOfField )     CHECKSTATUS(clReleaseKernel(m_kDepthOfField));
 	if( m_kAmbientOcclusion ) CHECKSTATUS(clReleaseKernel(m_kAmbientOcclusion));
-	if( m_kRadiosity )      CHECKSTATUS(clReleaseKernel(m_kRadiosity));
+	if( m_kRadiosity )        CHECKSTATUS(clReleaseKernel(m_kRadiosity));
 
    // Queue and context
    if( m_hQueue ) CHECKSTATUS(clReleaseCommandQueue(m_hQueue));
@@ -680,7 +677,7 @@ void OpenCLKernel::render_begin( const float timer )
 
       SceneInfo sceneInfo=m_sceneInfo;
       if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
-      if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
+      if( m_sceneInfo.pathTracingIteration.x>=20/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
       size_t szLocalWorkSize[] = { 1, 1 };
       size_t szGlobalWorkSize[] = { m_sceneInfo.width.x/szLocalWorkSize[0], m_sceneInfo.height.x/szLocalWorkSize[1] };

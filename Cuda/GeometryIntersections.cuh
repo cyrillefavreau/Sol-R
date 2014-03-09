@@ -1,5 +1,5 @@
 ﻿/* 
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -227,7 +227,7 @@ __device__ inline bool sphereIntersection(
 
    // Shadow management
    r = dot(dir,normal);
-	shadowIntensity = 1.f; //(materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
+	shadowIntensity = (materials[sphere.materialId.x].transparency.x != 0.f) ? (1.f-fabs(r)) : 1.f;
 
 #ifdef EXTENDED_FEATURES
 	// Power textures
@@ -493,7 +493,7 @@ __device__ inline bool triangleIntersection(
    back = false;
 
    // Reject triangles with normal opposite to ray.
-   Vertex N=ray.direction-ray.origin;
+   Vertex N=normalize(ray.direction-ray.origin);
    if( processingShadows )
    {
       if( dot(N,triangle.n0)<=0.f ) return false;
@@ -546,9 +546,9 @@ __device__ inline bool triangleIntersection(
    intersection = ray.origin + t*ray.direction;
 
    // Normal
-   Vertex v0 = triangle.p0 - intersection;
-   Vertex v1 = triangle.p1 - intersection;
-   Vertex v2 = triangle.p2 - intersection;
+   Vertex v0 = (triangle.p0 - intersection);
+   Vertex v1 = (triangle.p1 - intersection);
+   Vertex v2 = (triangle.p2 - intersection);
    areas.x = 0.5f*length(crossProduct( v1,v2 ));
    areas.y = 0.5f*length(crossProduct( v0,v2 ));
    areas.z = 0.5f*length(crossProduct( v0,v1 ));

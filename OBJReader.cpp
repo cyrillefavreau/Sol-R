@@ -1,5 +1,5 @@
 /* 
-* Copyright (C) 2011-2012 Cyrille Favreau <cyrille_favreau@hotmail.com>
+* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
 *
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Library General Public
@@ -134,7 +134,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
    int materialId)
 {
    const float innerDiffusion=1000.f;
-   const float diffusionRatio=5.f;
+   const float diffusionRatio=1.f;
 
    std::string materialsFilename(filename);
    materialsFilename += ".mtl";
@@ -166,7 +166,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, 
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-                  m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
+                  m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
                   m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
                   false );
                LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
@@ -179,14 +179,15 @@ unsigned int OBJReader::loadMaterialsFromFile(
             MaterialMTL material;
             memset( &material, 0, sizeof(MaterialMTL));
             material.index = static_cast<unsigned int>(materials.size()+materialId);
+            //material.reflection = 0.2f;
             material.diffuseTextureId = MATERIAL_NONE;
             material.normalTextureId  = MATERIAL_NONE;
             material.bumpTextureId    = MATERIAL_NONE;
             materials[id].isSketchupLightMaterial = false;
-            material.noise = 5.f;
+            material.noise = 0.f;
             materials[id] = material;
             materials[id].Ks.x = 1.f;
-            materials[id].Ks.y = 200.f;
+            materials[id].Ks.y = 500.f;
          }
 
          if( line.find("Kd") == 0 )
@@ -299,7 +300,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, 
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
-            m.Ks.x, 10.f*m.Ks.y, m.Ks.z,
+            m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
             m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
             false );
          LOG_INFO(3, "[" << m.index << "] Added material [" << id << "] " <<
