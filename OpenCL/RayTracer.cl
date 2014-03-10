@@ -2076,7 +2076,7 @@ inline float4 launchRay(
       intersectionColor = intersectionColor*b + (*sceneInfo).backgroundColor*(1.f-b);
    }
 
-   (*depthOfField) = (len-(*depthOfField))/(*sceneInfo).viewDistance;
+   (*depthOfField) = len;
 
    // Primitive information
    (*primitiveXYId).y = iteration;
@@ -2181,7 +2181,7 @@ __kernel void k_standardRenderer(
    }
    */
 
-   float dof = postProcessingInfo.param1;
+   float dof = 0;
    Vertex intersection;
 
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
@@ -2330,7 +2330,7 @@ __kernel void k_anaglyphRenderer(
       postProcessingBuffer[index].w = 0.f;
    }
 
-   float dof = postProcessingInfo.param1;
+   float dof = 0;
    Vertex intersection;
    Ray eyeRay;
 
@@ -2460,7 +2460,7 @@ __kernel void k_3DVisionRenderer(
       postProcessingBuffer[index].w = 0.f;
    }
 
-   float dof = postProcessingInfo.param1;
+   float dof = 0;
    Vertex intersection;
    int halfWidth  = sceneInfo.width/2;
 
@@ -2607,7 +2607,7 @@ __kernel void k_depthOfField(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
-   float  depth = postProcessingInfo.param2*postProcessingBuffer[index].w;
+   float  depth = 0.00001f*(postProcessingBuffer[index].w-postProcessingInfo.param1);
    int    wh = sceneInfo.width*sceneInfo.height;
 
    float4 localColor = {0.f,0.f,0.f,0.f};
@@ -2615,8 +2615,8 @@ __kernel void k_depthOfField(
    {
       int ix = i%wh;
       int iy = (i+sceneInfo.width)%wh;
-      int xx = x+depth*randoms[ix]*0.5f;
-      int yy = y+depth*randoms[iy]*0.5f;
+      int xx = x+depth*randoms[ix]*postProcessingInfo.param2;
+      int yy = y+depth*randoms[iy]*postProcessingInfo.param2;
       if( xx>=0 && xx<sceneInfo.width && yy>=0 && yy<sceneInfo.height )
       {
          int localIndex = yy*sceneInfo.width+xx;

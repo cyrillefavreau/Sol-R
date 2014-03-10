@@ -366,7 +366,7 @@ __device__ __INLINE__ float4 launchRay(
       float b = 1.f-(a/D2);
       intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
    }
-   depthOfField = (len-depthOfField)/sceneInfo.viewDistance.x;
+   depthOfField = len;
 
    // Primitive information
    primitiveXYId.y = iteration;
@@ -456,6 +456,7 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
+#if 0
    else
 	{
 		// Randomize view for natural depth of field
@@ -471,8 +472,9 @@ __global__ void k_standardRenderer(
 		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
 		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
 	}
+#endif // 0
 
-	float dof = postProcessingInfo.param1.x;
+	float dof = 0.f;
 	Vertex intersection;
 
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
@@ -651,7 +653,7 @@ __global__ void k_fishEyeRenderer(
       }
 	}
 
-	float dof = postProcessingInfo.param1.x;
+	float dof = 0.f;
 	Vertex intersection;
 
    // Normal Y axis
@@ -774,7 +776,7 @@ __global__ void k_anaglyphRenderer(
 		postProcessingBuffer[index].w = 0.f;
 	}
 
-	float dof = postProcessingInfo.param1.x;
+	float dof = 0.f;
 	Vertex intersection;
 	Ray eyeRay;
 
@@ -1063,7 +1065,7 @@ __global__ void k_depthOfField(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
    
-   float  depth = postProcessingInfo.param2.x*postProcessingBuffer[index].w;
+   float  depth = 0.00001f*(postProcessingBuffer[index].w-postProcessingInfo.param1.x);
 	int    wh = sceneInfo.width.x*sceneInfo.height.x;
 
    float4 localColor = {0.f,0.f,0.f};
@@ -1071,8 +1073,8 @@ __global__ void k_depthOfField(
 	{
 		int ix = i%wh;
 		int iy = (i+sceneInfo.width.x)%wh;
-		int xx = x+depth*randoms[ix]*0.5f;
-		int yy = y+depth*randoms[iy]*0.5f;
+		int xx = x+depth*randoms[ix]*postProcessingInfo.param2.x;
+		int yy = y+depth*randoms[iy]*postProcessingInfo.param2.x;
 		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
 		{
 			int localIndex = yy*sceneInfo.width.x+xx;
@@ -1122,10 +1124,10 @@ __global__ void k_ambiantOcclusion(
 	float  depth = localColor.w;
 
    int c(0);
-   const int step = 48;
-	for( int X=-step; X<step; X+=4 )
+   const int step = 8;
+	for( int X=-step; X<step; X+=2 )
 	{
-		for( int Y=-step; Y<step; Y+=4 )
+		for( int Y=-step; Y<step; Y+=2 )
 		{
 			int xx = x+X;
 			int yy = y+Y;

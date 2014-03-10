@@ -23,6 +23,7 @@
 #pragma once
 
 #include <vector_types.h>
+#include "../consts.h"
 
 #ifdef USE_CUDA
 typedef float3        Vertex;
