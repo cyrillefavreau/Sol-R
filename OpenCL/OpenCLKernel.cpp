@@ -215,8 +215,8 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_EXTENSIONS, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
       LOG_INFO(1, "  Extensions : " << buffer);
 
-		CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, devices, &ret_num_devices));
-      //CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices));
+		//CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, devices, &ret_num_devices));
+      CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices));
 
 		// Devices
 		for( cl_uint device=0; device<ret_num_devices; ++device)

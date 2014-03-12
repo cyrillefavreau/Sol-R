@@ -329,7 +329,7 @@ __device__ __INLINE__ float4 primitiveShader(
 			         // --------------------------------------------------------------------------------
 			         // Lambert
 			         // --------------------------------------------------------------------------------
-	               float lambert = 2.f*dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
+	               float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
                   // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
                   // depends on the transparency rate.
                   lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : 1.f;

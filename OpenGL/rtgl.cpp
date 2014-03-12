@@ -59,11 +59,16 @@ Vertex gEye = {gScale/10.f,0.f, -20.f*gScale};
 Vertex gDir = {gScale/10.f,0.f, -20.f*gScale+5000.f};
 Vertex gAngles = {0.f,0.f,0.f};
 
+// OpenCL
+//RayTracer::gOpenCLPlatform=1;
+//RayTracer::gOpenCLDevice=1;
+
 void RayTracer::InitializeRaytracer( const int width, const int height )
 {
+   LOG_INFO(1,"Intializing Raytracing engine: " << gOpenCLPlatform << "," << gOpenCLDevice);
    // Scene
    gSceneInfo.width.x = width;
-   gSceneInfo.height.x = height; 
+   gSceneInfo.height.x = height;
    gSceneInfo.graphicsLevel.x = 4;
    gSceneInfo.nbRayIterations.x = 5;
    gSceneInfo.transparentColor.x =  0.f;
@@ -88,7 +93,7 @@ void RayTracer::InitializeRaytracer( const int width, const int height )
    // Kernel
    if(!gKernel) 
    {
-      gKernel = new GenericGPUKernel(0, 480, 1, 0);
+      gKernel = new GenericGPUKernel(0, 480, gOpenCLPlatform, gOpenCLDevice);
       gSceneInfo.pathTracingIteration.x = 0; 
       gKernel->setSceneInfo( gSceneInfo );
       gKernel->initBuffers();

@@ -52,7 +52,7 @@ public:
    };
 
 public:
-	OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform = 0, int device = 0 );
+	OpenCLKernel( const bool activeLogging, const int optimalNbOfPrimmitivesPerBox, const int platform, const int device );
 	~OpenCLKernel();
 
    virtual void initBuffers();

@@ -904,6 +904,11 @@ typedef int bool;
    /*
    * Raytracer
    */
+   
+   // OpenCL constants
+   static int gOpenCLPlatform=1;
+   static int gOpenCLDevice=0;
+
    typedef void GLUnurbsObj;
 
    void InitializeRaytracer( const int width, const int height );
