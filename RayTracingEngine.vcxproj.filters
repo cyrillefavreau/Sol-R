@@ -45,6 +45,9 @@
     <Filter Include="Resource Files">
       <UniqueIdentifier>{b2d7151a-5bdf-4d79-8d23-3b2158ab0f22}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\OpenCL\Generated">
+      <UniqueIdentifier>{2dc87ba4-2d30-4df9-9a8f-8682d1ad3456}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -107,6 +110,9 @@
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
+    <ClInclude Include="OpenCL\RayTracer.cl.h">
+      <Filter>Source Files\OpenCL\Generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -158,9 +164,6 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="OpenCL\RayTracer.cl">
-      <Filter>Source Files\OpenCL</Filter>
-    </None>
     <None Include="Cuda\TextureMapping.cuh">
       <Filter>Source Files\Cuda</Filter>
     </None>
@@ -181,5 +184,10 @@
     <ResourceCompile Include="RayTracingEngine.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="OpenCL\RayTracer.cl">
+      <Filter>Source Files\OpenCL</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

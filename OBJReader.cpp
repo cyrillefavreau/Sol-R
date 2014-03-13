@@ -134,7 +134,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
    int materialId)
 {
    const float innerDiffusion=1000.f;
-   const float diffusionRatio=1.f;
+   const float diffusionRatio=4.f;
 
    std::string materialsFilename(filename);
    materialsFilename += ".mtl";

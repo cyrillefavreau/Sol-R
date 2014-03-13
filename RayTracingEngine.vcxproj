@@ -862,6 +862,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="OpenCL\RayTracer.cl.h" />
     <ClInclude Include="OpenGL\rtgl.h" />
     <ClInclude Include="PDBReader.h" />
     <ClInclude Include="RayTracingEngineStub.h" />
@@ -988,7 +989,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Max\ExportOBJ.ms" />
-    <None Include="OpenCL\RayTracer.cl">
+    <CustomBuild Include="OpenCL\RayTracer.cl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">true</ExcludedFromBuild>
@@ -1003,12 +1004,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">true</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">ioc32.exe -input=$(InputFile)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">%KITTING%\bin\OpenCLOfuscator.exe %(FullPath) %(FullPath).h</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">ioc32.exe -input=$(InputFile)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">opencl.log</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">%(FullPath).h</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">opencl.log</Outputs>
       <FileType>Document</FileType>
-    </None>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RayTracingEngine.rc" />

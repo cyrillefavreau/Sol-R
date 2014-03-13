@@ -1,26 +1,4 @@
-﻿/* 
-* Copyright (C) 2011-2014 Cyrille Favreau <cyrille_favreau@hotmail.com>
-*
-* This library is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Library General Public
-* License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
-*
-* This library is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-* Library General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>. 
-*/
-
-/*
-* Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
-*
-*/
-
-// Typedefs
+﻿// Typedefs
 typedef float4        Vertex;
 typedef int4          PrimitiveXYIdBuffer;
 typedef float4        PostProcessingBuffer;
@@ -29,7 +7,7 @@ typedef float         RandomBuffer;
 typedef int           Lamp;
 
 //#define ADVANCED_GEOMETRY
-#define GRADIANT_BACKGROUND
+//#define GRADIANT_BACKGROUND
 
 // Constants
 #define MAX_GPU_COUNT     32
@@ -250,8 +228,7 @@ rayon incident
 reflected : le vecteur normal reflechi
 ________________________________________________________________________________
 */
-#define vectorReflection( __r, __i, __n ) \
-   __r = __i-2.f*dot(__i,__n)*__n;
+#define vectorReflection( __r, __i, __n ) __r = __i-2.f*dot(__i,__n)*__n;
 
 /*
 ________________________________________________________________________________
@@ -285,18 +262,21 @@ __c : Center of rotations
 __a : Angles
 ________________________________________________________________________________
 */
-#define vectorRotation( __v, __c, __a ) \
-{ \
-   Vertex __r = __v; \
-   /* X axis */ \
-   __r.y = __v.y*half_cos(__a.x) - __v.z*half_sin(__a.x); \
-   __r.z = __v.y*half_sin(__a.x) + __v.z*half_cos(__a.x); \
-   __v = __r; \
-   __r = __v; \
-   /* Y axis */ \
-   __r.z = __v.z*half_cos(__a.y) - __v.x*half_sin(__a.y); \
-   __r.x = __v.z*half_sin(__a.y) + __v.x*half_cos(__a.y); \
-   __v = __r; \
+void vectorRotation(
+    Vertex* vector, 
+    const Vertex center,
+    const Vertex angles )
+{
+   Vertex __r = (*vector);
+   /* X axis */
+   __r.y = (*vector).y*half_cos(angles.x) - (*vector).z*half_sin(angles.x);
+   __r.z = (*vector).y*half_sin(angles.x) + (*vector).z*half_cos(angles.x);
+   (*vector) = __r;
+   __r = (*vector);
+   /* Y axis */
+   __r.z = (*vector).z*half_cos(angles.y) - (*vector).x*half_sin(angles.y);
+   __r.x = (*vector).z*half_sin(angles.y) + (*vector).x*half_cos(angles.y); 
+   (*vector) = __r;
 }
 
 /*
@@ -1379,18 +1359,7 @@ This object cannot shadow itself !
 We now have to find the (*intersection) between the considered object and the ray 
 which origin is the considered 3D float4 and which direction is defined by the 
 light source center.
-.
-. * Lamp                     Ray = Origin -> Light Source Center
-.  \
-.   \##
-.   #### object
-.    ##
-.      \
-.       \  Origin
-.--------O-------
-.
 @return 1.f when pixel is in the shades
-
 ________________________________________________________________________________
 */
 float processShadows(
@@ -1608,7 +1577,7 @@ float4 primitiveShader(
                   // Lambert
                   // --------------------------------------------------------------------------------
                   float lambert = dot((*normal),lightRay); 
-                  // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
+                  // Transparent materials are lighted on both sides but the amount of light received by the dark side
                   // depends on the transparency rate.
                   lambert *= (lambert<0.f) ? -materials[(*primitive).materialId].transparency : 1.f;
 
@@ -1628,8 +1597,8 @@ float4 primitiveShader(
                       lambert *= (1.f+randoms[t]*(*material).innerIllumination.w); 
                   }
                   lambert *= (1.f-(*shadowIntensity));
-                  lambert *= (1.f-photonEnergy);
                   lambert += (*sceneInfo).backgroundColor.w;
+                  lambert *= (1.f-photonEnergy);
 
                   // Lighted object, not in the shades
                   lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;
@@ -1783,17 +1752,6 @@ inline bool intersectionWithPrimitives(
 ________________________________________________________________________________
 
 Calculate the reflected vector                   
-
-^ Normal to object surface (N)  
-Reflection (O_R)  |                              
-\ |  Eye (O_E)                    
-\| /
-----------------O--------------- Object surface 
-closestIntersection                      
-
-============================================================================== 
-colours                                                                                    
------------------------------------------------------------------------------- 
 We now have to know the colour of this (*intersection)                                        
 Color_from_object will compute the amount of light received by the
 (*intersection) float4 and  will also compute the shadows. 
@@ -2013,7 +1971,7 @@ inline float4 launchRay(
       iteration++;
    }
 
-   if( (*sceneInfo).graphicsLevel>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test "(*sceneInfo).pathTracingIteration==iteration"
+   if( (*sceneInfo).graphicsLevel>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test (*sceneInfo).pathTracingIteration==iteration
    {
       Vertex areas = {0.f,0.f,0.f,0.f};
       // TODO: Dodgy implementation		
@@ -2133,7 +2091,7 @@ __kernel void k_standardRenderer(
    }
 #endif // 0
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    // And only process pixels that need extra rendering
    if(index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ||
       (sceneInfo.pathTracingIteration>primitiveXYIds[index].y &&   // Still need to process iterations
@@ -2198,8 +2156,8 @@ __kernel void k_standardRenderer(
       ray.direction.y = ray.direction.y + step.y*(float)(device_split+stream_split+y - (sceneInfo.height/2));
    }
 
-   vectorRotation( ray.origin, rotationCenter, angles );
-   vectorRotation( ray.direction, rotationCenter, angles );
+   vectorRotation( &ray.origin, rotationCenter, angles );
+   vectorRotation( &ray.direction, rotationCenter, angles );
 
    // Antialisazing
    float2 AArotatedGrid[4] =
@@ -2307,7 +2265,7 @@ __kernel void k_anaglyphRenderer(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
    float focus = primitiveXYIds[sceneInfo.width*sceneInfo.height/2].x - origin.z;
@@ -2346,7 +2304,7 @@ __kernel void k_anaglyphRenderer(
    eyeRay.direction.z = direction.z;
 
    //vectorRotation( eyeRay.origin, rotationCenter, angles );
-   vectorRotation( eyeRay.direction, rotationCenter, angles );
+   vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
    float4 colorLeft = launchRay(
       index,
@@ -2371,7 +2329,7 @@ __kernel void k_anaglyphRenderer(
    eyeRay.direction.z = direction.z;
 
    //vectorRotation( eyeRay.origin, rotationCenter, angles );
-   vectorRotation( eyeRay.direction, rotationCenter, angles );
+   vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
    float4 colorRight = launchRay(
       index,
@@ -2437,7 +2395,7 @@ __kernel void k_3DVisionRenderer(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
    float focus = primitiveXYIds[sceneInfo.width*sceneInfo.height/2].x - origin.z;
@@ -2492,8 +2450,8 @@ __kernel void k_3DVisionRenderer(
 
    if(sqrt(eyeRay.direction.x*eyeRay.direction.x+eyeRay.direction.y*eyeRay.direction.y)>(halfWidth*6)) return;
 
-   vectorRotation( eyeRay.origin,    rotationCenter, angles );
-   vectorRotation( eyeRay.direction, rotationCenter, angles );
+   vectorRotation( &eyeRay.origin,    rotationCenter, angles );
+   vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
    float4 color = launchRay(
       index,
@@ -2572,7 +2530,7 @@ __kernel void k_default(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
    float4 localColor = postProcessingBuffer[index];
@@ -2601,7 +2559,7 @@ __kernel void k_depthOfField(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
    float  depth = postProcessingInfo.param2*postProcessingBuffer[index].w;
@@ -2655,7 +2613,7 @@ __kernel void k_ambientOcclusion(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
    float occ = 0.f;
@@ -2717,7 +2675,7 @@ __kernel void k_radiosity(
    int y = get_global_id(1);
    int index = y*sceneInfo.width+x;
 
-   // Beware out of bounds error! \[^_^]/
+   // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
    int wh = sceneInfo.width*sceneInfo.height;

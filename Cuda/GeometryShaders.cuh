@@ -346,8 +346,8 @@ __device__ __INLINE__ float4 primitiveShader(
 
                   lambert *= (1.f+randoms[t]*material.innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
 			         lambert *= (1.f-shadowIntensity);
-                  lambert *= (1.f-photonEnergy);
                   lambert += sceneInfo.backgroundColor.w;
+                  lambert *= (1.f-photonEnergy);
 
                   // Lighted object, not in the shades
                   lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;
@@ -371,7 +371,6 @@ __device__ __INLINE__ float4 primitiveShader(
 					         blinnTerm = specular.x * pow(blinnTerm,specular.y);
                         blinnTerm *= (1.f-material.transparency.x);
                         blinnTerm *= (1.f-photonEnergy);
-
 					         totalBlinn += lightInformation[cptLamp].color * lightInformation[cptLamp].color.w * blinnTerm;
                      
                         // Get transparency from specular map

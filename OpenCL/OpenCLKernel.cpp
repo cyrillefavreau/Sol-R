@@ -33,6 +33,7 @@
 
 #include "OpenCLKernel.h"
 #include "../Logging.h"
+#include "Raytracer.cl.h"
 
 const long MAX_SOURCE_SIZE = 3*65535;
 const long MAX_DEVICES = 10;
@@ -216,78 +217,84 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
       LOG_INFO(1, "  Extensions : " << buffer);
 
 		//CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, devices, &ret_num_devices));
-      CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices));
+      if( clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices) == CL_SUCCESS )
+      {
+		   // Devices
+		   for( cl_uint device=0; device<ret_num_devices; ++device)
+         {
+            LOG_INFO(1,"   -------------------------------------");
+            if( platform==m_platform && device==m_device )
+            {
+               LOG_INFO(1,"   Device " << device << " --- Selected platform and device");
+               m_hDeviceId = devices[device];
+	            m_hContext = clCreateContext(NULL, ret_num_devices, &devices[0], NULL, NULL, &status );
+               CHECKSTATUS(status);
+	            m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
+               CHECKSTATUS(status);
+            }
+            else
+            {
+   		      LOG_INFO(1,"   Device " << device);
+            }
+            LOG_INFO(1,"   -------------------------------------");
 
-		// Devices
-		for( cl_uint device=0; device<ret_num_devices; ++device)
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
+			   LOG_INFO(1,"    DEVICE_NAME                        : " << buffer);
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_VENDOR, sizeof(buffer), buffer, NULL));
+			   LOG_INFO(1,"    DEVICE_VENDOR                      : " << buffer);
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_VERSION, sizeof(buffer), buffer, NULL));
+			   LOG_INFO(1,"    DEVICE_VERSION                     : " << buffer);
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DRIVER_VERSION, sizeof(buffer), buffer, NULL));
+			   LOG_INFO(1,"    DRIVER_VERSION                     : " << buffer);
+
+			   cl_uint value;
+			   cl_uint values[10];
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(value), &value, NULL));
+			   LOG_INFO(1,"    DEVICE_MAX_COMPUTE_UNITS           : " << value);
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(value), &value, NULL));
+			   LOG_INFO(1,"    CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS : " << value);
+			   //CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(value), &value, NULL));
+			   //LOG_INFO(1,"    CL_DEVICE_MAX_WORK_GROUP_SIZE      : " << value << "\n";
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(values), &values, NULL));
+			   LOG_INFO(1,"    CL_DEVICE_MAX_WORK_ITEM_SIZES      : " << values[0] << ", " << values[1] << ", " << values[2]);
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(value), &value, NULL));
+			   LOG_INFO(1,"    CL_DEVICE_MAX_CLOCK_FREQUENCY      : " << value);
+         
+			   cl_device_type infoType;
+			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_TYPE, sizeof(infoType), &infoType, NULL));
+			   LOG_INFO(1,"    DEVICE_TYPE                        : ");
+			   if (infoType & CL_DEVICE_TYPE_DEFAULT) 
+            {
+				   infoType &= ~CL_DEVICE_TYPE_DEFAULT;
+				   LOG_INFO(1,"      Default");
+			   }
+			   if (infoType & CL_DEVICE_TYPE_CPU) 
+            {
+				   infoType &= ~CL_DEVICE_TYPE_CPU;
+				   LOG_INFO(1,"      CPU");
+			   }
+			   if (infoType & CL_DEVICE_TYPE_GPU) 
+            {
+				   infoType &= ~CL_DEVICE_TYPE_GPU;
+				   LOG_INFO(1,"      GPU");
+			   }
+			   if (infoType & CL_DEVICE_TYPE_ACCELERATOR) 
+            {
+				   infoType &= ~CL_DEVICE_TYPE_ACCELERATOR;
+				   LOG_INFO(1,"      Accelerator");
+			   }
+			   if (infoType != 0) 
+            {
+				   LOG_INFO(1,"      Unknown " << infoType);
+            }
+         }
+		}
+      else
       {
          LOG_INFO(1,"   -------------------------------------");
-         if( platform==m_platform && device==m_device )
-         {
-            LOG_INFO(1,"   Device " << device << " --- Selected platform and device");
-            m_hDeviceId = devices[device];
-	         m_hContext = clCreateContext(NULL, ret_num_devices, &devices[0], NULL, NULL, &status );
-            CHECKSTATUS(status);
-	         m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
-            CHECKSTATUS(status);
-         }
-         else
-         {
-   		   LOG_INFO(1,"   Device " << device);
-         }
+         LOG_INFO(1,"   No device for this platform" );
          LOG_INFO(1,"   -------------------------------------");
-
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
-			LOG_INFO(1,"    DEVICE_NAME                        : " << buffer);
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_VENDOR, sizeof(buffer), buffer, NULL));
-			LOG_INFO(1,"    DEVICE_VENDOR                      : " << buffer);
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_VERSION, sizeof(buffer), buffer, NULL));
-			LOG_INFO(1,"    DEVICE_VERSION                     : " << buffer);
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DRIVER_VERSION, sizeof(buffer), buffer, NULL));
-			LOG_INFO(1,"    DRIVER_VERSION                     : " << buffer);
-
-			cl_uint value;
-			cl_uint values[10];
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(value), &value, NULL));
-			LOG_INFO(1,"    DEVICE_MAX_COMPUTE_UNITS           : " << value);
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(value), &value, NULL));
-			LOG_INFO(1,"    CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS : " << value);
-			//CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(value), &value, NULL));
-			//LOG_INFO(1,"    CL_DEVICE_MAX_WORK_GROUP_SIZE      : " << value << "\n";
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(values), &values, NULL));
-			LOG_INFO(1,"    CL_DEVICE_MAX_WORK_ITEM_SIZES      : " << values[0] << ", " << values[1] << ", " << values[2]);
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(value), &value, NULL));
-			LOG_INFO(1,"    CL_DEVICE_MAX_CLOCK_FREQUENCY      : " << value);
-         
-			cl_device_type infoType;
-			CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_TYPE, sizeof(infoType), &infoType, NULL));
-			LOG_INFO(1,"    DEVICE_TYPE                        : ");
-			if (infoType & CL_DEVICE_TYPE_DEFAULT) 
-         {
-				infoType &= ~CL_DEVICE_TYPE_DEFAULT;
-				LOG_INFO(1,"      Default");
-			}
-			if (infoType & CL_DEVICE_TYPE_CPU) 
-         {
-				infoType &= ~CL_DEVICE_TYPE_CPU;
-				LOG_INFO(1,"      CPU");
-			}
-			if (infoType & CL_DEVICE_TYPE_GPU) 
-         {
-				infoType &= ~CL_DEVICE_TYPE_GPU;
-				LOG_INFO(1,"      GPU");
-			}
-			if (infoType & CL_DEVICE_TYPE_ACCELERATOR) 
-         {
-				infoType &= ~CL_DEVICE_TYPE_ACCELERATOR;
-				LOG_INFO(1,"      Accelerator");
-			}
-			if (infoType != 0) 
-         {
-				LOG_INFO(1,"      Unknown " << infoType);
-         }
-
-		}
+      }
 	}
    LOG_INFO(1,"--------------------------------------------------------------------------------");
 #else
@@ -320,7 +327,8 @@ void OpenCLKernel::compileKernels(
 	try 
 	{
 		const char* source_str; 
-		size_t len(0);
+      size_t len(0);
+#if 0
 		switch( sourceType ) 
 		{
 		case kst_file:
@@ -336,6 +344,17 @@ void OpenCLKernel::compileKernels(
 			}
 			break;
 		}
+#else
+      std::string source_code;
+      getKernelCode(source_code);
+      len=source_code.length();
+
+      for( int i(0);i<len;++i)
+      {
+         source_code[i] -= 128;
+      }
+      source_str=source_code.c_str();
+#endif // 0
 
       //saveToFile("encoded.cl", source_str );
 
@@ -356,13 +375,16 @@ void OpenCLKernel::compileKernels(
          memset(buffer,0,MAX_SOURCE_SIZE);
          CHECKSTATUS(clGetProgramBuildInfo(hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
          LOG_ERROR("Program Build failed [" << status << "]: "  << buffer );
+         LOG_ERROR(source_str);
       }
 
+      /*
 		if( sourceType == kst_file)
 		{
 			delete [] source_str;
 			source_str = NULL;
 		}
+      */
 
       // Rendering kernels
 		LOG_INFO(1,"Create kernels");
