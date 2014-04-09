@@ -481,7 +481,6 @@ ________________________________________________________________________________
 __device__ __INLINE__ bool triangleIntersection( 
     const SceneInfo& sceneInfo,
 	const Primitive& triangle, 
-	Material*        materials,
 	const Ray&       ray,
 	Vertex&          intersection,
 	Vertex&          normal,
@@ -492,8 +491,9 @@ __device__ __INLINE__ bool triangleIntersection(
 {
    back = false;
 
-   // Reject triangles with normal opposite to ray.
    Vertex N=normalize(ray.direction-ray.origin);
+#ifdef DOUBLE_SIDED_TRIANGLES
+   // Reject triangles with normal opposite to ray.
    if( processingShadows )
    {
       if( dot(N,triangle.n0)<=0.f ) return false;
@@ -502,6 +502,9 @@ __device__ __INLINE__ bool triangleIntersection(
    {
       if( dot(N,triangle.n0)>=0.f ) return false;
    }
+#else
+   back = ( dot(N,triangle.n0)<=0.f );
+#endif // DOUBLE_SIDED_TRIANGLES
 
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
@@ -680,7 +683,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
    float4& closestColor,
 	float4& colorBox,
 	bool&   back,
-   const int currentMaterialId)
+   const int currentmaterialId)
 {
 	bool intersections = false; 
 	float minDistance  = sceneInfo.viewDistance.x/(iteration+1);
@@ -713,7 +716,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
 			   { 
 				   Primitive& primitive = primitives[box.startIndex.x+cptPrimitives];
                Material& material = materials[primitive.materialId.x];
-               if( material.attributes.x==0 || (material.attributes.x==1 && currentMaterialId != primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
+               if( material.attributes.x==0 || (material.attributes.x==1 && currentmaterialId!= primitive.materialId.x)) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
                {
                   Vertex areas = {0.f,0.f,0.f};
    #ifdef EXTENDED_GEOMETRY
@@ -739,7 +742,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
                   case ptTriangle:
                      {
 						      back = false;
-						      i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, false ); 
+						      i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, false ); 
                         break;
                      }
 				      default: 
@@ -751,7 +754,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
 				      }
    #else
 					   back = false;
-						i = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, false ); 
+						i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, false ); 
    #endif // EXTENDED_GEOMETRY
 
 #ifdef EXTENDED_FEATURES

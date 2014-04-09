@@ -172,7 +172,7 @@ void FileMarshaller::readPrimitive( GPUKernel& kernel, const std::string& line, 
             case 20: primitive.size.y = static_cast<float>(atof( value.c_str() )); break;
             case 21: primitive.size.z = static_cast<float>(atof( value.c_str() )); break;
 
-            case 22: primitive.materialId.x   = static_cast<int>(atoi( value.c_str() )); break;
+            case 22: primitive.materialId.x = static_cast<int>(atoi( value.c_str() )); break;
 
             // Texture coordinates
             case 23: primitive.vt0.x = static_cast<float>(atof( value.c_str() )); break;
@@ -359,7 +359,7 @@ void FileMarshaller::readMaterial( GPUKernel& kernel, const std::string& line, c
       (material.attributes.z==1), 
       material.attributes.w,
       material.transparency.x,
-      material.textureIds.x, material.textureIds.y, material.textureIds.z, material.textureIds.w,
+      material.textureIds.x, material.textureIds.y, material.textureIds.z, material.textureIds.w, material.advancedTextureIds.x, material.advancedTextureIds.y, 
       material.specular.x, material.specular.y, material.specular.z,
       material.innerIllumination.x,material.innerIllumination.y,material.innerIllumination.z,
       (material.attributes.x==1));

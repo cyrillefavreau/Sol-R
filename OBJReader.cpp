@@ -35,6 +35,8 @@
 #include "Consts.h"
 #include "OBJReader.h"
 
+const int NB_MAX_FACES=NB_MAX_PRIMITIVES*0.9f; // Max number of faces
+
 OBJReader::OBJReader(void)
 {
 }
@@ -165,7 +167,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, 
-                  m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
+                  m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId,
                   m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
                   m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
                   false );
@@ -299,7 +301,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Kd.x,m.Kd.y,m.Kd.z,
             m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, 
-            m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId,
+            m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId,
             m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
             m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
             false );
@@ -509,6 +511,8 @@ Vertex OBJReader::loadModelFromFile(
       file.close();
    }
 
+   LOG_INFO(1,"Object contains " << vertices.size() << " vertices");
+
    Vertex objectCenter = center;
    Vertex objectScale  = scale;
    if( autoScale )
@@ -525,9 +529,6 @@ Vertex OBJReader::loadModelFromFile(
       file.close();
    }
 
-   // Populate ray-tracing engine
-   int sketchupLightCount=0;
-
    // Load model faces
    file.open(modelFilename.c_str());
    if( file.is_open() )
@@ -537,10 +538,9 @@ Vertex OBJReader::loadModelFromFile(
       bool isSketchupLightMaterial(false);
       
       std::vector<Vertex> solrVertices;
-      int indexSolrVertices(0);
       std::string component;
       std::string line;
-      while( file.good() )
+      while( file.good() && kernel.getNbActivePrimitives()<NB_MAX_FACES )
       {
          int nbPrimitives(0);
          std::getline( file, line );
@@ -581,7 +581,6 @@ Vertex OBJReader::loadModelFromFile(
 
                std::vector<int4> face;
                size_t i(1);
-               int item(0);
                char previousChar = line[0];
                while( i<line.length() )
                {

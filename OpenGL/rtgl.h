@@ -920,6 +920,7 @@ typedef int bool;
    void RAYTRACINGENGINE_API glutInitWindowPosition( int x, int y );
    void RAYTRACINGENGINE_API glutInitWindowSize( int width, int height );
    void RAYTRACINGENGINE_API glutInitDisplayMode( unsigned int displayMode );
+   void RAYTRACINGENGINE_API glutReshapeWindow( int width, int height );
 
    /*
    * Process loop function, see freeglut_main.c

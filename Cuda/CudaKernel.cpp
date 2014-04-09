@@ -141,6 +141,7 @@ void CudaKernel::initializeDevice()
       ,m_hPrimitives
 #endif 
    );
+   reshape_scene(m_occupancyParameters,m_sceneInfo);
 }
 
 void CudaKernel::resetBoxesAndPrimitives()
@@ -318,7 +319,7 @@ void CudaKernel::render_end()
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-      ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
+      ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
 #if 0
       if( m_sceneInfo.renderingType.x == vt3DVision )
@@ -518,4 +519,11 @@ void CudaKernel::deviceQuery()
 
    sProfileString += "\n";
    LOG_INFO(3, sProfileString.c_str());
+}
+
+void CudaKernel::reshape()
+{
+   LOG_INFO(1,"CudaKernel::reshape");
+   GPUKernel::reshape();
+   reshape_scene(m_occupancyParameters,m_sceneInfo);
 }

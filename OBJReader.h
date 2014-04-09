@@ -41,6 +41,8 @@ struct MaterialMTL
    int    normalTextureId;
    int    bumpTextureId;
    int    specularTextureId;
+   int    reflectionTextureId;
+   int    transparencyTextureId;
    float  illumination;
    bool   isSketchupLightMaterial;
 };

@@ -39,7 +39,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    double viewDistance, double shadowIntensity,
    int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
-   bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
+   int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D );
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
@@ -105,13 +105,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double noise,
    double reflection,
    double refraction,
-   bool   procedural,
-   bool   wireframe, int wireframeDepth,
+   int    procedural,
+   int    wireframe, int wireframeDepth,
    double transparency,
-   int    diffuseTextureId, int bumpTextureId, int normalTextureId, int specularTextureId,
+   int    diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparencyTextureId,
    double specValue, double specPower, double specCoef, 
    double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
-   bool   fastTransparency);
+   int    fastTransparency);
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int     index,

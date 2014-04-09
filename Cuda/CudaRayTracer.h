@@ -45,6 +45,10 @@ extern "C" void finalize_scene(
 #endif
    );
 
+extern "C" void reshape_scene(
+   int2 occupancyParameters,
+   SceneInfo sceneInfo );
+   
 extern "C" void h2d_scene(
    int2   occupancyParameters,
    BoundingBox* boundingBoxes, 

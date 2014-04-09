@@ -144,6 +144,14 @@ struct __ALIGN16__ Material
                              // y: Normal map
                              // z: Bump map
                              // w: Specular map
+   int4   advancedTextureOffset;// x: Reflection map
+                                // y: Transparency map
+                                // z: not used
+                                // w: not used
+   int4   advancedTextureIds;   // x: Reflection map
+                                // y: Transparency map
+                                // z: not used
+                                // w: not used
 };
 
 // Bounding Box Structure
@@ -180,6 +188,17 @@ struct __ALIGN16__ Primitive
    Vertex vt2;
 };
 
+enum TextureType
+{
+   tex_diffuse,
+   tex_bump,
+   tex_normal,
+   tex_ambient_occlusion,
+   tex_reflective,
+   tex_specular,
+   tex_transparent
+};
+
 // Texture information structure
 struct __ALIGN16__ TextureInformation
 {
@@ -187,6 +206,7 @@ struct __ALIGN16__ TextureInformation
    int   offset;          // Offset of the texture in the global texture buffer (the one 
                           // that will be transfered to the GPU)
    int3  size;            // Size of the texture
+   TextureType type;      // Texture type (diffuse, normal, bump, etc.)
 };
 
 // Post processing types

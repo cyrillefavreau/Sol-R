@@ -23,10 +23,10 @@
 
 #include "RayTracingEngineStub.h"
 #include "Consts.h"
-
 #include "PDBReader.h"
 #include "OBJReader.h"
 #include "FileMarshaller.h"
+#include "Logging.h"
 
 #include <fstream>
 
@@ -56,9 +56,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    double viewDistance, double shadowIntensity,
    int renderingType, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB,
-   bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
+   int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D)
 {
+   LOG_INFO(3,"RayTracer_SetSceneInfo");
    gSceneInfoStub.width.x                   = width;
    gSceneInfoStub.height.x                  = height;
    gSceneInfoStub.graphicsLevel.x           = graphicsLevel;
@@ -85,6 +86,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 )
 {
+   LOG_INFO(3,"RayTracer_SetPostProcessingInfo");
    gPostProcessingInfoStub.type.x   = type;
    gPostProcessingInfoStub.param1.x = static_cast<float>(param1);
    gPostProcessingInfoStub.param2.x = static_cast<float>(param2);
@@ -97,6 +99,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
    int platform, 
    int device )
 {
+   LOG_INFO(3,"RayTracer_InitializeKernel");
    if( gKernel == nullptr )
    {
 	   gKernel = new GenericGPUKernel( activeLogging, NB_MAX_BOXES, platform, device );
@@ -114,6 +117,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel(
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_FinalizeKernel()
 {
+   LOG_INFO(3,"RayTracer_FinalizeKernel");
    if( gKernel ) 
    {
       delete gKernel;
@@ -126,6 +130,7 @@ extern "C" RAYTRACINGENGINE_API
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_ResetKernel()
 {
+   LOG_INFO(3,"RayTracer_ResetKernel");
    if( gKernel ) 
    {
       gKernel->resetAll();
@@ -142,6 +147,7 @@ extern "C" RAYTRACINGENGINE_API
    double dir_x,   double dir_y,   double dir_z,
    double angle_x, double angle_y, double angle_z )
 {
+   LOG_INFO(3,"RayTracer_SetCamera");
    Vertex eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z)};
    Vertex dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z)};
    Vertex angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z)};
@@ -151,11 +157,12 @@ extern "C" RAYTRACINGENGINE_API
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuffer* image )
 {
+   LOG_INFO(3,"RayTracer_RunKernel");
 	gKernel->setSceneInfo( gSceneInfoStub );
    gKernel->setPostProcessingInfo( gPostProcessingInfoStub );
 	gKernel->render_begin( static_cast<float>(timer) );
    gKernel->render_end();
-   memcpy(image,gKernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*3);
+   memcpy(image,gKernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth);
    return 0;
 }
 
@@ -163,6 +170,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuf
 extern "C" RAYTRACINGENGINE_API 
    int RayTracer_AddPrimitive( int type )
 {
+   LOG_INFO(3,"RayTracer_AddPrimitive");
    return gKernel->addPrimitive( static_cast<PrimitiveType>(type) );
 }
 
@@ -176,6 +184,7 @@ extern "C" RAYTRACINGENGINE_API
    double size_x, double size_y, double size_z,
    int    materialId )
 {
+   LOG_INFO(3,"RayTracer_SetPrimitive");
    gKernel->setPrimitive(
       index,
       static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z), 
@@ -194,6 +203,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
    double& size_x, double& size_y, double& size_z,
    int& materialId )
 {
+   LOG_INFO(3,"RayTracer_GetPrimitive");
    CPUPrimitive* primitive = gKernel->getPrimitive(index);
    if( primitive != NULL )
    {
@@ -217,11 +227,13 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitive(
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt( int x, int y )
 {
+   LOG_INFO(3,"RayTracer_GetPrimitiveAt");
    return gKernel->getPrimitiveAt(x,y);
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveCenter( int index, double& x, double& y, double& z)
 {
+   LOG_INFO(3,"RayTracer_GetPrimitiveCenter");
    Vertex center = gKernel->getPrimitiveCenter( index );
    x = static_cast<double>(center.x);
    y = static_cast<double>(center.y);
@@ -234,6 +246,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive(
    double rx, double ry, double rz,
    double ax, double ay, double az)
 {
+   LOG_INFO(3,"RayTracer_RotatePrimitive");
    float4 rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz), 0.f };
    float4 angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az), 0.f };
 
@@ -246,6 +259,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
    double rx, double ry, double rz,
    double ax, double ay, double az)
 {
+   LOG_INFO(3,"RayTracer_RotatePrimitives");
    try
    {
       Vertex rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz) };
@@ -264,12 +278,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveMaterial(
    int    index,
    int    materialId)
 {
+   LOG_INFO(3,"RayTracer_SetPrimitiveMaterial");
    gKernel->setPrimitiveMaterial( index,  materialId );
    return 0;
 }
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( int index)
 {
+   LOG_INFO(3,"RayTracer_GetPrimitiveMaterial");
    return gKernel->getPrimitiveMaterial( index );
 }
 
@@ -283,6 +299,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
    double hands_radius, int hands_materialId,
    double feet_radius,  int feet_materialId)
 {
+   LOG_INFO(3,"RayTracer_UpdateSkeletons");
 #if USE_KINECT
    Vertex position = { static_cast<float>(p0_x), static_cast<float>(p0_y), static_cast<float>(p0_z) };
    return gKernel->updateSkeletons(
@@ -302,12 +319,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons(
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadTextureFromFile( int index, char* filename )
 {
+   LOG_INFO(3,"RayTracer_LoadTextureFromFile");
    return gKernel->loadTextureFromFile( index, filename );
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture )
 {
+   LOG_INFO(3,"RayTracer_SetTexture");
    /* TODO
    CPUTextureInformation texInfo;
    gKernel->setTexture( 
@@ -319,12 +338,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE text
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures( int& nbTextures )
 {
+   LOG_INFO(3,"RayTracer_GetNbTextures");
    return NB_MAX_TEXTURES;// gKernel->getNbActiveTextures();
 }
 
 // ---------- Materials ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddMaterial()
 {
+   LOG_INFO(3,"RayTracer_AddMaterial");
    return gKernel->addMaterial();
 }
 
@@ -335,14 +356,15 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double noise,
    double reflection,
    double refraction,
-   bool   procedural,
-   bool   wireframe, int wireframeDepth,
+   int    procedural,
+   int    wireframe, int wireframeDepth,
    double transparency,
-   int    diffuseTextureId, int bumpTextureId, int normalTextureId, int specularTextureId,
+   int    diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparencyTextureId,
    double specValue, double specPower, double specCoef, 
    double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
-   bool   fastTransparency)
+   int    fastTransparency)
 {
+   LOG_INFO(3,"RayTracer_SetMaterial");
    gKernel->setMaterial(
       index, 
       static_cast<float>(color_r), 
@@ -351,27 +373,31 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
       static_cast<float>(noise),
       static_cast<float>(reflection), 
       static_cast<float>(refraction),
-      procedural, 
-      wireframe, 
+      (procedural==1), 
+      (wireframe==1),
       static_cast<int>(wireframeDepth),
       static_cast<float>(transparency), 
       static_cast<int>(diffuseTextureId),
-      static_cast<int>(bumpTextureId),
       static_cast<int>(normalTextureId),
+      static_cast<int>(bumpTextureId),
       static_cast<int>(specularTextureId),
+      static_cast<int>(reflectionTextureId),
+      static_cast<int>(transparencyTextureId),
       static_cast<float>(specValue),
       static_cast<float>(specPower), 
       static_cast<float>(specCoef ),
       static_cast<float>(innerIllumination),
       static_cast<float>(illuminationDiffusion),
       static_cast<float>(illuminationPropagation),
-      fastTransparency
+      (fastTransparency==1)
       );
+   /*
    if( innerIllumination!=0.f )
    {
       gKernel->reorganizeLights();
       gKernel->streamDataToGPU();
    }
+   */
    return 0;
 }
 
@@ -390,6 +416,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation,
    int&    out_fastTransparency)
 {
+   LOG_INFO(3,"RayTracer_GetMaterial");
    float color_r,color_g,color_b, noise, reflection, refraction, transparency;
    float specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation;
    bool  procedural;
@@ -436,6 +463,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
    int    atomMaterialType,
    double scale)
 {
+   LOG_INFO(3,"RayTracer_LoadMolecule");
    // PDB
 	PDBReader prbReader;
    float s(static_cast<float>(scale));
@@ -447,7 +475,6 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
       static_cast<float>(defaultStickSize),
       atomMaterialType, 
       objectScale );
-   gKernel->compactBoxes(true);
    return gKernel->getNbActivePrimitives();
 }
 
@@ -457,6 +484,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
    int    materialId,
    double scale)
 {
+   LOG_INFO(3,"RayTracer_LoadOBJModel");
    Vertex center={0.f,0.f,0.f};
    // PDB
 	OBJReader objReader;
@@ -477,6 +505,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
 {
+   LOG_INFO(3,"RayTracer_SaveToFile");
    FileMarshaller fm;
    fm.saveToFile( *gKernel, filename );
    return gKernel->getNbActivePrimitives();
@@ -485,6 +514,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename)
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, double scale )
 {
+   LOG_INFO(3,"RayTracer_LoadFromFile");
    Vertex center = { 0.f,0.f,0.f };
    FileMarshaller fm;
    fm.loadFromFile( *gKernel, filename, center, static_cast<float>(scale) );
@@ -494,12 +524,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile( char* filename, doub
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes( bool update )
 {
+   LOG_INFO(3,"RayTracer_CompactBoxes");
    return gKernel->compactBoxes(update);
 }
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
 {
+   LOG_INFO(3,"RayTracer_GetLight");
    return gKernel->getLight(index);
 }
 

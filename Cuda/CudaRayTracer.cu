@@ -107,7 +107,7 @@ __device__ __INLINE__ float4 launchRay(
 	primitiveXYId.x = -1;
    primitiveXYId.z = 0;
    primitiveXYId.w = 0;
-   int currentMaterialId=-2;
+   int currentmaterialId=-2;
 
    // TODO
    float  colorContributions[NB_MAX_ITERATIONS+1];
@@ -157,12 +157,12 @@ __device__ __INLINE__ float4 launchRay(
 				rayOrigin,
 				iteration,  
 				closestPrimitive, closestIntersection, 
-				normal, areas, closestColor, colorBox, back, currentMaterialId);
+				normal, areas, closestColor, colorBox, back, currentmaterialId);
 		}
 
 		if( carryon ) 
 		{
-         currentMaterialId = primitives[closestPrimitive].materialId.x;
+         currentmaterialId = primitives[closestPrimitive].materialId.x;
 
 			if( iteration==0 )
 			{
@@ -201,14 +201,13 @@ __device__ __INLINE__ float4 launchRay(
 
          // Primitive illumination
          float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
-         primitiveXYId.z += 255*materials[currentMaterialId].innerIllumination.x;
+         primitiveXYId.z += 255*materials[currentmaterialId].innerIllumination.x;
          primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
 
          // ----------
 			// Refraction
 			// ----------
-			if( materials[primitives[closestPrimitive].materialId.x].transparency.x != 0.f ) 
-			//if( rBlinn.w != 0.f ) 
+			if( materials[primitives[closestPrimitive].materialId.x].transparency.x!=0.f ) 
 			{
 				// Back of the object? If so, reset refraction to 1.f (air)
 				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
@@ -223,7 +222,7 @@ __device__ __INLINE__ float4 launchRay(
             // Prepare next ray
 				initialRefraction = refraction;
 
-				if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f )
+				if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x!=0.f )
             {
 					vectorReflection( reflectedRay.direction, O_E, normal );
 					Vertex rt = closestIntersection - reflectedRay.direction;
@@ -304,7 +303,7 @@ __device__ __INLINE__ float4 launchRay(
 			reflectedRay,
 			reflectedRays,  
 			closestPrimitive, closestIntersection, 
-         normal, areas, closestColor, colorBox, back, currentMaterialId) )
+         normal, areas, closestColor, colorBox, back, currentmaterialId) )
       {
          float4 color = primitiveShader( 
             index,
@@ -1122,37 +1121,40 @@ __global__ void k_ambiantOcclusion(
    float occ = 0.f;
 	float4 localColor = postProcessingBuffer[index];
 	float  depth = localColor.w;
-
-   int c(0);
    const int step = 8;
-	for( int X=-step; X<step; X+=2 )
+   int c=0;
+	for( int X=-step; X<step; ++X )
 	{
-		for( int Y=-step; Y<step; Y+=2 )
+		for( int Y=-step; Y<step; ++Y )
 		{
-			int xx = x+X;
-			int yy = y+Y;
-			if( c%2==0 && xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
-			{
-				int localIndex = yy*sceneInfo.width.x+xx;
-				if( postProcessingBuffer[localIndex].w>=depth)
-				{
-					occ += 1.f;
-				}
-			}
-			else
+         if( X!=0 || Y!=0 || X!=Y )
          {
-				occ += 1.f;
+            ++c;
+			   int xx = x+X;
+			   int yy = y+Y;
+			   if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+			   {
+				   int localIndex = yy*sceneInfo.width.x+xx;
+				   if( postProcessingBuffer[localIndex].w>=depth)
+				   {
+					   occ += 1.f;
+				   }
+			   }
+			   else
+            {
+				   occ += 1.f;
+            }
          }
-         c+=3;
 		}
 	}
-	occ /= float(step*step);
+	occ /= (float)c;
 	occ += 0.3f; // Ambient light
-
-   localColor.x *= occ;
-	localColor.y *= occ;
-	localColor.z *= occ;
-
+   if( occ<1.f )
+   {
+      localColor.x *= occ;
+	   localColor.y *= occ;
+   	localColor.z *= occ;
+   }
    if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
       localColor /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
 
@@ -1245,6 +1247,49 @@ __global__ void k_oneColor(
 	makeColor( sceneInfo, localColor, bitmap, index ); 
 }
 
+extern "C" void reshape_scene(
+   int2 occupancyParameters,
+   SceneInfo sceneInfo )
+{
+   for( int device(0); device<occupancyParameters.x; ++device )
+   {
+      size_t totalMemoryAllocation(0);
+      checkCudaErrors(cudaSetDevice(device));
+      
+      // Select device
+      FREECUDARESOURCE(d_randoms[device]);
+	   FREECUDARESOURCE(d_postProcessingBuffer[device]);
+      FREECUDARESOURCE(d_bitmap[device]);
+	   FREECUDARESOURCE(d_primitivesXYIds[device]);
+
+      // Randoms
+      size_t size=sceneInfo.width.x*sceneInfo.height.x*sizeof(RandomBuffer);
+      checkCudaErrors(cudaMalloc( (void**)&d_randoms[device], size));
+      LOG_INFO(3, "d_randoms: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+	   // Post-processing 
+      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PostProcessingBuffer)/occupancyParameters.x;
+	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], size));
+      LOG_INFO(3, "d_postProcessingBuffer: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+      // Bitmap
+      size = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
+	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device], size));
+      LOG_INFO(3, "d_bitmap: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+      // Primitive IDs
+      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
+      checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device], size));
+      LOG_INFO(3, "d_primitivesXYIds: " << size << " bytes" );
+      totalMemoryAllocation += size;
+
+      LOG_INFO(3, "Total variable GPU memory allocated on device " << device << ": " << totalMemoryAllocation << " bytes" );
+   }
+}
+
 /*
 ________________________________________________________________________________
 
@@ -1282,7 +1327,7 @@ extern "C" void initialize_scene(
 
    for( int device(0); device<occupancyParameters.x; ++device )
    {
-      int totalMemoryAllocation(0);
+      size_t totalMemoryAllocation(0);
       checkCudaErrors(cudaSetDevice(device));
       for( int stream(0); stream<occupancyParameters.y; ++stream )
       {
@@ -1291,9 +1336,9 @@ extern "C" void initialize_scene(
       LOG_INFO(1, "Created " << occupancyParameters.y << " streams on device " << device );
 
       // Scene resources
-      // Scene resources
       int size(NB_MAX_BOXES*sizeof(BoundingBox));
 
+      // Bounding boxes
 #ifdef USE_MANAGED_MEMORY
 	   checkCudaErrors(cudaMallocManaged( &boundingBoxes, size, cudaMemAttachHost));
 #else
@@ -1302,6 +1347,7 @@ extern "C" void initialize_scene(
       LOG_INFO( 1, "d_boundingBoxes: " << size << " bytes" );
       totalMemoryAllocation += size;
 
+      // Primitives
       size=NB_MAX_PRIMITIVES*sizeof(Primitive);
 #ifdef USE_MANAGED_MEMORY
 	   checkCudaErrors(cudaMallocManaged( &primitives, size, cudaMemAttachHost));
@@ -1311,45 +1357,28 @@ extern "C" void initialize_scene(
       LOG_INFO( 1, "d_primitives: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
+      // Lamps
       size=NB_MAX_LAMPS*sizeof(Lamp);
       checkCudaErrors(cudaMalloc( (void**)&d_lamps[device], size));
       LOG_INFO(3, "d_lamps: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
+      // Materials
       size=NB_MAX_MATERIALS*sizeof(Material);
       checkCudaErrors(cudaMalloc( (void**)&d_materials[device], size));
       LOG_INFO(3, "d_materials: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
+      // Light information
       size=NB_MAX_LIGHTINFORMATIONS*sizeof(LightInformation);
       checkCudaErrors(cudaMalloc( (void**)&d_lightInformation[device], size));
       LOG_INFO(3, "d_lightInformation: " << size << " bytes" );
       totalMemoryAllocation += size;
 	   
-      size=sceneInfo.width.x*sceneInfo.height.x*sizeof(RandomBuffer);
-      checkCudaErrors(cudaMalloc( (void**)&d_randoms[device], size));
-      LOG_INFO(3, "d_randoms: " << size << " bytes" );
-      totalMemoryAllocation += size;
-
-	   // Rendering canvas
-      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PostProcessingBuffer)/occupancyParameters.x;
-	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], size));
-      LOG_INFO(3, "d_postProcessingBuffer: " << size << " bytes" );
-      totalMemoryAllocation += size;
-
-      size = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
-	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device], size));
-      LOG_INFO(3, "d_bitmap: " << size << " bytes" );
-      totalMemoryAllocation += size;
-
-      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
-      checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device], size));
-      LOG_INFO(3, "d_primitivesXYIds: " << size << " bytes" );
-      totalMemoryAllocation += size;
-
       d_textures[device] = nullptr;
-      LOG_INFO(3, "Total GPU memory allocated on device " << device << ": " << totalMemoryAllocation << " bytes" );
+      LOG_INFO(3, "Total constant GPU memory allocated on device " << device << ": " << totalMemoryAllocation << " bytes" );
    }
+
 	LOG_INFO( 3, "GPU: SceneInfo         : " << sizeof(SceneInfo) );
 	LOG_INFO( 3, "GPU: Ray               : " << sizeof(Ray) );
 	LOG_INFO( 3, "GPU: PrimitiveType     : " << sizeof(PrimitiveType) );

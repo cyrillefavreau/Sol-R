@@ -40,8 +40,8 @@ __device__ __INLINE__ void normalMap(
    BitmapBuffer r,g;
 	r = textures[i  ];
 	g = textures[i+1];
-	normal.x = 0.1f*(r/256.f-0.5f);
-	normal.y = 0.1f*(g/256.f-0.5f);
+	normal.x += (r/256.f-0.5f);
+	normal.y += (g/256.f-0.5f);
 	normal.z = 0.f;
 }
 
@@ -59,9 +59,10 @@ __device__ __INLINE__ void bumpMap(
 	r = textures[i  ];
 	g = textures[i+1];
 	b = textures[i+2];
-	intersection.x += (r/256.f);
-	intersection.y += (g/256.f);
-	intersection.z += (b/256.f);
+   float d=0.5f*(r+g+b)/768.f;
+	intersection.x += d;
+	intersection.y += d;
+	intersection.z += d;
 }
 
 // ----------
@@ -78,9 +79,9 @@ __device__ __INLINE__ void specularMap(
 	r = textures[i  ];
 	g = textures[i+1];
 	b = textures[i+2];
-	specular.x = (r+g+b)/(3.f*256.f);
-	//specular.y = 10.f*(r+g+b);
-	//specular.z = (b/256.f);
+   specular.x = r/256.f;
+   specular.y = 1000.f*g/256.f;
+   specular.z = b/256.f;
 }
 
 __device__ __INLINE__ void juliaSet( 

@@ -112,9 +112,10 @@ void pfn_notify(cl_program, void *user_data)
 * CHECKSTATUS
 */
 
+int __status=CL_SUCCESS;
 #define CHECKSTATUS( stmt ) \
 { \
-	int __status = stmt; \
+	__status = stmt; \
 	if( __status != CL_SUCCESS ) { \
 	std::stringstream __s; \
 	__s << "==> " #stmt "\n"; \
@@ -151,6 +152,8 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
    m_kAmbientOcclusion(0),
    m_kRadiosity(0)
 {
+   LOG_INFO(1,"Platform: " << selectedPlatform << ", Device: " << selectedDevice );
+
 	int  status(0);
 	cl_platform_id   platforms[MAX_DEVICES];
 	cl_device_id     devices[MAX_DEVICES];
@@ -223,7 +226,7 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 		   for( cl_uint device=0; device<ret_num_devices; ++device)
          {
             LOG_INFO(1,"   -------------------------------------");
-            if( platform==m_platform && device==m_device )
+            if( platform==selectedPlatform && device==selectedDevice )
             {
                LOG_INFO(1,"   Device " << device << " --- Selected platform and device");
                m_hDeviceId = devices[device];
@@ -411,7 +414,8 @@ void OpenCLKernel::compileKernels(
       m_kAmbientOcclusion = clCreateKernel( hProgram, "k_ambientOcclusion", &status );
 		CHECKSTATUS(status);
 
-      m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
+      //m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
+      m_kRadiosity = clCreateKernel( hProgram, "k_contrast", &status );
 		CHECKSTATUS(status);
 
 #if 0
@@ -524,20 +528,17 @@ void OpenCLKernel::initializeDevice()
 	int status(0);
 	// Setup device memory
 	LOG_INFO(3,"Setup device memory");
-   int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
-   m_dBitmap              = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(BitmapBuffer)*gColorDepth,   0, NULL);
-	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(RandomBuffer),         0, NULL);
-   m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PostProcessingBuffer), 0, NULL);
-   m_dPrimitivesXYIds     = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PrimitiveXYIdBuffer),  0, NULL);
-   m_dBoundingBoxes       = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(BoundingBox)*NB_MAX_BOXES,                  0, NULL);
-   m_dPrimitives          = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Primitive)*NB_MAX_PRIMITIVES,               0, NULL);
-   m_dLamps               = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Lamp)*NB_MAX_LAMPS,                         0, NULL);
-   m_dLightInformation    = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(LightInformation)*NB_MAX_LIGHTINFORMATIONS, 0, NULL);
-   m_dMaterials           = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Material)*NB_MAX_MATERIALS, 0, NULL);
+   cl_int errorCode=0;
+   reshape();
+   m_dBoundingBoxes       = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(BoundingBox)*NB_MAX_BOXES,                  0, &errorCode);
+   m_dPrimitives          = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Primitive)*NB_MAX_PRIMITIVES,               0, &errorCode);
+   m_dLamps               = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Lamp)*NB_MAX_LAMPS,                         0, &errorCode);
+   m_dLightInformation    = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(LightInformation)*NB_MAX_LIGHTINFORMATIONS, 0, &errorCode);
+   m_dMaterials           = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , sizeof(Material)*NB_MAX_MATERIALS, 0, &errorCode);
 
 #if USE_KINECT
-	m_dVideo      = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , gVideoWidth*gVideoHeight*gKinectColorVideo, 0, NULL);
-	m_dDepth      = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , gDepthWidth*gDepthHeight*gKinectColorDepth, 0, NULL);
+	m_dVideo      = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , gVideoWidth*gVideoHeight*gKinectColorVideo, 0, &errorCode);
+	m_dDepth      = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , gDepthWidth*gDepthHeight*gKinectColorDepth, 0, &errorCode);
 #endif // USE_KINECT
 }
 
@@ -666,6 +667,7 @@ void OpenCLKernel::render_begin( const float timer )
          {
             totalSize += m_hTextures[i].size.x*m_hTextures[i].size.y*m_hTextures[i].size.z;
          }
+         LOG_INFO(1,"Total texture size: " << totalSize << " bytes");
       	
          if( m_dTextures ) 
          {
@@ -686,6 +688,7 @@ void OpenCLKernel::render_begin( const float timer )
                   memcpy(tmpTextures+m_hTextures[i].offset,m_hTextures[i].buffer,textureSize);
                }
             }
+            LOG_INFO(1,"Creating texture buffer");
             m_dTextures = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY , totalSize*sizeof(BitmapBuffer), 0, NULL);
             CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dTextures, CL_TRUE, 0, totalSize*sizeof(BitmapBuffer), tmpTextures, 0, NULL, NULL));
             LOG_INFO( 1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
@@ -703,11 +706,12 @@ void OpenCLKernel::render_begin( const float timer )
 
       SceneInfo sceneInfo=m_sceneInfo;
       if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
-      if( m_sceneInfo.pathTracingIteration.x>=20/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
+      //if( m_sceneInfo.pathTracingIteration.x>=20/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
       size_t szLocalWorkSize[] = { 1, 1 };
       size_t szGlobalWorkSize[] = { m_sceneInfo.width.x/szLocalWorkSize[0], m_sceneInfo.height.x/szLocalWorkSize[1] };
       int zero(0);
+      LOG_INFO(3,"Running default rendering kernel");
 	   switch( sceneInfo.renderingType.x ) 
 	   {
 	   case vtAnaglyph:
@@ -726,9 +730,9 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
-            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
-            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
-            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,13, sizeof(Vertex),   (void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,14, sizeof(Vertex),   (void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,15, sizeof(Vertex),   (void*)&m_angles ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kAnaglyphRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
@@ -751,9 +755,9 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
-            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
-            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
-            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,13, sizeof(Vertex),   (void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,14, sizeof(Vertex),   (void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,15, sizeof(Vertex),   (void*)&m_angles ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_k3DVisionRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
@@ -776,9 +780,9 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
-            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
-            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
-            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,13, sizeof(Vertex),   (void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,14, sizeof(Vertex),   (void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,15, sizeof(Vertex),   (void*)&m_angles ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
@@ -801,9 +805,9 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
-            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,13, sizeof(cl_float3),(void*)&m_viewPos ));
-            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,14, sizeof(cl_float3),(void*)&m_viewDir ));
-            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,15, sizeof(cl_float3),(void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,13, sizeof(Vertex),   (void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,14, sizeof(Vertex),   (void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,15, sizeof(Vertex),   (void*)&m_angles ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
             CHECKSTATUS(clSetKernelArg( m_kStandardRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
@@ -812,10 +816,12 @@ void OpenCLKernel::render_begin( const float timer )
 			   break;
 		   }
       }
+      LOG_INFO(3,"Rendering kernel done");
 
       // --------------------------------------------------------------------------------
       // Post processing
       // --------------------------------------------------------------------------------
+      LOG_INFO(3,"Running Post-Processing kernel");
 	   switch( m_postProcessingInfo.type.x )
 	   {
 	   case ppe_depthOfField:
@@ -837,6 +843,7 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbientOcclusion, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_radiosity:
+         /*
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
@@ -844,6 +851,13 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 5, sizeof(cl_mem),   (void*)&m_dRandoms ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
+         */
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dBitmap ));
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_oneColor:
@@ -858,12 +872,14 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kDefault, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   }
+      LOG_INFO(3,"Post-Processing Kernel done");
    }
    m_refresh = (m_sceneInfo.pathTracingIteration.x<m_sceneInfo.maxPathTracingIterations.x);
 }
   
 void OpenCLKernel::render_end()
 {
+   LOG_INFO(3,"OpenCLKernel::render_end");
    if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
    {
       LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
@@ -871,9 +887,13 @@ void OpenCLKernel::render_end()
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
-	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap,          CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(BitmapBuffer)*gColorDepth, m_bitmap, 0, NULL, NULL) );
-   CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitivesXYIds, CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer), m_hPrimitivesXYIds, 0, NULL, NULL) );
-   
+   size_t size=m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(BitmapBuffer)*gColorDepth;
+   LOG_INFO(3, m_hQueue << ", " << m_dBitmap << ", " << m_bitmap << " - Bitmap Size=" << size);
+	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap, CL_TRUE, 0, size, m_bitmap, 0, NULL, NULL) );
+   size=m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer);
+   LOG_INFO(3,"PrimitivesID Size=" << size);
+   CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitivesXYIds, CL_TRUE, 0, size, m_hPrimitivesXYIds, 0, NULL, NULL) );
+   LOG_INFO(3,"Flushing queues");
 	CHECKSTATUS(clFlush(m_hQueue));
 	CHECKSTATUS(clFinish(m_hQueue));
    
@@ -884,7 +904,7 @@ void OpenCLKernel::render_end()
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-      ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
+      ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
       if( m_sceneInfo.renderingType.x == vt3DVision )
       {
@@ -972,7 +992,11 @@ void OpenCLKernel::initBuffers()
 	LOG_INFO(3,"OpenCLKernel::initBuffers");
    GPUKernel::initBuffers();
 	initializeDevice();
-   compileKernels( kst_file, "RayTracer.cl", "", "-cl-fast-relaxed-math" );
+#ifdef _DEBUG
+   compileKernels(kst_file, "RayTracer.cl", "", "-g -cl-fast-relaxed-math -s E:\\svn\\GPGPU\\CUDA\\RaytracingEngine\\trunk\\OpenCL\\RayTracer.cl");
+#else
+   compileKernels(kst_file, "RayTracer.cl", "", "-cl-fast-relaxed-math");
+#endif // DEBUG
 }
 
 OpenCLKernel::~OpenCLKernel()
@@ -988,4 +1012,21 @@ OpenCLKernel::~OpenCLKernel()
 	CloseHandle(m_hNextSkeletonEvent);
 	NuiShutdown();
 #endif // USE_KINECT
+}
+
+void OpenCLKernel::reshape()
+{
+   LOG_INFO(1,"OpenCLKernel::reshape");
+   GPUKernel::reshape();
+ 	if( m_dRandoms ) CHECKSTATUS(clReleaseMemObject(m_dRandoms));
+   if( m_dPostProcessingBuffer ) CHECKSTATUS(clReleaseMemObject(m_dPostProcessingBuffer));
+   if( m_dPrimitivesXYIds ) CHECKSTATUS(clReleaseMemObject(m_dPrimitivesXYIds));
+	if( m_dBitmap ) CHECKSTATUS(clReleaseMemObject(m_dBitmap));
+
+   cl_int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
+   int errorCode;
+   m_dBitmap              = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(BitmapBuffer)*gColorDepth,   0, &errorCode);
+	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(RandomBuffer),         0, &errorCode);
+   m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PostProcessingBuffer), 0, &errorCode);
+   m_dPrimitivesXYIds     = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PrimitiveXYIdBuffer),  0, &errorCode);
 }

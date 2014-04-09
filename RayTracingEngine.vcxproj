@@ -138,7 +138,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'" Label="Configuration">
@@ -292,7 +291,6 @@
     <LibraryPath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <TargetExt>.dll</TargetExt>
     <TargetName>$(ProjectName)_OpenCL</TargetName>
     <OutDir>$(KITTING)\bin\</OutDir>
@@ -565,10 +563,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_USE_OCULUS;USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <OpenMPSupport>true</OpenMPSupport>
+      <PreprocessorDefinitions>USE_OCULUS;USE_CUDA;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\OculusSDK\LibOVR\Include;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <AdditionalDependencies>cudart.lib</AdditionalDependencies>
@@ -584,7 +581,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-ftz=true -prec-div=false -prec-sqrt=false %(AdditionalOptions)</AdditionalOptions>
       <MaxRegCount>32</MaxRegCount>
-      <CodeGeneration>compute_10,sm_10;compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
@@ -677,19 +674,12 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;USE_OPENCL;RAYTRACINGENGINE_EXPORTS;WIN32;NDEBUG;_WINDOWS;_USRDLL;RAYTRACINGENGINE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <OpenMPSupport>true</OpenMPSupport>
       <AdditionalIncludeDirectories>..\..\OculusSDK\LibOVR\Include;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>opencl.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\OculusSDK\LibOVR\Lib\x64;%(AdditionalLibraryDirectories);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
     </Link>

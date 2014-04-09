@@ -40,6 +40,8 @@ public:
 	void initializeDevice();
 	void releaseDevice();
 
+   virtual void reshape();
+
    void deviceQuery();
 
    void resetBoxesAndPrimitives();

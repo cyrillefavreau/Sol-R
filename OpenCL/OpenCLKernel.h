@@ -68,6 +68,8 @@ public:
 		const std::string& ptxFileName,
 		const std::string& options);
 
+   virtual void reshape();
+
 public:
 	// ---------- Rendering ----------
 	void render_begin( const float timer );

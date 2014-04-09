@@ -34,9 +34,10 @@
 //CUDA Specific
 #undef USE_MANAGED_MEMORY
 
-// #define PHOTON_ENERGY
-#define GRADIANT_BACKGROUND
-#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+// Raytracer features
+#define DOUBLE_SIDED_TRIANGLES
+#undef  GRADIANT_BACKGROUND
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  ADVANCED_FEATURES
 #define AUTOFOCUS
 #undef  PHOTON_ENERGY
@@ -48,8 +49,8 @@ const int MAX_STREAM_COUNT  = 32;
 const int NB_MAX_ITERATIONS = 20;
 
 const long BOUNDING_BOXES_TREE_DEPTH = 64;
-const long NB_MAX_BOXES      = 2097152;
-const long NB_MAX_PRIMITIVES = 2097152;
+const long NB_MAX_BOXES      = 3500000;
+const long NB_MAX_PRIMITIVES = 3500000;
 const long NB_MAX_LAMPS      = 512;
 const long NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const long NB_MAX_TEXTURES   = 512;

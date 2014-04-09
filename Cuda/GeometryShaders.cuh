@@ -155,12 +155,12 @@ __device__ __INLINE__ float processShadows(
 					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
                case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
 					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
-					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, true ); break;
+					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, true ); break;
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
 #else
-               hit = triangleIntersection( sceneInfo, primitive, materials, r, intersection, normal, areas, shadowIntensity, back, true );
+               hit = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, true );
 #endif
 
 #ifdef EXTENDED_FEATURES
@@ -256,7 +256,7 @@ __device__ __INLINE__ float4 primitiveShader(
    // Intersection color
    float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular );
    normal += bumpNormal;
-   normalize(normal);
+   normal = normalize(normal);
 
 	if( material.innerIllumination.x!=0.f || material.attributes.z!=0 )
    {

@@ -51,7 +51,7 @@ inline std::string getTimestamp()
 }
 
 #ifdef WIN32
-#if 1
+#if 0
 	#define LOG_INFO( __level, __msg ) \
    { \
       if( __level==1) std::cout << getTimestamp() << " INFO  [" << __level << "] " << __msg << std::endl; \
@@ -61,12 +61,11 @@ inline std::string getTimestamp()
 #else
 	#define LOG_INFO( __level, __msg ) \
 	   { \
-		  if( m_activeLogging ) \
-		  { \
-			 std::stringstream __s; \
-			 __s << "[INFO]  " << __msg; \
-			 OutputDebugString(__s.str().c_str()); \
-		  } \
+         if( __level==1) {\
+			   std::stringstream __s; \
+			   __s << "[INFO]  " << __msg; \
+   			OutputDebugString(__s.str().c_str()); \
+         }\
 	   }
 
 	#define LOG_ERROR( __msg ) \

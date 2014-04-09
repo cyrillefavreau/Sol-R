@@ -85,6 +85,8 @@ public:
 
    virtual void initBuffers();
    virtual void cleanup();
+   
+   virtual void reshape();
 
 public:
 
@@ -183,7 +185,7 @@ public:
 		bool procedural,
       bool wireframe, int wireframeWidth,
 		float transparency,
-	   int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId,
+	   int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId,
 		float specValue, float specPower, float specCoef,
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
       bool fastTransparency);
@@ -350,7 +352,7 @@ public:
 
 public:
 
-   int  compactBoxes( bool reconstructBoxes, int gridSize=0 );
+   int  compactBoxes( bool reconstructBoxes );
    void streamDataToGPU(); 
    void displayBoxesInfo(  );
    void resetBoxes( bool resetPrimitives );
