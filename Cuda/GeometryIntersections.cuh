@@ -459,7 +459,8 @@ __device__ __INLINE__ bool planeIntersection(
 		if( primitive.type.x == ptCamera || materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE )
 		{
          Vertex specular = {0.f,0.f,0.f}; // TODO?
-			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal, specular );
+         Vertex attributes;
+			color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes );
          shadowIntensity = color.w;
 		}
 
@@ -584,7 +585,8 @@ __device__ float4 intersectionShader(
 	Vertex&          intersection,
 	const Vertex&    areas,
    Vertex&          normal,
-   Vertex&          specular)
+   Vertex&          specular,
+   Vertex&          attributes)
 {
 	float4 colorAtIntersection = materials[primitive.materialId.x].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
@@ -599,7 +601,7 @@ __device__ float4 intersectionShader(
 		{
 			if(materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
 			{
-				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular );
+				colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular, attributes );
 			}
 			break;
 		}
@@ -607,7 +609,7 @@ __device__ float4 intersectionShader(
 		{
 			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
-				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular );
+				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes );
 			}
 			else 
 			{
@@ -641,7 +643,7 @@ __device__ float4 intersectionShader(
 		{
 			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
-				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular );
+				colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes );
 			}
 			break;
 		}
@@ -649,7 +651,7 @@ __device__ float4 intersectionShader(
       {
 			if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 			{
-            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular );
+            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes );
 			}
 			break;
       }
@@ -657,7 +659,7 @@ __device__ float4 intersectionShader(
 #else
 	if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
 	{
-      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular );
+      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes );
 	}
 #endif // EXTENDED_GEOMETRY
 	return colorAtIntersection;

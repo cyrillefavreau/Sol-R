@@ -1000,13 +1000,14 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
 
       int treeDepth=0;
       nbBoxes = static_cast<int>(m_primitives[m_frame].size());
-      while( nbBoxes>gridGranularity )
+      do
       {
          ++treeDepth;
-         nbBoxes /= 4;
          LOG_INFO(1,"2. Depth=" << treeDepth << ", NbBoxes=" << nbBoxes );
          processOutterBoxes(nbBoxes,treeDepth);
+         nbBoxes /= 4;
       }
+	  while( nbBoxes>gridGranularity );
    }
 
    LOG_INFO(1,"Streaming data to GPU");

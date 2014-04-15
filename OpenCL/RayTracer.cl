@@ -17,12 +17,12 @@ typedef int           Lamp;
 #define NB_MAX_ITERATIONS 20
 
 __constant int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
-
-__constant int MATERIAL_NONE = -1;
-__constant int TEXTURE_NONE = -1;
-__constant int TEXTURE_MANDELBROT = -2;
-__constant int TEXTURE_JULIA = -3;
 __constant int gColorDepth = 3;
+
+#define MATERIAL_NONE -1
+#define TEXTURE_NONE -1
+#define TEXTURE_MANDELBROT -2
+#define TEXTURE_JULIA -3
 
 // Globals
 __constant float PI=3.14159265358979323846f;
@@ -458,7 +458,7 @@ void normalMap(
    Vertex*          normal)
 {
    int i = (*material).textureOffset.z + index;
-   BitmapBuffer r,g,b;
+   BitmapBuffer r,g;
    r = textures[i  ];
    g = textures[i+1];
    //b = textures[i+2];
@@ -1944,7 +1944,7 @@ inline float4 launchRay(
          attributes.z=materials[primitives[closestPrimitive].materialId].refraction;
 
          // Get object color
-         rBlinn.w = materials[primitives[closestPrimitive].materialId].transparency;
+         rBlinn.w = attributes.y;
          colors[iteration] = primitiveShader(
             index, 
             sceneInfo, postProcessingInfo,
@@ -2071,8 +2071,9 @@ inline float4 launchRay(
             reflectedRay.origin, &normal, closestPrimitive, 
             &closestIntersection, areas, &closestColor,
             iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
-
          colors[reflectedRays] += color*reflectedRatio;
+
+         primitiveXYId.w = shadowIntensity*255;
       }
    }
 
@@ -2778,7 +2779,6 @@ __kernel void k_contrast(
    float4 localColor = postProcessingBuffer[index];
    const int step = 8;
    int c=0;
-   int d=0;
    float4 color={0.f,0.f,0.f,0.f};
    for( int X=-step; X<step; ++X )
    {

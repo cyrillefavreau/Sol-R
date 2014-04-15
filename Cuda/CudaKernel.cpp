@@ -284,7 +284,7 @@ void CudaKernel::render_begin( const float timer )
       objects.w = m_lightInformationSize;
 
       SceneInfo sceneInfo=m_sceneInfo;
-      if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
+      //if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
       if( m_sceneInfo.pathTracingIteration.x>=20 && m_sceneInfo.pathTracingIteration.x%3==0/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
       cudaRender(

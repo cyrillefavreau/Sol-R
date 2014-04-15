@@ -220,7 +220,7 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
       LOG_INFO(1, "  Extensions : " << buffer);
 
 		//CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, devices, &ret_num_devices));
-      if( clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices) == CL_SUCCESS )
+      if( clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL /*CL_DEVICE_TYPE_CPU*/, MAX_DEVICES, devices, &ret_num_devices) == CL_SUCCESS )
       {
 		   // Devices
 		   for( cl_uint device=0; device<ret_num_devices; ++device)
@@ -378,7 +378,7 @@ void OpenCLKernel::compileKernels(
          memset(buffer,0,MAX_SOURCE_SIZE);
          CHECKSTATUS(clGetProgramBuildInfo(hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
          LOG_ERROR("Program Build failed [" << status << "]: "  << buffer );
-         LOG_ERROR(source_str);
+         //LOG_ERROR(source_str);
       }
 
       /*

@@ -185,8 +185,13 @@ __device__ __INLINE__ float4 launchRay(
          previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
 #endif // PHOTON_ENERGY
 
-			// Get object color
-         rBlinn.w = materials[primitives[closestPrimitive].materialId.x].transparency.x;
+         Vertex attributes;
+         attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
+         attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
+         attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
+
+         // Get object color
+         rBlinn.w = attributes.y;
          colors[iteration] =
             primitiveShader( 
                index,
@@ -197,7 +202,7 @@ __device__ __INLINE__ float4 launchRay(
                materials, textures, 
                randoms, rayOrigin.origin, normal, 
                closestPrimitive, closestIntersection, areas, closestColor,
-			      iteration, refractionFromColor, shadowIntensity, rBlinn );
+			      iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
 
          // Primitive illumination
          float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
@@ -207,29 +212,29 @@ __device__ __INLINE__ float4 launchRay(
          // ----------
 			// Refraction
 			// ----------
-			if( materials[primitives[closestPrimitive].materialId.x].transparency.x!=0.f ) 
+			if( attributes.y!=0.f ) 
 			{
 				// Back of the object? If so, reset refraction to 1.f (air)
-				float refraction = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].refraction.x;
+				float refraction = /*back ? 1.f : */attributes.y;
 
 				// Actual refraction
 				Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
 				vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
 				reflectedTarget = closestIntersection - rayOrigin.direction;
 
-            colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].transparency.x;
+            colorContributions[iteration] = attributes.y;
                
             // Prepare next ray
 				initialRefraction = refraction;
 
-				if( reflectedRays==-1 && materials[primitives[closestPrimitive].materialId.x].reflection.x!=0.f )
+				if( reflectedRays==-1 && attributes.x!=0.f )
             {
 					vectorReflection( reflectedRay.direction, O_E, normal );
 					Vertex rt = closestIntersection - reflectedRay.direction;
 
                reflectedRay.origin    = closestIntersection + rt*0.00001f;
 					reflectedRay.direction = rt;
-               reflectedRatio = materials[primitives[closestPrimitive].materialId.x].reflection.x;
+               reflectedRatio = attributes.x;
 					reflectedRays=iteration;
             }
 			}
@@ -238,12 +243,12 @@ __device__ __INLINE__ float4 launchRay(
 				// ----------
 				// Reflection
 				// ----------
-				if( materials[primitives[closestPrimitive].materialId.x].reflection.x != 0.f ) 
+				if( attributes.x!=0.f ) 
 				{
 					Vertex O_E = rayOrigin.origin - closestIntersection;
 					vectorReflection( rayOrigin.direction, O_E, normal );
 					reflectedTarget = closestIntersection - rayOrigin.direction;
-               colorContributions[iteration] = materials[primitives[closestPrimitive].materialId.x].reflection.x;
+               colorContributions[iteration] = attributes.x;
 				}
 				else 
 				{
@@ -305,6 +310,8 @@ __device__ __INLINE__ float4 launchRay(
 			closestPrimitive, closestIntersection, 
          normal, areas, closestColor, colorBox, back, currentmaterialId) )
       {
+         Vertex attributes;
+         attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
          float4 color = primitiveShader( 
             index,
 				sceneInfo, postProcessingInfo,
@@ -315,9 +322,7 @@ __device__ __INLINE__ float4 launchRay(
             reflectedRay.origin, normal, closestPrimitive, 
             closestIntersection, areas, closestColor, 
 			   reflectedRays, 
-            refractionFromColor, shadowIntensity, rBlinn );
-
-         //colors[reflectedRays] = color*(1.f-reflectedRatio)+colors[reflectedRays]*reflectedRatio;
+            refractionFromColor, shadowIntensity, rBlinn, attributes );
          colors[reflectedRays] += color*reflectedRatio;
 
          primitiveXYId.w = shadowIntensity*255;

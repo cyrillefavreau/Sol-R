@@ -235,7 +235,8 @@ __device__ __INLINE__ float4 primitiveShader(
 	const int&    iteration,
 	float4&       refractionFromColor,
 	float&        shadowIntensity,
-	float4&       totalBlinn)
+	float4&       totalBlinn,
+   Vertex&       attributes)
 {
 	Primitive& primitive = primitives[objectId];
    Material& material = materials[primitive.materialId.x];
@@ -254,7 +255,7 @@ __device__ __INLINE__ float4 primitiveShader(
    specular.z=material.specular.z;
 
    // Intersection color
-   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular );
+   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular, attributes );
    normal += bumpNormal;
    normal = normalize(normal);
 
