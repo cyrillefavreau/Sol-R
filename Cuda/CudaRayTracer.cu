@@ -460,21 +460,24 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
-#if 0
-   else
+#if 1
+   if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
 	{
 		// Randomize view for natural depth of field
-		int rindex = 3*(index+sceneInfo.misc.y) + 5000;
+      float a=(sceneInfo.maxPathTracingIterations.x/sceneInfo.pathTracingIteration.x)*(postProcessingInfo.param1.x/1000000.f);
+      int rindex;
+      /*
+		rindex = 3*(index+sceneInfo.misc.y) + 5000;
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
-		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
-		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
-		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
-
+		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
+		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
+      */
       rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
-		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
-		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
-		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param1.x;
+		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
+		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
 	}
 #endif // 0
 

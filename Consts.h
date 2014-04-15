@@ -35,9 +35,9 @@
 #undef USE_MANAGED_MEMORY
 
 // Raytracer features
-#define DOUBLE_SIDED_TRIANGLES
+#undef  DOUBLE_SIDED_TRIANGLES
 #undef  GRADIANT_BACKGROUND
-#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  ADVANCED_FEATURES
 #define AUTOFOCUS
 #undef  PHOTON_ENERGY
