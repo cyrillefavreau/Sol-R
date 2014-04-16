@@ -688,7 +688,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
    const int currentmaterialId)
 {
 	bool intersections = false; 
-	float minDistance  = sceneInfo.viewDistance.x/(iteration+1);
+	float minDistance  = (iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
 
 	Ray r;
 	r.origin    = ray.origin;

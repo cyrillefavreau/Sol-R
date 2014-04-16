@@ -1464,11 +1464,12 @@ float processShadows(
    r.origin    = origin;
    r.direction = lampCenter-origin;
    computeRayAttributes( &r );
+	float minDistance  = (iteration<2) ? (*sceneInfo).viewDistance : (*sceneInfo).viewDistance/(iteration+1);
 
    while( result<(*sceneInfo).shadowIntensity && cptBoxes<nbActiveBoxes )
    {
       __constant BoundingBox* box = &boudingBoxes[cptBoxes];
-      if( boxIntersection(box, &r, 0.f, (*sceneInfo).viewDistance/(*sceneInfo).pathTracingIteration))
+      if(boxIntersection(box, &r, 0.f, minDistance))
       {
          int cptPrimitives = 0;
          while( result<(*sceneInfo).shadowIntensity && cptPrimitives<(*box).nbPrimitives)
@@ -1748,7 +1749,7 @@ inline bool intersectionWithPrimitives(
    const int currentMaterialId)
 {
    bool intersections = false;
-   float minDistance  = (*sceneInfo).viewDistance/iteration;
+   float minDistance  = (iteration<2) ? (*sceneInfo).viewDistance : (*sceneInfo).viewDistance/(iteration+1);
 
    Ray r;
    r.origin    = (*ray).origin;
@@ -2073,7 +2074,7 @@ inline float4 launchRay(
             iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
          colors[reflectedRays] += color*reflectedRatio;
 
-         primitiveXYId.w = shadowIntensity*255;
+         (*primitiveXYId).w = shadowIntensity*255;
       }
    }
 
@@ -2185,6 +2186,16 @@ __kernel void k_standardRenderer(
       postProcessingBuffer[index].z = 0.f;
       postProcessingBuffer[index].w = 0.f;
    }
+   if( sceneInfo.pathTracingIteration>=NB_MAX_ITERATIONS )
+	{
+		// Randomize view for natural depth of field
+      float a=(sceneInfo.maxPathTracingIterations/sceneInfo.pathTracingIteration)*(postProcessingInfo.param1/1000000.f);
+      int rindex = 3*(index+sceneInfo.misc.y);
+		rindex = rindex%(sceneInfo.width*sceneInfo.height-3);
+		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
+		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
+	}
 
    Vertex intersection;
 

@@ -129,11 +129,12 @@ __device__ __INLINE__ float processShadows(
 	r.origin    = origin;
 	r.direction = lampCenter-origin;
 	computeRayAttributes( r );
+	float minDistance  = (iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
 
    while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
 	{
 		BoundingBox& box = boudingBoxes[cptBoxes];
-		if( boxIntersection(box, r, 0.f, sceneInfo.viewDistance.x))
+		if( boxIntersection(box, r, 0.f, minDistance))
 		{
 			int cptPrimitives = 0;
 			while( result<sceneInfo.shadowIntensity.x && cptPrimitives<box.nbPrimitives.x)

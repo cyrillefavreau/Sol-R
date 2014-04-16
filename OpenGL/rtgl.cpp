@@ -59,16 +59,26 @@ Vertex gEye = {gScale/10.f,0.f, -20.f*gScale};
 Vertex gDir = {gScale/10.f,0.f, -20.f*gScale+5000.f};
 Vertex gAngles = {0.f,0.f,0.f};
 
+#ifdef USE_OPENCL
 // OpenCL
-//RayTracer::gOpenCLPlatform=1;
-//RayTracer::gOpenCLDevice=1;
+void RayTracer::setOpenCLPlatform(const int platform)
+{
+   RayTracer::gOpenCLPlatform=platform;
+}
+
+void RayTracer::setOpenCLDevice(const int device)
+{
+   RayTracer::gOpenCLDevice=device;
+}
+#endif // USE_OPENCL
 
 void RayTracer::InitializeRaytracer( const int width, const int height )
 {
-   gOpenCLPlatform=1;
-   gOpenCLDevice=0;
-
+#ifdef USE_OPENCL
    LOG_INFO(1,"Intializing Raytracing engine: " << gOpenCLPlatform << "," << gOpenCLDevice);
+#else
+   LOG_INFO(1,"Intializing Raytracing engine");
+#endif // USE_OPENCL
    // Scene
    gSceneInfo.width.x = width;
    gSceneInfo.height.x = height;

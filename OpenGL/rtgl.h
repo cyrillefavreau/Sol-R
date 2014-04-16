@@ -648,6 +648,10 @@ typedef int bool;
    void RAYTRACINGENGINE_API glPointSize(GLfloat size);
 
    // Raytracer specific
+#ifdef USE_OPENCL
+   void RAYTRACINGENGINE_API setOpenCLPlatform(const int platform);
+   void RAYTRACINGENGINE_API setOpenCLDevice(const int device);
+#endif // USE_OPENCL
    void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
    void RAYTRACINGENGINE_API setAngles( GLfloat, GLfloat, GLfloat );
    void RAYTRACINGENGINE_API render();
@@ -906,8 +910,8 @@ typedef int bool;
    */
    
    // OpenCL constants
-   static int gOpenCLPlatform=1;
-   static int gOpenCLDevice=0;
+   static int gOpenCLPlatform=-1;
+   static int gOpenCLDevice=-1;
 
    typedef void GLUnurbsObj;
 
