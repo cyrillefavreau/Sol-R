@@ -215,7 +215,7 @@ __device__ __INLINE__ float4 launchRay(
 			if( attributes.y!=0.f ) 
 			{
 				// Back of the object? If so, reset refraction to 1.f (air)
-				float refraction = /*back ? 1.f : */attributes.y;
+				float refraction = /*back ? 1.f : */attributes.z;
 
 				// Actual refraction
 				Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
