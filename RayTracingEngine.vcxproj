@@ -354,7 +354,7 @@
       <GenerateLineInfo>true</GenerateLineInfo>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-ftz=true -prec-div=false -prec-sqrt=false %(AdditionalOptions)</AdditionalOptions>
-      <CodeGeneration>compute_10,sm_10;compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35</CodeGeneration>
       <MaxRegCount>32</MaxRegCount>
     </CudaCompile>
   </ItemDefinitionGroup>

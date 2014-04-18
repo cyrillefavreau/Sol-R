@@ -2689,13 +2689,13 @@ void GPUKernel::render_begin( const float timer )
    if( m_oculus && m_sensorFusion && m_sensorFusion->IsAttachedToSensor() )
    {
       OVR::Quatf orientation = m_sensorFusion->GetOrientation();
-      m_viewPos.y = 2000.f;
+      m_viewPos.y = 0.f;
       m_viewDir.y = m_viewPos.y;
       m_angles.x = -PI*orientation.x;
       m_angles.y = -PI*orientation.y;
       m_angles.z =  PI*orientation.z;
       m_sceneInfo.pathTracingIteration.x=0;
-      //m_sceneInfo.renderingType.x = vt3DVision;
+      m_sceneInfo.renderingType.x = vt3DVision;
    }
 #endif // USE_OCULUS
 }
@@ -2735,6 +2735,17 @@ void GPUKernel::previousFrame()
 void GPUKernel::switchOculusVR()
 {
    m_oculus = !m_oculus;
+   if(m_oculus)
+   {
+      m_viewPos.z = -2360;
+      m_viewDir.z = m_viewPos.z + 2810.f;
+   }
+   else
+   {
+      m_viewPos.z = -10000.f;
+      m_viewDir.z = 0.f;
+   }
+
 }
 
 #ifdef USE_OCULUS

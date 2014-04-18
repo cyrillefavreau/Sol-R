@@ -284,8 +284,8 @@ void CudaKernel::render_begin( const float timer )
       objects.w = m_lightInformationSize;
 
       SceneInfo sceneInfo=m_sceneInfo;
-      if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
-      if( m_sceneInfo.pathTracingIteration.x>=20 && m_sceneInfo.pathTracingIteration.x%3==0/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
+      //if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
+      //if( m_sceneInfo.pathTracingIteration.x>=20 && m_sceneInfo.pathTracingIteration.x%3==0/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
       cudaRender(
          m_occupancyParameters,
@@ -321,7 +321,7 @@ void CudaKernel::render_end()
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
       ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
-#if 0
+#if 1
       if( m_sceneInfo.renderingType.x == vt3DVision )
       {
          float step = 0.125f;

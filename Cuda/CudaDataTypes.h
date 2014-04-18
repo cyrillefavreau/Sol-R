@@ -71,8 +71,12 @@ struct SceneInfo
    int1    maxPathTracingIterations; // Maximum number of iterations for current frame
    int4    misc;                     // x: Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
                                      // y: Timer
-                                     // z: Fog( 0: disabled, 1: enabled )
+                                     // z: Fog( 0:disabled, 1:enabled )
                                      // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+   int4    parameters;               // x: Double-sided triangles( 0:disabled, 1:enabled )
+                                     // y: Gradient background( 0:disabled, 1:enabled )
+                                     // z: Advanced features( 0:disabled, 1:enabled )
+                                     // w: Not used
 };
 
 // Ray structure

@@ -6,9 +6,7 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-#define DOUBLE_SIDED_TRIANGLES
 //#define ADVANCED_GEOMETRY
-#define GRADIANT_BACKGROUND
 
 // Debug Delphi
 #define TEST
@@ -71,10 +69,14 @@ typedef struct
    int    renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
    int    pathTracingIteration;     // Current iteration for current frame
    int    maxPathTracingIterations; // Maximum number of iterations for current frame
-   int4   misc;                    // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
-   // y: Timer
-   // z: Fog( 0: disabled, 1: enabled )
-   // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+   int4   misc;                     // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
+                                    // y: Timer
+                                    // z: Fog( 0: disabled, 1: enabled )
+                                    // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+   int4    parameters;              // x: Double-sided triangles( 0:disabled, 1:enabled )
+                                    // y: Gradient background( 0:disabled, 1:enabled )
+                                    // z: Not used
+                                    // w: Not used
 } SceneInfo;
 
 typedef struct
@@ -1236,23 +1238,27 @@ bool triangleIntersection(
    float*           shadowIntensity,
    const bool       processingShadows )
 {
-#ifdef DOUBLE_SIDED_TRIANGLES
-   Vertex N=normalize((*ray).direction);
-   // Reject triangles with normal opposite to ray.
-   //Vertex V=normalize((*triangle).n0+(*triangle).n1+(*triangle).n2);
-   Vertex V=(*triangle).n0;
-   if( processingShadows )
+   if( (*sceneInfo).parameters.x==1 )
    {
-      if( dot(N,V)<=0.f ) return false;
+      // Double Sided triangles
+      Vertex N=normalize((*ray).direction);
+      // Reject triangles with normal opposite to ray.
+      //Vertex V=normalize((*triangle).n0+(*triangle).n1+(*triangle).n2);
+      Vertex V=(*triangle).n0;
+      if( processingShadows )
+      {
+         if( dot(N,V)<=0.f ) return false;
+      }
+      else
+      {
+         if( dot(N,V)>=0.f ) return false;
+      }
    }
    else
    {
-      if( dot(N,V)>=0.f ) return false;
+      //Vertex N=normalize((*ray).direction);
+      //(*backFace) = ( dot(N,(*triangle).n0)<=0.f );
    }
-#else
-   //Vertex N=normalize((*ray).direction);
-   //(*backFace) = ( dot(N,(*triangle).n0)<=0.f );
-#endif // DOUBLE_SIDED_TRIANGLES
 
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
@@ -1506,11 +1512,11 @@ float processShadows(
                      float ratio = shadowIntensity*(*sceneInfo).shadowIntensity;
                      if( materials[(*primitive).materialId].transparency != 0.f )
                      {
+                        // Shadow color
                         O_L=normalize(O_L);
                         float a=fabs(dot(O_L,normal));
                         float r = (materials[(*primitive).materialId].transparency==0.f ) ? 1.f : (1.f-0.8f*materials[(*primitive).materialId].transparency);
                         ratio *= r*a;
-                        // Shadow color
                         (*color).x  += ratio*(0.3f-0.3f*materials[(*primitive).materialId].color.x);
                         (*color).y  += ratio*(0.3f-0.3f*materials[(*primitive).materialId].color.y);
                         (*color).z  += ratio*(0.3f-0.3f*materials[(*primitive).materialId].color.z);
@@ -2032,15 +2038,18 @@ inline float4 launchRay(
       else
       {
          // Background
-#ifdef GRADIANT_BACKGROUND
-         Vertex normal = {0.f,1.f,0.f,0.f};
-         Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
-         float angle = 0.5f-dot( normal, dir);
-         angle = (angle>1.f) ? 1.f: angle;
-         colors[iteration] = (1.f-angle)*(*sceneInfo).backgroundColor;
-#else
-         colors[iteration] = (*sceneInfo).backgroundColor;
-#endif // GRADIANT_BACKGROUND
+         if( (*sceneInfo).parameters.y==1 )
+         {
+            Vertex normal = {0.f,1.f,0.f,0.f};
+            Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
+            float angle = 0.5f-dot( normal, dir);
+            angle = (angle>1.f) ? 1.f: angle;
+            colors[iteration] = (1.f-angle)*(*sceneInfo).backgroundColor;
+         }
+         else
+         {
+            colors[iteration] = (*sceneInfo).backgroundColor;
+         }
          colorContributions[iteration] = 1.f;
       }
       iteration++;
@@ -2189,7 +2198,7 @@ __kernel void k_standardRenderer(
    if( sceneInfo.pathTracingIteration>=NB_MAX_ITERATIONS )
 	{
 		// Randomize view for natural depth of field
-      float a=(sceneInfo.maxPathTracingIterations/sceneInfo.pathTracingIteration)*(postProcessingInfo.param1/1000000.f);
+      float a=postProcessingInfo.param1/100000.f;
       int rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width*sceneInfo.height-3);
 		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
@@ -2265,12 +2274,13 @@ __kernel void k_standardRenderer(
       &dof,
       &primitiveXYIds[index]);
 
-#ifdef ADVANCED_FEATURES
-   // Randomize light intensity
-   int rindex = index;
-   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
-   color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
-#endif // ADVANCED_FEATURES
+   if( sceneInfo.parameters.z==1 )
+   {
+      // Randomize light intensity
+      int rindex = index;
+      rindex = rindex%(sceneInfo.width*sceneInfo.height);
+      color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+   }
 
    if( antialiasingActivated )
    {

@@ -129,7 +129,7 @@ __device__ __INLINE__ float processShadows(
 	r.origin    = origin;
 	r.direction = lampCenter-origin;
 	computeRayAttributes( r );
-	float minDistance  = (iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
+	float minDistance=(iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
 
    while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
 	{
@@ -373,7 +373,8 @@ __device__ __INLINE__ float4 primitiveShader(
 					         blinnTerm = specular.x * pow(blinnTerm,specular.y);
                         blinnTerm *= (1.f-material.transparency.x);
                         blinnTerm *= (1.f-photonEnergy);
-					         totalBlinn += lightInformation[cptLamp].color * lightInformation[cptLamp].color.w * blinnTerm;
+                        float4 b=lightInformation[cptLamp].color*lightInformation[cptLamp].color.w*blinnTerm;
+					         totalBlinn = (length(totalBlinn)>length(b)) ? totalBlinn : b;
                      
                         // Get transparency from specular map
                         totalBlinn.w = specular.z;

@@ -493,19 +493,23 @@ __device__ __INLINE__ bool triangleIntersection(
    back = false;
 
    Vertex N=normalize(ray.direction-ray.origin);
-#ifdef DOUBLE_SIDED_TRIANGLES
-   // Reject triangles with normal opposite to ray.
-   if( processingShadows )
+   if( sceneInfo.parameters.x==1 )
    {
-      if( dot(N,triangle.n0)<=0.f ) return false;
+      // Double Sided triangles
+      // Reject triangles with normal opposite to ray.
+      if( processingShadows )
+      {
+         if( dot(N,triangle.n0)<=0.f ) return false;
+      }
+      else
+      {
+         if( dot(N,triangle.n0)>=0.f ) return false;
+      }
    }
    else
    {
-      if( dot(N,triangle.n0)>=0.f ) return false;
+      back = ( dot(N,triangle.n0)<=0.f );
    }
-#else
-   back = ( dot(N,triangle.n0)<=0.f );
-#endif // DOUBLE_SIDED_TRIANGLES
 
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
@@ -688,7 +692,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
    const int currentmaterialId)
 {
 	bool intersections = false; 
-	float minDistance  = (iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
+	float minDistance  = sceneInfo.viewDistance.x;//(iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
 
 	Ray r;
 	r.origin    = ray.origin;

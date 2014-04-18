@@ -281,16 +281,19 @@ __device__ __INLINE__ float4 launchRay(
 		}
 		else
 		{
-#ifdef GRADIANT_BACKGROUND
-         // Background
-         Vertex normal = {0.f, 1.f, 0.f };
-         Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
-         float angle = 0.5f-dot( normal, dir);
-         angle = (angle>1.f) ? 1.f: angle;
-			colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
-#else
-			colors[iteration] = sceneInfo.backgroundColor;
-#endif // GRADIANT_BACKGROUND
+         if( sceneInfo.parameters.y==1 )
+         {
+            // Background
+            Vertex normal = {0.f, 1.f, 0.f };
+            Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
+            float angle = 0.5f-dot( normal, dir);
+            angle = (angle>1.f) ? 1.f: angle;
+			   colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
+         }
+         else
+         {
+			   colors[iteration] = sceneInfo.backgroundColor;
+         }
 			colorContributions[iteration] = 1.f;
 		}
 		iteration++;
@@ -464,15 +467,8 @@ __global__ void k_standardRenderer(
    if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
 	{
 		// Randomize view for natural depth of field
-      float a=(sceneInfo.maxPathTracingIterations.x/sceneInfo.pathTracingIteration.x)*(postProcessingInfo.param1.x/1000000.f);
+      float a=(postProcessingInfo.param1.x/100000.f);
       int rindex;
-      /*
-		rindex = 3*(index+sceneInfo.misc.y) + 5000;
-		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
-		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
-		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
-		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
-      */
       rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
 		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
@@ -550,12 +546,13 @@ __global__ void k_standardRenderer(
 		dof,
 		primitiveXYIds[index]);
 
-#ifdef ADVANCED_FEATURES
-   // Randomize light intensity
-	int rindex = index;
-	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
-   color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
-#endif // ADVANCED_FEATURES
+   if( sceneInfo.parameters.z==1 )
+   {
+      // Randomize light intensity
+	   int rindex = index;
+	   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+      color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+   }
    
    if( antialiasingActivated )
    {
@@ -986,12 +983,13 @@ __global__ void k_3DVisionRenderer(
 		dof,
 		primitiveXYIds[index]);
 
-#ifdef ADVANCED_FEATURES
-   // Randomize light intensity
-	int rindex = index;
-	rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
-   color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
-#endif // ADVANCED_FEATURES
+   if( sceneInfo.parameters.z==1 )
+   {
+      // Randomize light intensity
+	   int rindex = index;
+	   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+      color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+   }
 
    // Contribute to final image
 	if( sceneInfo.pathTracingIteration.x == 0 ) postProcessingBuffer[index].w = dof;

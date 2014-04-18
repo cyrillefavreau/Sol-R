@@ -35,10 +35,7 @@
 #undef USE_MANAGED_MEMORY
 
 // Raytracer features
-#undef  DOUBLE_SIDED_TRIANGLES
-#undef  GRADIANT_BACKGROUND
 #undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
-#undef  ADVANCED_FEATURES
 #define AUTOFOCUS
 #undef  PHOTON_ENERGY
 #undef  DODGY_REFRACTIONS
@@ -46,7 +43,7 @@
 // Consts
 const int MAX_GPU_COUNT     = 32;
 const int MAX_STREAM_COUNT  = 32;
-const int NB_MAX_ITERATIONS = 20;
+const int NB_MAX_ITERATIONS = 10;
 
 const long BOUNDING_BOXES_TREE_DEPTH = 64;
 const long NB_MAX_BOXES      = 3500000;
