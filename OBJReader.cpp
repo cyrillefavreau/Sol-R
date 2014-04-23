@@ -212,10 +212,12 @@ unsigned int OBJReader::loadMaterialsFromFile(
 
          bool diffuseMap=(line.find("map_Kd")==0);
          bool bumpMap=(line.find("map_bump")==0);
-         if( diffuseMap || bumpMap )
+         bool normalMap=(line.find("map_norm")==0);
+         bool specularlMap=(line.find("map_spec")==0);
+         if( diffuseMap || bumpMap || normalMap || specularlMap )
          {
             if(diffuseMap) line = line.substr(7);
-            if(bumpMap) line = line.substr(9);
+            if(bumpMap || normalMap || specularlMap) line = line.substr(9);
             std::string folder(filename);
             size_t backSlashPos = filename.rfind('/');
             if( backSlashPos==-1 )
@@ -234,16 +236,22 @@ unsigned int OBJReader::loadMaterialsFromFile(
                if(diffuseMap) 
                {
                   materials[id].diffuseTextureId = idx;
-                  materials[id].normalTextureId = idx;
-                  //materials[id].bumpTextureId = idx;
-                  //materials[id].specularTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Diffuse texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
                if(bumpMap)
                {
                   materials[id].bumpTextureId = idx;
-                  materials[id].normalTextureId = idx;
                   LOG_INFO(3, "[Slot " << idx  << "] Bump texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+               }
+               if(normalMap)
+               {
+                  materials[id].normalTextureId = idx;
+                  LOG_INFO(3, "[Slot " << idx  << "] Mormal texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
+               }
+               if(specularlMap)
+               {
+                  materials[id].specularTextureId = idx;
+                  LOG_INFO(3, "[Slot " << idx  << "] Specular texture " << folder << " successfully loaded and assigned to material " << id << "(" << materials[id].index << ")" );
                }
             }
             else

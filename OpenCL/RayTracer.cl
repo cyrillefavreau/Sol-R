@@ -2201,9 +2201,9 @@ __kernel void k_standardRenderer(
       float a=postProcessingInfo.param1/100000.f;
       int rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width*sceneInfo.height-3);
-		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
-		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
-		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
+		ray.origin.x -= randoms[rindex  ]*postProcessingBuffer[index].w*a;
+		ray.origin.y -= randoms[rindex+1]*postProcessingBuffer[index].w*a;
+		ray.origin.z -= randoms[rindex+2]*postProcessingBuffer[index].w*a;
 	}
 
    Vertex intersection;

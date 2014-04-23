@@ -704,7 +704,7 @@ void OpenCLKernel::render_begin( const float timer )
       LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
       SceneInfo sceneInfo=m_sceneInfo;
-      if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
+      //if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
       //if( m_sceneInfo.pathTracingIteration.x>=20/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
 
       size_t szLocalWorkSize[] = { 1, 1 };

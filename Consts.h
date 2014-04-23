@@ -51,7 +51,7 @@ const long NB_MAX_PRIMITIVES = 3500000;
 const long NB_MAX_LAMPS      = 512;
 const long NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const long NB_MAX_TEXTURES   = 512;
-const long NB_MAX_FRAMES     = 128;
+const long NB_MAX_FRAMES     = 512;
 const long NB_MAX_LIGHTINFORMATIONS = 512;
 
 
@@ -64,7 +64,7 @@ const long NB_MAX_LIGHTINFORMATIONS = 512;
 
 // Globals
 #define PI 3.14159265358979323846f
-#define EPSILON 1.f
+#define EPSILON 5.f
 
 #ifdef USE_KINECT
 // Kinect
