@@ -321,7 +321,7 @@ void CudaKernel::render_end()
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
       ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
-#if 1
+#if 0
       if( m_sceneInfo.renderingType.x == vt3DVision )
       {
          float step = 0.125f;
