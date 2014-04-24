@@ -341,7 +341,8 @@ __device__ __INLINE__ float4 launchRay(
 
 	intersection = closestIntersection;
 
-	float len = length(firstIntersection - ray.origin);
+	float len=length(firstIntersection-ray.origin);
+   depthOfField = len;
    if( closestPrimitive != -1 )
    {
       Primitive& primitive=primitives[closestPrimitive];
@@ -350,6 +351,7 @@ __device__ __INLINE__ float4 launchRay(
          len = sceneInfo.viewDistance.x;
       }
    }
+
 #ifdef PHOTON_ENERGY
 	// --------------------------------------------------
    // Photon energy
@@ -373,7 +375,6 @@ __device__ __INLINE__ float4 launchRay(
       float b = 1.f-(a/D2);
       intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
    }
-   depthOfField = len;
 
    // Primitive information
    primitiveXYId.y = iteration;
@@ -464,16 +465,16 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].w = 0.f;
    }
 #if 1
-   if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
+   if( postProcessingInfo.type.x!=ppe_depthOfField && sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
 	{
 		// Randomize view for natural depth of field
       float a=(postProcessingInfo.param1.x/100000.f);
       int rindex;
       rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
-		ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
-		ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
-		ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
+		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
+		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
 	}
 #endif // 0
 
@@ -1070,14 +1071,14 @@ __global__ void k_depthOfField(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
    
-   float  depth = 0.00001f*(postProcessingBuffer[index].w-postProcessingInfo.param1.x);
+   float4 localColor = {0.f,0.f,0.f};
+   float  depth=fabs(postProcessingBuffer[index].w-postProcessingInfo.param1.x)/sceneInfo.viewDistance.x;
 	int    wh = sceneInfo.width.x*sceneInfo.height.x;
 
-   float4 localColor = {0.f,0.f,0.f};
 	for( int i=0; i<postProcessingInfo.param3.x; ++i )
 	{
 		int ix = i%wh;
-		int iy = (i+sceneInfo.width.x)%wh;
+		int iy = (i+100)%wh;
 		int xx = x+depth*randoms[ix]*postProcessingInfo.param2.x;
 		int yy = y+depth*randoms[iy]*postProcessingInfo.param2.x;
 		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )

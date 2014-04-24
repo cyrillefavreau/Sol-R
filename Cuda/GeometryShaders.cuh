@@ -124,8 +124,7 @@ __device__ __INLINE__ float processShadows(
    color.x = 0.f;
    color.y = 0.f;
    color.z = 0.f;
-   int it=-1;
-	Ray r;
+   Ray r;
 	r.origin    = origin;
 	r.direction = lampCenter-origin;
 	computeRayAttributes( r );
@@ -179,7 +178,7 @@ __device__ __INLINE__ float processShadows(
 						Vertex O_I = intersection-r.origin;
 						Vertex O_L = r.direction;
 						float l = length(O_I);
-						if( l>EPSILON && l<length(O_L) )
+						if( l>500.f && l<length(O_L) ) // ??? 500.f
 						{
                      float ratio = shadowIntensity*sceneInfo.shadowIntensity.x;
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
@@ -195,12 +194,11 @@ __device__ __INLINE__ float processShadows(
                      }
                      result += ratio;
                   }
-                  it++;
 					}
 				}
-				cptPrimitives++;
+				++cptPrimitives;
 			}
-   		cptBoxes++;
+   		++cptBoxes;
 		}
       else
       {

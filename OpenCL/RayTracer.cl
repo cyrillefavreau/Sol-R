@@ -1465,7 +1465,6 @@ float processShadows(
    (*color).x = 0.f;
    (*color).y = 0.f;
    (*color).z = 0.f;
-   int it=-1;
    Ray r;
    r.origin    = origin;
    r.direction = lampCenter-origin;
@@ -1507,10 +1506,10 @@ float processShadows(
                   Vertex O_I = intersection-r.origin;
                   Vertex O_L = r.direction;
                   float l = length(O_I);
-                  if( l>EPSILON && l<length(O_L) )
+                  if( l>500.f && l<length(O_L) ) // ??? 500.f
                   {
                      float ratio = shadowIntensity*(*sceneInfo).shadowIntensity;
-                     if( materials[(*primitive).materialId].transparency != 0.f )
+                     if( materials[(*primitive).materialId].transparency!=0.f )
                      {
                         // Shadow color
                         O_L=normalize(O_L);
@@ -1523,12 +1522,11 @@ float processShadows(
                      }
                      result += ratio;
                   }
-                  it++;
                }
             }
-            cptPrimitives++;
+            ++cptPrimitives;
          }
-         cptBoxes++;
+         ++cptBoxes;
       }
       else
       {
@@ -2097,6 +2095,7 @@ inline float4 launchRay(
    (*intersection) = closestIntersection;
 
    float len = length(firstIntersection - (*ray).origin);
+   (*depthOfField) = len;
    if( closestPrimitive != -1 )
    {
       __constant Primitive* primitive=&primitives[closestPrimitive];
@@ -2117,7 +2116,6 @@ inline float4 launchRay(
       float b = 1.f-(a/D2);
       intersectionColor = intersectionColor*b + (*sceneInfo).backgroundColor*(1.f-b);
    }
-   (*depthOfField) = len;
 
    // Primitive information
    (*primitiveXYId).y = iteration;
@@ -2195,15 +2193,16 @@ __kernel void k_standardRenderer(
       postProcessingBuffer[index].z = 0.f;
       postProcessingBuffer[index].w = 0.f;
    }
-   if( sceneInfo.pathTracingIteration>=NB_MAX_ITERATIONS )
+   if( postProcessingInfo.type!=ppe_depthOfField && sceneInfo.pathTracingIteration>=NB_MAX_ITERATIONS )
 	{
 		// Randomize view for natural depth of field
       float a=postProcessingInfo.param1/100000.f;
-      int rindex = 3*(index+sceneInfo.misc.y);
+      int rindex;
+      rindex = 3*(index+sceneInfo.misc.y);
 		rindex = rindex%(sceneInfo.width*sceneInfo.height-3);
-		ray.origin.x -= randoms[rindex  ]*postProcessingBuffer[index].w*a;
-		ray.origin.y -= randoms[rindex+1]*postProcessingBuffer[index].w*a;
-		ray.origin.z -= randoms[rindex+2]*postProcessingBuffer[index].w*a;
+		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
+		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
+		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
 	}
 
    Vertex intersection;
@@ -2631,16 +2630,16 @@ __kernel void k_depthOfField(
    // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
-   float  depth = postProcessingInfo.param2*postProcessingBuffer[index].w;
-   int    wh = sceneInfo.width*sceneInfo.height;
-
    float4 localColor = {0.f,0.f,0.f,0.f};
+   float  depth=fabs(postProcessingBuffer[index].w-postProcessingInfo.param1)/sceneInfo.viewDistance;
+	int    wh = sceneInfo.width*sceneInfo.height;
+
    for( int i=0; i<postProcessingInfo.param3; ++i )
    {
       int ix = i%wh;
-      int iy = (i+sceneInfo.width)%wh;
-      int xx = x+depth*randoms[ix]*0.5f;
-      int yy = y+depth*randoms[iy]*0.5f;
+      int iy = (i+100)%wh;
+      int xx = x+depth*randoms[ix]*postProcessingInfo.param2;
+      int yy = y+depth*randoms[iy]*postProcessingInfo.param2;
       if( xx>=0 && xx<sceneInfo.width && yy>=0 && yy<sceneInfo.height )
       {
          int localIndex = yy*sceneInfo.width+xx;

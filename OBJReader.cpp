@@ -35,7 +35,7 @@
 #include "Consts.h"
 #include "OBJReader.h"
 
-const int NB_MAX_FACES=NB_MAX_PRIMITIVES*0.9f; // Max number of faces
+const int NB_MAX_FACES=static_cast<int>(NB_MAX_PRIMITIVES*0.9f); // Max number of faces
 
 OBJReader::OBJReader(void)
 {
