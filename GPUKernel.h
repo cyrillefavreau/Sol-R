@@ -204,7 +204,7 @@ public:
       bool& wireframe,
       int& wireframeDepth,
 		float& transparency,
-      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId,
+      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId,
 		float& specValue, float& specPower, float& specCoef,
       float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
       bool& fastTransparency);

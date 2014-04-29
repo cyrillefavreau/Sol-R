@@ -55,11 +55,32 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int graphicsLevel, int nbRayIterations, double transparentColor,
    double viewDistance, double shadowIntensity,
    int renderingType, double width3DVision,
-   double bgColorR, double bgColorG, double bgColorB,
+   double bgColorR, double bgColorG, double bgColorB, double bgColorA,
    int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D)
 {
-   LOG_INFO(3,"RayTracer_SetSceneInfo");
+   LOG_INFO(1,"RayTracer_SetSceneInfo (" << 
+      width << "," <<
+      height << "," <<
+      graphicsLevel << "," <<
+      nbRayIterations << "," <<
+      transparentColor << "," <<
+      viewDistance << "," <<
+      shadowIntensity << "," <<
+      width3DVision << "," <<
+      bgColorR << "," <<
+      bgColorG << "," <<
+      bgColorB << "," <<
+      bgColorA << "," <<
+      renderingType << "," <<
+      renderBoxes << "," <<
+      pathTracingIteration << "," <<
+      maxPathTracingIterations << "," <<
+      outputType << "," <<
+      timer << "," <<
+      fogEffect << "," <<
+      isometric3D);
+
    gSceneInfoStub.width.x                   = width;
    gSceneInfoStub.height.x                  = height;
    gSceneInfoStub.graphicsLevel.x           = graphicsLevel;
@@ -71,7 +92,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    gSceneInfoStub.backgroundColor.x         = static_cast<float>(bgColorR);
    gSceneInfoStub.backgroundColor.y         = static_cast<float>(bgColorG);
    gSceneInfoStub.backgroundColor.z         = static_cast<float>(bgColorB);
-   gSceneInfoStub.backgroundColor.w         = 0.f;
+   gSceneInfoStub.backgroundColor.w         = static_cast<float>(bgColorA);
    gSceneInfoStub.renderingType.x           = renderingType;
    gSceneInfoStub.renderBoxes.x             = static_cast<int>(renderBoxes);
    gSceneInfoStub.pathTracingIteration.x    = pathTracingIteration;
@@ -289,6 +310,35 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( int index)
    return gKernel->getPrimitiveMaterial( index );
 }
 
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveNormals( 
+   int    index,
+   double n0_x, double n0_y, double n0_z,
+   double n1_x, double n1_y, double n1_z,
+   double n2_x, double n2_y, double n2_z )
+{
+   LOG_INFO(3,"RayTracer_SetPrimitiveNormals");
+   Vertex n0={static_cast<float>(n0_x),static_cast<float>(n0_y),static_cast<float>(n0_z)};
+   Vertex n1={static_cast<float>(n1_x),static_cast<float>(n1_y),static_cast<float>(n1_z)};
+   Vertex n2={static_cast<float>(n2_x),static_cast<float>(n2_y),static_cast<float>(n2_z)};
+   gKernel->setPrimitiveNormals(index,n0,n1,n2);
+   return 0;
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveTextureCoordinates( 
+   int    index,
+   double t0_x, double t0_y, double t0_z,
+   double t1_x, double t1_y, double t1_z,
+   double t2_x, double t2_y, double t2_z )
+{
+   LOG_INFO(3,"RayTracer_SetPrimitiveTextureCoordinates");
+   Vertex t0={static_cast<float>(t0_x),static_cast<float>(t0_y),static_cast<float>(t0_z)};
+   Vertex t1={static_cast<float>(t1_x),static_cast<float>(t1_y),static_cast<float>(t1_z)};
+   Vertex t2={static_cast<float>(t2_x),static_cast<float>(t2_y),static_cast<float>(t2_z)};
+   gKernel->setPrimitiveTextureCoordinates(index,t0,t1,t2);
+   return 0;
+}
+
+
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_UpdateSkeletons( 
    int index,
@@ -339,7 +389,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE text
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures( int& nbTextures )
 {
    LOG_INFO(3,"RayTracer_GetNbTextures");
-   return NB_MAX_TEXTURES;// gKernel->getNbActiveTextures();
+   return gKernel->getNbActiveTextures();
 }
 
 // ---------- Materials ----------
@@ -364,7 +414,32 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
    int    fastTransparency)
 {
-   LOG_INFO(3,"RayTracer_SetMaterial");
+   LOG_INFO(3, "RayTracer_SetMaterial (" << 
+      index << "," << 
+      static_cast<float>(color_r) << "," <<
+      static_cast<float>(color_g) << "," <<
+      static_cast<float>(color_b) << "," <<
+      static_cast<float>(noise) << "," <<
+      static_cast<float>(reflection) << "," <<
+      static_cast<float>(refraction) << "," <<
+      procedural << "," <<
+      wireframe << "," <<
+      static_cast<int>(wireframeDepth) << "," <<
+      static_cast<float>(transparency) << "," <<
+      static_cast<int>(diffuseTextureId) << "," <<
+      static_cast<int>(normalTextureId) << "," <<
+      static_cast<int>(bumpTextureId) << "," <<
+      static_cast<int>(specularTextureId) << "," <<
+      static_cast<int>(reflectionTextureId) << "," <<
+      static_cast<int>(transparencyTextureId) << "," <<
+      static_cast<float>(specValue) << "," <<
+      static_cast<float>(specPower) << "," <<
+      static_cast<float>(specCoef ) << "," <<
+      static_cast<float>(innerIllumination) << "," <<
+      static_cast<float>(illuminationDiffusion) << "," <<
+      static_cast<float>(illuminationPropagation) << "," <<
+      fastTransparency << ")");
+
    gKernel->setMaterial(
       index, 
       static_cast<float>(color_r), 
@@ -391,13 +466,6 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
       static_cast<float>(illuminationPropagation),
       (fastTransparency==1)
       );
-   /*
-   if( innerIllumination!=0.f )
-   {
-      gKernel->reorganizeLights();
-      gKernel->streamDataToGPU();
-   }
-   */
    return 0;
 }
 
@@ -411,7 +479,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int&    out_procedural,
    int&    out_wireframe, int&    out_wireframeDepth,
    double& out_transparency,
-   int&    out_diffuseTextureId, int& out_bumpTextureId, int& out_normalTextureId, int& out_specularTextureId,
+   int&    out_diffuseTextureId, int& out_bumpTextureId, int& out_normalTextureId, int& out_specularTextureId, int& out_reflectionTextureId, int& out_transparencyTextureId,
    double& out_specValue, double& out_specPower, double& out_specCoef,
    double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation,
    int&    out_fastTransparency)
@@ -422,13 +490,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    bool  procedural;
    bool  wireframe;
    int   wireframeDepth;
-   int   diffuseTextureId, normalTextureId, bumpTextureId, specularTextureId;
+   int   diffuseTextureId, normalTextureId, bumpTextureId, specularTextureId, reflectionTextureId, transparencyTextureId;
    bool  fastTransparency;
    int returnValue = gKernel->getMaterialAttributes(
       in_index, 
       color_r, color_g, color_b,
       noise, reflection, refraction, procedural, wireframe, wireframeDepth, transparency, 
-      diffuseTextureId, bumpTextureId, normalTextureId, specularTextureId, specValue, specPower, specCoef, innerIllumination, 
+      diffuseTextureId, bumpTextureId, normalTextureId, specularTextureId, reflectionTextureId, transparencyTextureId,
+      specValue, specPower, specCoef, innerIllumination, 
       illuminationDiffusion, illuminationPropagation, fastTransparency );
 
    out_color_r = static_cast<double>(color_r);
@@ -441,6 +510,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    out_diffuseTextureId = static_cast<int>(diffuseTextureId);
    out_bumpTextureId = static_cast<int>(bumpTextureId);
    out_normalTextureId = static_cast<int>(normalTextureId);
+   out_specularTextureId = static_cast<int>(specularTextureId);
+   out_reflectionTextureId = static_cast<int>(reflectionTextureId);
+   out_transparencyTextureId = static_cast<int>(transparencyTextureId);
    out_procedural = procedural ? 1 : 0;
    out_wireframe = wireframe ? 1 : 0;
    out_wireframeDepth = wireframeDepth;
@@ -480,9 +552,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
-   char*  filename,
-   int    materialId,
-   double scale)
+   char*   filename,
+   int     materialId,
+   double  scale,
+   double& height)
 {
    LOG_INFO(3,"RayTracer_LoadOBJModel");
    Vertex center={0.f,0.f,0.f};
@@ -499,6 +572,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
       true,
       materialId,
       false);
+   height=-minPos.y/2.f;
    return gKernel->getNbActivePrimitives();
 }
 

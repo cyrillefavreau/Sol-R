@@ -6,7 +6,7 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-//#define ADVANCED_GEOMETRY
+#define ADVANCED_GEOMETRY
 
 // Debug Delphi
 #define TEST

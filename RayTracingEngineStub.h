@@ -21,6 +21,10 @@
  *
  */
 
+// --------------------------------------------------------------------
+// IMPORTANT!!! C++ exceptions must be disabled in the compiler options
+// --------------------------------------------------------------------
+
 #pragma once
 
 #ifdef WIN32
@@ -38,7 +42,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int graphicsLevel, int nbRayIterations, double transparentColor,
    double viewDistance, double shadowIntensity,
    int supportFor3DVision, double width3DVision,
-   double bgColorR, double bgColorG, double bgColorB,
+   double bgColorR, double bgColorG, double bgColorB, double bgColorA,
    int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D );
 
@@ -85,6 +89,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitive(
    int index,
    double rx, double ry, double rz,
    double ax, double ay, double az);
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives( 
    int fromBoxId, int toBoxId,
    double rx, double ry, double rz,
@@ -94,8 +99,21 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveMaterial( 
    int    index,
    int    materialId);
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial( 
    int    index);
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveNormals( 
+   int    index,
+   double n0_x, double n0_y, double n0_z,
+   double n1_x, double n1_y, double n1_z,
+   double n2_x, double n2_y, double n2_z );
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveTextureCoordinates( 
+   int    index,
+   double t0_x, double t0_y, double t0_z,
+   double t1_x, double t1_y, double t1_z,
+   double t2_x, double t2_y, double t2_z );
 
 // ---------- Materials ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_AddMaterial();
@@ -122,7 +140,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int&    procedural,
    int&    wireframe, int& wireframeDepth,
    double& transparency,
-   int& diffuseTextureId, int& bumpTextureId, int& normalTextureId, int& specularTextureId,
+   int& diffuseTextureId, int& bumpTextureId, int& normalTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId,
    double& specValue, double& specPower, double& specCoef,
    double& innerIllumination, double& illuminationDiffusion, double& illuminationPropagation,
    int&    fastTransparency);
@@ -149,9 +167,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
 
 // ---------- OBJ models ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
-   char*  filename,
-   int    materialId,
-   double scale);
+   char*   filename,
+   int     materialId,
+   double  scale,
+   double& height);
 
 // ---------- File marshaller ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile( char* filename);

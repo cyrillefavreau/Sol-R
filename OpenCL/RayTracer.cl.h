@@ -9,7 +9,7 @@ void getKernelCode(std::string& gOpenCLCode) {
   gOpenCLCode+="τωπεδεζ ζμοατ         ÒαξδονΒυζζες»";
   gOpenCLCode+="τωπεδεζ ιξτ           Μανπ»";
   gOpenCLCode+="";
-  gOpenCLCode+="――£δεζιξε ΑΔΦΑΞΓΕΔίΗΕΟΝΕΤÒΩ";
+  gOpenCLCode+="£δεζιξε ΑΔΦΑΞΓΕΔίΗΕΟΝΕΤÒΩ";
   gOpenCLCode+="";
   gOpenCLCode+="―― Δεβυη Δεμπθι";
   gOpenCLCode+="£δεζιξε ΤΕΣΤ";

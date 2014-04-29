@@ -363,6 +363,11 @@ Vertex PDBReader::loadAtomsFromFile(
 								objectScale.z*distanceRatio*atomDistance*(halfCenter.z - center.z),
 								objectScale.x*stickRadius, 0.f,0.f,
                         (geometryType==gtSticks) ? atom.materialId : 11 );
+                     Vertex vt0={0.f,0.f,0.f};
+                     Vertex vt1={1.f,1.f,0.f};
+                     Vertex vt2={0.f,0.f,0.f};
+							cudaKernel.setPrimitiveTextureCoordinates( 
+								nb, vt0, vt1, vt2 );
 						}
 					}
 					it2++;
@@ -382,6 +387,9 @@ Vertex PDBReader::loadAtomsFromFile(
 			if( addAtom )
 			{
             // Enveloppe
+            Vertex vt0={0.f,0.f,0.f};
+            Vertex vt1={1.f,1.f,0.f};
+            Vertex vt2={0.f,0.f,0.f};
             if( geometryType==gtIsoSurface && atom.isBackbone && atom.chainId%2==0 )
             {
 					nb = cudaKernel.addPrimitive( ptSphere );
@@ -392,6 +400,8 @@ Vertex PDBReader::loadAtomsFromFile(
 					   objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
 					   objectScale.x*radius*2.f, 0.f, 0.f,
 						10 );
+					cudaKernel.setPrimitiveTextureCoordinates( 
+						nb, vt0, vt1, vt2 );
             }
 
 				nb = cudaKernel.addPrimitive( ptSphere );
@@ -402,6 +412,8 @@ Vertex PDBReader::loadAtomsFromFile(
 					objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
 					objectScale.x*radius, 0.f, 0.f,
                m );
+				cudaKernel.setPrimitiveTextureCoordinates( 
+					nb, vt0, vt1, vt2 );
 			}
 		}
 		++it;

@@ -215,7 +215,7 @@ void CudaKernel::render_begin( const float timer )
             m_occupancyParameters,
             m_hMaterials, nbMaterials, 
             m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
-         LOG_INFO(3, "Transfering " << nbMaterials << " materials");
+         LOG_INFO(1, "Transfering " << nbMaterials << " materials");
 		   m_materialsTransfered = true;
 	   }
 

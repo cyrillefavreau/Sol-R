@@ -1204,7 +1204,7 @@ void GPUKernel::streamDataToGPU()
 
    for( int i(0); i<m_nbActiveBoxes[m_frame]; ++i)
    {
-      if( i+m_hBoundingBoxes[i].indexForNextBox.x>=m_nbActiveBoxes[m_frame]) 
+      if( i+m_hBoundingBoxes[i].indexForNextBox.x>m_nbActiveBoxes[m_frame]) 
       {
          LOG_ERROR("Box " << i << " --> " << i+m_hBoundingBoxes[i].indexForNextBox.x );
       }
@@ -1721,19 +1721,31 @@ void GPUKernel::setMaterial(
    float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
    bool fastTransparency)
 {
-	LOG_INFO(3,"GPUKernel::setMaterial( " << 
-		index << "," <<
-		"color=(" << r << "," << g << "," << b << ")," <<
-		"reflection=" << reflection << "," <<
-		"refraction=" << refraction << "," <<
-		"transparency=" << transparency << "," <<
-		"procedural=" << (procedural ? "true" : "false") << "," <<
-		"wireframe=" << (wireframe ? "true" : "false") << "," <<
-		"textureIds=(" << diffuseTextureId << "," << normalTextureId << "," << bumpTextureId << "," << specularTextureId << ")," <<
-		"specular=(" << specValue << "," << specPower << "," << specCoef << ")," << 
-		"innerIllumination=" << innerIllumination << "," 
-		"fastTransparency=" << fastTransparency
-		);
+   LOG_INFO(3, "GPUKernel::setMaterial (" << 
+      index << "," << 
+      static_cast<float>(r) << "," <<
+      static_cast<float>(g) << "," <<
+      static_cast<float>(b) << "," <<
+      static_cast<float>(noise) << "," <<
+      static_cast<float>(reflection) << "," <<
+      static_cast<float>(refraction) << "," <<
+      procedural << "," <<
+      wireframe << "," <<
+      static_cast<int>(wireframeWidth) << "," <<
+      static_cast<float>(transparency) << "," <<
+      static_cast<int>(diffuseTextureId) << "," <<
+      static_cast<int>(normalTextureId) << "," <<
+      static_cast<int>(bumpTextureId) << "," <<
+      static_cast<int>(specularTextureId) << "," <<
+      static_cast<int>(reflectionTextureId) << "," <<
+      static_cast<int>(transparentTextureId) << "," <<
+      static_cast<float>(specValue) << "," <<
+      static_cast<float>(specPower) << "," <<
+      static_cast<float>(specCoef ) << "," <<
+      static_cast<float>(innerIllumination) << "," <<
+      static_cast<float>(illuminationDiffusion) << "," <<
+      static_cast<float>(illuminationPropagation) << "," <<
+      fastTransparency << ")");
 
    if( index>=0 && index<NB_MAX_MATERIALS ) 
 	{
@@ -1867,7 +1879,7 @@ int GPUKernel::getMaterialAttributes(
 	bool&  procedural,
 	bool&  wireframe, int& wireframeDepth,
 	float& transparency,
-	int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId,
+	int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId,
 	float& specValue, float& specPower, float& specCoef,
    float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
    bool& fastTransparency)
@@ -1887,6 +1899,8 @@ int GPUKernel::getMaterialAttributes(
 		bumpTextureId    = m_hMaterials[index].textureIds.y;
 		normalTextureId  = m_hMaterials[index].textureIds.z;
 		specularTextureId= m_hMaterials[index].textureIds.w;
+		reflectionTextureId= m_hMaterials[index].advancedTextureOffset.x;
+		transparencyTextureId= m_hMaterials[index].advancedTextureOffset.y;
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;
@@ -2158,7 +2172,7 @@ TextureInformation& GPUKernel::getTextureInformation(const int index)
 
 void GPUKernel::realignTexturesAndMaterials()
 {
-   LOG_INFO(3,"Realign Textures And Materials");
+   LOG_INFO(1,"Realign Textures And Materials");
    for( int i(0);i<m_nbActiveMaterials; ++i)
    {
       int diffuseTextureId  = m_hMaterials[i].textureIds.x;
