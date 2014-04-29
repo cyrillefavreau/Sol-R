@@ -44,7 +44,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int supportFor3DVision, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB, double bgColorA,
    int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
-   int outputType, int timer, int fogEffect, int isometric3D );
+   int outputType, int timer, int fogEffect, int isometric3D,
+   int doubleSidedTriangles, int gradientBackGround, int advancedFeatures );
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 );

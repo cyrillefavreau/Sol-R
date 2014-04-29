@@ -550,8 +550,8 @@ __global__ void k_standardRenderer(
    if( sceneInfo.parameters.z==1 )
    {
       // Randomize light intensity
-	   int rindex = index;
-	   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+	   int rindex = index+sceneInfo.misc.y;
+	   rindex %= (sceneInfo.width.x*sceneInfo.height.x);
       color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
    }
    

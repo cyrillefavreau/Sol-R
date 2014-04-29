@@ -57,7 +57,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int renderingType, double width3DVision,
    double bgColorR, double bgColorG, double bgColorB, double bgColorA,
    int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
-   int outputType, int timer, int fogEffect, int isometric3D)
+   int outputType, int timer, int fogEffect, int isometric3D, 
+   int doubleSidedTriangles, int gradientBackGround, int advancedFeatures )
 {
    LOG_INFO(1,"RayTracer_SetSceneInfo (" << 
       width << "," <<
@@ -101,6 +102,10 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    gSceneInfoStub.misc.y                    = timer;
    gSceneInfoStub.misc.z                    = fogEffect;
    gSceneInfoStub.misc.w                    = isometric3D;
+   gSceneInfoStub.parameters.x              = doubleSidedTriangles;
+   gSceneInfoStub.parameters.y              = gradientBackGround;
+   gSceneInfoStub.parameters.z              = advancedFeatures;
+   gSceneInfoStub.parameters.w              = 0; // Not used
    return 0;
 }
 

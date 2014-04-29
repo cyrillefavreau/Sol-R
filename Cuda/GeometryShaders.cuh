@@ -178,7 +178,7 @@ __device__ __INLINE__ float processShadows(
 						Vertex O_I = intersection-r.origin;
 						Vertex O_L = r.direction;
 						float l = length(O_I);
-						if( l>500.f && l<length(O_L) ) // ??? 500.f
+						if( l>EPSILON && l<length(O_L) ) // ??? 0.f
 						{
                      float ratio = shadowIntensity*sceneInfo.shadowIntensity.x;
                      if( materials[primitive.materialId.x].transparency.x != 0.f )
