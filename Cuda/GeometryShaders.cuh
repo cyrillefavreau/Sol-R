@@ -369,7 +369,7 @@ __device__ __INLINE__ float4 primitiveShader(
 					         blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
 					         blinnTerm = specular.x * pow(blinnTerm,specular.y);
-                        blinnTerm *= (1.f-material.transparency.x);
+                        //blinnTerm *= (1.f-material.transparency.x);
                         blinnTerm *= (1.f-photonEnergy);
                         float4 b=lightInformation[cptLamp].color*lightInformation[cptLamp].color.w*blinnTerm;
 					         totalBlinn = (length(totalBlinn)>length(b)) ? totalBlinn : b;

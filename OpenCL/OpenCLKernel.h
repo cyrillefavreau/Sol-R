@@ -41,6 +41,8 @@
 #include "../Consts.h"
 #include "../GPUKernel.h"
 
+const long MAX_DEVICES = 10;
+
 class RAYTRACINGENGINE_API OpenCLKernel : public GPUKernel
 {
 
@@ -74,6 +76,25 @@ public:
 	// ---------- Rendering ----------
 	void render_begin( const float timer );
    void render_end();
+
+public:
+
+   static void populateOpenCLInformation();
+   static int getNumPlatforms();
+   static std::string getPlatformDescription(const int platform);
+   static int getNumDevices(const int platform);
+   static std::string getDeviceDescription(const int platform, const int device);
+
+private:
+   // Platforms
+   static cl_platform_id   m_platforms[MAX_DEVICES];
+   static cl_uint          m_numberOfPlatforms;
+   static std::string      m_platformsDescription[MAX_DEVICES];
+
+   // Devices
+   static cl_device_id     m_devices[MAX_DEVICES][MAX_DEVICES];
+   static cl_uint          m_numberOfDevices[MAX_DEVICES];
+   static std::string      m_devicesDescription[MAX_DEVICES][MAX_DEVICES];
 
 private:
 	// OpenCL Objects

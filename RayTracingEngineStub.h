@@ -36,6 +36,15 @@ typedef char* HANDLE;
 #include "DLL_API.h"
 #include "GPUKernel.h"
 
+#ifdef USE_OPENCL
+// ---------- OpenCL ----------
+extern "C" RAYTRACINGENGINE_API int RayTracer_PopulateOpenCLInformation();
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlaformCount();
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlatformDescription(int platform,char* value,int valueLength);
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLDeviceCount(int platform);
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLDeviceDescription(int platform, int device,char* value,int valueLength);
+#endif // USE_OPENCL
+
 // ---------- Scene ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int width, int height,
@@ -49,6 +58,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    int type, double param1, double param2, int param3 );
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetDraftMode(int draft);
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLogging, int platform, int device );
 extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel();

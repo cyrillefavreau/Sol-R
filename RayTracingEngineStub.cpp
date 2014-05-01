@@ -120,6 +120,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPostProcessingInfo(
    return 0;
 }
 
+extern "C" RAYTRACINGENGINE_API int RayTracer_SetDraftMode(int draft)
+{
+   gSceneInfoStub.parameters.w = draft;
+   return 0;
+}
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( 
    bool activeLogging, 
    int platform, 
@@ -614,3 +620,34 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
    return gKernel->getLight(index);
 }
 
+#ifdef USE_OPENCL
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlaformCount()
+{
+   return gKernel->getNumPlatforms();
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlatformDescription(int platform, char* value, int valueLength)
+{
+   std::string description=gKernel->getPlatformDescription(platform);
+   strncpy(value,description.c_str(),valueLength);
+   return 0;
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLDeviceCount(int platform)
+{
+   return gKernel->getNumDevices(platform);
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLDeviceDescription(int platform, int device, char* value, int valueLength)
+{
+   std::string description=gKernel->getDeviceDescription(platform, device);
+   strncpy(value,description.c_str(),valueLength);
+   return 0;
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_PopulateOpenCLInformation()
+{
+   gKernel->populateOpenCLInformation();
+   return 0;
+}
+#endif // USE_OPENCL

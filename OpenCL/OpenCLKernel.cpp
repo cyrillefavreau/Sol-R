@@ -36,13 +36,16 @@
 #include "Raytracer.cl.h"
 
 const long MAX_SOURCE_SIZE = 3*65535;
-const long MAX_DEVICES = 10;
 
-#ifdef USE_DIRECTX
-// DirectX
-clGetDeviceIDsFromD3D10NV_fn clGetDeviceIDsFromD3D10NV = NULL;
-ID3D10Device*           g_pd3dDevice = NULL; // Our rendering device
-#endif // USE_DIRECTX
+// Platforms
+cl_platform_id   OpenCLKernel::m_platforms[MAX_DEVICES];
+cl_uint          OpenCLKernel::m_numberOfPlatforms;
+std::string      OpenCLKernel::m_platformsDescription[MAX_DEVICES];
+
+// Devices
+cl_device_id     OpenCLKernel::m_devices[MAX_DEVICES][MAX_DEVICES];
+cl_uint          OpenCLKernel::m_numberOfDevices[MAX_DEVICES];
+std::string      OpenCLKernel::m_devicesDescription[MAX_DEVICES][MAX_DEVICES];
 
 /*
 * getErrorDesc
@@ -125,145 +128,92 @@ int __status=CL_SUCCESS;
 	} \
 }
 
-/*
-* OpenCLKernel constructor
-*/
-OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int selectedPlatform, int selectedDevice )
- : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox ),
-   m_platform(selectedPlatform),
-   m_device(selectedDevice),
-   m_hContext(0),
-   m_hQueue(0),
-   m_dRandoms(0),
-	m_dBitmap(0), 
-   m_dTextures(0),
-	m_dPrimitives(0), 
-   m_dPostProcessingBuffer(0),
-   m_dPrimitivesXYIds(0),
-   m_dLamps(0),
-   m_dLightInformation(0),
-   m_preferredWorkGroupSize(0),
-   m_kStandardRenderer(0),
-   m_kAnaglyphRenderer(0),
-   m_k3DVisionRenderer(0),
-   m_kFishEyeRenderer(0),
-   m_kDefault(0),
-   m_kDepthOfField(0),
-   m_kAmbientOcclusion(0),
-   m_kRadiosity(0)
+void OpenCLKernel::populateOpenCLInformation()
 {
-   LOG_INFO(1,"Platform: " << selectedPlatform << ", Device: " << selectedDevice );
-
-	int  status(0);
-	cl_platform_id   platforms[MAX_DEVICES];
-	cl_device_id     devices[MAX_DEVICES];
-	cl_uint          ret_num_devices;
-	cl_uint          ret_num_platforms;
-
-   // TODO: Occupancy parameters
-   m_occupancyParameters.x = 1;
-   m_occupancyParameters.y = 1;
-
 	char buffer[MAX_SOURCE_SIZE];
 	size_t len;
-
-#ifdef LOGGING
-	// Initialize Log
-	LOG_INITIALIZE_ETW(
-		&GPU_OPENCLRAYTRACERMODULE,
-		&GPU_OPENCLRAYTRACERMODULE_EVENT_DEBUG,
-		&GPU_OPENCLRAYTRACERMODULE_EVENT_VERBOSE,
-		&GPU_OPENCLRAYTRACERMODULE_EVENT_INFO, 
-		&GPU_OPENCLRAYTRACERMODULE_EVENT_WARNING,
-		&GPU_OPENCLRAYTRACERMODULE_EVENT_ERROR);
-#endif // NDEBUG
-
-#if USE_KINECT
-	// Initialize Kinect
-	status = NuiInitialize( NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
-
-	m_hNextDepthFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
-	m_hNextVideoFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
-	m_hNextSkeletonEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
-
-	m_skeletons = CreateEvent( NULL, TRUE, FALSE, NULL );			 
-	status = NuiSkeletonTrackingEnable( m_skeletons, 0 );
-
-	status = NuiImageStreamOpen( NUI_IMAGE_TYPE_COLOR,                  NUI_IMAGE_RESOLUTION_640x480, 0, 2, m_hNextVideoFrameEvent, &m_pVideoStreamHandle );
-	status = NuiImageStreamOpen( NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX, NUI_IMAGE_RESOLUTION_320x240, 0, 2, m_hNextDepthFrameEvent, &m_pDepthStreamHandle );
-
-	status = NuiCameraElevationSetAngle( 0 );
-#endif // USE_KINECT
-
 	std::stringstream s;
+
    LOG_INFO(1,"--------------------------------------------------------------------------------");
 	LOG_INFO(3,"clGetPlatformIDs");
-	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, platforms, &ret_num_platforms));
-   LOG_INFO(1,"Number of platforms detected: " << ret_num_platforms);
+	CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, m_platforms, &m_numberOfPlatforms));
+   LOG_INFO(1,"Number of m_platforms detected: " << m_platforms);
 
-#if 1
-	for( cl_uint platform(0);platform<ret_num_platforms;++platform)
+	for( cl_uint platform(0);platform<m_numberOfPlatforms;++platform)
    {
 		// Platform details
+      std::string platformDescription;
       LOG_INFO(1,"----------------------------------------");
 		LOG_INFO(1, "Platform " << platform );
       LOG_INFO(1,"----------------------------------------");
-		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_PROFILE, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
-      LOG_INFO(1, "  Profile    : " << buffer);
-		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_VERSION, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
-      LOG_INFO(1, "  Version    : " << buffer);
-		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_NAME, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
+		
+      CHECKSTATUS(clGetPlatformInfo( m_platforms[platform], CL_PLATFORM_NAME, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
       LOG_INFO(1, "  Name       : " << buffer);
-		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_VENDOR, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
+      platformDescription = buffer;
+		
+      CHECKSTATUS(clGetPlatformInfo( m_platforms[platform], CL_PLATFORM_VERSION, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
+      LOG_INFO(1, "  Version    : " << buffer);
+      platformDescription += " (";
+      platformDescription += buffer;
+		
+      CHECKSTATUS(clGetPlatformInfo( m_platforms[platform], CL_PLATFORM_VENDOR, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
       LOG_INFO(1, "  Vendor     : " << buffer);
-		CHECKSTATUS(clGetPlatformInfo( platforms[platform], CL_PLATFORM_EXTENSIONS, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
+      platformDescription += ", ";
+      platformDescription += buffer;
+      platformDescription += ")";
+		
+      CHECKSTATUS(clGetPlatformInfo( m_platforms[platform], CL_PLATFORM_PROFILE, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
+      LOG_INFO(1, "  Profile    : " << buffer);
+		
+      CHECKSTATUS(clGetPlatformInfo( m_platforms[platform], CL_PLATFORM_EXTENSIONS, MAX_SOURCE_SIZE, buffer, &len )); buffer[len] = 0; 
       LOG_INFO(1, "  Extensions : " << buffer);
 
-      if( clGetDeviceIDs(platforms[platform], /*CL_DEVICE_TYPE_ALL*/ CL_DEVICE_TYPE_CPU, MAX_DEVICES, devices, &ret_num_devices) == CL_SUCCESS )
-      {
-		   // Devices
-		   for( cl_uint device=0; device<ret_num_devices; ++device)
-         {
-            LOG_INFO(1,"   -------------------------------------");
-            if( platform==selectedPlatform && device==selectedDevice )
-            {
-               LOG_INFO(1,"   Device " << device << " --- Selected platform and device");
-               m_hDeviceId = devices[device];
-	            m_hContext = clCreateContext(NULL, ret_num_devices, &devices[0], NULL, NULL, &status );
-               CHECKSTATUS(status);
-	            m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
-               CHECKSTATUS(status);
-            }
-            else
-            {
-   		      LOG_INFO(1,"   Device " << device);
-            }
-            LOG_INFO(1,"   -------------------------------------");
+      m_platformsDescription[platform] = platformDescription;
 
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
+      //if( clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, m_devices[platform], &m_numberOfDevices[platform]) == CL_SUCCESS )
+      if( clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, m_devices[platform], &m_numberOfDevices[platform]) == CL_SUCCESS )
+      {
+		   // m_devices
+		   for( cl_uint device=0; device<m_numberOfDevices[platform]; ++device)
+         {
+            std::string deviceDescription;
+			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
 			   LOG_INFO(1,"    DEVICE_NAME                        : " << buffer);
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_VENDOR, sizeof(buffer), buffer, NULL));
+            deviceDescription=buffer;
+			   
+            CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_VENDOR, sizeof(buffer), buffer, NULL));
 			   LOG_INFO(1,"    DEVICE_VENDOR                      : " << buffer);
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_VERSION, sizeof(buffer), buffer, NULL));
+            deviceDescription+=" (";
+            deviceDescription+=buffer;
+
+            CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_VERSION, sizeof(buffer), buffer, NULL));
 			   LOG_INFO(1,"    DEVICE_VERSION                     : " << buffer);
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DRIVER_VERSION, sizeof(buffer), buffer, NULL));
+            deviceDescription+=", ";
+            deviceDescription+=buffer;
+
+            CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DRIVER_VERSION, sizeof(buffer), buffer, NULL));
 			   LOG_INFO(1,"    DRIVER_VERSION                     : " << buffer);
+            deviceDescription+=", ";
+            deviceDescription+=buffer;
+            deviceDescription+=")";
+
+            m_devicesDescription[platform][device]=deviceDescription;
 
 			   cl_uint value;
 			   cl_uint values[10];
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(value), &value, NULL));
+			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(value), &value, NULL));
 			   LOG_INFO(1,"    DEVICE_MAX_COMPUTE_UNITS           : " << value);
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(value), &value, NULL));
+			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(value), &value, NULL));
 			   LOG_INFO(1,"    CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS : " << value);
 			   //CHECKSTATUS(clGetDeviceInfo(m_hDevices[d], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(value), &value, NULL));
 			   //LOG_INFO(1,"    CL_DEVICE_MAX_WORK_GROUP_SIZE      : " << value << "\n";
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(values), &values, NULL));
+			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(values), &values, NULL));
 			   LOG_INFO(1,"    CL_DEVICE_MAX_WORK_ITEM_SIZES      : " << values[0] << ", " << values[1] << ", " << values[2]);
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(value), &value, NULL));
+			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(value), &value, NULL));
 			   LOG_INFO(1,"    CL_DEVICE_MAX_CLOCK_FREQUENCY      : " << value);
          
 			   cl_device_type infoType;
-			   CHECKSTATUS(clGetDeviceInfo(devices[device], CL_DEVICE_TYPE, sizeof(infoType), &infoType, NULL));
+			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_TYPE, sizeof(infoType), &infoType, NULL));
 			   LOG_INFO(1,"    DEVICE_TYPE                        : ");
 			   if (infoType & CL_DEVICE_TYPE_DEFAULT) 
             {
@@ -299,9 +249,77 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
       }
 	}
    LOG_INFO(1,"--------------------------------------------------------------------------------");
-#else
-	CHECKSTATUS(clGetDeviceIDs(platforms[platform], CL_DEVICE_TYPE_ALL, 1, m_hDevices, &ret_num_devices));
-#endif // 0
+}
+
+/*
+* OpenCLKernel constructor
+*/
+OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int selectedPlatform, int selectedDevice )
+ : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox ),
+   m_platform(selectedPlatform),
+   m_device(selectedDevice),
+   m_hContext(0),
+   m_hQueue(0),
+   m_dRandoms(0),
+	m_dBitmap(0), 
+   m_dTextures(0),
+	m_dPrimitives(0), 
+   m_dPostProcessingBuffer(0),
+   m_dPrimitivesXYIds(0),
+   m_dLamps(0),
+   m_dLightInformation(0),
+   m_preferredWorkGroupSize(0),
+   m_kStandardRenderer(0),
+   m_kAnaglyphRenderer(0),
+   m_k3DVisionRenderer(0),
+   m_kFishEyeRenderer(0),
+   m_kDefault(0),
+   m_kDepthOfField(0),
+   m_kAmbientOcclusion(0),
+   m_kRadiosity(0)
+{
+   LOG_INFO(1,"Platform: " << selectedPlatform << ", Device: " << selectedDevice );
+
+	int  status(0);
+   populateOpenCLInformation();
+
+   // TODO: Occupancy parameters
+   m_occupancyParameters.x = 1;
+   m_occupancyParameters.y = 1;
+
+#ifdef LOGGING
+	// Initialize Log
+	LOG_INITIALIZE_ETW(
+		&GPU_OPENCLRAYTRACERMODULE,
+		&GPU_OPENCLRAYTRACERMODULE_EVENT_DEBUG,
+		&GPU_OPENCLRAYTRACERMODULE_EVENT_VERBOSE,
+		&GPU_OPENCLRAYTRACERMODULE_EVENT_INFO, 
+		&GPU_OPENCLRAYTRACERMODULE_EVENT_WARNING,
+		&GPU_OPENCLRAYTRACERMODULE_EVENT_ERROR);
+#endif // NDEBUG
+
+#if USE_KINECT
+	// Initialize Kinect
+	status = NuiInitialize( NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
+
+	m_hNextDepthFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
+	m_hNextVideoFrameEvent = CreateEvent( NULL, TRUE, FALSE, NULL ); 
+	m_hNextSkeletonEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
+
+	m_skeletons = CreateEvent( NULL, TRUE, FALSE, NULL );			 
+	status = NuiSkeletonTrackingEnable( m_skeletons, 0 );
+
+	status = NuiImageStreamOpen( NUI_IMAGE_TYPE_COLOR,                  NUI_IMAGE_RESOLUTION_640x480, 0, 2, m_hNextVideoFrameEvent, &m_pVideoStreamHandle );
+	status = NuiImageStreamOpen( NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX, NUI_IMAGE_RESOLUTION_320x240, 0, 2, m_hNextDepthFrameEvent, &m_pDepthStreamHandle );
+
+	status = NuiCameraElevationSetAngle( 0 );
+#endif // USE_KINECT
+
+   // OpenCL
+   m_hDeviceId = m_devices[selectedPlatform][selectedDevice];
+	m_hContext = clCreateContext(NULL, m_numberOfDevices[selectedPlatform], &m_devices[selectedPlatform][selectedDevice], NULL, NULL, &status );
+   CHECKSTATUS(status);
+	m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
 
 	// Eye position
 	m_viewPos.x =   0.0f;
@@ -420,26 +438,26 @@ void OpenCLKernel::compileKernels(
 #if 0
 		// Generate Binaries!!!
 		// Obtain the length of the binary data that will be queried, for each device
-      LOG_INFO(1,"Get number of devices");
-		size_t ret_num_devices = 1;
-      CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint),&ret_num_devices,NULL));
-      LOG_INFO(1, "  " << ret_num_devices << " device(s) detected");
+      LOG_INFO(1,"Get number of m_devices");
+		size_t m_numberOfDevices[platform] = 1;
+      CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint),&m_numberOfDevices[platform],NULL));
+      LOG_INFO(1, "  " << m_numberOfDevices[platform] << " device(s) detected");
 
       LOG_INFO(1,"Get binary sizes");
 		size_t binaries_sizes[MAX_DEVICES];
-		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARY_SIZES,ret_num_devices*sizeof(size_t),binaries_sizes,NULL));
+		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARY_SIZES,m_numberOfDevices[platform]*sizeof(size_t),binaries_sizes,NULL));
 
 		char **binaries = new char*[MAX_DEVICES];
-		for (size_t i = 0; i < ret_num_devices; i++)
+		for (size_t i = 0; i < m_numberOfDevices[platform]; i++)
       {
 			binaries[i] = new char[binaries_sizes[i]+1];
          LOG_INFO(1,"Binary " << i << ", Size=" << binaries_sizes[i]);
       }
 
       LOG_INFO(1,"Get binaries");
-		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARIES,ret_num_devices*sizeof(size_t),binaries,NULL));                        
+		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARIES,m_numberOfDevices[platform]*sizeof(size_t),binaries,NULL));                        
 
-		for (size_t i = 0; i < ret_num_devices; i++) 
+		for (size_t i = 0; i < m_numberOfDevices[platform]; i++) 
       {
          LOG_INFO(1,"Writting kernel" << i << ".ptx to disk");
 			binaries[i][binaries_sizes[i]] = '\0';
@@ -451,7 +469,7 @@ void OpenCLKernel::compileKernels(
 			fclose(fp);
 		}
 
-		for (size_t i = 0; i < ret_num_devices; i++)
+		for (size_t i = 0; i < m_numberOfDevices[platform]; i++)
       {
 			delete [] binaries[i];
       }
@@ -704,8 +722,7 @@ void OpenCLKernel::render_begin( const float timer )
       LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
       SceneInfo sceneInfo=m_sceneInfo;
-      //if( m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
-      //if( m_sceneInfo.pathTracingIteration.x>=20/*m_sceneInfo.maxPathTracingIterations.x-1*/ ) sceneInfo.misc.w = 2; // Antialiasing on last iteration
+      if( m_sceneInfo.parameters.w==1 && m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
 
       size_t szLocalWorkSize[] = { 1, 1 };
       size_t szGlobalWorkSize[] = { m_sceneInfo.width.x/szLocalWorkSize[0], m_sceneInfo.height.x/szLocalWorkSize[1] };
@@ -1028,4 +1045,24 @@ void OpenCLKernel::reshape()
 	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(RandomBuffer),         0, &errorCode);
    m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PostProcessingBuffer), 0, &errorCode);
    m_dPrimitivesXYIds     = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PrimitiveXYIdBuffer),  0, &errorCode);
+}
+
+int OpenCLKernel::getNumPlatforms()
+{
+   return m_numberOfPlatforms;
+}
+
+int OpenCLKernel::getNumDevices(const int platform)
+{
+   return m_numberOfDevices[platform];
+}
+
+std::string OpenCLKernel::getPlatformDescription(const int platform)
+{
+   return m_platformsDescription[platform];
+}
+
+std::string OpenCLKernel::getDeviceDescription(const int platform, const int device)
+{
+   return m_devicesDescription[platform][device];
 }

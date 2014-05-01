@@ -1506,7 +1506,7 @@ float processShadows(
                   Vertex O_I = intersection-r.origin;
                   Vertex O_L = r.direction;
                   float l = length(O_I);
-                  if( l>500.f && l<length(O_L) ) // ??? 500.f
+                  if( l>EPSILON && l<length(O_L) )
                   {
                      float ratio = shadowIntensity*(*sceneInfo).shadowIntensity;
                      if( materials[(*primitive).materialId].transparency!=0.f )
@@ -1702,7 +1702,7 @@ float4 primitiveShader(
                         blinnTerm = ( blinnTerm < 0.f) ? 0.f : blinnTerm;
 
                         blinnTerm = specular.x*pow(blinnTerm,specular.y);
-                        blinnTerm *= (1.f-(*material).transparency);
+                        //blinnTerm *= (1.f-(*material).transparency);
                         blinnTerm *= (1.f-photonEnergy);
                         (*totalBlinn).x += lightInformation[cptLamp].color.x*lightInformation[cptLamp].color.w*blinnTerm;
                         (*totalBlinn).y += lightInformation[cptLamp].color.y*lightInformation[cptLamp].color.w*blinnTerm;

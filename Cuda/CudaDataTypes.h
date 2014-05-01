@@ -76,7 +76,7 @@ struct SceneInfo
    int4    parameters;               // x: Double-sided triangles( 0:disabled, 1:enabled )
                                      // y: Gradient background( 0:disabled, 1:enabled )
                                      // z: Advanced features( 0:disabled, 1:enabled )
-                                     // w: Not used
+                                     // w: Draft mode(0:disabled, 1:enabled)
 };
 
 // Ray structure
