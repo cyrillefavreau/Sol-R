@@ -207,14 +207,22 @@ void CudaKernel::render_begin( const float timer )
          m_primitivesTransfered = true;
       }
 	
-      if( !m_materialsTransfered )
+      if(!m_randomsTransfered)
+      {
+		   h2d_randoms(
+            m_occupancyParameters,
+            m_hRandoms);
+         LOG_INFO(1, "Transfering random numbers");
+		   m_randomsTransfered = true;
+      }
+
+      if(!m_materialsTransfered)
 	   {
          realignTexturesAndMaterials();
 
 		   h2d_materials(
             m_occupancyParameters,
-            m_hMaterials, nbMaterials, 
-            m_hRandoms,   m_sceneInfo.width.x*m_sceneInfo.height.x);
+            m_hMaterials, nbMaterials);
          LOG_INFO(1, "Transfering " << nbMaterials << " materials");
 		   m_materialsTransfered = true;
 	   }

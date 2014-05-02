@@ -1270,25 +1270,25 @@ extern "C" void reshape_scene(
 	   FREECUDARESOURCE(d_primitivesXYIds[device]);
 
       // Randoms
-      size_t size=sceneInfo.width.x*sceneInfo.height.x*sizeof(RandomBuffer);
+      size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*sizeof(RandomBuffer);
       checkCudaErrors(cudaMalloc( (void**)&d_randoms[device], size));
       LOG_INFO(3, "d_randoms: " << size << " bytes" );
       totalMemoryAllocation += size;
 
 	   // Post-processing 
-      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PostProcessingBuffer)/occupancyParameters.x;
+      size = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*sizeof(PostProcessingBuffer)/occupancyParameters.x;
 	   checkCudaErrors(cudaMalloc( (void**)&d_postProcessingBuffer[device], size));
       LOG_INFO(3, "d_postProcessingBuffer: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       // Bitmap
-      size = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
+      size = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
 	   checkCudaErrors(cudaMalloc( (void**)&d_bitmap[device], size));
       LOG_INFO(3, "d_bitmap: " << size << " bytes" );
       totalMemoryAllocation += size;
 
       // Primitive IDs
-      size = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
+      size = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
       checkCudaErrors(cudaMalloc( (void**)&d_primitivesXYIds[device], size));
       LOG_INFO(3, "d_primitivesXYIds: " << size << " bytes" );
       totalMemoryAllocation += size;
@@ -1469,15 +1469,23 @@ extern "C" void h2d_scene(
 extern "C" void h2d_materials( 
    int2 occupancyParameters,
 	Material*  materials, 
-   int  nbActiveMaterials,
-	float*     randoms,   
-   int  nbRandoms)
+   int  nbActiveMaterials)
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
 	   checkCudaErrors(cudaMemcpyAsync( d_materials[device], materials, nbActiveMaterials*sizeof(Material), cudaMemcpyHostToDevice, d_streams[device][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_randoms[device],   randoms,   nbRandoms*sizeof(float), cudaMemcpyHostToDevice, d_streams[device][0] ));
+   }
+}
+
+extern "C" void h2d_randoms( 
+   int2 occupancyParameters,
+	float*     randoms)
+{
+   for( int device(0); device<occupancyParameters.x; ++device )
+   {
+      checkCudaErrors(cudaSetDevice(device));
+      checkCudaErrors(cudaMemcpyAsync( d_randoms[device],randoms,MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*sizeof(float), cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 

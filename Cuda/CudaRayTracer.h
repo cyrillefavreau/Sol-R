@@ -61,9 +61,11 @@ extern "C" void h2d_scene(
 extern "C" void h2d_materials( 
    int2    occupancyParameters,
 	Material*     materials, 
-   int     nbActiveMaterials,
-   RandomBuffer* randoms,   
-   int     nbRandoms );
+   int     nbActiveMaterials);
+
+extern "C" void h2d_randoms( 
+   int2 occupancyParameters,
+	float*     randoms);
 
 extern "C" void h2d_textures( 
    int2          occupancyParameters,

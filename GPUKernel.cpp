@@ -33,6 +33,10 @@
 #include <iostream>
 #include <vector>
 
+// JPeg
+#include "jpge.h"
+
+// Raytracing
 #include "OpenGL/rtgl.h"
 #include "GPUKernel.h"
 #include "Logging.h"
@@ -169,6 +173,7 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
    m_primitivesTransfered(false),
 	m_materialsTransfered(false),
    m_texturesTransfered(false),
+   m_randomsTransfered(false),
    m_doneWithAdding(false),
    m_addingIndex(0),
    m_refresh(true),
@@ -275,7 +280,27 @@ void GPUKernel::initBuffers()
    // Textures
    memset(m_hTextures,0,NB_MAX_TEXTURES*sizeof(TextureInformation));
 
-   reshape();
+   // Randoms
+   size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
+   if(m_hRandoms) delete m_hRandoms;
+	m_hRandoms = new RandomBuffer[size];
+	int i;
+#pragma omp parallel for
+	for( i=0; i<size; ++i)
+	{
+		m_hRandoms[i] = (rand()%2000-1000)/80000.f;
+	}
+   // Primitive IDs
+   if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
+   m_hPrimitivesXYIds = new PrimitiveXYIdBuffer[size];
+   memset(m_hPrimitivesXYIds,0,size*sizeof(PrimitiveXYIdBuffer));
+
+   // Bitmap
+   if( m_bitmap ) delete m_bitmap;
+   size*=gColorDepth;
+   m_bitmap = new BitmapBuffer[size];
+   memset(m_bitmap,0,size);
+   LOG_INFO(1, m_bitmap << " - Bitmap Size=" << size);
 
 #ifdef USE_OCULUS
    initializeOVR();
@@ -347,6 +372,7 @@ void GPUKernel::cleanup()
 	m_materialsTransfered = false;
    m_primitivesTransfered = false;
    m_texturesTransfered = false;
+   m_randomsTransfered = false;
 
    // Morphing
    m_morph = 0.f;
@@ -368,28 +394,7 @@ void GPUKernel::cleanup()
 
 void GPUKernel::reshape()
 {
-   size_t size=m_sceneInfo.width.x*m_sceneInfo.height.x;
-
-   // Randoms
-   if(m_hRandoms) delete m_hRandoms;
-	m_hRandoms = new RandomBuffer[size];
-	int i;
-#pragma omp parallel for
-	for( i=0; i<size; ++i)
-	{
-		m_hRandoms[i] = (rand()%2000-1000)/80000.f;
-	}
-   // Primitive IDs
-   if(m_hPrimitivesXYIds) delete m_hPrimitivesXYIds;
-   m_hPrimitivesXYIds = new PrimitiveXYIdBuffer[size];
-   memset(m_hPrimitivesXYIds,0,size*sizeof(PrimitiveXYIdBuffer));
-
-   // Bitmap
-   if( m_bitmap ) delete m_bitmap;
-   size*=gColorDepth;
-   m_bitmap = new BitmapBuffer[size];
-   memset(m_bitmap,0,size);
-   LOG_INFO(1, m_bitmap << " - Bitmap Size=" << size);
+   m_randomsTransfered=false;
 }
 
 /*
@@ -2760,6 +2765,60 @@ void GPUKernel::switchOculusVR()
       m_viewDir.z = 0.f;
    }
 
+}
+
+void GPUKernel::generateScreenshot(const std::string& filename,const int quality)
+{
+   LOG_INFO(1,"Generating screenshot " << filename << " (Quality=" << quality << "/" << m_sceneInfo.nbRayIterations.x << ")");
+   SceneInfo sceneInfo=m_sceneInfo;
+   SceneInfo bakSceneInfo=m_sceneInfo;
+   sceneInfo.width.x =MAX_BITMAP_WIDTH;
+   sceneInfo.height.x=MAX_BITMAP_HEIGHT;
+   sceneInfo.maxPathTracingIterations.x=quality;
+   for(int i(0);i<sceneInfo.maxPathTracingIterations.x;++i)
+   {
+      LOG_INFO(1,"Generating frame " << i );
+      sceneInfo.pathTracingIteration.x=i;
+      if(i==sceneInfo.maxPathTracingIterations.x-1) sceneInfo.misc.w=2; // Antialiasing on last frame
+      m_sceneInfo=sceneInfo;
+      render_begin(0);
+      render_end();
+   }
+   LOG_INFO(1,"Saving bitmap to disk");
+   size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*gColorDepth;
+   switch(sceneInfo.misc.x)
+   {
+   case otOpenGL:
+   case otJPEG:
+      {
+         BitmapBuffer* dst=new BitmapBuffer[size];
+         for(int i(0);i<size;i+=gColorDepth)
+         {
+            dst[i  ]=m_bitmap[size-i];
+            dst[i+1]=m_bitmap[size-i+1];
+            dst[i+2]=m_bitmap[size-i+2];
+         }
+         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.width.x,sceneInfo.height.x,gColorDepth,dst);
+         delete [] dst;
+         break;
+      }
+   default:
+      {
+         BitmapBuffer* dst=new BitmapBuffer[size];
+         for(int i(0);i<size;i+=gColorDepth)
+         {
+            dst[i  ]=m_bitmap[size-i+2];
+            dst[i+1]=m_bitmap[size-i+1];
+            dst[i+2]=m_bitmap[size-i  ];
+         }
+         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.width.x,sceneInfo.height.x,gColorDepth,dst);
+         delete [] dst;
+         break;
+      }
+      break;
+   }
+   m_sceneInfo=bakSceneInfo;
+   LOG_INFO(1,"Screenshot successfully generated!");
 }
 
 #ifdef USE_OCULUS

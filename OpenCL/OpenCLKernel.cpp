@@ -1039,7 +1039,7 @@ void OpenCLKernel::reshape()
    if( m_dPrimitivesXYIds ) CHECKSTATUS(clReleaseMemObject(m_dPrimitivesXYIds));
 	if( m_dBitmap ) CHECKSTATUS(clReleaseMemObject(m_dBitmap));
 
-   cl_int size = m_sceneInfo.width.x*m_sceneInfo.height.x;
+   cl_int size = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
    int errorCode;
    m_dBitmap              = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(BitmapBuffer)*gColorDepth,   0, &errorCode);
 	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(RandomBuffer),         0, &errorCode);

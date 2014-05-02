@@ -620,6 +620,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
    return gKernel->getLight(index);
 }
 
+extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char* filename, int quality)
+{
+   gKernel->generateScreenshot(filename,quality);
+   return 0;
+}
+
 #ifdef USE_OPENCL
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlaformCount()
 {

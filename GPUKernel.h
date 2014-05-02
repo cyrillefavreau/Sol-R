@@ -94,6 +94,7 @@ public:
 	virtual void render_begin( const float timer );
    virtual void render_end() = 0;
    BitmapBuffer* getBitmap() { return m_bitmap; };
+   void generateScreenshot(const std::string& filename,const int quality);
 
 public:
 
@@ -419,6 +420,7 @@ protected:
    bool   m_primitivesTransfered;
 	bool	 m_materialsTransfered;
 	bool	 m_texturesTransfered;
+   bool   m_randomsTransfered;
    // Scene Size
    Vertex m_minPos[NB_MAX_FRAMES];
    Vertex m_maxPos[NB_MAX_FRAMES];
