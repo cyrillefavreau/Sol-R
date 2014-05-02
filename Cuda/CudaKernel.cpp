@@ -315,11 +315,12 @@ void CudaKernel::render_begin( const float timer )
 void CudaKernel::render_end()
 {
    // GPU -> CPU Data transfers
+   d2h_bitmap( m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds );
+
    if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
    {
       LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
    }
-   d2h_bitmap( m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds );
    if( m_sceneInfo.misc.x == 0 )
    {
       ::glEnable(GL_TEXTURE_2D);

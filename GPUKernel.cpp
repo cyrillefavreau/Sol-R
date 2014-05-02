@@ -2777,12 +2777,12 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
    sceneInfo.maxPathTracingIterations.x=quality;
    for(int i(0);i<sceneInfo.maxPathTracingIterations.x;++i)
    {
-      LOG_INFO(1,"Generating frame " << i );
       sceneInfo.pathTracingIteration.x=i;
       if(i==sceneInfo.maxPathTracingIterations.x-1) sceneInfo.misc.w=2; // Antialiasing on last frame
       m_sceneInfo=sceneInfo;
       render_begin(0);
       render_end();
+      LOG_INFO(1,"Frame " << i << " generated");
    }
    LOG_INFO(1,"Saving bitmap to disk");
    size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*gColorDepth;

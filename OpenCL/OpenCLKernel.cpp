@@ -896,10 +896,6 @@ void OpenCLKernel::render_begin( const float timer )
 void OpenCLKernel::render_end()
 {
    LOG_INFO(3,"OpenCLKernel::render_end");
-   if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
-   {
-      LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
-   }
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
@@ -912,6 +908,10 @@ void OpenCLKernel::render_end()
    LOG_INFO(3,"Flushing queues");
 	CHECKSTATUS(clFlush(m_hQueue));
 	CHECKSTATUS(clFinish(m_hQueue));
+   if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
+   {
+      LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
+   }
    
    if( m_sceneInfo.misc.x == 0 )
    {
