@@ -12,7 +12,7 @@ typedef int           Lamp;
 #define TEST
 
 // Constants
-#define NB_MAX_ITERATIONS 20
+#define NB_MAX_ITERATIONS 10
 
 __constant int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 __constant int gColorDepth = 3;
@@ -1621,10 +1621,10 @@ float4 primitiveShader(
             int t = (index*3+(*sceneInfo).misc.y)%((*sceneInfo).width*(*sceneInfo).height);
             __constant Material* m=&materials[lightInformation[cptLamp].attribute.y];
 
-            if( lightInformation[cptLamp].attribute.x>=0 && lightInformation[cptLamp].attribute.x<nbActivePrimitives)
+            if( (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS && lightInformation[cptLamp].attribute.x>=0 && lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
                t = t%((*sceneInfo).width*(*sceneInfo).height-3);
-               float a=((*sceneInfo).pathTracingIteration<(*sceneInfo).maxPathTracingIterations) ? ((*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations)) : 1.f;
+               float a=(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
                center.x += (*m).innerIllumination.y*randoms[t  ]*a;
                center.y += (*m).innerIllumination.y*randoms[t+1]*a;
                center.z += (*m).innerIllumination.y*randoms[t+2]*a;
