@@ -285,6 +285,7 @@ void CudaKernel::render_begin( const float timer )
 
       SceneInfo sceneInfo=m_sceneInfo;
       if( m_sceneInfo.parameters.w==1 && m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
+      if( m_sceneInfo.parameters.w==1 && m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x ) sceneInfo.misc.w = 2;
 
       cudaRender(
          m_occupancyParameters,
