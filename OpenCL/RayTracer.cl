@@ -6,7 +6,7 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-#define ADVANCED_GEOMETRY
+#undef ADVANCED_GEOMETRY
 
 // Debug Delphi
 #define TEST
@@ -312,7 +312,6 @@ void makeColor(
    __global BitmapBuffer*    bitmap,
    int              index)
 {
-   int mdc_index = index*gColorDepth; 
    (*color).x = ((*color).x>1.f) ? 1.f : (*color).x;
    (*color).y = ((*color).y>1.f) ? 1.f : (*color).y; 
    (*color).z = ((*color).z>1.f) ? 1.f : (*color).z;
@@ -320,6 +319,7 @@ void makeColor(
    (*color).y = ((*color).y<0.f) ? 0.f : (*color).y; 
    (*color).z = ((*color).z<0.f) ? 0.f : (*color).z;
 
+   int mdc_index = index*gColorDepth; 
    switch( (*sceneInfo).misc.x )
    {
    case otOpenGL: 
@@ -340,7 +340,6 @@ void makeColor(
       }
    case otJPEG: 
       {
-         mdc_index = ((*sceneInfo).width*(*sceneInfo).height-index)*gColorDepth; 
          // JPEG
          bitmap[mdc_index+2] = (BitmapBuffer)((*color).z*255.f); // Blue
          bitmap[mdc_index+1] = (BitmapBuffer)((*color).y*255.f); // Green
@@ -1907,7 +1906,9 @@ inline float4 launchRay(
    int currentMaxIteration = ( (*sceneInfo).graphicsLevel<3 ) ? 1 : (*sceneInfo).nbRayIterations+(*sceneInfo).pathTracingIteration;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 
-   while( iteration<currentMaxIteration && carryon ) 
+   float accumulatedRefrection=0.f;
+   float accumulatedTransparency=0.f;
+   while( accumulatedTransparency<1.f && accumulatedRefrection<1.f && iteration<currentMaxIteration && carryon ) 
    {
       Vertex areas = {0.f,0.f,0.f,0.f};
       // If no intersection with lamps detected. Now compute intersection with Primitives
@@ -1971,6 +1972,7 @@ inline float4 launchRay(
          // ----------
          if(attributes.y!=0.f) // Transparency
          {
+            accumulatedTransparency+=(1.f-attributes.y);
             // Back of the object? If so, reset refraction to 1.f (air)
             float refraction = /*back ? 1.f :*/ attributes.z;
 
@@ -1989,7 +1991,7 @@ inline float4 launchRay(
                vectorReflection( reflectedRay.direction, O_E, normal );
                Vertex rt = closestIntersection - reflectedRay.direction;
 
-               reflectedRay.origin    = closestIntersection + rt*0.00001f;
+               reflectedRay.origin = closestIntersection + rt*0.00001f;
                reflectedRay.direction = rt;
                reflectedRatio = attributes.x;
                reflectedRays=iteration;
@@ -1999,6 +2001,7 @@ inline float4 launchRay(
          {
             if(attributes.x!=0.f) // Reflection
             {
+               accumulatedRefrection += (1.f-attributes.x);
                Vertex O_E = rayOrigin.origin - closestIntersection;
                vectorReflection( rayOrigin.direction, O_E, normal );
                reflectedTarget = closestIntersection - rayOrigin.direction;

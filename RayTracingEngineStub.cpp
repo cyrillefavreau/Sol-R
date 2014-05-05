@@ -194,7 +194,28 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuf
    gKernel->setPostProcessingInfo( gPostProcessingInfoStub );
 	gKernel->render_begin( static_cast<float>(timer) );
    gKernel->render_end();
-   memcpy(image,gKernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth);
+   if(gSceneInfoStub.misc.x==otDelphi)
+   {
+      BitmapBuffer* dst=new BitmapBuffer[gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth];
+      BitmapBuffer* src=gKernel->getBitmap();
+      for(int y(0);y<gSceneInfoStub.height.x;++y)
+      {
+         for(int x(0);x<gSceneInfoStub.width.x*gColorDepth;x+=gColorDepth)
+         {
+            int indexSrc=(y*gSceneInfoStub.width.x*gColorDepth)+x;
+            int indexDst=(y+1)*(gSceneInfoStub.width.x*gColorDepth)-x-gColorDepth;
+            dst[indexDst  ]  = src[indexSrc  ];
+            dst[indexDst+1]  = src[indexSrc+1];
+            dst[indexDst+2]  = src[indexSrc+2];
+         }
+      }
+      memcpy(image,dst,gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth);
+      delete dst;
+   }
+   else
+   {
+      memcpy(image,gKernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth);
+   }
    return 0;
 }
 

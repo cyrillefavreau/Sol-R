@@ -72,7 +72,6 @@ __device__ __INLINE__ void makeColor(
 	   }
       case otJPEG: 
 	   {
-         mdc_index = (sceneInfo.width.x*sceneInfo.height.x-index)*gColorDepth; 
 		   // JPEG
 		   bitmap[mdc_index+2] = (BitmapBuffer)(color.z*255.f); // Blue
       	bitmap[mdc_index+1] = (BitmapBuffer)(color.y*255.f); // Green
