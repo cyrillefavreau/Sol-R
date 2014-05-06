@@ -1778,59 +1778,36 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureMapping.z = TEXTURE_NONE;  // Deprecated
 		m_hMaterials[index].textureMapping.w = 0;
 		m_hMaterials[index].textureIds.x     = diffuseTextureId;
-		m_hMaterials[index].textureIds.y     = bumpTextureId;
-		m_hMaterials[index].textureIds.z     = normalTextureId;
-		m_hMaterials[index].textureIds.w     = specularTextureId;
-		m_hMaterials[index].advancedTextureIds.x     = reflectionTextureId;
-		m_hMaterials[index].advancedTextureIds.y     = transparentTextureId;
+		m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
+		m_hMaterials[index].textureIds.z     = TEXTURE_NONE;
+		m_hMaterials[index].textureIds.w     = TEXTURE_NONE;
+		m_hMaterials[index].advancedTextureIds.x     = TEXTURE_NONE;
+		m_hMaterials[index].advancedTextureIds.y     = TEXTURE_NONE;
 		m_hMaterials[index].advancedTextureIds.z     = TEXTURE_NONE;
 		m_hMaterials[index].advancedTextureIds.w     = TEXTURE_NONE;
       m_hMaterials[index].advancedTextureOffset.x  = 0;
       m_hMaterials[index].advancedTextureOffset.y  = 0;
       m_hMaterials[index].advancedTextureOffset.z  = 0;
       m_hMaterials[index].advancedTextureOffset.w  = 0;
-
-      if(bumpTextureId!=TEXTURE_NONE && bumpTextureId<m_nbActiveTextures)
-      {
-         m_hMaterials[index].textureMapping.x = m_hTextures[bumpTextureId].size.x; // Width
-         m_hMaterials[index].textureMapping.y = m_hTextures[bumpTextureId].size.y; // Height
-         m_hMaterials[index].textureMapping.w = m_hTextures[bumpTextureId].size.z; // Depth
-         m_hMaterials[index].textureOffset.y  = m_hTextures[bumpTextureId].offset;
-      }
-      else if(normalTextureId!=TEXTURE_NONE && normalTextureId<m_nbActiveTextures)
-      {
-         m_hMaterials[index].textureMapping.x = m_hTextures[normalTextureId].size.x; // Width
-         m_hMaterials[index].textureMapping.y = m_hTextures[normalTextureId].size.y; // Height
-         m_hMaterials[index].textureMapping.w = m_hTextures[normalTextureId].size.z; // Depth
-         m_hMaterials[index].textureOffset.z  = m_hTextures[normalTextureId].offset;
-      }
-      else if(specularTextureId!=TEXTURE_NONE && specularTextureId<m_nbActiveTextures)
-      {
-         m_hMaterials[index].textureMapping.x = m_hTextures[specularTextureId].size.x; // Width
-         m_hMaterials[index].textureMapping.y = m_hTextures[specularTextureId].size.y; // Height
-         m_hMaterials[index].textureMapping.w = m_hTextures[specularTextureId].size.z; // Depth
-         m_hMaterials[index].textureOffset.w  = m_hTextures[specularTextureId].offset;
-      }
-      else if(reflectionTextureId!=TEXTURE_NONE && reflectionTextureId<m_nbActiveTextures)
-      {
-         m_hMaterials[index].textureMapping.x = m_hTextures[reflectionTextureId].size.x; // Width
-         m_hMaterials[index].textureMapping.y = m_hTextures[reflectionTextureId].size.y; // Height
-         m_hMaterials[index].textureMapping.w = m_hTextures[reflectionTextureId].size.z; // Depth
-         m_hMaterials[index].advancedTextureOffset.x  = m_hTextures[reflectionTextureId].offset;
-      }
-      else if(transparentTextureId!=TEXTURE_NONE && transparentTextureId<m_nbActiveTextures)
-      {
-         m_hMaterials[index].textureMapping.x = m_hTextures[transparentTextureId].size.x; // Width
-         m_hMaterials[index].textureMapping.y = m_hTextures[transparentTextureId].size.y; // Height
-         m_hMaterials[index].textureMapping.w = m_hTextures[transparentTextureId].size.z; // Depth
-         m_hMaterials[index].advancedTextureOffset.y  = m_hTextures[transparentTextureId].offset;
-      }
-      else if( diffuseTextureId!=TEXTURE_NONE && diffuseTextureId<m_nbActiveTextures )
+      if( diffuseTextureId!=TEXTURE_NONE && diffuseTextureId<m_nbActiveTextures )
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[diffuseTextureId].size.x; // Width
          m_hMaterials[index].textureMapping.y = m_hTextures[diffuseTextureId].size.y; // Height
          m_hMaterials[index].textureMapping.w = m_hTextures[diffuseTextureId].size.z; // Depth
+         m_hMaterials[index].textureMapping.z = TEXTURE_NONE; // Deprecated
+         m_hMaterials[index].textureIds.x     = diffuseTextureId;
+         m_hMaterials[index].textureIds.y     = bumpTextureId;
+         m_hMaterials[index].textureIds.z     = normalTextureId;
+         m_hMaterials[index].textureIds.w     = specularTextureId;
          m_hMaterials[index].textureOffset.x  = m_hTextures[diffuseTextureId].offset; // Offset
+         m_hMaterials[index].textureOffset.y  = (bumpTextureId==TEXTURE_NONE) ? 0: m_hTextures[bumpTextureId].offset;
+         m_hMaterials[index].textureOffset.z  = (normalTextureId==TEXTURE_NONE) ? 0: m_hTextures[normalTextureId].offset;
+         m_hMaterials[index].textureOffset.w  = (specularTextureId==TEXTURE_NONE) ? 0: m_hTextures[specularTextureId].offset;
+         // Advanced texturess
+         m_hMaterials[index].advancedTextureIds.x     = reflectionTextureId;
+         m_hMaterials[index].advancedTextureIds.y     = transparentTextureId;
+         m_hMaterials[index].advancedTextureOffset.x  = (reflectionTextureId==TEXTURE_NONE) ? 0: m_hTextures[reflectionTextureId].offset;
+         m_hMaterials[index].advancedTextureOffset.y  = (transparentTextureId==TEXTURE_NONE) ? 0: m_hTextures[transparentTextureId].offset;
       }
       else
       {
@@ -1840,6 +1817,13 @@ void GPUKernel::setMaterial(
          m_hMaterials[index].textureMapping.z = TEXTURE_NONE; // Deprecated
          m_hMaterials[index].textureMapping.w = 3;
          m_hMaterials[index].textureIds.x     = diffuseTextureId;
+         m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
+         m_hMaterials[index].textureIds.z     = TEXTURE_NONE;
+         m_hMaterials[index].textureIds.w     = TEXTURE_NONE;
+         m_hMaterials[index].textureOffset.x  = 0;
+         m_hMaterials[index].textureOffset.y  = 0;
+         m_hMaterials[index].textureOffset.z  = 0;
+         m_hMaterials[index].textureOffset.w  = 0;
       }
 
 		m_materialsTransfered = false;
@@ -2801,7 +2785,7 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
       LOG_INFO(1,"Frame " << i << " generated");
    }
    LOG_INFO(1,"Saving bitmap to disk");
-   size_t size=sceneInfo.width.x*sceneInfo.height.x*gColorDepth;
+   size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*gColorDepth;
    switch(sceneInfo.misc.x)
    {
    case otOpenGL:

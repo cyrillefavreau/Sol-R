@@ -139,10 +139,12 @@ __device__ __INLINE__ float4 launchRay(
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( sceneInfo.graphicsLevel.x<3 ) ? 1 : sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
+   float accumulatedReflection=0.f;
+   float accunulatedTransparency=0.f;
 #ifdef PHOTON_ENERGY
 	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
 #else
-	while( iteration<currentMaxIteration && carryon ) 
+	while( accunulatedTransparency<1.f && accumulatedReflection<1.f && iteration<currentMaxIteration && carryon ) 
 #endif // PHOTON_ENERGY
 	{
       Vertex areas = {0.f,0.f,0.f};
@@ -214,6 +216,7 @@ __device__ __INLINE__ float4 launchRay(
 			// ----------
 			if( attributes.y!=0.f ) 
 			{
+            accunulatedTransparency += (1.f-attributes.y);
 				// Back of the object? If so, reset refraction to 1.f (air)
 				float refraction = /*back ? 1.f : */attributes.z;
 
@@ -242,6 +245,7 @@ __device__ __INLINE__ float4 launchRay(
 			{
 				if( attributes.x!=0.f ) // Relection
 				{
+               accumulatedReflection += (1.f-attributes.x);
 					Vertex O_E = rayOrigin.origin - closestIntersection;
 					vectorReflection( rayOrigin.direction, O_E, normal );
 					reflectedTarget = closestIntersection - rayOrigin.direction;

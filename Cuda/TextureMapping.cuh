@@ -234,15 +234,16 @@ __device__ __INLINE__ float4 triangleUVMapping(
 	v = v%material.textureMapping.y;
 	if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
 	{
-      int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
-      int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
-		int index = A%B;
       switch( material.textureIds.x )
       {
       case TEXTURE_MANDELBROT: mandelbrotSet( primitive, materials, sceneInfo, u, v, result ); break;
       case TEXTURE_JULIA: juliaSet( primitive, materials, sceneInfo, u, v, result ); break;
       default:
          {
+            int A = (v*material.textureMapping.x+u)*material.textureMapping.w;
+            int B = material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+		      int index = A%B;
+
             // Diffuse
             int i = material.textureOffset.x + index;
             BitmapBuffer r,g,b;
@@ -260,19 +261,19 @@ __device__ __INLINE__ float4 triangleUVMapping(
 		      result.x = r/256.f;
 		      result.y = g/256.f;
 		      result.z = b/256.f;
+
+            // Bump mapping
+            if( material.textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+            // Normal mapping
+            if( material.textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+            // Specular mapping
+            if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
+			   // Reflection mapping
+			   if( material.advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
+			   // Transparency mapping
+			   if( material.advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
          }
       }
-
-      // Bump mapping
-      if( material.textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
-      // Normal mapping
-      if( material.textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
-      // Specular mapping
-      if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
-		// Reflection mapping
-		if( material.advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
-		// Transparency mapping
-		if( material.advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
 	}
 	return result; 
 }
