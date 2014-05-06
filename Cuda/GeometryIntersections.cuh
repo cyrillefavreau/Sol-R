@@ -592,8 +592,8 @@ __device__ float4 intersectionShader(
    Vertex&          specular,
    Vertex&          attributes)
 {
-	float4 colorAtIntersection = materials[primitive.materialId.x].color;
-   colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
+	float4 colorAtIntersection = materials[primitive.materialId.x].color; // To remove??
+   colorAtIntersection.w = 0.f; // w attribute is used to determine light intensity of the material
 
 #ifdef EXTENDED_GEOMETRY
 	switch( primitive.type.x ) 
@@ -661,10 +661,7 @@ __device__ float4 intersectionShader(
       }
    }
 #else
-	if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE ) 
-	{
-      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes );
-	}
+   colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes );
 #endif // EXTENDED_GEOMETRY
 	return colorAtIntersection;
 }

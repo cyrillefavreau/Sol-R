@@ -58,7 +58,7 @@ struct SceneInfo
 {
    int1    width;                    // Image width
    int1    height;                   // Image height
-   int1    graphicsLevel;            // Graphics level( No Shading=0, Lambert=1, Specular=2, Reflections and Refractions=3, Shadows=4 )
+   int1    graphicsLevel;            // Graphics level( No Shading=0, Lambert=1, Specular=2, textured=3, Reflections and Refractions=4, Shadows=5 )
    int1    nbRayIterations;          // Maximum number of ray iterations for current frame
    float1  transparentColor;         // Value above which r+g+b color is considered as transparent
    float1  viewDistance;             // Maximum viewing distance

@@ -194,7 +194,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuf
    gKernel->setPostProcessingInfo( gPostProcessingInfoStub );
 	gKernel->render_begin( static_cast<float>(timer) );
    gKernel->render_end();
-   if(gSceneInfoStub.misc.x==otDelphi)
+   if(false && gSceneInfoStub.misc.x==otDelphi)
    {
       BitmapBuffer* dst=new BitmapBuffer[gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth];
       BitmapBuffer* src=gKernel->getBitmap();

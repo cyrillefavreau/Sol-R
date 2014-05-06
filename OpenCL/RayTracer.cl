@@ -1906,9 +1906,7 @@ inline float4 launchRay(
    int currentMaxIteration = ( (*sceneInfo).graphicsLevel<3 ) ? 1 : (*sceneInfo).nbRayIterations+(*sceneInfo).pathTracingIteration;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 
-   float accumulatedRefrection=0.f;
-   float accumulatedTransparency=0.f;
-   while( accumulatedTransparency<1.f && accumulatedRefrection<1.f && iteration<currentMaxIteration && carryon ) 
+   while( iteration<currentMaxIteration && carryon ) 
    {
       Vertex areas = {0.f,0.f,0.f,0.f};
       // If no intersection with lamps detected. Now compute intersection with Primitives
@@ -1972,7 +1970,6 @@ inline float4 launchRay(
          // ----------
          if(attributes.y!=0.f) // Transparency
          {
-            accumulatedTransparency+=(1.f-attributes.y);
             // Back of the object? If so, reset refraction to 1.f (air)
             float refraction = /*back ? 1.f :*/ attributes.z;
 
@@ -2001,7 +1998,6 @@ inline float4 launchRay(
          {
             if(attributes.x!=0.f) // Reflection
             {
-               accumulatedRefrection += (1.f-attributes.x);
                Vertex O_E = rayOrigin.origin - closestIntersection;
                vectorReflection( rayOrigin.direction, O_E, normal );
                reflectedTarget = closestIntersection - rayOrigin.direction;
