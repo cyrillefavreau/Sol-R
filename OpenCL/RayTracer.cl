@@ -27,15 +27,15 @@ __constant float PI=3.14159265358979323846f;
 __constant int EPSILON=1.f;
 
 // Kinect
-__constant int gKinectVideoWidth  = 640;
-__constant int gKinectVideoHeight = 480;
-__constant int gKinectVideo       = 4;
-__constant int gKinectVideoSize   = 640*480*4;
+__constant int KINECT_COLOR_WIDTH  = 640;
+__constant int KINECT_COLOR_HEIGHT = 480;
+__constant int KINECT_COLOR_DEPTH  = 4;
+__constant int KINECT_COLOR_SIZE   = 640*480*4;
 
-__constant int gKinectDepthWidth  = 320;
-__constant int gKinectDepthHeight = 240;
-__constant int gKinectDepth       = 2;
-__constant int gKinectDepthSize   = 320*240*2;
+__constant int KINECT_DEPTH_WIDTH  = 320;
+__constant int KINECT_DEPTH_HEIGHT = 240;
+__constant int KINECT_DEPTH_DEPTH  = 2;
+__constant int KINECT_DEPTH_SIZE   = 320*240*2;
 
 // 3D vision type
 enum VisionType
@@ -643,14 +643,14 @@ float4 cubeMapping(
    if( primitive.type.x == ptCamera )
    {
       int x = ((*intersection).x-(*primitive).p0.x+(*primitive).size.x)*material.textureMapping.x;
-      int y = gKinectVideoHeight - ((*intersection).y-(*primitive).p0.y+(*primitive).size.y)*material.textureMapping.y;
+      int y = KINECT_COLOR_HEIGHT - ((*intersection).y-(*primitive).p0.y+(*primitive).size.y)*material.textureMapping.y;
 
-      x = (x+gKinectVideoWidth)%gKinectVideoWidth;
-      y = (y+gKinectVideoHeight)%gKinectVideoHeight;
+      x = (x+KINECT_COLOR_WIDTH)%KINECT_COLOR_WIDTH;
+      y = (y+KINECT_COLOR_HEIGHT)%KINECT_COLOR_HEIGHT;
 
-      if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
+      if( x>=0 && x<KINECT_COLOR_WIDTH && y>=0 && y<KINECT_COLOR_HEIGHT ) 
       {
-         int index = (y*gKinectVideoWidth+x)*gKinectVideo;
+         int index = (y*KINECT_COLOR_WIDTH+x)*KINECT_COLOR_DEPTH;
          index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
          BitmapBuffer r = textures[index+2];
          BitmapBuffer g = textures[index+1];

@@ -1789,6 +1789,23 @@ void GPUKernel::setMaterial(
       m_hMaterials[index].advancedTextureOffset.y  = 0;
       m_hMaterials[index].advancedTextureOffset.z  = 0;
       m_hMaterials[index].advancedTextureOffset.w  = 0;
+      
+#ifdef USE_KINECT
+      switch(diffuseTextureId)
+      {
+      case KINECT_COLOR_TEXTURE:
+         m_hMaterials[index].textureMapping.x = KINECT_COLOR_WIDTH; // Width
+         m_hMaterials[index].textureMapping.y = KINECT_COLOR_HEIGHT; // Height
+         m_hMaterials[index].textureMapping.w = KINECT_COLOR_DEPTH; // Depth
+         break;
+      case KINECT_DEPTH_TEXTURE:
+         m_hMaterials[index].textureMapping.x = KINECT_DEPTH_WIDTH; // Width
+         m_hMaterials[index].textureMapping.y = KINECT_DEPTH_HEIGHT; // Height
+         m_hMaterials[index].textureMapping.w = KINECT_DEPTH_DEPTH; // Depth
+         break;
+      }
+#endif // USE_KINECT
+
       if( diffuseTextureId!=TEXTURE_NONE && diffuseTextureId<m_nbActiveTextures )
       {
          m_hMaterials[index].textureMapping.x = m_hTextures[diffuseTextureId].size.x; // Width
@@ -2340,15 +2357,15 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 void GPUKernel::initializeKinectTextures()
 {
    LOG_INFO(1, "Initializing Kinect textures" );
-   m_hTextures[0].offset = 0;
-   m_hTextures[0].size.x = gKinectVideoWidth;
-   m_hTextures[0].size.y = gKinectVideoHeight;
-   m_hTextures[0].size.z = gKinectVideo;
+   m_hTextures[KINECT_COLOR_TEXTURE].offset = 0;
+   m_hTextures[KINECT_COLOR_TEXTURE].size.x = KINECT_COLOR_WIDTH;
+   m_hTextures[KINECT_COLOR_TEXTURE].size.y = KINECT_COLOR_HEIGHT;
+   m_hTextures[KINECT_COLOR_TEXTURE].size.z = KINECT_COLOR_DEPTH;
 
-   m_hTextures[1].offset = gKinectVideoSize;
-   m_hTextures[1].size.x = gKinectDepthWidth;
-   m_hTextures[1].size.y = gKinectDepthHeight;
-   m_hTextures[1].size.z = gKinectDepth;
+   m_hTextures[KINECT_DEPTH_TEXTURE].offset = KINECT_COLOR_SIZE;
+   m_hTextures[KINECT_DEPTH_TEXTURE].size.x = KINECT_DEPTH_WIDTH;
+   m_hTextures[KINECT_DEPTH_TEXTURE].size.y = KINECT_DEPTH_HEIGHT;
+   m_hTextures[KINECT_DEPTH_TEXTURE].size.z = KINECT_DEPTH_DEPTH;
 
    m_nbActiveTextures = 2;
 }
@@ -2372,41 +2389,35 @@ int GPUKernel::updateSkeletons(
 		{
 			if( m_skeletonFrame.SkeletonData[i].eTrackingState == NUI_SKELETON_TRACKED ) 
 			{
-				m_skeletonIndex = i;
-				found = true; //(m_skeletonIndex==0);
-				/*
-				for( int j=0; j<20; j++ ) 
-				{
-				float r = radius;
-				int   m = materialId;
-				switch (j) {
-				case NUI_SKELETON_POSITION_FOOT_LEFT:
-				case NUI_SKELETON_POSITION_FOOT_RIGHT:
-				r = feet_radius;
-				m = feet_materialId;
-				break;
-				case NUI_SKELETON_POSITION_HAND_LEFT:
-				case NUI_SKELETON_POSITION_HAND_RIGHT:
-				r = hands_radius;
-				m = hands_materialId;
-				break;
-				case NUI_SKELETON_POSITION_HEAD:
-				r = head_radius;
-				m = head_materialId;
-				break;
-				}
-				setPrimitive(
-				primitiveIndex+j,
-				boxId,
-				static_cast<float>( m_skeletonFrame.SkeletonData[i].SkeletonPositions[j].x * size + skeletonPosition.x),
-				static_cast<float>( m_skeletonFrame.SkeletonData[i].SkeletonPositions[j].y * size + skeletonPosition.y),
-				static_cast<float>( skeletonPosition.z - 2.f*m_skeletonFrame.SkeletonData[i].SkeletonPositions[j].z * size ),
-				static_cast<float>(r), 
-				static_cast<float>(r), 
-				m,
-				1, 1 );
-				}
-				*/
+            m_skeletonIndex = i;
+            found = true; //(m_skeletonIndex==0);
+            for( int j=0; j<20; j++ ) 
+            {
+               float r = radius;
+               int   m = materialId;
+               switch (j) {
+               case NUI_SKELETON_POSITION_FOOT_LEFT:
+               case NUI_SKELETON_POSITION_FOOT_RIGHT:
+                  r = feet_radius;
+                  m = feet_materialId;
+                  break;
+               case NUI_SKELETON_POSITION_HAND_LEFT:
+               case NUI_SKELETON_POSITION_HAND_RIGHT:
+                  r = hands_radius;
+                  m = hands_materialId;
+                  break;
+               case NUI_SKELETON_POSITION_HEAD:
+                  r = head_radius;
+                  m = head_materialId;
+                  break;
+               }
+               setPrimitive(
+                  primitiveIndex+j,
+                  static_cast<float>( m_skeletonFrame.SkeletonData[i].SkeletonPositions[j].x*size + skeletonPosition.x),
+                  static_cast<float>( m_skeletonFrame.SkeletonData[i].SkeletonPositions[j].y*size + skeletonPosition.y + size),
+                  static_cast<float>( 0.f/*skeletonPosition.z - 2.f*m_skeletonFrame.SkeletonData[i].SkeletonPositions[j].z * size*/ ),
+                  static_cast<float>(r), 0.f, 0.f, m);
+            }
 			}
 			i++;
 		}
@@ -2420,7 +2431,7 @@ bool GPUKernel::getSkeletonPosition( int index, Vertex& position )
 	if( m_skeletonIndex != -1 ) 
 	{
 		position.x = m_skeletonFrame.SkeletonData[m_skeletonIndex].SkeletonPositions[index].x;
-		position.y = m_skeletonFrame.SkeletonData[m_skeletonIndex].SkeletonPositions[index].y;
+		position.y = 0.f;//m_skeletonFrame.SkeletonData[m_skeletonIndex].SkeletonPositions[index].y;
 		position.z = m_skeletonFrame.SkeletonData[m_skeletonIndex].SkeletonPositions[index].z;
 		returnValue = true;
 	}

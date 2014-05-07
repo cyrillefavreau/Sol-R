@@ -410,14 +410,14 @@ float4 CPUKernel::cubeMapping(
    if( primitive.type.x == ptCamera )
    {
       int x = static_cast<int>((intersection.x-primitive.p0.x+primitive.size.x)*material.textureMapping.x);
-      int y = static_cast<int>(gKinectVideoHeight - (intersection.y-primitive.p0.y+primitive.size.y)*material.textureMapping.y);
+      int y = static_cast<int>(KINECT_COLOR_HEIGHT - (intersection.y-primitive.p0.y+primitive.size.y)*material.textureMapping.y);
 
-      x = (x+gKinectVideoWidth)%gKinectVideoWidth;
-      y = (y+gKinectVideoHeight)%gKinectVideoHeight;
+      x = (x+KINECT_COLOR_WIDTH)%KINECT_COLOR_WIDTH;
+      y = (y+KINECT_COLOR_HEIGHT)%KINECT_COLOR_HEIGHT;
 
-      if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
+      if( x>=0 && x<KINECT_COLOR_WIDTH && y>=0 && y<KINECT_COLOR_HEIGHT ) 
       {
-         int index = (y*gKinectVideoWidth+x)*gKinectVideo;
+         int index = (y*KINECT_COLOR_WIDTH+x)*KINECT_COLOR_DEPTH;
          index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
          BitmapBuffer r = m_hTextures[material.textureMapping.z].buffer[index+2];
          BitmapBuffer g = m_hTextures[material.textureMapping.z].buffer[index+1];

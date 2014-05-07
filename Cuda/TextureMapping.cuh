@@ -251,7 +251,7 @@ __device__ __INLINE__ float4 triangleUVMapping(
 		      g = textures[i+1];
 		      b = textures[i+2];
 #ifdef USE_KINECT
-            if( material.textureIds.x==0 )
+            if( material.textureIds.x==KINECT_COLOR_TEXTURE )
             {
 		         r = textures[index+2];
 		         g = textures[index+1];
@@ -375,17 +375,17 @@ __device__ __INLINE__ float4 cubeMapping(
 	float4 result = material.color;
 
 #ifdef USE_KINECT
-	if( primitive.type.x == ptCamera )
+	if( primitive.type.x==ptCamera )
 	{
 		int x = (intersection.x-primitive.p0.x+primitive.size.x)*material.textureMapping.x;
-		int y = gKinectVideoHeight - (intersection.y-primitive.p0.y+primitive.size.y)*material.textureMapping.y;
+		int y = KINECT_COLOR_HEIGHT-(intersection.y-primitive.p0.y+primitive.size.y)*material.textureMapping.y;
 
-		x = (x+gKinectVideoWidth)%gKinectVideoWidth;
-		y = (y+gKinectVideoHeight)%gKinectVideoHeight;
+		x = (x+KINECT_COLOR_WIDTH)%KINECT_COLOR_WIDTH;
+		y = (y+KINECT_COLOR_HEIGHT)%KINECT_COLOR_HEIGHT;
 
-		if( x>=0 && x<gKinectVideoWidth && y>=0 && y<gKinectVideoHeight ) 
+		if( x>=0 && x<KINECT_COLOR_WIDTH && y>=0 && y<KINECT_COLOR_HEIGHT ) 
 		{
-			int index = (y*gKinectVideoWidth+x)*gKinectVideo;
+			int index = (y*KINECT_COLOR_WIDTH+x)*KINECT_COLOR_DEPTH;
          index = index%(material.textureMapping.x*material.textureMapping.y*material.textureMapping.w);
 			BitmapBuffer r = textures[index+2];
 			BitmapBuffer g = textures[index+1];

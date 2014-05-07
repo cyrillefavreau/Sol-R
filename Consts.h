@@ -35,7 +35,7 @@
 #undef USE_MANAGED_MEMORY
 
 // Raytracer features
-#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #define AUTOFOCUS
 #undef  PHOTON_ENERGY
 #undef  DODGY_REFRACTIONS
@@ -67,15 +67,75 @@ const long MAX_BITMAP_HEIGHT = 1080;
 #define PI 3.14159265358979323846f
 #define EPSILON 5.f
 
+// Skybox matrerials
+const int SKYBOX_FRONT_MATERIAL  = NB_MAX_MATERIALS-2;
+const int SKYBOX_RIGHT_MATERIAL  = NB_MAX_MATERIALS-3;
+const int SKYBOX_BACK_MATERIAL   = NB_MAX_MATERIALS-4;
+const int SKYBOX_LEFT_MATERIAL   = NB_MAX_MATERIALS-5;
+const int SKYBOX_TOP_MATERIAL    = NB_MAX_MATERIALS-6;
+const int SKYBOX_BOTTOM_MATERIAL = NB_MAX_MATERIALS-7;
+
+// Ground material
+const int SKYBOX_GROUND_MATERIAL = NB_MAX_MATERIALS-8;
+
+// Cornell Box material
+const int CORNELLBOX_FRONT_MATERIAL  = NB_MAX_MATERIALS-9;
+const int CORNELLBOX_RIGHT_MATERIAL  = NB_MAX_MATERIALS-10;
+const int CORNELLBOX_BACK_MATERIAL   = NB_MAX_MATERIALS-11;
+const int CORNELLBOX_LEFT_MATERIAL   = NB_MAX_MATERIALS-12;
+const int CORNELLBOX_TOP_MATERIAL    = NB_MAX_MATERIALS-13;
+const int CORNELLBOX_BOTTOM_MATERIAL = NB_MAX_MATERIALS-14;
+const int CORNELLBOX_GROUND_MATERIAL = NB_MAX_MATERIALS-15;
+
+// Fractals
+const int MANDELBROT_MATERIAL = NB_MAX_MATERIALS-16;
+const int JULIA_MATERIAL      = NB_MAX_MATERIALS-17;
+
+// Basic reflection materials
+const int BASIC_REFLECTION_MATERIAL_001 = NB_MAX_MATERIALS-18;
+const int BASIC_REFLECTION_MATERIAL_002 = NB_MAX_MATERIALS-19;
+const int BASIC_REFLECTION_MATERIAL_003 = NB_MAX_MATERIALS-20;
+const int BASIC_REFLECTION_MATERIAL_004 = NB_MAX_MATERIALS-21;
+const int BASIC_REFLECTION_MATERIAL_005 = NB_MAX_MATERIALS-22;
+const int BASIC_REFLECTION_MATERIAL_006 = NB_MAX_MATERIALS-23;
+
+// Light source materials
+const int LIGHT_MATERIAL_001            = NB_MAX_MATERIALS-24;
+const int LIGHT_MATERIAL_002            = NB_MAX_MATERIALS-25;
+const int LIGHT_MATERIAL_003            = NB_MAX_MATERIALS-26;
+const int LIGHT_MATERIAL_004            = NB_MAX_MATERIALS-27;
+const int LIGHT_MATERIAL_005            = NB_MAX_MATERIALS-28;
+const int LIGHT_MATERIAL_006            = NB_MAX_MATERIALS-29;
+const int LIGHT_MATERIAL_007            = NB_MAX_MATERIALS-30;
+const int LIGHT_MATERIAL_008            = NB_MAX_MATERIALS-31;
+const int LIGHT_MATERIAL_009            = NB_MAX_MATERIALS-32;
+const int LIGHT_MATERIAL_010            = NB_MAX_MATERIALS-33;
+const int DEFAULT_LIGHT_MATERIAL        = NB_MAX_MATERIALS-34;
+
+// Basic color materials
+const int WHITE_MATERIAL                = NB_MAX_MATERIALS-35;
+const int RED_MATERIAL                  = NB_MAX_MATERIALS-36;
+const int GREEN_MATERIAL                = NB_MAX_MATERIALS-37;
+const int BLUE_MATERIAL                 = NB_MAX_MATERIALS-38;
+const int YELLOW_MATERIAL               = NB_MAX_MATERIALS-39;
+const int PURPLE_MATERIAL               = NB_MAX_MATERIALS-40;
+
 #ifdef USE_KINECT
 // Kinect
-const int gKinectVideoWidth  = 640;
-const int gKinectVideoHeight = 480;
-const int gKinectVideo       = 4;
-const int gKinectVideoSize   = gKinectVideoWidth*gKinectVideoHeight*gKinectVideo;
+const int KINECT_COLOR_MATERIAL         = NB_MAX_MATERIALS-41;
+const int KINECT_DEPTH_MATERIAL         = NB_MAX_MATERIALS-42;
 
-const int gKinectDepthWidth  = 320;
-const int gKinectDepthHeight = 240;
-const int gKinectDepth       = 2;
-const int gKinectDepthSize   = gKinectDepthWidth*gKinectDepthHeight*gKinectDepth;
+const int KINECT_COLOR_TEXTURE          = 0;
+const int KINECT_DEPTH_TEXTURE          = 1;
+
+const int KINECT_COLOR_WIDTH  = 640;
+const int KINECT_COLOR_HEIGHT = 480;
+const int KINECT_COLOR_DEPTH  = 4;
+const int KINECT_COLOR_SIZE   = KINECT_COLOR_WIDTH*KINECT_COLOR_HEIGHT*KINECT_COLOR_DEPTH;
+
+const int KINECT_DEPTH_WIDTH  = 320;
+const int KINECT_DEPTH_HEIGHT = 240;
+const int KINECT_DEPTH_DEPTH  = 2;
+const int KINECT_DEPTH_SIZE   = KINECT_DEPTH_WIDTH*KINECT_DEPTH_HEIGHT*KINECT_DEPTH_DEPTH;
+
 #endif // USE_KINECT

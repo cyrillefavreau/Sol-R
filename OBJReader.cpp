@@ -370,7 +370,7 @@ void OBJReader::addLightComponent(
 Vertex OBJReader::loadModelFromFile(
    const std::string& filename,
    GPUKernel& kernel,
-   const Vertex& center,
+   const Vertex& objectPosition,
    const bool autoScale,
    const Vertex& scale,
    bool loadMaterials,
@@ -521,7 +521,7 @@ Vertex OBJReader::loadModelFromFile(
 
    LOG_INFO(1,"Object contains " << vertices.size() << " vertices");
 
-   Vertex objectCenter = center;
+   Vertex objectCenter = objectPosition;
    Vertex objectScale  = scale;
    if( autoScale )
    {
@@ -563,7 +563,7 @@ Vertex OBJReader::loadModelFromFile(
                {
                   if( line!=component )
                   {
-                     addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,sketchupMaterial);
+                     addLightComponent(kernel,solrVertices,objectPosition,objectCenter,objectScale,sketchupMaterial);
                   }
                   component=line;
                }
@@ -626,9 +626,9 @@ Vertex OBJReader::loadModelFromFile(
                      nbPrimitives = kernel.addPrimitive( ptSphere );
                      kernel.setPrimitive( 
                         nbPrimitives,
-                        center.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
-                        center.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
-                        center.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
+                        objectPosition.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
+                        objectPosition.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
+                        objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         radius, radius, radius,
                         material);
                   }
@@ -638,9 +638,9 @@ Vertex OBJReader::loadModelFromFile(
                   nbPrimitives = kernel.addPrimitive( ptTriangle );
                   kernel.setPrimitive( 
                      nbPrimitives,
-                     center.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
-                     center.x+objectScale.x*(-objectCenter.x+vertices[face[f+1].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+1].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+1].x].z),
-                     center.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
+                     objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
+                     objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f+1].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f+1].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f+1].x].z),
+                     objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
                      0.f, 0.f, 0.f,
                      material);
                }
@@ -673,9 +673,9 @@ Vertex OBJReader::loadModelFromFile(
                      nbPrimitives = kernel.addPrimitive( ptSphere );
                      kernel.setPrimitive( 
                         nbPrimitives,
-                        center.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
-                        center.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
-                        center.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
+                        objectPosition.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
+                        objectPosition.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
+                        objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         radius, 0.f, 0.f,
                         material);
                   }
@@ -684,9 +684,9 @@ Vertex OBJReader::loadModelFromFile(
                      nbPrimitives = kernel.addPrimitive( ptTriangle );
                      kernel.setPrimitive( 
                         nbPrimitives, 
-                        center.x+objectScale.x*(-objectCenter.x+vertices[face[f+3].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+3].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+3].x].z),
-                        center.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
-                        center.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),center.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),center.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
+                        objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f+3].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f+3].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f+3].x].z),
+                        objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
+                        objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
                         0.f, 0.f, 0.f,
                         material);
                   }
@@ -705,7 +705,7 @@ Vertex OBJReader::loadModelFromFile(
       // Remaining SoL-R lights
       if( solrVertices.size()!=0 )
       {
-         addLightComponent(kernel,solrVertices,center,objectCenter,objectScale,sketchupMaterial);
+         addLightComponent(kernel,solrVertices,objectPosition,objectCenter,objectScale,sketchupMaterial);
       }
 
    }

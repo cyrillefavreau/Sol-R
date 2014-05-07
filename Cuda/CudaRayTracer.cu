@@ -1547,8 +1547,8 @@ extern "C" void h2d_kinect(
 {
    for( int device(0); device<occupancyParameters.x; ++device )
    {
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[device],                  kinectVideo, gKinectVideoSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
-	   checkCudaErrors(cudaMemcpyAsync( d_textures[device]+gKinectVideoSize, kinectDepth, gKinectDepthSize*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[device],                   kinectVideo, KINECT_COLOR_SIZE*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
+	   checkCudaErrors(cudaMemcpyAsync( d_textures[device]+KINECT_COLOR_SIZE, kinectDepth, KINECT_DEPTH_SIZE*sizeof(BitmapBuffer), cudaMemcpyHostToDevice, d_streams[device][0] ));
    }
 }
 #endif // USE_KINECT

@@ -46,7 +46,6 @@ GPUKernel* RayTracer::gKernel = nullptr;
 
 SceneInfo gSceneInfo;
 PostProcessingInfo gPostProcessingInfo;
-const int DEFAULT_LIGHT_MATERIAL = NB_MAX_MATERIALS-1;
 const int gTotalPathTracingIterations = 1;
 int4      gMisc = {otOpenGL,0,0,0};
 Vertex    gRotationCenter = { 0.f, 0.f, 0.f };
