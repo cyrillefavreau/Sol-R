@@ -1971,6 +1971,7 @@ void GPUKernel::setTexture(
 	   m_hTextures[index].size.y = textureInfo.size.y;
 	   m_hTextures[index].size.z = textureInfo.size.z;
       memcpy(m_hTextures[index].buffer,textureInfo.buffer,textureInfo.size.x*textureInfo.size.y*textureInfo.size.z);
+      ++m_nbActiveTextures;
    }
 }
 
