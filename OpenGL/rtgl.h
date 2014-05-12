@@ -652,6 +652,7 @@ typedef int bool;
    void RAYTRACINGENGINE_API setOpenCLPlatform(const int platform);
    void RAYTRACINGENGINE_API setOpenCLDevice(const int device);
 #endif // USE_OPENCL
+   void RAYTRACINGENGINE_API glCompactBoxes();
    void RAYTRACINGENGINE_API createRandomMaterials( bool update, bool lightsOnly );
    void RAYTRACINGENGINE_API setAngles( GLfloat, GLfloat, GLfloat );
    void RAYTRACINGENGINE_API render();

@@ -112,6 +112,15 @@ void RayTracer::InitializeRaytracer( const int width, const int height )
       createRandomMaterials(false,false);
    }
 }
+
+void RayTracer::glCompactBoxes()
+{
+   if(RayTracer::gKernel)
+   {
+      RayTracer::gKernel->compactBoxes(true);
+   }
+}
+
 /*
 ________________________________________________________________________________
 
@@ -249,6 +258,7 @@ void RayTracer::glColor3f (GLfloat red, GLfloat green, GLfloat blue)
 
 void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
+   /*
    bool found(false);
    unsigned int i(0);
    while( i<RayTracer::gKernel->getNbActiveMaterials() && !found )
@@ -268,12 +278,13 @@ void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alph
       RayTracer::gKernel->setMaterialColor(i,red,green,blue);
    }
    else
+   */
    {
       int m = RayTracer::gKernel->getCurrentMaterial();
       ++m;
       RayTracer::gKernel->setMaterial( m, 
          red, green, blue,
-         10.f, 0.f, 1.2f, 
+         0.f, 0.f, 1.2f, 
          false, 0.f, 0, alpha, 
          MATERIAL_NONE, MATERIAL_NONE, MATERIAL_NONE, MATERIAL_NONE, TEXTURE_NONE, TEXTURE_NONE,
          1.f, 200.f, 1000.f, 
@@ -620,28 +631,32 @@ void RayTracer::glOrtho(	GLdouble  	left,
 
 void RayTracer::render()
 {
-   Vertex rotation = RayTracer::gKernel->getRotation();
-   RayTracer::gKernel->setCamera(gEye,gDir,rotation);
-   RayTracer::gKernel->setSceneInfo(gSceneInfo);
-   RayTracer::gKernel->setPostProcessingInfo(gPostProcessingInfo);
-   if( !gLighting )
+   if(RayTracer::gKernel)
    {
-      // if no light is defined, I add one
-      int p = RayTracer::gKernel->addPrimitive(ptSphere);
-      RayTracer::gKernel->setPrimitive(p,20.f*gScale,20.f*gScale,20.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
+      Vertex rotation = RayTracer::gKernel->getRotation();
+      RayTracer::gKernel->setCamera(gEye,gDir,rotation);
+      RayTracer::gKernel->setSceneInfo(gSceneInfo);
+      RayTracer::gKernel->setPostProcessingInfo(gPostProcessingInfo);
+      if( !gLighting )
+      {
+         // if no light is defined, I add one
+         int p = RayTracer::gKernel->addPrimitive(ptSphere);
+         RayTracer::gKernel->setPrimitive(p,20.f*gScale,20.f*gScale,20.f*gScale,0.1f*gScale,0.1f*gScale,0.1f*gScale,DEFAULT_LIGHT_MATERIAL);
       
-      //p = RayTracer::gKernel->addPrimitive(ptSphere);
-      //RayTracer::gKernel->setPrimitive(p,0.f,0.f,0.f,0.1f*gScale,0.1f*gScale,0.1f*gScale,0);
-      gLighting = true;
+         //p = RayTracer::gKernel->addPrimitive(ptSphere);
+         //RayTracer::gKernel->setPrimitive(p,0.f,0.f,0.f,0.1f*gScale,0.1f*gScale,0.1f*gScale,0);
+         gLighting = true;
+      }
+
+      RayTracer::gKernel->compactBoxes(false);
+      for( int i(0); i<gTotalPathTracingIterations; ++i)
+      {
+         RayTracer::gKernel->render_begin(0);
+         RayTracer::gKernel->render_end();
+      }
+      RayTracer::gKernel->resetFrame();
+      gLighting=false;
    }
-   RayTracer::gKernel->compactBoxes(true);
-   for( int i(0); i<gTotalPathTracingIterations; ++i)
-   {
-      RayTracer::gKernel->render_begin(0);
-      RayTracer::gKernel->render_end();
-   }
-   RayTracer::gKernel->resetFrame();
-   gLighting=false;
 }
 
 void RayTracer::glTranslatef( GLfloat x, GLfloat y, GLfloat z )
