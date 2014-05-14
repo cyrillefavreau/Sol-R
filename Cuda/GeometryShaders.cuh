@@ -129,7 +129,7 @@ __device__ __INLINE__ float processShadows(
 	computeRayAttributes( r );
 	float minDistance=(iteration<2) ? sceneInfo.viewDistance.x : sceneInfo.viewDistance.x/(iteration+1);
 
-   while( result<sceneInfo.shadowIntensity.x && cptBoxes<nbActiveBoxes )
+   while( result<(sceneInfo.shadowIntensity.x-sceneInfo.backgroundColor.w) && cptBoxes<nbActiveBoxes )
 	{
 		BoundingBox& box = boudingBoxes[cptBoxes];
 		if( boxIntersection(box, r, 0.f, minDistance))
@@ -326,6 +326,7 @@ __device__ __INLINE__ float4 primitiveShader(
 //#endif // PHOTON_ENERGY
 
                   lightRay = normalize(lightRay);
+
 			         // --------------------------------------------------------------------------------
 			         // Lambert
 			         // --------------------------------------------------------------------------------
@@ -352,7 +353,7 @@ __device__ __INLINE__ float4 primitiveShader(
                   // Lighted object, not in the shades
                   lampsColor += lambert*lightInformation[cptLamp].color - shadowColor;
 
-			         if( sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x )
+			         if(sceneInfo.graphicsLevel.x>1 && shadowIntensity<sceneInfo.shadowIntensity.x)
 			         {
 				         // --------------------------------------------------------------------------------
 				         // Blinn - Phong

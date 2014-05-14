@@ -6,7 +6,7 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-#undef ADVANCED_GEOMETRY
+#define ADVANCED_GEOMETRY
 
 // Debug Delphi
 #define TEST
@@ -559,41 +559,23 @@ float4 sphereUVMapping(
    __constant Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
 
-   float len,U,V;
-   Vertex I=(*intersection);
-   vectorRotation(&I,(*primitive).p0,(*primitive).vt0);
-   I = I-(*primitive).p0;
+   Vertex I=normalize((*intersection)-(*primitive).p0);
+   float U = ((atan2(I.x, I.z)/PI)+1.f)*.5f;
+   float V = (asin(I.y)/PI)+.5f;
 
-   float z = I.z;
-   len = sqrt(I.x*I.x+I.y*I.y+I.z*I.z);
-   if(len>0.0f) 
-   {     
-      if(I.x==0.0f && I.y==0.0f) 
-      {
-         U = 0.f;
-      }
-      else
-      {
-         U = (1.f - atan2(I.x,I.y)/PI)/2.f;
-      }
+   int u=(*material).textureMapping.x*(U*(*primitive).vt1.x);
+   int v=(*material).textureMapping.y*(V*(*primitive).vt1.y);
 
-      z/=len;
-      V = 1.f-acos(z)/PI;
-   }
-
-   int u = (*material).textureMapping.x*(U*(*primitive).vt1.x); // TODO
-   int v = (*material).textureMapping.y*(V*(*primitive).vt1.y);
-
-   if( (*material).textureMapping.x != 0 ) u = u%(*material).textureMapping.x;
-   if( (*material).textureMapping.y != 0 ) v = v%(*material).textureMapping.y;
+   if( (*material).textureMapping.x != 0 ) u%=(*material).textureMapping.x;
+   if( (*material).textureMapping.y != 0 ) v%=(*material).textureMapping.y;
    if( u>=0 && u<(*material).textureMapping.x && v>=0 && v<(*material).textureMapping.y )
    {
-      int A = (v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
-      int B = (*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w;
-      int index = A%B;
+      int A=(v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
+      int B=(*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w;
+      int index=A%B;
 
       // Diffuse
-      int i = (*material).textureOffset.x + index;
+      int i=(*material).textureOffset.x+index;
       BitmapBuffer r,g,b;
       r = textures[i  ];
       g = textures[i+1];
@@ -604,16 +586,12 @@ float4 sphereUVMapping(
 
       // Bump mapping
       if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
-
       // Normal mapping
       if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
-
       // Specular mapping
       if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
-
       // Reflection mapping
       if( (*material).advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
-
       // Transparency mapping
       if( (*material).advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
    }

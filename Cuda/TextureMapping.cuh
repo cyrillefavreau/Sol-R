@@ -298,29 +298,11 @@ __device__ __INLINE__ float4 sphereUVMapping(
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
 
-   float len,U,V;
-   Vertex I=intersection;
-   vectorRotation(I,primitive.p0,primitive.vt0);
-   I = I-primitive.p0;
+   Vertex I=normalize(intersection-primitive.p0);
+   float U = ((atan2(I.x, I.z)/PI)+1.f)*.5f;
+   float V = (asin(I.y)/PI)+.5f;
 
-   float z = I.z;
-   len = sqrt(I.x*I.x+I.y*I.y+I.z*I.z);
-   if(len>0.0f) 
-   {     
-      if(I.x==0.0f && I.y==0.0f) 
-      {
-         U = 0.f;
-      }
-      else
-      {
-         U = (1.f - atan2(I.x,I.y)/PI)/2.f;
-      }
-
-      z/=len;
-      V = 1.f-acos(z)/PI;
-   }
-
-   int u = material.textureMapping.x*(U*primitive.vt1.x); // TODO
+   int u = material.textureMapping.x*(U*primitive.vt1.x);
    int v = material.textureMapping.y*(V*primitive.vt1.y);
 
    if( material.textureMapping.x != 0 ) u = u%material.textureMapping.x;

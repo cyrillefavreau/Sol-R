@@ -35,7 +35,7 @@
 #undef USE_MANAGED_MEMORY
 
 // Raytracer features
-#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #define AUTOFOCUS
 #undef  PHOTON_ENERGY
 #undef  DODGY_REFRACTIONS
@@ -120,10 +120,13 @@ const int BLUE_MATERIAL                 = NB_MAX_MATERIALS-38;
 const int YELLOW_MATERIAL               = NB_MAX_MATERIALS-39;
 const int PURPLE_MATERIAL               = NB_MAX_MATERIALS-40;
 
+// Ground material
+const int SKYBOX_SPHERE_MATERIAL        = NB_MAX_MATERIALS-41;
+
 #ifdef USE_KINECT
 // Kinect
-const int KINECT_COLOR_MATERIAL         = NB_MAX_MATERIALS-41;
-const int KINECT_DEPTH_MATERIAL         = NB_MAX_MATERIALS-42;
+const int KINECT_COLOR_MATERIAL         = NB_MAX_MATERIALS-42;
+const int KINECT_DEPTH_MATERIAL         = NB_MAX_MATERIALS-43;
 
 const int KINECT_COLOR_TEXTURE          = 0;
 const int KINECT_DEPTH_TEXTURE          = 1;

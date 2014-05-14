@@ -191,7 +191,7 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
    	m_nbActiveLamps[i]=0;
    }
 
-	LOG_INFO(1,"----------++++++++++  GPU Kernel created  ++++++++++----------" );
+	LOG_INFO(3,"----------++++++++++  GPU Kernel created  ++++++++++----------" );
 	LOG_INFO(3, "CPU: SceneInfo         : " << sizeof(SceneInfo) );
 	LOG_INFO(3, "CPU: Ray               : " << sizeof(Ray) );
 	LOG_INFO(3, "CPU: PrimitiveType     : " << sizeof(PrimitiveType) );
@@ -207,11 +207,11 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
 
 #if USE_KINECT
 	// Initialize Kinect
-   LOG_INFO(1, "----------------------------" );
-   LOG_INFO(1, "                         O  " );
-   LOG_INFO(1, "                       --+--" );
-   LOG_INFO(1, "                         |  " );
-   LOG_INFO(1, "Kinect initialization   / \\" );
+   LOG_INFO(3, "----------------------------" );
+   LOG_INFO(3, "                         O  " );
+   LOG_INFO(3, "                       --+--" );
+   LOG_INFO(3, "                         |  " );
+   LOG_INFO(3, "Kinect initialization   / \\" );
 	HRESULT err=NuiInitialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON | NUI_INITIALIZE_FLAG_USES_COLOR);
    m_kinectEnabled = (err==S_OK);
 
@@ -233,7 +233,7 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
    {
       LOG_ERROR("    FAILED" );
    }
-   LOG_INFO(1, "----------------------------" );
+   LOG_INFO(3, "----------------------------" );
 #endif // USE_KINECT
 }
 
@@ -254,12 +254,12 @@ GPUKernel::~GPUKernel()
 #endif // USE_KINECT
 
    cleanup();
-   LOG_INFO(1,"----------++++++++++ GPU Kernel Destroyed ++++++++++----------" );
+   LOG_INFO(3,"----------++++++++++ GPU Kernel Destroyed ++++++++++----------" );
 }
 
 void GPUKernel::initBuffers()
 {
-	LOG_INFO(1,"GPUKernel::initBuffers");
+	LOG_INFO(3,"GPUKernel::initBuffers");
 
    // Setup CPU resources
    m_lightInformation = new LightInformation[ NB_MAX_LIGHTINFORMATIONS ];
@@ -300,7 +300,7 @@ void GPUKernel::initBuffers()
    size*=gColorDepth;
    m_bitmap = new BitmapBuffer[size];
    memset(m_bitmap,0,size);
-   LOG_INFO(1, m_bitmap << " - Bitmap Size=" << size);
+   LOG_INFO(3, m_bitmap << " - Bitmap Size=" << size);
 
 #ifdef USE_OCULUS
    initializeOVR();
@@ -313,7 +313,7 @@ void GPUKernel::cleanup()
    //finializeOVR();
 #endif // USE_OCULUS
 
-   LOG_INFO(1,"Cleaning up resources");
+   LOG_INFO(3,"Cleaning up resources");
 
    for( int i(0); i<NB_MAX_FRAMES; ++i)
    {
@@ -902,11 +902,11 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-            LOG_INFO(1,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
+            LOG_INFO(3,"[" << m_treeDepth << "] Lamp " << p << " added (" << m_nbActiveLamps[m_frame] << "/" << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId );
          }
          else
          {
-            //LOG_INFO(1, "Adding primitive to box " << B);
+            //LOG_INFO(3, "Adding primitive to box " << B);
             m_boundingBoxes[m_frame][0][B].primitives.push_back(p);
          }
       }
@@ -930,7 +930,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
 
 void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDepth )
 {
-   LOG_INFO(1,"processOutterBoxes(" << boxSize << "," << boundingBoxesDepth << ")");
+   LOG_INFO(3,"processOutterBoxes(" << boxSize << "," << boundingBoxesDepth << ")");
    Vertex boxSteps;
    boxSteps.x = ( m_maxPos[m_frame].x - m_minPos[m_frame].x ) / boxSize;
    boxSteps.y = ( m_maxPos[m_frame].y - m_minPos[m_frame].y ) / boxSize;
@@ -965,7 +965,7 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
       m_boundingBoxes[m_frame][boundingBoxesDepth][B].primitives.push_back((*it).first);
       ++it;
    }
-   LOG_INFO(1,"Depth " << boundingBoxesDepth << ": " << m_boundingBoxes[m_frame][boundingBoxesDepth].size() << " created" );
+   LOG_INFO(3,"Depth " << boundingBoxesDepth << ": " << m_boundingBoxes[m_frame][boundingBoxesDepth].size() << " created" );
 
    // Now update box sizes
    BoxContainer::iterator itb = m_boundingBoxes[m_frame][boundingBoxesDepth].begin();
@@ -978,7 +978,7 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
 
 int GPUKernel::compactBoxes( bool reconstructBoxes )
 {
-	LOG_INFO(1,"GPUKernel::compactBoxes (" << (reconstructBoxes ? "true" : "false") << ")" );
+	LOG_INFO(3,"GPUKernel::compactBoxes (" << (reconstructBoxes ? "true" : "false") << ")" );
 
    // First box of highest level is dedicated to light sources
    int boundingBoxesDepth(0);
@@ -995,10 +995,10 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
          ++m_treeDepth;
          nbBoxes /= 4;
       }
-      LOG_INFO(1, "Scene depth=" << m_treeDepth );
+      LOG_INFO(3, "Scene depth=" << m_treeDepth );
 
       int activeBoxes(12000); // deprecated
-      LOG_INFO(1, "1. Nb Boxes=" << nbBoxes );
+      LOG_INFO(3, "1. Nb Boxes=" << nbBoxes );
       processBoxes(activeBoxes, activeBoxes, false );
 
       // TODO: Parallelize!!
@@ -1008,21 +1008,20 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       do
       {
          ++treeDepth;
-         LOG_INFO(1,"2. Depth=" << treeDepth << ", NbBoxes=" << nbBoxes );
+         LOG_INFO(3,"2. Depth=" << treeDepth << ", NbBoxes=" << nbBoxes );
          processOutterBoxes(nbBoxes,treeDepth);
          nbBoxes /= 4;
       }
 	  while( nbBoxes>gridGranularity );
    }
 
-   LOG_INFO(1,"Streaming data to GPU");
+   LOG_INFO(3,"Streaming data to GPU");
    streamDataToGPU();
    return static_cast<int>(m_nbActiveBoxes[m_frame]);
 }
 
 void GPUKernel::recursiveDataStreamToGPU( const int depth, std::vector<long>& elements )
 {
-   LOG_INFO(3,"");
    LOG_INFO(3,"RecursiveDataStreamToGPU(" << depth << ")");
    LOG_INFO(3,"Depth " << depth << " contains " << elements.size() << " boxes");
 
@@ -1088,7 +1087,7 @@ void GPUKernel::recursiveDataStreamToGPU( const int depth, std::vector<long>& el
 
 void GPUKernel::streamDataToGPU()
 {
-   LOG_INFO(1,"GPUKernel::streamDataToGPU");
+   LOG_INFO(3,"GPUKernel::streamDataToGPU");
    // --------------------------------------------------------------------------------
    // Transform data for ray-tracer
    // CPU -> GPU
@@ -1185,9 +1184,11 @@ void GPUKernel::streamDataToGPU()
       }
 
       ++m_nbActiveBoxes[m_frame];
-      recursiveDataStreamToGPU(maxDepth-1, box.primitives);
-      m_hBoundingBoxes[boxIndex].indexForNextBox.x = m_nbActiveBoxes[m_frame]-boxIndex;
       
+      // Recursively populate flattened tree representation
+      if(maxDepth>0) recursiveDataStreamToGPU(maxDepth-1, box.primitives);
+
+      m_hBoundingBoxes[boxIndex].indexForNextBox.x = m_nbActiveBoxes[m_frame]-boxIndex;
       LOG_INFO(3,"Master Primitive (" << 
          box.parameters[0].x << "," << box.parameters[0].y << "," << box.parameters[0].z << "),(" <<
          box.parameters[1].x << "," << box.parameters[1].y << "," << box.parameters[1].z << ")," <<
@@ -1201,7 +1202,7 @@ void GPUKernel::streamDataToGPU()
    //buildLightInformationFromTexture(4);
 
    // Done
-   LOG_INFO(1, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
+   LOG_INFO(3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
    if( m_nbActivePrimitives[m_frame] != m_primitives[m_frame].size() )
    {
       LOG_ERROR("Lost primitives on the way for frame " << m_frame << "... " << m_nbActivePrimitives[m_frame] << "!=" << m_primitives[m_frame].size() );
@@ -2073,7 +2074,7 @@ void GPUKernel::saveToFile( const std::string& filename, const std::string& cont
 {
    FileMarshaller fm;
    fm.saveToFile(*this,filename);
-   LOG_INFO(1,"3D scene saved to " << filename);
+   LOG_INFO(3,"3D scene saved to " << filename);
 }
 
 // ---------- Kinect ----------
@@ -2153,7 +2154,7 @@ void GPUKernel::reorganizeLights()
 
                if( !found )
                {
-                  LOG_INFO(1,"Add light information");
+                  LOG_INFO(3,"Add light information");
                   LightInformation lightInformation;
                   lightInformation.location.x = primitive.p0.x;
                   lightInformation.location.y = primitive.p0.y;
@@ -2165,7 +2166,7 @@ void GPUKernel::reorganizeLights()
                   lightInformation.color.z = material.color.z;
                   lightInformation.color.w = 0.f; // not used
 
-                  LOG_INFO(1,
+                  LOG_INFO(3,
                      "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << "," <<
                      m_lightInformation[m_lightInformationSize].attribute.y << ":" <<
                      m_lightInformation[m_lightInformationSize].location.x << "," <<
@@ -2185,7 +2186,7 @@ void GPUKernel::reorganizeLights()
       }
       ++it;
    }
-   LOG_INFO(1,"Reorganized " << m_lightInformationSize << " Lights" );
+   LOG_INFO(3,"Reorganized " << m_lightInformationSize << " Lights" );
 }
 
 TextureInformation& GPUKernel::getTextureInformation(const int index)
@@ -2195,7 +2196,7 @@ TextureInformation& GPUKernel::getTextureInformation(const int index)
 
 void GPUKernel::realignTexturesAndMaterials()
 {
-   LOG_INFO(1,"Realign Textures And Materials");
+   LOG_INFO(3,"Realign Textures And Materials");
    for( int i(0);i<m_nbActiveMaterials; ++i)
    {
       int diffuseTextureId  = m_hMaterials[i].textureIds.x;
@@ -2266,7 +2267,7 @@ void GPUKernel::realignTexturesAndMaterials()
 
 void GPUKernel::buildLightInformationFromTexture( unsigned int index )
 {
-   LOG_INFO(1,"buildLightInformationFromTexture");
+   LOG_INFO(3,"buildLightInformationFromTexture");
    m_lightInformationSize=0;
    reorganizeLights();
 
@@ -2351,13 +2352,13 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    }
    */
 #endif // 0
-   LOG_INFO(1, "Light Information Size = " << m_nbActiveLamps[m_frame] << "/" << m_lightInformationSize );
+   LOG_INFO(3, "Light Information Size = " << m_nbActiveLamps[m_frame] << "/" << m_lightInformationSize );
 }
 
 #ifdef USE_KINECT
 void GPUKernel::initializeKinectTextures()
 {
-   LOG_INFO(1, "Initializing Kinect textures" );
+   LOG_INFO(3, "Initializing Kinect textures" );
    m_hTextures[KINECT_COLOR_TEXTURE].offset = 0;
    m_hTextures[KINECT_COLOR_TEXTURE].size.x = KINECT_COLOR_WIDTH;
    m_hTextures[KINECT_COLOR_TEXTURE].size.y = KINECT_COLOR_HEIGHT;
@@ -2615,7 +2616,7 @@ int GPUKernel::setGLMode( const int& glMode )
          break;
       default:
          {
-            LOG_INFO(1, "[OpenGL] Mode " << m_GLMode << " not supported" );
+            LOG_INFO(3, "[OpenGL] Mode " << m_GLMode << " not supported" );
          }
          break;
       }
@@ -2781,7 +2782,7 @@ void GPUKernel::switchOculusVR()
 
 void GPUKernel::generateScreenshot(const std::string& filename,const int quality)
 {
-   LOG_INFO(1,"Generating screenshot " << filename << " (Quality=" << quality << "/" << m_sceneInfo.nbRayIterations.x << ")");
+   LOG_INFO(3,"Generating screenshot " << filename << " (Quality=" << quality << "/" << m_sceneInfo.nbRayIterations.x << ")");
    SceneInfo sceneInfo=m_sceneInfo;
    SceneInfo bakSceneInfo=m_sceneInfo;
    sceneInfo.width.x =MAX_BITMAP_WIDTH;
@@ -2794,9 +2795,9 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
       m_sceneInfo=sceneInfo;
       render_begin(0);
       render_end();
-      LOG_INFO(1,"Frame " << i << " generated");
+      LOG_INFO(3,"Frame " << i << " generated");
    }
-   LOG_INFO(1,"Saving bitmap to disk");
+   LOG_INFO(3,"Saving bitmap to disk");
    size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*gColorDepth;
    switch(sceneInfo.misc.x)
    {
@@ -2830,17 +2831,17 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
       break;
    }
    m_sceneInfo=bakSceneInfo;
-   LOG_INFO(1,"Screenshot successfully generated!");
+   LOG_INFO(3,"Screenshot successfully generated!");
 }
 
 #ifdef USE_OCULUS
 void GPUKernel::initializeOVR()
 {
-   LOG_INFO(1, "----------------------------" );
-   LOG_INFO(1, "                       _____" );
-   LOG_INFO(1, "                       [O_O]" );
-   LOG_INFO(1, "                            " );
-   LOG_INFO(1, "Oculus initialization       " );
+   LOG_INFO(3, "----------------------------" );
+   LOG_INFO(3, "                       _____" );
+   LOG_INFO(3, "                       [O_O]" );
+   LOG_INFO(3, "                            " );
+   LOG_INFO(3, "Oculus initialization       " );
 
    m_oculus = false;
 
@@ -2877,7 +2878,7 @@ void GPUKernel::initializeOVR()
    {
       LOG_ERROR("    FAILED" );
    }
-   LOG_INFO(1, "----------------------------" );
+   LOG_INFO(3, "----------------------------" );
 }
 
 void GPUKernel::finializeOVR()
