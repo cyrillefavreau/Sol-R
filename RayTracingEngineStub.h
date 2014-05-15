@@ -168,6 +168,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index );
 // ---------- Textures ----------
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadTextureFromFile( int index, char* filename );
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE texture );
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetTextureSize( int index, int& width, int& height, int& depth );
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetTexture( int index, BitmapBuffer* image );
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures( int& nbTextures );
 
 // ---------- Molecules ----------

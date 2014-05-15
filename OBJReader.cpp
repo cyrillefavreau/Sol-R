@@ -182,9 +182,12 @@ unsigned int OBJReader::loadMaterialsFromFile(
             memset( &material, 0, sizeof(MaterialMTL));
             material.index = static_cast<unsigned int>(materials.size()+materialId);
             //material.reflection = 0.2f;
-            material.diffuseTextureId = MATERIAL_NONE;
-            material.normalTextureId  = MATERIAL_NONE;
-            material.bumpTextureId    = MATERIAL_NONE;
+            material.diffuseTextureId      = MATERIAL_NONE;
+            material.normalTextureId       = MATERIAL_NONE;
+            material.bumpTextureId         = MATERIAL_NONE;
+            material.specularTextureId     = MATERIAL_NONE;
+            material.reflectionTextureId   = MATERIAL_NONE;
+            material.transparencyTextureId = MATERIAL_NONE;
             materials[id].isSketchupLightMaterial = false;
             material.noise = 0.f;
             materials[id] = material;

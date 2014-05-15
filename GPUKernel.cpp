@@ -1779,11 +1779,11 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].textureMapping.z = TEXTURE_NONE;  // Deprecated
 		m_hMaterials[index].textureMapping.w = 0;
 		m_hMaterials[index].textureIds.x     = diffuseTextureId;
-		m_hMaterials[index].textureIds.y     = TEXTURE_NONE;
-		m_hMaterials[index].textureIds.z     = TEXTURE_NONE;
-		m_hMaterials[index].textureIds.w     = TEXTURE_NONE;
-		m_hMaterials[index].advancedTextureIds.x     = TEXTURE_NONE;
-		m_hMaterials[index].advancedTextureIds.y     = TEXTURE_NONE;
+		m_hMaterials[index].textureIds.y     = normalTextureId;
+      m_hMaterials[index].textureIds.z     = bumpTextureId;
+      m_hMaterials[index].textureIds.w     = specularTextureId;
+      m_hMaterials[index].advancedTextureIds.x     = reflectionTextureId;
+      m_hMaterials[index].advancedTextureIds.y     = transparentTextureId;
 		m_hMaterials[index].advancedTextureIds.z     = TEXTURE_NONE;
 		m_hMaterials[index].advancedTextureIds.w     = TEXTURE_NONE;
       m_hMaterials[index].advancedTextureOffset.x  = 0;
@@ -1922,8 +1922,8 @@ int GPUKernel::getMaterialAttributes(
 		bumpTextureId    = m_hMaterials[index].textureIds.y;
 		normalTextureId  = m_hMaterials[index].textureIds.z;
 		specularTextureId= m_hMaterials[index].textureIds.w;
-		reflectionTextureId= m_hMaterials[index].advancedTextureOffset.x;
-		transparencyTextureId= m_hMaterials[index].advancedTextureOffset.y;
+      reflectionTextureId= m_hMaterials[index].advancedTextureIds.x;
+		transparencyTextureId= m_hMaterials[index].advancedTextureIds.y;
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;
@@ -1973,6 +1973,17 @@ void GPUKernel::setTexture(
 	   m_hTextures[index].size.z = textureInfo.size.z;
       memcpy(m_hTextures[index].buffer,textureInfo.buffer,textureInfo.size.x*textureInfo.size.y*textureInfo.size.z);
       ++m_nbActiveTextures;
+   }
+}
+
+void GPUKernel::getTexture(
+   const int index,
+	TextureInformation& textureInfo )
+{
+   LOG_INFO(3,"GPUKernel::getTexture(" << index << ")" );
+   if( index<=m_nbActiveTextures )
+   {
+      textureInfo = m_hTextures[index];
    }
 }
 

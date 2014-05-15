@@ -418,6 +418,49 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture( int index, HANDLE text
    return 0;
 }
 
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetTextureSize( int index, int& width, int& height, int& depth )
+{
+   LOG_INFO(3,"RayTracer_GetTextureSize");
+   if(index<gKernel->getNbActiveTextures())
+   {
+      TextureInformation texInfo;
+      memset(&texInfo,0,sizeof(TextureInformation));
+      gKernel->getTexture( index, texInfo );
+      if(texInfo.buffer)
+      {
+         width=texInfo.size.x;
+         height=texInfo.size.y;
+         depth=texInfo.size.z;
+      }
+      return 0;
+   }
+   return 1;
+}
+
+extern "C" RAYTRACINGENGINE_API int RayTracer_GetTexture( int index, BitmapBuffer* image )
+{
+   LOG_INFO(3,"RayTracer_GetTexture");
+   if(index<gKernel->getNbActiveTextures())
+   {
+      TextureInformation texInfo;
+      memset(&texInfo,0,sizeof(TextureInformation));
+      gKernel->getTexture( index, texInfo );
+      if(texInfo.buffer)
+      {
+         int len(texInfo.size.x*texInfo.size.y*texInfo.size.z);
+         for(int i(0);i<len;i+=texInfo.size.z)
+         {
+            image[i]   = texInfo.buffer[i+2];
+            image[i+1] = texInfo.buffer[i+1];
+            image[i+2] = texInfo.buffer[i];
+         }
+         //memcpy(image,texInfo.buffer,texInfo.size.x*texInfo.size.y*texInfo.size.z);
+      }
+      return 0;
+   }
+   return 1;
+}
+
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures( int& nbTextures )
 {
    LOG_INFO(3,"RayTracer_GetNbTextures");

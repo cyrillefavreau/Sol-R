@@ -224,6 +224,7 @@ public:
 
 	// ---------- Textures ----------
 	void setTexture( const int index, const TextureInformation& textureInfo );
+	void getTexture( const int index, TextureInformation& textureInfo );
    void setTexturesTransfered(const bool transfered) { m_texturesTransfered=transfered; };
    void realignTexturesAndMaterials();
 
