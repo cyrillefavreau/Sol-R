@@ -45,6 +45,7 @@
 
 struct CPUPrimitive
 {
+   bool   belongsToModel;
    bool   movable;
 	Vertex p0;
 	Vertex p1;
@@ -99,7 +100,7 @@ public:
 public:
 
 	// ---------- Primitives ----------
-	int addPrimitive( PrimitiveType type );
+	int addPrimitive( PrimitiveType type, bool belongsToModel=false );
 	void setPrimitive( 
       const int& index,
 		float x0, float y0, float z0, float w,  float h,  float d, int   materialId );
@@ -116,6 +117,9 @@ public:
    void setPrimitiveIsMovable( 
       const int& index,
       bool movable );
+   void setPrimitiveBellongsToModel(
+      const int& index,
+      bool bellongsToModel );
 
    // Scaling
    void scalePrimitives( float scale, unsigned int from, unsigned int to );
@@ -178,6 +182,7 @@ public:
 
 	// ---------- Materials ----------
 	int addMaterial();
+   void setMaterial(unsigned int index,const Material& material);
 	void setMaterial( 
 		unsigned int index,
 		float r, float g, float b, float noise,
@@ -230,6 +235,7 @@ public:
 
 	bool loadTextureFromFile( const int index, const std::string& filename );
    void buildLightInformationFromTexture( unsigned int index );
+   void processTextureOffsets();
 
 public:
 
@@ -330,8 +336,9 @@ public:
 
 public:
 
-	char* loadFromFile( const std::string& filename, size_t& length );
-   void  saveToFile( const std::string& filename, const std::string& content );
+	//char* loadFromFile( const std::string& filename, size_t& length );
+	void  loadFromFile(const std::string& filename);
+   void  saveToFile(const std::string& filename);
 
 public:
 

@@ -157,8 +157,6 @@ bool ImageLoader::loadBMP24(const int index, const std::string& filename, Textur
       "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl <<
       "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter );
 
-   processOffset( textureInformations );
-
    LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
       textureInformations[index].size.x << "," <<
       textureInformations[index].size.y << ","  <<
@@ -191,8 +189,6 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
       textureInformations[index].size.y = height;
       textureInformations[index].size.z = actual_comps;
       textureInformations[index].offset = 0;
-
-      processOffset( textureInformations );
 
       LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
          textureInformations[index].size.x << "," <<
@@ -288,8 +284,6 @@ bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureI
    textureInformations[index].size.z = texture.bpp/8;
 #endif
 
-   processOffset( textureInformations );
-
    LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " (" <<
       textureInformations[index].size.x << "," <<
       textureInformations[index].size.y << ","  <<
@@ -298,21 +292,3 @@ bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureI
    return true;
 }
 
-void ImageLoader::processOffset( TextureInformation* textureInformations )
-{
-   // Reprocess offset
-   int totalSize=0;
-   for( int i(0); i<NB_MAX_TEXTURES; ++i )
-   {
-      if( textureInformations[i].buffer!=nullptr )
-      {
-         //LOG_INFO(1,"Texture " << i << ": Offset=" << totalSize );
-         textureInformations[i].offset = totalSize;
-         totalSize += textureInformations[i].size.x*textureInformations[i].size.y*textureInformations[i].size.z;
-      }
-      else
-      {
-         textureInformations[i].offset = 0;
-      }
-   }
-}

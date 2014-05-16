@@ -51,9 +51,5 @@ public:
    // TGA
    bool loadTGA(const int index, const std::string& filename, TextureInformation* textureInformations);
 
-
-protected:
-   void processOffset( TextureInformation* textureInformations );
-
 };
 

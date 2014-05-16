@@ -352,7 +352,7 @@ Vertex PDBReader::loadAtomsFromFile(
 							halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
 
                      // Sticks
-                     nb = cudaKernel.addPrimitive( ptCylinder );
+                     nb = cudaKernel.addPrimitive(ptCylinder,true);
 							cudaKernel.setPrimitive( 
 								nb,
 								objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
@@ -392,7 +392,7 @@ Vertex PDBReader::loadAtomsFromFile(
             Vertex vt2={0.f,0.f,0.f};
             if( geometryType==gtIsoSurface && atom.isBackbone && atom.chainId%2==0 )
             {
-					nb = cudaKernel.addPrimitive( ptSphere );
+					nb = cudaKernel.addPrimitive(ptSphere,true);
 					cudaKernel.setPrimitive( 
 						nb,
 					   objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
@@ -404,7 +404,7 @@ Vertex PDBReader::loadAtomsFromFile(
 						nb, vt0, vt1, vt2 );
             }
 
-				nb = cudaKernel.addPrimitive( ptSphere );
+				nb = cudaKernel.addPrimitive(ptSphere,true);
 				cudaKernel.setPrimitive( 
 					nb, 
 					objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 

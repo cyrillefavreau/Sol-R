@@ -60,7 +60,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    int outputType, int timer, int fogEffect, int isometric3D, 
    int doubleSidedTriangles, int gradientBackGround, int advancedFeatures )
 {
-   LOG_INFO(1,"RayTracer_SetSceneInfo (" << 
+   LOG_INFO(3,"RayTracer_SetSceneInfo (" << 
       width << "," <<
       height << "," <<
       graphicsLevel << "," <<
@@ -221,10 +221,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuf
 
 // --------------------------------------------------------------------------------
 extern "C" RAYTRACINGENGINE_API 
-   int RayTracer_AddPrimitive( int type )
+   int RayTracer_AddPrimitive( int type, int movable )
 {
    LOG_INFO(3,"RayTracer_AddPrimitive");
-   return gKernel->addPrimitive( static_cast<PrimitiveType>(type) );
+   int id=gKernel->addPrimitive(static_cast<PrimitiveType>(type));
+   gKernel->setPrimitiveIsMovable(id,(movable==1));
+   return id;
 }
 
 // --------------------------------------------------------------------------------
@@ -484,7 +486,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    int    procedural,
    int    wireframe, int wireframeDepth,
    double transparency,
-   int    diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparencyTextureId,
+   int    diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, 
+   int    reflectionTextureId, int transparencyTextureId,
    double specValue, double specPower, double specCoef, 
    double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
    int    fastTransparency)
@@ -554,7 +557,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int&    out_procedural,
    int&    out_wireframe, int&    out_wireframeDepth,
    double& out_transparency,
-   int&    out_diffuseTextureId, int& out_bumpTextureId, int& out_normalTextureId, int& out_specularTextureId, int& out_reflectionTextureId, int& out_transparencyTextureId,
+   int&    out_diffuseTextureId, int& out_normalTextureId, int& out_bumpTextureId, int& out_specularTextureId, 
+   int&    out_reflectionTextureId, int& out_transparencyTextureId,
    double& out_specValue, double& out_specPower, double& out_specCoef,
    double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation,
    int&    out_fastTransparency)
@@ -567,11 +571,12 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    int   wireframeDepth;
    int   diffuseTextureId, normalTextureId, bumpTextureId, specularTextureId, reflectionTextureId, transparencyTextureId;
    bool  fastTransparency;
+   
    int returnValue = gKernel->getMaterialAttributes(
       in_index, 
       color_r, color_g, color_b,
       noise, reflection, refraction, procedural, wireframe, wireframeDepth, transparency, 
-      diffuseTextureId, bumpTextureId, normalTextureId, specularTextureId, reflectionTextureId, transparencyTextureId,
+      diffuseTextureId, normalTextureId, bumpTextureId, specularTextureId, reflectionTextureId, transparencyTextureId,
       specValue, specPower, specCoef, innerIllumination, 
       illuminationDiffusion, illuminationPropagation, fastTransparency );
 
@@ -583,8 +588,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    out_refraction = static_cast<double>(refraction);
    out_transparency = static_cast<double>(transparency);
    out_diffuseTextureId = static_cast<int>(diffuseTextureId);
-   out_bumpTextureId = static_cast<int>(bumpTextureId);
    out_normalTextureId = static_cast<int>(normalTextureId);
+   out_bumpTextureId = static_cast<int>(bumpTextureId);
    out_specularTextureId = static_cast<int>(specularTextureId);
    out_reflectionTextureId = static_cast<int>(reflectionTextureId);
    out_transparencyTextureId = static_cast<int>(transparencyTextureId);

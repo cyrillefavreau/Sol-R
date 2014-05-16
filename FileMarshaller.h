@@ -36,13 +36,5 @@ public:
 
    Vertex loadFromFile( GPUKernel& kernel, const std::string& filename, const Vertex& center, const float scale);
    void saveToFile    ( GPUKernel& kernel, const std::string& filename);
-
-private:
-
-   void readSceneInfo( GPUKernel& kernel, const std::string& line );
-   void readPrimitive( GPUKernel& kernel, const std::string& line, Vertex& min, Vertex& max, const Vertex& center );
-   void readMaterial ( GPUKernel& kernel, const std::string& line, const int materialId );
-   void readTexture  ( GPUKernel& kernel, const std::string& line );
-
 };
 

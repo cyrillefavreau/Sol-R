@@ -366,6 +366,7 @@ void OBJReader::addLightComponent(
          center.z+objectScale.z*(-objectCenter.z+lightCenter.z),
          radius, 0.f, 0.f,
          material);
+      kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
    }
    solrVertices.clear();
 }
@@ -634,6 +635,7 @@ Vertex OBJReader::loadModelFromFile(
                         objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         radius, radius, radius,
                         material);
+                     kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                   }
                }
                else
@@ -646,6 +648,7 @@ Vertex OBJReader::loadModelFromFile(
                      objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f+2].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f+2].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f+2].x].z),
                      0.f, 0.f, 0.f,
                      material);
+                  kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                }
 
                // Texture coordinates
@@ -681,6 +684,7 @@ Vertex OBJReader::loadModelFromFile(
                         objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         radius, 0.f, 0.f,
                         material);
+                     kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                   }
                   else
                   {
@@ -692,6 +696,7 @@ Vertex OBJReader::loadModelFromFile(
                         objectPosition.x+objectScale.x*(-objectCenter.x+vertices[face[f  ].x].x),objectPosition.y+objectScale.y*(-objectCenter.y+vertices[face[f  ].x].y),objectPosition.z+objectScale.z*(-objectCenter.z+vertices[face[f  ].x].z),
                         0.f, 0.f, 0.f,
                         material);
+                     kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                   }
                   // Texture coordinates
                   kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );

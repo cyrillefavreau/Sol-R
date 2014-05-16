@@ -77,7 +77,7 @@ extern "C" RAYTRACINGENGINE_API void RayTracer_SetCamera(
 extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuffer* image );
 
 // ---------- Primitives ----------
-extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive( int type );
+extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive( int type, int movable );
 
 extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitive( 
    int index,

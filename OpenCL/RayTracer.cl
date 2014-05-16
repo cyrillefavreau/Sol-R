@@ -458,13 +458,13 @@ void normalMap(
    __constant BitmapBuffer*    textures,
    Vertex*          normal)
 {
-   int i = (*material).textureOffset.z + index;
+   int i = (*material).textureOffset.y + index;
    BitmapBuffer r,g;
    r = textures[i  ];
    g = textures[i+1];
    //b = textures[i+2];
-   (*normal).x += (r/256.f-0.5f);
-   (*normal).y += (g/256.f-0.5f);
+   (*normal).x += 5.f*(r/256.f-0.5f);
+   (*normal).y += 5.f*(g/256.f-0.5f);
    //(*normal).z += (b/256.f-0.5f)/100.f;
 }
 
@@ -477,7 +477,7 @@ void bumpMap(
    __constant BitmapBuffer*    textures,
    Vertex*          intersection)
 {
-   int i = (*material).textureOffset.y + index;
+   int i = (*material).textureOffset.z + index;
    BitmapBuffer r,g,b;
    r = textures[i  ];
    g = textures[i+1];
@@ -584,10 +584,10 @@ float4 sphereUVMapping(
       result.y = g/256.f;
       result.z = b/256.f;
 
-      // Bump mapping
-      if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
       // Normal mapping
-      if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+      if( (*material).textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+      // Bump mapping
+      if( (*material).textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
       // Specular mapping
       if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
       // Reflection mapping
@@ -672,18 +672,15 @@ float4 cubeMapping(
                result.y = g/256.f;
                result.z = b/256.f;
 
-               // Bump mapping
-               if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
 
                // Normal mapping
-               if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
-
+               if( (*material).textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+               // Bump mapping
+               if( (*material).textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
                // Specular mapping
                if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
-
                // Reflection mapping
                if( (*material).advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
-
                // Transparency mapping
                if( (*material).advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
             }
@@ -751,18 +748,14 @@ float4 triangleUVMapping(
             result.y = g/256.f;
             result.z = b/256.f;
 
-            // Bump mapping
-            if( (*material).textureIds.y!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
-
             // Normal mapping
-            if( (*material).textureIds.z!=TEXTURE_NONE) normalMap(index, material, textures, normal);
-
+            if( (*material).textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+            // Bump mapping
+            if( (*material).textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
             // Specular mapping
             if( (*material).textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
-
             // Reflection mapping
             if( (*material).advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
-
             // Transparency mapping
             if( (*material).advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
          }
