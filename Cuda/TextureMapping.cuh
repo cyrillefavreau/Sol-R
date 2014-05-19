@@ -34,14 +34,15 @@ __device__ __INLINE__ void normalMap(
    const int&       index,
 	const Material&  material,
 	BitmapBuffer*    textures,
-   Vertex&          normal)
+   Vertex&          normal,
+   const float      strength)
 {
    int i = material.textureOffset.y + index;
    BitmapBuffer r,g;
 	r = textures[i  ];
 	g = textures[i+1];
-	normal.x += 5.f*(r/256.f-0.5f);
-	normal.y += 5.f*(g/256.f-0.5f);
+	normal.x += strength*(r/256.f-0.5f);
+	normal.y += strength*(g/256.f-0.5f);
 	normal.z = 0.f;
 }
 
@@ -52,17 +53,18 @@ __device__ __INLINE__ void bumpMap(
    const int&       index,
 	const Material&  material,
 	BitmapBuffer*    textures,
-   Vertex&          intersection)
+   Vertex&          intersection,
+   float&           value)
 {
    int i = material.textureOffset.z + index;
    BitmapBuffer r,g,b;
 	r = textures[i  ];
 	g = textures[i+1];
 	b = textures[i+2];
-   float d=0.5f*(r+g+b)/768.f;
-	intersection.x += d;
-	intersection.y += d;
-	intersection.z += d;
+   value=10.f*(r+g+b)/768.f;
+	//intersection.x += value;
+	//intersection.y += value;
+	//intersection.z += value;
 }
 
 // ----------
@@ -262,10 +264,11 @@ __device__ __INLINE__ float4 triangleUVMapping(
 		      result.y = g/256.f;
 		      result.z = b/256.f;
 
-            // Normal mapping
-            if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+            float strength(3.f);
             // Bump mapping
-            if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+            if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection, strength);
+            // Normal mapping
+            if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal, strength);
             // Specular mapping
             if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
 			   // Reflection mapping
@@ -323,10 +326,11 @@ __device__ __INLINE__ float4 sphereUVMapping(
 		result.y = g/256.f;
 		result.z = b/256.f;
 
-      // Normal mapping
-      if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+      float strength(3.f);
       // Bump mapping
-      if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+      if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection, strength);
+      // Normal mapping
+      if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal, strength);
       // Specular mapping
       if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
       // Reflection mapping
@@ -411,10 +415,11 @@ __device__ __INLINE__ float4 cubeMapping(
 			      result.y = g/256.f;
 			      result.z = b/256.f;
 
-               // Normal mapping
-               if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal);
+               float strength(3.f);
                // Bump mapping
-               if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection);
+               if( material.textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection, strength);
+               // Normal mapping
+               if( material.textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal, strength);
                // Specular mapping
                if( material.textureIds.w!=TEXTURE_NONE) specularMap(index, material, textures, specular);
 				   // Reflection mapping

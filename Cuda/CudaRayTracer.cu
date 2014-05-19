@@ -438,6 +438,15 @@ __global__ void k_standardRenderer(
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
 	int index = (stream_split+y)*sceneInfo.width.x+x;
 
+   // Antialisazing
+   float2 AArotatedGrid[4] =
+   {
+      {  3.f,  5.f },
+      {  5.f, -3.f },
+      { -3.f, -5.f },
+      { -5.f,  3.f }
+   };
+
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
    if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
@@ -476,6 +485,9 @@ __global__ void k_standardRenderer(
 		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
 		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
 		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
+      int i=(index+sceneInfo.pathTracingIteration.x)%4;
+      ray.direction.x += AArotatedGrid[i].x;
+      ray.direction.y += AArotatedGrid[i].y;
 	}
 #endif // 0
 
@@ -501,16 +513,6 @@ __global__ void k_standardRenderer(
 
 	vectorRotation( ray.origin, rotationCenter, angles );
 	vectorRotation( ray.direction, rotationCenter, angles );
-
-   // Antialisazing
-   float2 AArotatedGrid[4] =
-   {
-      {  3.f,  5.f },
-      {  5.f, -3.f },
-      { -3.f, -5.f },
-      { -5.f,  3.f }
-   };
-
 
    float4 color = {0.f,0.f,0.f,0.f};
    if( antialiasingActivated )

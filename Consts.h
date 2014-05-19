@@ -27,7 +27,7 @@
 #define nullptr 0
 #endif
 
-// inline
+// inline   
 #define __INLINE__ // inline
 #define __ALIGN16__ //__align__(16)
 
