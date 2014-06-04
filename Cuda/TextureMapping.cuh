@@ -41,8 +41,8 @@ __device__ __INLINE__ void normalMap(
    BitmapBuffer r,g;
 	r = textures[i  ];
 	g = textures[i+1];
-	normal.x += strength*(r/256.f-0.5f);
-	normal.y += strength*(g/256.f-0.5f);
+	normal.x -= strength*(r/256.f-0.5f);
+	normal.y -= strength*(g/256.f-0.5f);
 	normal.z = 0.f;
 }
 

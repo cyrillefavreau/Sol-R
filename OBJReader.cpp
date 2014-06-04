@@ -166,7 +166,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   m.noise,m.reflection,m.refraction, false, false, 0,
-                  m.transparency, 
+                  m.transparency, m.opacity,
                   m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId,
                   m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
                   m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
@@ -189,6 +189,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             material.reflectionTextureId   = MATERIAL_NONE;
             material.transparencyTextureId = MATERIAL_NONE;
             materials[id].isSketchupLightMaterial = false;
+            material.opacity = kernel.getSceneInfo().viewDistance.x;
             material.noise = 0.f;
             materials[id] = material;
             materials[id].Ks.x = 1.f;
@@ -311,7 +312,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,
             m.noise,m.reflection,m.refraction, false, false, 0,
-            m.transparency, 
+            m.transparency, m.opacity,
             m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId,
             m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
             m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,

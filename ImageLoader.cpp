@@ -172,7 +172,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
 
    if( buffer != nullptr )
    {
-	   //Reverse buffer
+	   //Vertical Flip
       size_t size=width*height*actual_comps;
       BitmapBuffer* revBuffer=new BitmapBuffer[size];
 	   for (size_t i(0); i<size; i+=actual_comps)
@@ -278,6 +278,24 @@ bool ImageLoader::loadTGA(const int index, const std::string& filename, TextureI
 #else
    Texture texture;
    LoadTGA(&texture, const_cast<char*>(filename.c_str()));
+
+#if 0
+	//Vertical Flip
+   size_t colorDepth=texture.bpp/8;
+   size_t size=texture.width*texture.height*colorDepth;
+   BitmapBuffer* revBuffer=new BitmapBuffer[size];
+	for (size_t i(0); i<size; i+=colorDepth)
+	{
+		revBuffer[i+2] = texture.imageData[size-1-i];
+		revBuffer[i+1] = texture.imageData[size-2-i];
+		revBuffer[i  ] = texture.imageData[size-3-i];
+	}
+
+   if(textureInformations[index].buffer!=NULL) delete [] textureInformations[index].buffer;
+   memcpy(texture.imageData,revBuffer,size);
+   delete [] revBuffer;
+#endif // 0
+
    textureInformations[index].buffer = texture.imageData;
    textureInformations[index].size.x = texture.width;
    textureInformations[index].size.y = texture.height;

@@ -100,8 +100,7 @@ __device__ __INLINE__ bool ellipsoidIntersection(
    const Ray& ray, 
    Vertex& intersection,
    Vertex& normal,
-	float& shadowIntensity,
-   bool& back) 
+	float& shadowIntensity) 
 {
 	// Shadow intensity
 	shadowIntensity = 1.f;
@@ -135,7 +134,6 @@ __device__ __INLINE__ bool ellipsoidIntersection(
    float t2 = (-b-d)/(2.f*a);
 
 	if( t1<=EPSILON && t2<=EPSILON ) return false; // both intersections are behind the ray origin
-	back = (t1<=EPSILON || t2<=EPSILON); // If only one intersection (t>0) then we are inside the sphere and the intersection is at the back of the sphere
 
 	float t=0.f;
 	if( t1<=EPSILON ) 
@@ -154,7 +152,6 @@ __device__ __INLINE__ bool ellipsoidIntersection(
    normal.y = 2.f*normal.y/(ellipsoid.size.y*ellipsoid.size.y);
    normal.z = 2.f*normal.z/(ellipsoid.size.z*ellipsoid.size.z);
 
-	normal *= (back) ? -1.f : 1.f;
 	normal = normalize(normal);
    return true;
 }
@@ -172,8 +169,7 @@ __device__ __INLINE__ bool sphereIntersection(
 	const Ray& ray, 
 	Vertex&    intersection,
 	Vertex&    normal,
-	float&     shadowIntensity,
-	bool&      back
+	float&     shadowIntensity
 	) 
 {
 	// solve the equation sphere-ray to find the intersections
@@ -191,7 +187,6 @@ __device__ __INLINE__ bool sphereIntersection(
 	float t2 = (-b+r)/a;
 
 	if( t1<=EPSILON && t2<=EPSILON ) return false; // both intersections are behind the ray origin
-	back = (t1<=EPSILON || t2<=EPSILON); // If only one intersection (t>0) then we are inside the sphere and the intersection is at the back of the sphere
 
 	float t=0.f;
 	if( t1<=EPSILON ) 
@@ -222,7 +217,6 @@ __device__ __INLINE__ bool sphereIntersection(
 		newCenter.z = sphere.p0.z + 0.008f*sphere.size.z*sin(cos(sceneInfo.misc.y + intersection.z ));
 		normal  = intersection - newCenter;
 	}
-	normal *= (back) ? -1.f : 1.f;
 	normal = normalize(normal);
 
    // Shadow management
@@ -255,10 +249,8 @@ __device__ __INLINE__ bool cylinderIntersection(
 	const Ray& ray,
 	Vertex&    intersection,
 	Vertex&    normal,
-	float&     shadowIntensity,
-	bool&      back) 
+	float&     shadowIntensity)
 {
-	back = false;
 	Vertex O_C = ray.origin-cylinder.p0;
 	Vertex dir = ray.direction;
 	Vertex n   = crossProduct(dir, cylinder.n1);
@@ -293,7 +285,6 @@ __device__ __INLINE__ bool cylinderIntersection(
 	if( scale1 < EPSILON || scale2 > EPSILON ) 
    {
 	   intersection = ray.origin+t2*dir;
-      back = true;
       HB1 = intersection-cylinder.p0;
 	   HB2 = intersection-cylinder.p1;
 	   scale1 = dot(HB1,cylinder.n1);
@@ -305,7 +296,6 @@ __device__ __INLINE__ bool cylinderIntersection(
    Vertex V = intersection-cylinder.p2;
    normal = V-project(V,cylinder.n1);
 	normal = normalize(normal);
-   if(back) normal*=-1.f; 
 
    // Shadow management
    dir = normalize(dir);
@@ -487,11 +477,8 @@ __device__ __INLINE__ bool triangleIntersection(
 	Vertex&          normal,
 	Vertex&          areas,
 	float&           shadowIntensity,
-	bool&            back,
    const bool&      processingShadows)
 {
-   back = false;
-
    Vertex N=normalize(ray.direction-ray.origin);
    if( sceneInfo.parameters.x==1 )
    {
@@ -505,10 +492,6 @@ __device__ __INLINE__ bool triangleIntersection(
       {
          if( dot(N,triangle.n0)>=0.f ) return false;
       }
-   }
-   else
-   {
-      back = ( dot(N,triangle.n0)<=0.f );
    }
 
    // Reject rays using the barycentric coordinates of
@@ -688,7 +671,6 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
    Vertex& closestAreas,
    float4& closestColor,
 	float4& colorBox,
-	bool&   back,
    const int currentmaterialId)
 {
 	bool intersections = false; 
@@ -732,35 +714,32 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
 				      case ptEnvironment :
                   case ptSphere:
                      {
-						      i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
+						      i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); 
 						      break;
 					      }
 				      case ptCylinder: 
 					      {
-						      i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); 
+						      i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); 
 						      break;
 					      }
                   case ptEllipsoid:
                      {
-						      i = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back );
+						      i = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity );
                         break;
                      }
                   case ptTriangle:
                      {
-						      back = false;
-						      i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, false ); 
+						      i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, false ); 
                         break;
                      }
 				      default: 
 					      {
-                        back = false;
 						      i = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false); 
 						      break;
 					      }
 				      }
    #else
-					   back = false;
-						i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, false ); 
+						i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, false ); 
    #endif // EXTENDED_GEOMETRY
 
 #ifdef EXTENDED_FEATURES

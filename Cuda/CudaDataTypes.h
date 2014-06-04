@@ -25,11 +25,7 @@
 #include <vector_types.h>
 #include "../consts.h"
 
-#ifdef USE_CUDA
-typedef float3        Vertex;
-#else
 typedef float4        Vertex;
-#endif // USE_CUDA
 typedef int4          PrimitiveXYIdBuffer;
 typedef float4        PostProcessingBuffer;
 typedef unsigned char BitmapBuffer;
@@ -112,7 +108,8 @@ enum PrimitiveType
    ptXZPlane     = 7,
    ptMagicCarpet = 8,
    ptEnvironment = 9,
-   ptEllipsoid   = 10
+   ptEllipsoid   = 10,
+   ptQuad        = 11
 };
 
 // Material structure
@@ -130,7 +127,7 @@ struct __ALIGN16__ Material
    float1 reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
    float1 refraction;        // Refraction index( ex: glass=1.33 )
    float1 transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
-   float1 dummy;             // alignment issues
+   float1 opacity;           // Opacity strength
    int4   attributes;        // x: Fast transparency( off=0, on=1 ). Fast transparency produces no shadows 
                              //    and drops intersections if rays intersects primitive with the same material ID
                              // y: Procedural textures( off=0, on=1 )

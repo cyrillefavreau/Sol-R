@@ -123,7 +123,8 @@ __device__ __INLINE__ float4 launchRay(
 	Vertex reflectedTarget;
    float4 closestColor = {0.f,0.f,0.f,0.f};
 	float4 colorBox = {0.f,0.f,0.f,0.f};
-	bool   back = false;
+   Vertex latestIntersection=ray.origin;
+   float rayLength=0.f;
 
 #ifdef PHOTON_ENERGY
    // Photon energy
@@ -159,7 +160,7 @@ __device__ __INLINE__ float4 launchRay(
 				rayOrigin,
 				iteration,  
 				closestPrimitive, closestIntersection, 
-				normal, areas, closestColor, colorBox, back, currentmaterialId);
+				normal, areas, closestColor, colorBox, currentmaterialId);
 		}
 
 		if( carryon ) 
@@ -175,6 +176,7 @@ __device__ __INLINE__ float4 launchRay(
             colorContributions[iteration]=1.f;
 
 				firstIntersection = closestIntersection;
+            latestIntersection=closestIntersection;
             
             // Primitive ID for current pixel
             primitiveXYId.x = primitives[closestPrimitive].index.x;
@@ -191,6 +193,7 @@ __device__ __INLINE__ float4 launchRay(
          attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
          attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
          attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
+         attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
 
          // Get object color
          rBlinn.w = attributes.y;
@@ -211,14 +214,31 @@ __device__ __INLINE__ float4 launchRay(
          primitiveXYId.z += 255*materials[currentmaterialId].innerIllumination.x;
          primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
 
+         float segmentLength=length(closestIntersection-latestIntersection);
+         latestIntersection=closestIntersection;
+
          // ----------
 			// Refraction
 			// ----------
+         float transparency=attributes.y;
+         float a=0.f;
 			if( attributes.y!=0.f ) 
 			{
             accunulatedTransparency += (1.f-attributes.y);
-				// Back of the object? If so, reset refraction to 1.f (air)
-				float refraction = /*back ? 1.f : */attributes.z;
+				
+            // Back of the object? If so, reset refraction to 1.f (air)
+            float refraction = attributes.z;
+            if(initialRefraction==refraction)
+            {
+               refraction = 1.f;
+               float length=segmentLength*(attributes.w*(1.f-transparency));
+               rayLength+=length;
+               rayLength=(rayLength>sceneInfo.viewDistance.x) ? sceneInfo.viewDistance.x : rayLength;
+               a=(rayLength/sceneInfo.viewDistance.x);
+               colors[iteration].x-=a;
+               colors[iteration].y-=a;
+               colors[iteration].z-=a;
+            }
 
 				// Actual refraction
 				Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
@@ -312,7 +332,7 @@ __device__ __INLINE__ float4 launchRay(
 			reflectedRay,
 			reflectedRays,  
 			closestPrimitive, closestIntersection, 
-         normal, areas, closestColor, colorBox, back, currentmaterialId) )
+         normal, areas, closestColor, colorBox, currentmaterialId) )
       {
          Vertex attributes;
          attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
@@ -474,7 +494,7 @@ __global__ void k_standardRenderer(
 		postProcessingBuffer[index].z = 0.f;
 		postProcessingBuffer[index].w = 0.f;
    }
-#if 1
+
    if( postProcessingInfo.type.x!=ppe_depthOfField && sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
 	{
 		// Randomize view for natural depth of field
@@ -489,7 +509,6 @@ __global__ void k_standardRenderer(
       ray.direction.x += AArotatedGrid[i].x;
       ray.direction.y += AArotatedGrid[i].y;
 	}
-#endif // 0
 
 	float dof = 0.f;
 	Vertex intersection;
@@ -515,9 +534,9 @@ __global__ void k_standardRenderer(
 	vectorRotation( ray.direction, rotationCenter, angles );
 
    float4 color = {0.f,0.f,0.f,0.f};
+   Ray r=ray;
    if( antialiasingActivated )
    {
-      Ray r=ray;
 	   for( int I=0; I<4; ++I )
 	   {
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
@@ -537,6 +556,11 @@ __global__ void k_standardRenderer(
          color += c;
       }
    }
+   else
+   {
+      r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
+      r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
+   }
    color += launchRay(
       index,
 		BoundingBoxes, nbActiveBoxes,
@@ -544,7 +568,7 @@ __global__ void k_standardRenderer(
       lightInformation, lightInformationSize, nbActiveLamps,
 		materials, textures, 
 		randoms,
-		ray, 
+		r, 
 		sceneInfo, postProcessingInfo,
 		intersection,
 		dof,

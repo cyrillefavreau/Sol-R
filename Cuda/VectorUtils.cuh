@@ -27,6 +27,9 @@
 #include <helper_cuda.h>
 #include <helper_math.h>
 
+// Project
+#include "CudaDataTypes.h"
+
 // ________________________________________________________________________________
 __device__ __INLINE__ void saturateVector( float4& v )
 {
@@ -42,9 +45,9 @@ __device__ __INLINE__ void saturateVector( float4& v )
 }
 
 // ________________________________________________________________________________
-__device__ __INLINE__ float3 crossProduct( const float3& b, const float3& c )
+__device__ __INLINE__ Vertex crossProduct( const Vertex& b, const Vertex& c )
 {
-	float3 a;
+	Vertex a;
 	a.x = b.y*c.z - b.z*c.y;
 	a.y = b.z*c.x - b.x*c.z;
 	a.z = b.x*c.y - b.y*c.x;
@@ -61,7 +64,7 @@ rayon incident
 reflected : le vecteur normal reflechi
 ________________________________________________________________________________
 */
-__device__ __INLINE__ void vectorReflection( float3& r, const float3& i, const float3& n )
+__device__ __INLINE__ void vectorReflection( Vertex& r, const Vertex& i, const Vertex& n )
 {
 	r = i-2.f*dot(i,n)*n;
 }
@@ -75,10 +78,10 @@ n2      : index of refraction of new medium
 ________________________________________________________________________________
 */
 __device__ __INLINE__ void vectorRefraction( 
-	float3&      refracted, 
-	const float3 incident, 
+	Vertex&      refracted, 
+	const Vertex incident, 
 	const float  n1, 
-	const float3 normal, 
+	const Vertex normal, 
 	const float  n2 )
 {
 	refracted = incident;
@@ -98,9 +101,9 @@ __c : Center of rotations
 __a : Angles
 ________________________________________________________________________________
 */
-__device__ __INLINE__ void vectorRotation( float3& v, const float3& rotationCenter, const float3& angles )
+__device__ __INLINE__ void vectorRotation( Vertex& v, const Vertex& rotationCenter, const Vertex& angles )
 { 
-	float3 cosAngles, sinAngles;
+	Vertex cosAngles, sinAngles;
 	
    cosAngles.x = cosf(angles.x);
 	cosAngles.y = cosf(angles.y);
@@ -111,11 +114,11 @@ __device__ __INLINE__ void vectorRotation( float3& v, const float3& rotationCent
 	sinAngles.z = sinf(angles.z);
 
    // Rotate Center
-   float3 vector;
+   Vertex vector;
    vector.x = v.x - rotationCenter.x;
    vector.y = v.y - rotationCenter.y;
    vector.z = v.z - rotationCenter.z;
-   float3 result = vector; 
+   Vertex result = vector; 
 
    /* X axis */ 
    result.y = vector.y*cosAngles.x - vector.z*sinAngles.x; 

@@ -146,20 +146,19 @@ __device__ __INLINE__ float processShadows(
             if( primitive.index.x!=objectId && materials[primitive.materialId.x].attributes.x==0)
 				{
 
-					bool back;
 					bool hit = false;
 #ifdef EXTENDED_GEOMETRY
 					switch(primitive.type.x)
 					{
-					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
-               case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
-					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity, back ); break;
-					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, true ); break;
+					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); break;
+               case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity); break;
+					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity); break;
+					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, true ); break;
 					case ptCamera   : hit=false; break;
 					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
 					}
 #else
-               hit = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, back, true );
+               hit = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, true );
 #endif
 
 #ifdef EXTENDED_FEATURES
@@ -345,9 +344,13 @@ __device__ __INLINE__ float4 primitiveShader(
                      lambert *= lightInformation[cptLamp].color.w;
                   }
 
-                  lambert *= (1.f+randoms[t]*material.innerIllumination.w); // Randomize lamp intensity depending on material noise, for more realistic rendering
+                  if( material.innerIllumination.w!=0.f )
+                  {
+                     // Randomize lamp intensity depending on material noise, for more realistic rendering
+                     lambert *= (1.f+randoms[t]*material.innerIllumination.w*100.f); 
+                  }
 			         lambert *= (1.f-shadowIntensity);
-                  lambert += sceneInfo.backgroundColor.w;
+                  //lambert += sceneInfo.backgroundColor.w;
                   lambert *= (1.f-photonEnergy);
 
                   // Lighted object, not in the shades

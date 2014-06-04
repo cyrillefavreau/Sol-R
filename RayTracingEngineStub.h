@@ -43,6 +43,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlaformCount();
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlatformDescription(int platform,char* value,int valueLength);
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLDeviceCount(int platform);
 extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLDeviceDescription(int platform, int device,char* value,int valueLength);
+extern "C" RAYTRACINGENGINE_API int RayTracer_RecompileKernels(char* filename);
 #endif // USE_OPENCL
 
 // ---------- Scene ----------
@@ -139,7 +140,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
    double refraction,
    int    procedural,
    int    wireframe, int wireframeDepth,
-   double transparency,
+   double transparency, double opacity,
    int    diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparencyTextureId,
    double specValue, double specPower, double specCoef, 
    double innerIllumination, double illuminationDiffusion, double illuminationPropagation, 
@@ -153,7 +154,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& refraction,
    int&    procedural,
    int&    wireframe, int& wireframeDepth,
-   double& transparency,
+   double& transparency, double& opacity,
    int& diffuseTextureId, int& bumpTextureId, int& normalTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId,
    double& specValue, double& specPower, double& specCoef,
    double& innerIllumination, double& illuminationDiffusion, double& illuminationPropagation,

@@ -329,12 +329,12 @@ void GPUKernel::cleanup()
       m_lamps[i].clear();
       m_nbActiveLamps[i] = 0;
 
-      m_minPos[i].x =  100000.f;
-      m_minPos[i].y =  100000.f;
-      m_minPos[i].z =  100000.f;
-      m_maxPos[i].x = -100000.f;
-      m_maxPos[i].y = -100000.f;
-      m_maxPos[i].z = -100000.f;
+      m_minPos[i].x = -m_sceneInfo.viewDistance.x;
+      m_minPos[i].y = -m_sceneInfo.viewDistance.x;
+      m_minPos[i].z = -m_sceneInfo.viewDistance.x;
+      m_maxPos[i].x =  m_sceneInfo.viewDistance.x;
+      m_maxPos[i].y =  m_sceneInfo.viewDistance.x;
+      m_maxPos[i].z =  m_sceneInfo.viewDistance.x;
    }
 
    for( int i(0); i<NB_MAX_TEXTURES; ++i)
@@ -709,6 +709,13 @@ bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 	Vertex corner0;
 	Vertex corner1;
 
+   box.parameters[0].x=1000000;
+   box.parameters[0].y=1000000;
+   box.parameters[0].z=1000000;
+   box.parameters[1].x=-1000000;
+   box.parameters[1].y=-1000000;
+   box.parameters[1].z=-1000000;
+
    std::vector<long>::const_iterator it = box.primitives.begin();
    while( it != box.primitives.end() )
    {
@@ -783,6 +790,7 @@ bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
    box.center.x = (box.parameters[0].x+box.parameters[1].x)/2.f;
    box.center.y = (box.parameters[0].y+box.parameters[1].y)/2.f;
    box.center.z = (box.parameters[0].z+box.parameters[1].z)/2.f;
+   //LOG_INFO(1,"Box Center="<<box.center.x<<","<<box.center.y<<","<<box.center.z);
    return result;
 }
 
@@ -800,26 +808,36 @@ bool GPUKernel::updateOutterBoundingBox( CPUBoundingBox& outterBox, const int de
 	outterBox.parameters[1].y = -m_sceneInfo.viewDistance.x;
 	outterBox.parameters[1].z = -m_sceneInfo.viewDistance.x;
 
+   LOG_INFO(3,"OutterBox: (" << 
+      outterBox.center.x << "," << outterBox.center.y << "," << outterBox.center.z << "),(" <<
+      outterBox.indexForNextBox << "," << outterBox.primitives.size() << "),(" <<
+      outterBox.parameters[0].x << "," << outterBox.parameters[0].y << "," << outterBox.parameters[0].z << "),(" << 
+      outterBox.parameters[1].x << "," << outterBox.parameters[1].y << "," << outterBox.parameters[1].z << ")");
+
    // Process box size
    std::vector<long>::const_iterator it = outterBox.primitives.begin();
    while( it != outterBox.primitives.end() )
    {
-      CPUBoundingBox& box = (m_boundingBoxes[m_frame][depth])[*it];
-      if( outterBox.parameters[0].x>box.parameters[0].x ) outterBox.parameters[0].x=box.parameters[0].x;
-	   if( outterBox.parameters[0].y>box.parameters[0].y ) outterBox.parameters[0].y=box.parameters[0].y;
-	   if( outterBox.parameters[0].z>box.parameters[0].z ) outterBox.parameters[0].z=box.parameters[0].z;
-	   if( outterBox.parameters[1].x<box.parameters[1].x ) outterBox.parameters[1].x=box.parameters[1].x;
-	   if( outterBox.parameters[1].y<box.parameters[1].y ) outterBox.parameters[1].y=box.parameters[1].y;
-	   if( outterBox.parameters[1].z<box.parameters[1].z ) outterBox.parameters[1].z=box.parameters[1].z;
+      try
+      {
+         CPUBoundingBox& box = (m_boundingBoxes[m_frame][depth])[*it];
+         if( outterBox.parameters[0].x>box.parameters[0].x ) outterBox.parameters[0].x=box.parameters[0].x;
+	      if( outterBox.parameters[0].y>box.parameters[0].y ) outterBox.parameters[0].y=box.parameters[0].y;
+	      if( outterBox.parameters[0].z>box.parameters[0].z ) outterBox.parameters[0].z=box.parameters[0].z;
+	      if( outterBox.parameters[1].x<box.parameters[1].x ) outterBox.parameters[1].x=box.parameters[1].x;
+	      if( outterBox.parameters[1].y<box.parameters[1].y ) outterBox.parameters[1].y=box.parameters[1].y;
+	      if( outterBox.parameters[1].z<box.parameters[1].z ) outterBox.parameters[1].z=box.parameters[1].z;
+      }
+      catch(...)
+      {
+         LOG_ERROR("Ca chie grave dans les boites!");
+      }
       ++it;
    }
    outterBox.center.x = (outterBox.parameters[0].x+outterBox.parameters[1].x)/2.f;
    outterBox.center.y = (outterBox.parameters[0].y+outterBox.parameters[1].y)/2.f;
    outterBox.center.z = (outterBox.parameters[0].z+outterBox.parameters[1].z)/2.f;
 
-   LOG_INFO(3,"OutterBox: (" << 
-      outterBox.parameters[0].x << "," << outterBox.parameters[0].y << "," << outterBox.parameters[0].z << "),(" << 
-      outterBox.parameters[1].x << "," << outterBox.parameters[1].y << "," << outterBox.parameters[1].z << ")");
    return result;
 }
 
@@ -896,16 +914,19 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       }
       else
       {
-         if( primitivesPerBox.find(B) == primitivesPerBox.end() )
+         if( primitivesPerBox.find(B)==primitivesPerBox.end() )
          {
-            // Box B
-	         m_boundingBoxes[m_frame][0][B].parameters[0].x = m_sceneInfo.viewDistance.x;
-	         m_boundingBoxes[m_frame][0][B].parameters[0].y = m_sceneInfo.viewDistance.x;
-	         m_boundingBoxes[m_frame][0][B].parameters[0].z = m_sceneInfo.viewDistance.x;
-	         m_boundingBoxes[m_frame][0][B].parameters[1].x = -m_sceneInfo.viewDistance.x;
-	         m_boundingBoxes[m_frame][0][B].parameters[1].y = -m_sceneInfo.viewDistance.x;
-	         m_boundingBoxes[m_frame][0][B].parameters[1].z = -m_sceneInfo.viewDistance.x;
-            m_boundingBoxes[m_frame][0][B].indexForNextBox = 1;
+            // Create Box B since it does not exist yet
+            CPUBoundingBox box;
+            memset(&box,0,sizeof(CPUBoundingBox));
+	         box.parameters[0].x = m_sceneInfo.viewDistance.x;
+	         box.parameters[0].y = m_sceneInfo.viewDistance.x;
+	         box.parameters[0].z = m_sceneInfo.viewDistance.x;
+	         box.parameters[1].x = -m_sceneInfo.viewDistance.x;
+	         box.parameters[1].y = -m_sceneInfo.viewDistance.x;
+	         box.parameters[1].z = -m_sceneInfo.viewDistance.x;
+            box.indexForNextBox = 1;
+            m_boundingBoxes[m_frame][0].insert(std::make_pair<long,CPUBoundingBox>(B,box));
          }
          
          // Lights
@@ -959,12 +980,19 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
       CPUBoundingBox& box((*it).second);
 
       Vertex center=box.center;
+      
+      // CAUTION:
+      // DODGY CODE!! If logging removed -> Weird exception in Delphi (Floating point errors)
+      
+      //LOG_INFO(1,"BoxSteps=" << boxSteps.x <<","<< boxSteps.y << "," << boxSteps.z);
+      //LOG_INFO(1,"center=" << center.x <<","<< center.y << "," << center.z);
+      //LOG_INFO(1,"m_minPos[m_frame]=" << m_minPos[m_frame].x <<","<< m_minPos[m_frame].y << "," << m_minPos[m_frame].z);
       int X = static_cast<int>(( center.x - m_minPos[m_frame].x ) / boxSteps.x);
       int Y = static_cast<int>(( center.y - m_minPos[m_frame].y ) / boxSteps.y);
       int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
       int B = (X*boxSize*boxSize + Y*boxSize + Z);
 
-      ++B; // Index 0 is used to store lights
+      B++; // Index 0 is used to store lights
 
       // Box B
 	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].x = m_sceneInfo.viewDistance.x;
@@ -1739,7 +1767,7 @@ void GPUKernel::setMaterial(
 	float refraction, 
 	bool  procedural,
 	bool  wireframe, int wireframeWidth,
-	float transparency,
+	float transparency, float opacity,
 	int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId, 
 	float specValue, float specPower, float specCoef, 
    float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
@@ -1757,6 +1785,7 @@ void GPUKernel::setMaterial(
       wireframe << "," <<
       static_cast<int>(wireframeWidth) << "," <<
       static_cast<float>(transparency) << "," <<
+      static_cast<float>(opacity) << "," <<
       static_cast<int>(diffuseTextureId) << "," <<
       static_cast<int>(normalTextureId) << "," <<
       static_cast<int>(bumpTextureId) << "," <<
@@ -1788,6 +1817,7 @@ void GPUKernel::setMaterial(
 		m_hMaterials[index].reflection.x  = reflection;
 		m_hMaterials[index].refraction.x  = refraction;
 		m_hMaterials[index].transparency.x= transparency;
+      m_hMaterials[index].opacity.x = opacity;
       m_hMaterials[index].attributes.x = fastTransparency ? 1 : 0;
 		m_hMaterials[index].attributes.y = procedural ? 1 : 0;
 		m_hMaterials[index].attributes.z = wireframe ? ((wireframeWidth==0 ) ? 1 : 2) : 0;
@@ -1899,7 +1929,9 @@ void GPUKernel::setMaterialTextureId( unsigned int textureId )
    if( textureId != m_hMaterials[m_currentMaterial].textureIds.x )
    {
       m_hMaterials[m_currentMaterial].reflection.x     = 0.3f;
+      m_hMaterials[m_currentMaterial].refraction.x     = 0.f;
       m_hMaterials[m_currentMaterial].transparency.x   = 0.f;
+      m_hMaterials[m_currentMaterial].opacity.x        = 0.f;
       m_hMaterials[m_currentMaterial].textureMapping.x = m_hTextures[textureId].size.x;
       m_hMaterials[m_currentMaterial].textureMapping.y = m_hTextures[textureId].size.y;
       m_hMaterials[m_currentMaterial].textureMapping.z = TEXTURE_NONE; // Deprecated
@@ -1919,7 +1951,7 @@ int GPUKernel::getMaterialAttributes(
 	float& refraction,
 	bool&  procedural,
 	bool&  wireframe, int& wireframeDepth,
-	float& transparency,
+	float& transparency, float& opacity,
 	int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, 
    int& reflectionTextureId, int& transparencyTextureId,
 	float& specValue, float& specPower, float& specCoef,
@@ -1933,10 +1965,11 @@ int GPUKernel::getMaterialAttributes(
 		r = m_hMaterials[index].color.x;
 		g = m_hMaterials[index].color.y;
 		b = m_hMaterials[index].color.z;
-      noise = m_hMaterials[index].color.w;
+      
 		reflection   = m_hMaterials[index].reflection.x;
 		refraction   = m_hMaterials[index].refraction.x;
 		transparency = m_hMaterials[index].transparency.x;
+		opacity      = m_hMaterials[index].opacity.x;
 		
       diffuseTextureId = m_hMaterials[index].textureIds.x;
 		normalTextureId = m_hMaterials[index].textureIds.y;
@@ -1948,9 +1981,10 @@ int GPUKernel::getMaterialAttributes(
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;
-		innerIllumination = m_hMaterials[index].innerIllumination.x;
-		illuminationDiffusion = m_hMaterials[index].innerIllumination.y;
+		innerIllumination       = m_hMaterials[index].innerIllumination.x;
+		illuminationDiffusion   = m_hMaterials[index].innerIllumination.y;
 		illuminationPropagation = m_hMaterials[index].innerIllumination.z;
+      noise                   = m_hMaterials[index].innerIllumination.w;
       fastTransparency = (m_hMaterials[index].attributes.x == 1);
 		procedural       = (m_hMaterials[index].attributes.y == 1);
 		wireframe        = (m_hMaterials[index].attributes.z == 1);
@@ -2875,10 +2909,9 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
    sceneInfo.width.x =MAX_BITMAP_WIDTH;
    sceneInfo.height.x=MAX_BITMAP_HEIGHT;
    sceneInfo.maxPathTracingIterations.x=quality;
-   for(int i(0);i<sceneInfo.maxPathTracingIterations.x;++i)
+   for(int i(0);i<quality;++i)
    {
       sceneInfo.pathTracingIteration.x=i;
-      if(i==sceneInfo.maxPathTracingIterations.x-1) sceneInfo.misc.w=2; // Antialiasing on last frame
       m_sceneInfo=sceneInfo;
       render_begin(0);
       render_end();

@@ -536,3 +536,8 @@ void CudaKernel::reshape()
    GPUKernel::reshape();
    reshape_scene(m_occupancyParameters,m_sceneInfo);
 }
+
+void CudaKernel::recompileKernels(const std::string&)
+{
+   LOG_ERROR("Not implemented");
+}

@@ -36,6 +36,10 @@ public:
    virtual void cleanup();
 
 public:
+
+   void recompileKernels(const std::string& kernelCode="");
+
+public:
 	// ---------- Devices ----------
 	void initializeDevice();
 	void releaseDevice();

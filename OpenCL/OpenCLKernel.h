@@ -64,11 +64,8 @@ public:
 	void initializeDevice();
 	void releaseDevice();
 
-	void compileKernels(
-		const KernelSourceType sourceType,
-		const std::string& source, 
-		const std::string& ptxFileName,
-		const std::string& options);
+	void recompileKernels(const std::string& kernelCode="");
+   void releaseKernels();
 
    virtual void reshape();
 

@@ -13,7 +13,7 @@
 * Library General Public License for more details.
 *
 * You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*
@@ -63,7 +63,10 @@ Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
       myfile.read((char*)&version,sizeof(size_t));
       LOG_INFO(1,"Version: " << version);
 
+      /*
       SceneInfo& sceneInfo = kernel.getSceneInfo();
+      */
+      SceneInfo sceneInfo; // NOT USED FOR NOW
       myfile.read((char*)&sceneInfo,sizeof(SceneInfo));
 
       // --------------------------------------------------------------------------------

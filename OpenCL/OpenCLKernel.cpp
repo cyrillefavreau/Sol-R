@@ -116,15 +116,13 @@ void pfn_notify(cl_program, void *user_data)
 */
 
 int __status=CL_SUCCESS;
+
+/*LOG_INFO(1,"[] " #stmt " []"); \*/
 #define CHECKSTATUS( stmt ) \
 { \
 	__status = stmt; \
-	if( __status != CL_SUCCESS ) { \
-	std::stringstream __s; \
-	__s << "==> " #stmt "\n"; \
-	__s << "ERROR : " << getErrorDesc(__status) << "\n" ; \
-	__s << "<== " #stmt "\n"; \
-	LOG_ERROR( __s.str().c_str() ); \
+   if( __status != CL_SUCCESS ) { \
+   LOG_ERROR("Status="<<__status << " (" << getErrorDesc(__status) << ") for " #stmt); \
 	} \
 }
 
@@ -170,12 +168,14 @@ void OpenCLKernel::populateOpenCLInformation()
 
       m_platformsDescription[platform] = platformDescription;
 
-      //if( clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, m_devices[platform], &m_numberOfDevices[platform]) == CL_SUCCESS )
-      if( clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, m_devices[platform], &m_numberOfDevices[platform]) == CL_SUCCESS )
+      if( clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_DEFAULT, MAX_DEVICES, m_devices[platform], &m_numberOfDevices[platform]) == CL_SUCCESS )
       {
 		   // m_devices
 		   for( cl_uint device=0; device<m_numberOfDevices[platform]; ++device)
          {
+            LOG_INFO(1,"  --------------------------------------");
+		      LOG_INFO(1, "  Device " << device );
+            LOG_INFO(1,"  --------------------------------------");
             std::string deviceDescription;
 			   CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
 			   LOG_INFO(1,"    DEVICE_NAME                        : " << buffer);
@@ -315,12 +315,6 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 	status = NuiCameraElevationSetAngle( 0 );
 #endif // USE_KINECT
 
-   // OpenCL
-   m_hDeviceId = m_devices[selectedPlatform][selectedDevice];
-	m_hContext = clCreateContext(NULL, m_numberOfDevices[selectedPlatform], &m_devices[selectedPlatform][selectedDevice], NULL, NULL, &status );
-   CHECKSTATUS(status);
-	m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
-
 	// Eye position
 	m_viewPos.x =   0.0f;
 	m_viewPos.y =   0.0f;
@@ -330,64 +324,70 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
 	m_angles.x = 0.0f;
 	m_angles.y = 0.0f;
 	m_angles.z = 0.0f;
+
+   // initialize OpenCL device
+   m_hDeviceId = m_devices[m_platform][m_device];
+	m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], &m_hDeviceId, NULL, NULL, &status );
+   CHECKSTATUS(status);
+   if(m_hContext) LOG_INFO(1,"Context successfully created");
+	m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
+   CHECKSTATUS(status);
+   if(m_hQueue) LOG_INFO(1,"Queue successfully created");
 }
 
 /*
 * compileKernels
 */
-void OpenCLKernel::compileKernels( 
-	const KernelSourceType sourceType,
-	const std::string& source, 
-	const std::string& ptxFileName,
-	const std::string& options)
+void OpenCLKernel::recompileKernels(const std::string& filename)
 {
-	LOG_INFO(3,"OpenCLKernel::compileKernels");
+	LOG_INFO(1,"OpenCLKernel::compileKernels");
+   
+   releaseKernels();
+
 	int status(0);
 	cl_program hProgram(0);
 	try 
 	{
-		const char* source_str; 
       size_t len(0);
-#if 0
-		switch( sourceType ) 
-		{
-		case kst_file:
-			if( source.length() != 0 ) 
-			{
-				source_str = loadFromFile(source, len);
-			}
-			break;
-		case kst_string:
-			{
-				source_str = source.c_str();
-				len = source.length();
-			}
-			break;
-		}
-#else
-      std::string source_code;
-      getKernelCode(source_code);
-      len=source_code.length();
-
-      for( int i(0);i<len;++i)
+      std::string kernelCode;
+      if( filename.length()==0 )
       {
-         source_code[i] -= 128;
-      }
-      source_str=source_code.c_str();
-#endif // 0
+         getKernelCode(kernelCode);
+         len=kernelCode.length();
 
-      //saveToFile("encoded.cl", source_str );
+         for( int i(0);i<len;++i)
+         {
+            kernelCode[i] -= 128;
+         }
+      }
+      else
+      {
+         std::string line;
+         std::ifstream inputFile(filename.c_str());
+         if( inputFile.is_open())
+         {
+            LOG_INFO(1,"Recompiling kernel from " << filename );
+            while(getline(inputFile,line))
+            {
+               line += 10;
+               line += 13;
+               kernelCode += line;
+            }
+            inputFile.close();
+         }
+         else
+         {
+            LOG_ERROR("Could not open file: " << filename );
+         }
+      }
 
 		LOG_INFO(1,"Create Program With Source");
-#if 1
-		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&source_str, (const size_t*)&len, &status );
-#else
-      hProgram = clCreateProgramWithBinary( m_hContext, 1, m_hDeviceId, len, (const char **)&ptxFileName, (const size_t*)&len, &status );
-#endif // 0
+      const char* kernel_code=kernelCode.c_str();
+		hProgram = clCreateProgramWithSource( m_hContext, 1, (const char **)&kernel_code, (const size_t*)&len, &status );
 		CHECKSTATUS(status);
 
 		LOG_INFO(1,"Build Program");
-      status = clBuildProgram(hProgram, 0, NULL, options.c_str(), NULL, NULL);
+      status = clBuildProgram(hProgram, 0, NULL, "-cl-fast-relaxed-math", NULL, NULL);
       if( status!=CL_SUCCESS )
       {
          size_t length;
@@ -395,16 +395,7 @@ void OpenCLKernel::compileKernels(
          memset(buffer,0,MAX_SOURCE_SIZE);
          CHECKSTATUS(clGetProgramBuildInfo(hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
          LOG_ERROR("Program Build failed [" << status << "]: "  << buffer );
-         //LOG_ERROR(source_str);
       }
-
-      /*
-		if( sourceType == kst_file)
-		{
-			delete [] source_str;
-			source_str = NULL;
-		}
-      */
 
       // Rendering kernels
 		LOG_INFO(1,"Create kernels");
@@ -435,101 +426,7 @@ void OpenCLKernel::compileKernels(
       m_kRadiosity = clCreateKernel( hProgram, "k_contrast", &status );
 		CHECKSTATUS(status);
 
-#if 0
-		// Generate Binaries!!!
-		// Obtain the length of the binary data that will be queried, for each device
-      LOG_INFO(1,"Get number of m_devices");
-		size_t m_numberOfDevices[platform] = 1;
-      CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint),&m_numberOfDevices[platform],NULL));
-      LOG_INFO(1, "  " << m_numberOfDevices[platform] << " device(s) detected");
-
-      LOG_INFO(1,"Get binary sizes");
-		size_t binaries_sizes[MAX_DEVICES];
-		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARY_SIZES,m_numberOfDevices[platform]*sizeof(size_t),binaries_sizes,NULL));
-
-		char **binaries = new char*[MAX_DEVICES];
-		for (size_t i = 0; i < m_numberOfDevices[platform]; i++)
-      {
-			binaries[i] = new char[binaries_sizes[i]+1];
-         LOG_INFO(1,"Binary " << i << ", Size=" << binaries_sizes[i]);
-      }
-
-      LOG_INFO(1,"Get binaries");
-		CHECKSTATUS(clGetProgramInfo(hProgram,CL_PROGRAM_BINARIES,m_numberOfDevices[platform]*sizeof(size_t),binaries,NULL));                        
-
-		for (size_t i = 0; i < m_numberOfDevices[platform]; i++) 
-      {
-         LOG_INFO(1,"Writting kernel" << i << ".ptx to disk");
-			binaries[i][binaries_sizes[i]] = '\0';
-			char name[255];
-			sprintf_s(name, 255, "kernel%d.ptx", i );
-			FILE* fp = NULL;
-			fopen_s(&fp, name, "w");
-			fwrite(binaries[i], 1, binaries_sizes[i], fp);
-			fclose(fp);
-		}
-
-		for (size_t i = 0; i < m_numberOfDevices[platform]; i++)
-      {
-			delete [] binaries[i];
-      }
-		delete [] binaries;
-#endif // 0
-
-		if( ptxFileName.length() != 0 ) 
-		{
-			// Open the ptx file and load it   
-			// into a char* buffer   
-			std::ifstream myReadFile;
-			std::string str;
-			std::string line;
-			std::ifstream myfile( ptxFileName.c_str() );
-			if (myfile.is_open()) {
-				while ( myfile.good() ) {
-					std::getline(myfile,line);
-					str += '\n' + line;
-				}
-				myfile.close();
-			}
-
-			size_t lSize = str.length();
-			char* buffer = new char[lSize+1];
-#ifdef WIN32
-			strcpy_s( buffer, lSize, str.c_str() );
-#else
-			strcpy( buffer, str.c_str() );
-#endif // WIN32
-
-			// Build the rendering kernel
-			int errcode(0);
-			hProgram = clCreateProgramWithBinary(
-				m_hContext,
-				1, 
-				&m_hDeviceId,
-				&lSize, 
-				(const unsigned char**)&buffer,                 
-				&status, 
-				&errcode);   
-			CHECKSTATUS(errcode);
-
-			CHECKSTATUS( clBuildProgram( hProgram, 0, NULL, "", NULL, NULL) );
-
-		   LOG_INFO(3,"clGetProgramBuildInfo");
-		   CHECKSTATUS( clGetProgramBuildInfo( hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, MAX_SOURCE_SIZE*sizeof(char), &buffer, &lSize ) );
-
-		   if( buffer[0] != 0 ) 
-		   {
-			   buffer[lSize] = 0;
-			   std::stringstream s;
-			   s << buffer;
-			   LOG_INFO(3, s.str().c_str() );
-			   LOG_INFO(3,s.str() );
-		   }
-
-			delete [] buffer;
-		}
-
-		LOG_INFO(3,"clReleaseProgram");
+		LOG_INFO(1,"clReleaseProgram");
 		CHECKSTATUS(clReleaseProgram(hProgram));
 		hProgram = 0;
 	}
@@ -559,8 +456,29 @@ void OpenCLKernel::initializeDevice()
 #endif // USE_KINECT
 }
 
+void OpenCLKernel::releaseKernels()
+{
+   // Rendering kernels
+   if( m_kStandardRenderer ) { CHECKSTATUS(clReleaseKernel(m_kStandardRenderer)); m_kStandardRenderer=0; }
+   if( m_kAnaglyphRenderer ) { CHECKSTATUS(clReleaseKernel(m_kAnaglyphRenderer)); m_kAnaglyphRenderer=0; }
+   if( m_k3DVisionRenderer ) { CHECKSTATUS(clReleaseKernel(m_k3DVisionRenderer)); m_k3DVisionRenderer=0; }
+   if( m_kFishEyeRenderer )  { CHECKSTATUS(clReleaseKernel(m_kFishEyeRenderer));  m_kFishEyeRenderer=0; }
+
+   // Post processing kernels
+   if( m_kDefault )          { CHECKSTATUS(clReleaseKernel(m_kDefault)); m_kDefault=0; }
+   if( m_kDepthOfField )     { CHECKSTATUS(clReleaseKernel(m_kDepthOfField)); m_kDepthOfField=0; }
+   if( m_kAmbientOcclusion ) { CHECKSTATUS(clReleaseKernel(m_kAmbientOcclusion)); m_kAmbientOcclusion=0; }
+   if( m_kRadiosity )        { CHECKSTATUS(clReleaseKernel(m_kRadiosity)); m_kRadiosity=0; }
+
+   m_primitivesTransfered=false;
+   m_materialsTransfered=false;
+   m_texturesTransfered=false;
+}
+
 void OpenCLKernel::releaseDevice()
 {
+   releaseKernels();
+
 	LOG_INFO(3,"Release device memory");
 	if( m_dPrimitives ) CHECKSTATUS(clReleaseMemObject(m_dPrimitives));
 	if( m_dBoundingBoxes ) CHECKSTATUS(clReleaseMemObject(m_dBoundingBoxes));
@@ -571,21 +489,9 @@ void OpenCLKernel::releaseDevice()
    if( m_dPrimitivesXYIds ) CHECKSTATUS(clReleaseMemObject(m_dPrimitivesXYIds));
 	if( m_dBitmap ) CHECKSTATUS(clReleaseMemObject(m_dBitmap));
 
-   // Rendering kernels
-   if( m_kStandardRenderer ) CHECKSTATUS(clReleaseKernel(m_kStandardRenderer));
-   if( m_kAnaglyphRenderer ) CHECKSTATUS(clReleaseKernel(m_kAnaglyphRenderer));
-   if( m_k3DVisionRenderer ) CHECKSTATUS(clReleaseKernel(m_k3DVisionRenderer));
-   if( m_kFishEyeRenderer )  CHECKSTATUS(clReleaseKernel(m_kFishEyeRenderer));
-
-   // Post processing kernels
-	if( m_kDefault )          CHECKSTATUS(clReleaseKernel(m_kDefault));
-	if( m_kDepthOfField )     CHECKSTATUS(clReleaseKernel(m_kDepthOfField));
-	if( m_kAmbientOcclusion ) CHECKSTATUS(clReleaseKernel(m_kAmbientOcclusion));
-	if( m_kRadiosity )        CHECKSTATUS(clReleaseKernel(m_kRadiosity));
-
    // Queue and context
-   if( m_hQueue ) CHECKSTATUS(clReleaseCommandQueue(m_hQueue));
-	if( m_hContext ) CHECKSTATUS(clReleaseContext(m_hContext));
+   if( m_hQueue ) { CHECKSTATUS(clReleaseCommandQueue(m_hQueue)); m_hQueue=0; }
+   if( m_hContext ) { CHECKSTATUS(clReleaseContext(m_hContext)); m_hContext=0; }
 }
 
 /*
@@ -593,6 +499,7 @@ void OpenCLKernel::releaseDevice()
 */
 void OpenCLKernel::render_begin( const float timer )
 {
+   //LOG_INFO(1,"Render_begin");
    if( m_sceneInfo.pathTracingIteration.x==0 ) m_counter=GetTickCount();
    GPUKernel::render_begin(timer);
 	int status(0);
@@ -603,7 +510,7 @@ void OpenCLKernel::render_begin( const float timer )
       int nbPrimitives = m_nbActivePrimitives[m_frame];
       int nbLamps      = m_nbActiveLamps[m_frame];
       int nbMaterials  = m_nbActiveMaterials+1;
-      LOG_INFO(3, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
+      //LOG_INFO(1, "Data sizes [" << m_frame << "]: " << nbBoxes << ", " << nbPrimitives << ", " << nbMaterials << ", " << nbLamps );
          
       if( !m_primitivesTransfered )
       {
@@ -612,6 +519,7 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dLamps,              CL_TRUE, 0, nbLamps*sizeof(Lamp),                            m_hLamps,              0, NULL, NULL));
 	      CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dLightInformation,   CL_TRUE, 0, m_lightInformationSize*sizeof(LightInformation), m_lightInformation,    0, NULL, NULL));
          m_primitivesTransfered = true;
+         //LOG_INFO(1,"Primitives successfully transfered");
       }
 	
       if( !m_materialsTransfered )
@@ -621,7 +529,7 @@ void OpenCLKernel::render_begin( const float timer )
          CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,   CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(RandomBuffer), m_hRandoms,      0, NULL, NULL));
          CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dMaterials, CL_TRUE, 0, nbMaterials*sizeof(Material),   m_hMaterials,    0, NULL, NULL));
 		   m_materialsTransfered = true;
-         LOG_INFO(1, "Transfering " << nbMaterials << " materials");
+         //LOG_INFO(1,"Materials successfully transfered");
 	   }
 
 #ifdef USE_KINECT
@@ -678,7 +586,6 @@ void OpenCLKernel::render_begin( const float timer )
 
       if( !m_texturesTransfered )
 	   {
-         LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize << " light information");
          int totalSize(0);
          for( int i(0); i<m_nbActiveTextures; ++i )
          {
@@ -712,6 +619,7 @@ void OpenCLKernel::render_begin( const float timer )
             delete tmpTextures;
          }
          m_texturesTransfered = true;
+         //LOG_INFO(1,"Textures successfully transfered");
       }
 
       // Kernel execution
@@ -895,7 +803,7 @@ void OpenCLKernel::render_begin( const float timer )
   
 void OpenCLKernel::render_end()
 {
-   LOG_INFO(3,"OpenCLKernel::render_end");
+   //LOG_INFO(1,"OpenCLKernel::render_end");
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
@@ -1007,12 +915,8 @@ void OpenCLKernel::initBuffers()
 {
 	LOG_INFO(3,"OpenCLKernel::initBuffers");
    GPUKernel::initBuffers();
+   recompileKernels();
 	initializeDevice();
-#ifdef _DEBUG
-   compileKernels(kst_file, "RayTracer.cl", "", "-g -cl-fast-relaxed-math -s E:\\svn\\GPGPU\\CUDA\\RaytracingEngine\\trunk\\OpenCL\\RayTracer.cl");
-#else
-   compileKernels(kst_file, "RayTracer.cl", "", "-cl-fast-relaxed-math");
-#endif // DEBUG
 }
 
 OpenCLKernel::~OpenCLKernel()

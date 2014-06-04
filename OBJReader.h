@@ -35,6 +35,7 @@ struct MaterialMTL
    float  Ns;
    float  reflection;
    float  transparency;
+   float  opacity;
    float  refraction;
    float  noise;
    int    diffuseTextureId;

@@ -91,6 +91,10 @@ public:
 
 public:
 
+   virtual void recompileKernels(const std::string& kernelCode="")=0;
+
+public:
+
    // ---------- Rendering ----------
 	virtual void render_begin( const float timer );
    virtual void render_end() = 0;
@@ -190,7 +194,7 @@ public:
 		float refraction,
 		bool procedural,
       bool wireframe, int wireframeWidth,
-		float transparency,
+		float transparency, float opacity,
 	   int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId,
 		float specValue, float specPower, float specCoef,
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
@@ -209,7 +213,7 @@ public:
 		bool& procedural,
       bool& wireframe,
       int& wireframeDepth,
-		float& transparency,
+		float& transparency, float& opacity,
       int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId,
 		float& specValue, float& specPower, float& specCoef,
       float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
