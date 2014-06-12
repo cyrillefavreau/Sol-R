@@ -9,7 +9,7 @@ typedef int           Lamp;
 #define ADVANCED_GEOMETRY
 
 // Constants
-#define NB_MAX_ITERATIONS 10
+#define NB_MAX_ITERATIONS 20
 #define CONST __global
 //#define CONST __constant
 
@@ -1859,6 +1859,7 @@ inline float4 launchRay(
    int reflectedRays=-1;
    Ray reflectedRay;
    float reflectedRatio;
+   bool BRDF=false;
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( (*sceneInfo).graphicsLevel<3 ) ? 1 : (*sceneInfo).nbRayIterations+(*sceneInfo).pathTracingIteration;
@@ -1982,8 +1983,27 @@ inline float4 launchRay(
             }
             else 
             {
-               colorContributions[iteration] = 1.f;
-               carryon = false;
+               if( (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS && !BRDF )
+               {
+                   // Compute the BRDF for this ray (assuming Lambertian reflection)
+                   BRDF=true;
+                   Vertex O_E = rayOrigin.origin - closestIntersection;
+                   vectorReflection( rayOrigin.direction, O_E, normal );
+                   reflectedTarget = closestIntersection - rayOrigin.direction;
+                   int t=((index+(*sceneInfo).pathTracingIteration+(*sceneInfo).misc.y)*3)%((*sceneInfo).width*(*sceneInfo).height);
+                   reflectedTarget.x += 1000000.f*randoms[t  ];
+                   reflectedTarget.y += 1000000.f*randoms[t+1];
+                   reflectedTarget.z += 1000000.f*randoms[t+2];
+                   float cos_theta = dot(normalize(reflectedTarget),normalize(normal));
+                   //float reflectance=0.1f;
+                   //float BDRF = 2.f*reflectance*cos_theta;
+                   colorContributions[iteration] = 0.5f*fabs(cos_theta);                  
+               }
+               else
+               {
+                   carryon = false;
+                   colorContributions[iteration] = 1.f;                   
+               }
             }         
          }
 
