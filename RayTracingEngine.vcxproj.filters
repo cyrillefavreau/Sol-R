@@ -47,6 +47,7 @@
     </Filter>
     <Filter Include="Source Files\OpenCL\Generated">
       <UniqueIdentifier>{2dc87ba4-2d30-4df9-9a8f-8682d1ad3456}</UniqueIdentifier>
+      <SourceControlFiles>False</SourceControlFiles>
     </Filter>
   </ItemGroup>
   <ItemGroup>
