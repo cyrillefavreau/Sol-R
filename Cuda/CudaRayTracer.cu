@@ -126,12 +126,6 @@ __device__ __INLINE__ float4 launchRay(
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
 
-#ifdef PHOTON_ENERGY
-   // Photon energy
-   float photonDistance = sceneInfo.viewDistance.x;
-   float previousTransparency = 1.f;
-#endif // PHOTON_ENERGY
-
    // Reflected rays
    int reflectedRays=-1;
    Ray reflectedRay;
@@ -140,13 +134,8 @@ __device__ __INLINE__ float4 launchRay(
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( sceneInfo.graphicsLevel.x<3 ) ? 1 : sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
-   float accumulatedReflection=0.f;
-   float accunulatedTransparency=0.f;
-#ifdef PHOTON_ENERGY
-	while( iteration<currentMaxIteration && carryon && photonDistance>0.f ) 
-#else
-	while( accunulatedTransparency<1.f && accumulatedReflection<1.f && iteration<currentMaxIteration && carryon ) 
-#endif // PHOTON_ENERGY
+	
+   while( iteration<currentMaxIteration && rayLength<sceneInfo.viewDistance.x && carryon ) 
 	{
       Vertex areas = {0.f,0.f,0.f};
       // If no intersection with lamps detected. Now compute intersection with Primitives
@@ -183,12 +172,6 @@ __device__ __INLINE__ float4 launchRay(
 
 			}
 
-#ifdef PHOTON_ENERGY
-         // Photon
-         photonDistance -= length(closestIntersection-rayOrigin.origin) * (5.f-previousTransparency);
-         previousTransparency = back ? 1.f : materials[primitives[closestPrimitive].materialId.x].transparency.x;
-#endif // PHOTON_ENERGY
-
          Vertex attributes;
          attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
          attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
@@ -211,7 +194,6 @@ __device__ __INLINE__ float4 launchRay(
 
          // Primitive illumination
          float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
-         primitiveXYId.z += 255*materials[currentmaterialId].innerIllumination.x;
          primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
 
          float segmentLength=length(closestIntersection-latestIntersection);
@@ -222,14 +204,14 @@ __device__ __INLINE__ float4 launchRay(
 			// ----------
          float transparency=attributes.y;
          float a=0.f;
-			if( attributes.y!=0.f ) 
+			if( attributes.y!=0.f ) // Transparency
 			{
-            accunulatedTransparency += (1.f-attributes.y);
-				
             // Back of the object? If so, reset refraction to 1.f (air)
             float refraction = attributes.z;
+
             if(initialRefraction==refraction)
             {
+               // Opacity
                refraction = 1.f;
                float length=segmentLength*(attributes.w*(1.f-transparency));
                rayLength+=length;
@@ -245,7 +227,7 @@ __device__ __INLINE__ float4 launchRay(
 				vectorRefraction( rayOrigin.direction, O_E, refraction, normal, initialRefraction );
 				reflectedTarget = closestIntersection - rayOrigin.direction;
 
-            colorContributions[iteration] = attributes.y;
+            colorContributions[iteration]=transparency-a;
                
             // Prepare next ray
 				initialRefraction = refraction;
@@ -255,7 +237,7 @@ __device__ __INLINE__ float4 launchRay(
                vectorReflection( reflectedRay.direction, O_E, normal );
 					Vertex rt = closestIntersection - reflectedRay.direction;
 
-               reflectedRay.origin    = closestIntersection + rt*0.00001f;
+               reflectedRay.origin    = closestIntersection+rt*REBOUND_EPSILON;
 					reflectedRay.direction = rt;
                reflectedRatio = attributes.x;
 					reflectedRays=iteration;
@@ -265,7 +247,6 @@ __device__ __INLINE__ float4 launchRay(
 			{
 				if( attributes.x!=0.f ) // Relection
 				{
-               accumulatedReflection += (1.f-attributes.x);
 					Vertex O_E = rayOrigin.origin - closestIntersection;
 					vectorReflection( rayOrigin.direction, O_E, normal );
 					reflectedTarget = closestIntersection - rayOrigin.direction;
@@ -284,7 +265,7 @@ __device__ __INLINE__ float4 launchRay(
  			recursiveBlinn.y=(rBlinn.y>recursiveBlinn.y) ? rBlinn.y:recursiveBlinn.y;
  			recursiveBlinn.z=(rBlinn.z>recursiveBlinn.z) ? rBlinn.z:recursiveBlinn.z;
 
-         rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
+         rayOrigin.origin    = closestIntersection+reflectedTarget*REBOUND_EPSILON; 
 			rayOrigin.direction = reflectedTarget;
 
 			// Noise management
@@ -292,7 +273,7 @@ __device__ __INLINE__ float4 launchRay(
 			{
 				// Randomize view
             float ratio = materials[primitives[closestPrimitive].materialId.x].color.w;
-            ratio *= (materials[primitives[closestPrimitive].materialId.x].transparency.x==0.f) ? 1000.f : 1.f;
+            ratio *= (attributes.y==0.f) ? 1000.f : 1.f;
 				int rindex = 3*sceneInfo.misc.y + sceneInfo.pathTracingIteration.x;
 				rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
 				rayOrigin.direction.x += randoms[rindex  ]*ratio;
@@ -373,18 +354,6 @@ __device__ __INLINE__ float4 launchRay(
       }
    }
 
-#ifdef PHOTON_ENERGY
-	// --------------------------------------------------
-   // Photon energy
-	// --------------------------------------------------
-   intersectionColor *= ( photonDistance>0.f) ? (photonDistance/sceneInfo.viewDistance.x) : 0.f;
-#endif // PHOTON_ENERGY
-
-	// --------------------------------------------------
-	// Fog
-	// --------------------------------------------------
-   //intersectionColor += randoms[((int)len + sceneInfo.misc.y)%100];
-
 	// --------------------------------------------------
 	// Background color
 	// --------------------------------------------------
@@ -404,7 +373,6 @@ __device__ __INLINE__ float4 launchRay(
    intersectionColor -= colorBox;
    
    // Ambient light
-   //intersectionColor += sceneInfo.backgroundColor.w;
 	saturateVector( intersectionColor );
 	return intersectionColor;
 }
@@ -1152,34 +1120,36 @@ __global__ void k_ambiantOcclusion(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
 
-   float occ = 0.f;
+   int    wh = sceneInfo.width.x*sceneInfo.height.x;
+   float  occ = 0.f;
 	float4 localColor = postProcessingBuffer[index];
 	float  depth = localColor.w;
-   const int step = 8;
-   int c=0;
-	for( int X=-step; X<step; ++X )
+   const int step = 16;
+   int i=0;
+   float c=0.f;
+	for( int X=-step; X<step; X+=2 )
 	{
-		for( int Y=-step; Y<step; ++Y )
+		for( int Y=-step; Y<step; Y+=2 )
 		{
-         if( X!=0 || Y!=0 || X!=Y )
+         int ix = i%wh;
+         int iy = (i+100)%wh;
+         ++i;
+         c+=1.f;
+         int xx = x+(X*postProcessingInfo.param2.x*randoms[ix]/10.f);
+         int yy = y+(Y*postProcessingInfo.param2.x*randoms[iy]/10.f);
+			if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+			{
+				int localIndex = yy*sceneInfo.width.x+xx;
+				if( postProcessingBuffer[localIndex].w>=depth)
+				{
+					occ += 1.f;
+				}
+			}
+			else
          {
-            ++c;
-			   int xx = x+X;
-			   int yy = y+Y;
-			   if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
-			   {
-				   int localIndex = yy*sceneInfo.width.x+xx;
-				   if( postProcessingBuffer[localIndex].w>=depth)
-				   {
-					   occ += 1.f;
-				   }
-			   }
-			   else
-            {
-				   occ += 1.f;
-            }
+				occ += 1.f;
          }
-		}
+      }
 	}
 	occ /= (float)c;
 	occ += 0.3f; // Ambient light

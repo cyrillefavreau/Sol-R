@@ -479,21 +479,6 @@ __device__ __INLINE__ bool triangleIntersection(
 	float&           shadowIntensity,
    const bool&      processingShadows)
 {
-   Vertex N=normalize(ray.direction-ray.origin);
-   if( sceneInfo.parameters.x==1 )
-   {
-      // Double Sided triangles
-      // Reject triangles with normal opposite to ray.
-      if( processingShadows )
-      {
-         if( dot(N,triangle.n0)<=0.f ) return false;
-      }
-      else
-      {
-         if( dot(N,triangle.n0)>=0.f ) return false;
-      }
-   }
-
    // Reject rays using the barycentric coordinates of
    // the intersection point with respect to T.
    Vertex E01=triangle.p1-triangle.p0;
@@ -544,6 +529,21 @@ __device__ __INLINE__ bool triangleIntersection(
    areas.y = 0.5f*length(crossProduct( v0,v2 ));
    areas.z = 0.5f*length(crossProduct( v0,v1 ));
    normal = normalize((triangle.n0*areas.x + triangle.n1*areas.y + triangle.n2*areas.z)/(areas.x+areas.y+areas.z));
+
+   if( sceneInfo.parameters.x==1 )
+   {
+      // Double Sided triangles
+      // Reject triangles with normal opposite to ray.
+      Vertex N=normalize(ray.direction-ray.origin);
+      if( processingShadows )
+      {
+         if( dot(N,normal)<=0.f ) return false;
+      }
+      else
+      {
+         if( dot(N,normal)>=0.f ) return false;
+      }
+   }
 
    Vertex dir = normalize(ray.direction);
    float r = dot(dir,normal);

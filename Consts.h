@@ -27,6 +27,9 @@
 #define nullptr 0
 #endif
 
+// Oculus Rift
+#define USE_OCULUS
+
 // inline   
 #define __INLINE__ // inline
 #define __ALIGN16__ //__align__(16)
@@ -65,7 +68,8 @@ const long MAX_BITMAP_HEIGHT = 1080;
 
 // Globals
 #define PI 3.14159265358979323846f
-#define EPSILON 5.f
+#define EPSILON 1.f
+#define REBOUND_EPSILON 0.00001f
 
 // Skybox matrerials
 const int SKYBOX_FRONT_MATERIAL  = NB_MAX_MATERIALS-2;

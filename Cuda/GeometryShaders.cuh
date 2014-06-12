@@ -276,9 +276,10 @@ __device__ __INLINE__ float4 primitiveShader(
 #endif // EXTENDED_FEATURES
 
 	   closestColor *= material.innerIllumination.x;
-	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
+      int C=(lightInformationSize>1) ? 2 : 1;
+	   for( int cpt=0; cpt<C; ++cpt ) 
 	   {
-         int cptLamp = cpt;
+         int cptLamp = (sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x%lightInformationSize+C-1) : 0;
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   Vertex center;
@@ -294,7 +295,7 @@ __device__ __INLINE__ float4 primitiveShader(
                 lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
                t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
-               float a=sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
+               float a=10.f*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
                center.x += m.innerIllumination.y*randoms[t  ]*a;
 				   center.y += m.innerIllumination.y*randoms[t+1]*a;
 				   center.z += m.innerIllumination.y*randoms[t+2]*a;
@@ -350,7 +351,7 @@ __device__ __INLINE__ float4 primitiveShader(
                      lambert *= (1.f+randoms[t]*material.innerIllumination.w*100.f); 
                   }
 			         lambert *= (1.f-shadowIntensity);
-                  //lambert += sceneInfo.backgroundColor.w;
+                  lambert += sceneInfo.backgroundColor.w;
                   lambert *= (1.f-photonEnergy);
 
                   // Lighted object, not in the shades

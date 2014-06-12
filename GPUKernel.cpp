@@ -1236,7 +1236,7 @@ void GPUKernel::streamDataToGPU()
    LOG_INFO(3,"Max primitives per box: " << m_maxPrimitivesPerBox );
 
    // Build global illumination structures
-   //buildLightInformationFromTexture(4);
+   buildLightInformationFromTexture(4);
 
    // Done
    LOG_INFO(3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
@@ -2376,18 +2376,19 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    // Light from explicit light sources
    float size = m_sceneInfo.viewDistance.x/3.f;
    float pi = static_cast<float>(PI);
-#if 0
-   for( unsigned int i(0); i<100; ++i)
+#if 1
+   for( unsigned int i(0); i<2; ++i)
    {
       LightInformation lightInformation;
       lightInformation.location.x = rand()%10000 - 5000.f;
-      lightInformation.location.y = rand()%10000 - 5000.f;
+      lightInformation.location.y = 5000.f+rand()%5000;
       lightInformation.location.z = rand()%10000 - 5000.f;
       lightInformation.attribute.x = -1;
+      lightInformation.attribute.y = (LIGHT_MATERIAL_010+i%10);
       lightInformation.color.x = rand()%50/100.f+0.5f;
       lightInformation.color.y = rand()%50/100.f+0.5f;
       lightInformation.color.z = rand()%50/100.f+0.5f;
-      lightInformation.color.w = 0.6f;
+      lightInformation.color.w = 2.f;
       m_lightInformation[m_nbActiveLamps[m_frame]+m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
@@ -2408,7 +2409,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
       m_lightInformationSize++;
    }
    // Light from skybox
-   if( index < m_textureIndex )
+   if( index < m_nbActiveTextures )
    {
       for( int i(0); i<gTextureWidth*gTextureHeight; i+=gTextureDepth*4)
       {
