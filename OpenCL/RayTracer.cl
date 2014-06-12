@@ -24,6 +24,7 @@ typedef int           Lamp;
 // Globals
 #define PI 3.14159265358979323846f
 #define EPSILON 1.f
+#define REBOUND_EPSILON 0.00001f
 
 // Kinect
 #define KINECT_COLOR_WIDTH  640
@@ -1265,8 +1266,10 @@ bool triangleIntersection(
 
    (*normal) = ((*triangle).n0*(*areas).x + (*triangle).n1*(*areas).y + (*triangle).n2*(*areas).z)/((*areas).x+(*areas).y+(*areas).z);
 
-   if( (*sceneInfo).parameters.x==1 ) // Double Sided triangles
+   if( (*sceneInfo).parameters.x==1 )
    {
+      // Double Sided triangles
+      // Reject triangles with normal opposite to ray.
       Vertex N=normalize((*ray).direction);
       if( processingShadows )
       {
@@ -1567,9 +1570,10 @@ float4 primitiveShader(
 #endif // EXTENDED_FEATURES
 
       (*closestColor) *= (*material).innerIllumination.x;
-      for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
+      int C=(lightInformationSize>1) ? 2 : 1;
+      for( int c=0; c<C; ++c ) 
       {
-         int cptLamp = cpt;
+         int cptLamp = ((*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS) ? ((*sceneInfo).pathTracingIteration%lightInformationSize+C-1) : 0;
 
          if(lightInformation[cptLamp].attribute.x != (*primitive).index)
          {
@@ -1586,6 +1590,7 @@ float4 primitiveShader(
             {
                t = t%((*sceneInfo).width*(*sceneInfo).height-3);
                float a=10.f*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
+               
                center.x += (*m).innerIllumination.y*randoms[t  ]*a;
                center.y += (*m).innerIllumination.y*randoms[t+1]*a;
                center.z += (*m).innerIllumination.y*randoms[t+2]*a;
@@ -1641,7 +1646,7 @@ float4 primitiveShader(
                      lambert *= (1.f+randoms[t]*(*material).innerIllumination.w*100.f); 
                   }
                   lambert *= (1.f-(*shadowIntensity));
-                  //lambert += (*sceneInfo).backgroundColor.w;
+                  lambert += (*sceneInfo).backgroundColor.w;
                   lambert *= (1.f-photonEnergy);
 
                   // Lighted object, not in the shades
@@ -1953,7 +1958,7 @@ inline float4 launchRay(
             // Actual refraction
             Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
             vectorRefraction( &rayOrigin.direction, O_E, refraction, normal, initialRefraction );
-            reflectedTarget = closestIntersection - rayOrigin.direction;
+            reflectedTarget = closestIntersection-rayOrigin.direction;
 
             colorContributions[iteration]=transparency-a;
 
@@ -1965,7 +1970,7 @@ inline float4 launchRay(
                vectorReflection( reflectedRay.direction, O_E, normal );
                Vertex rt = closestIntersection - reflectedRay.direction;
 
-               reflectedRay.origin = closestIntersection + rt*0.00001f;
+               reflectedRay.origin = closestIntersection+rt*REBOUND_EPSILON;
                reflectedRay.direction = rt;
                reflectedRatio = attributes.x;
                reflectedRays=iteration;
@@ -2013,7 +2018,7 @@ inline float4 launchRay(
          recursiveBlinn.y=(rBlinn.y>recursiveBlinn.y) ? rBlinn.y:recursiveBlinn.y;
          recursiveBlinn.z=(rBlinn.z>recursiveBlinn.z) ? rBlinn.z:recursiveBlinn.z;
 
-         rayOrigin.origin    = closestIntersection + reflectedTarget*0.00001f; 
+         rayOrigin.origin    = closestIntersection+reflectedTarget*REBOUND_EPSILON; 
          rayOrigin.direction = reflectedTarget;
 
          // Noise management
@@ -2119,10 +2124,6 @@ inline float4 launchRay(
    // Depth of field
    intersectionColor -= colorBox;
 
-   // Ambient light
-   intersectionColor.x += (*sceneInfo).backgroundColor.w;
-   intersectionColor.y += (*sceneInfo).backgroundColor.w;
-   intersectionColor.z += (*sceneInfo).backgroundColor.w;
    saturateVector( &intersectionColor );
    return intersectionColor;
 }
@@ -2684,47 +2685,48 @@ __kernel void k_ambientOcclusion(
    // Beware out of bounds error!
    if( index>=sceneInfo.width*sceneInfo.height/occupancyParameters.x ) return;
 
+   int    wh = sceneInfo.width*sceneInfo.height;
    float occ = 0.f;
    float4 localColor = postProcessingBuffer[index];
    float  depth = localColor.w;
-   const int step = 8;
-   int c=0;
-   for( int X=-step; X<step; ++X )
+   const int step = 16;
+   float c=0.f;
+   int i=0;
+   for( int X=-step; X<step; X+=2 )
    {
-      for( int Y=-step; Y<step; ++Y )
+      for( int Y=-step; Y<step; Y+=2 )
       {
-         if( X!=0 || Y!=0 || X!=Y )
+         int ix = i%wh;
+         int iy = (i+100)%wh;
+         ++i;
+         c+=1.f;
+         int xx = x+(X*postProcessingInfo.param2*randoms[ix]/10.f);
+         int yy = y+(Y*postProcessingInfo.param2*randoms[iy]/10.f);
+         if( xx>=0 && xx<sceneInfo.width && yy>=0 && yy<sceneInfo.height )
          {
-            ++c;
-            int xx = x+X;
-            int yy = y+Y;
-            if( xx>=0 && xx<sceneInfo.width && yy>=0 && yy<sceneInfo.height )
+            int localIndex = yy*sceneInfo.width+xx;
+            if( postProcessingBuffer[localIndex].w<depth)
             {
-               int localIndex = yy*sceneInfo.width+xx;
-               if( postProcessingBuffer[localIndex].w>=depth)
-               {
-                  occ += 1.f;
-               }
+               occ += 1.f-(postProcessingBuffer[localIndex].w-depth)/sceneInfo.viewDistance;
             }
-            else
-            {
-               occ += 1.f;
-            }
+         }
+         else
+         {
+            occ += 1.f;
          }
       }
    }
-   occ /= (float)c;
-   occ += 0.5f; // Ambient light
-   if( occ<1.f )
-   {
-      localColor.x *= occ;
-      localColor.y *= occ;
-      localColor.z *= occ;
-   }
+   occ /= 5.f*c;
+   //occ += 0.3f; // Ambient light
+   occ = (occ>1.f) ? 1.f : occ;
+   occ = (occ<0.f) ? 0.f : occ;
    if(sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS)
    {
       localColor /= (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1);
    }
+   localColor.x -= occ;
+   localColor.y -= occ;
+   localColor.z -= occ;
    saturateVector( &localColor );
 
    localColor.w = 1.f;
