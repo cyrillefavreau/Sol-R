@@ -58,7 +58,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    double bgColorR, double bgColorG, double bgColorB, double bgColorA,
    int renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
    int outputType, int timer, int fogEffect, int isometric3D, 
-   int doubleSidedTriangles, int gradientBackGround, int advancedFeatures )
+   int doubleSidedTriangles, int gradientBackGround, int advancedFeatures,
+   int skyboxSize, int skyboxMaterialId)
 {
    LOG_INFO(3,"RayTracer_SetSceneInfo (" << 
       width << "," <<
@@ -106,6 +107,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
    gSceneInfoStub.parameters.y              = gradientBackGround;
    gSceneInfoStub.parameters.z              = advancedFeatures;
    //gSceneInfoStub.parameters.w              = draftMode;
+
+   gSceneInfoStub.skybox.x                  = skyboxSize;
+   gSceneInfoStub.skybox.y                  = skyboxMaterialId;
    return 0;
 }
 

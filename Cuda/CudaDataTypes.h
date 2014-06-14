@@ -72,6 +72,8 @@ struct SceneInfo
                                      // y: Gradient background( 0:disabled, 1:enabled )
                                      // z: Advanced features( 0:disabled, 1:enabled )
                                      // w: Draft mode(0:disabled, 1:enabled)
+   int4    skybox;                   // x: size
+                                     // y: material Id
 };
 
 // Ray structure
@@ -228,3 +230,31 @@ struct PostProcessingInfo
    float1 param2;         // Parameter role depends on post processing type
    int1   param3;         // Parameter role depends on post processing type
 };
+
+// Deprecated structures
+// Scene information
+struct SceneInfo1
+{
+   int2    size;                     // Image size
+   int1    graphicsLevel;            // Graphics level( No Shading=0, Lambert=1, Specular=2, textured=3, Reflections and Refractions=4, Shadows=5 )
+   int1    nbRayIterations;          // Maximum number of ray iterations for current frame
+   float1  transparentColor;         // Value above which r+g+b color is considered as transparent
+   float1  viewDistance;             // Maximum viewing distance
+   float1  shadowIntensity;          // Shadow intensity( off=0, pitch black=1)
+   float1  width3DVision;            // 3D: Distance between both eyes
+   float4  backgroundColor;          // Background color
+   int1    renderingType;            // Rendering type( Standard=0, Anaglyph=1, OculusVR=2, FishEye=3)
+   int1    renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
+   int1    pathTracingIteration;     // Current iteration for current frame
+   int1    maxPathTracingIterations; // Maximum number of iterations for current frame
+   int4    misc;                     // x: Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
+                                     // y: Timer
+                                     // z: Fog( 0:disabled, 1:enabled )
+                                     // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+   int4    parameters;               // x: Double-sided triangles( 0:disabled, 1:enabled )
+                                     // y: Gradient background( 0:disabled, 1:enabled )
+                                     // z: Advanced features( 0:disabled, 1:enabled )
+                                     // w: Draft mode(0:disabled, 1:enabled)
+};
+
+

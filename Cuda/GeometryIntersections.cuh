@@ -86,6 +86,78 @@ __device__ __INLINE__ bool boxIntersection(
    return ( (tmin < t1) && (tmax > t0) );
 }
 
+/*
+________________________________________________________________________________
+
+Skybox mapping
+________________________________________________________________________________
+*/
+__device__ __INLINE__ float4 skyboxMapping(
+   const SceneInfo&    sceneInfo,
+   Material*           materials, 
+   BitmapBuffer*       textures,
+   const Ray&          ray
+   ) 
+{
+   Material& material = materials[sceneInfo.skybox.y];
+   float4 result = material.color;
+   // solve the equation sphere-ray to find the intersections
+   Vertex dir = normalize(ray.direction-ray.origin); 
+
+   float a = 2.f*dot(dir,dir);
+   float b = 2.f*dot(ray.origin,dir);
+   float c = dot(ray.origin,ray.origin)-(sceneInfo.skybox.x*sceneInfo.skybox.x);
+   float d = b*b-2.f*a*c;
+
+   if( d<=0.f || a == 0.f) return result;
+   float r = sqrt(d);
+   float t1 = (-b-r)/a;
+   float t2 = (-b+r)/a;
+
+   if( t1<=EPSILON && t2<=EPSILON ) return result; // both intersections are behind the ray origin
+
+   float t=0.f;
+   if( t1<=EPSILON ) 
+      t=t2;
+   else 
+      if( t2<=EPSILON )
+         t=t1;
+      else
+         t=(t1<t2) ? t1 : t2;
+
+   if( t<EPSILON ) return result; // Too close to intersection
+   Vertex intersection = normalize(ray.origin+t*dir);
+
+   // Intersection found, no get skybox color
+
+   float U = ((atan2(intersection.x, intersection.z)/PI)+1.f)*.5f;
+   float V = (asin(intersection.y)/PI)+.5f;
+
+   int u=int(material.textureMapping.x*U);
+   int v=int(material.textureMapping.y*V);
+
+   if( material.textureMapping.x != 0 ) u%=material.textureMapping.x;
+   if( material.textureMapping.y != 0 ) v%=material.textureMapping.y;
+   if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
+   {
+      int A=(v*material.textureMapping.x+u)*material.textureMapping.w;
+      int B=material.textureMapping.x*material.textureMapping.y*material.textureMapping.w;
+      int index=A%B;
+
+      // Diffuse
+      int i=material.textureOffset.x+index;
+      BitmapBuffer r,g,b;
+      r = textures[i  ];
+      g = textures[i+1];
+      b = textures[i+2];
+      result.x = r/256.f;
+      result.y = g/256.f;
+      result.z = b/256.f;
+   }
+
+   return result;
+}
+
 #ifdef EXTENDED_GEOMETRY
 /*
 ________________________________________________________________________________

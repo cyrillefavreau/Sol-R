@@ -67,7 +67,15 @@ Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
       SceneInfo& sceneInfo = kernel.getSceneInfo();
       */
       SceneInfo sceneInfo; // NOT USED FOR NOW
-      myfile.read((char*)&sceneInfo,sizeof(SceneInfo));
+      if(version==1)
+      {
+         SceneInfo1 sceneInfo1; // NOT USED FOR NOW
+         myfile.read((char*)&sceneInfo1,sizeof(SceneInfo1));
+      }
+      else
+      {
+         myfile.read((char*)&sceneInfo,sizeof(SceneInfo));
+      }
 
       // --------------------------------------------------------------------------------
       // Primitives

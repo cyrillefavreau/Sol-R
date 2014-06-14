@@ -257,7 +257,9 @@ public:
       int    maxPathTracingIterations,
       OutputType outputType,
       int    timer,
-      int    fogEffect);
+      int    fogEffect,
+      int    skyboxSize,
+      int    skyboxMaterialId);
 
    // Scene
    void setSceneInfo( const SceneInfo& sceneInfo );

@@ -2059,7 +2059,9 @@ void GPUKernel::setSceneInfo(
 	int    maxPathTracingIterations,
 	OutputType outputType,
    int    timer,
-   int    fogEffect)
+   int    fogEffect,
+   int    skyboxSize,
+   int    skyboxMaterialId)
 {
 	LOG_INFO(3,"GPUKernel::setSceneInfo" );
 	memset(&m_sceneInfo,0,sizeof(SceneInfo));
@@ -2079,6 +2081,8 @@ void GPUKernel::setSceneInfo(
 	m_sceneInfo.misc.x = outputType;
 	m_sceneInfo.misc.y = timer;
 	m_sceneInfo.misc.z = fogEffect;
+   m_sceneInfo.skybox.x = skyboxSize;
+   m_sceneInfo.skybox.y = skyboxMaterialId;
 }
 
 void GPUKernel::setSceneInfo( const SceneInfo& sceneInfo ) 

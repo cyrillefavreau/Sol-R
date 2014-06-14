@@ -305,18 +305,25 @@ __device__ __INLINE__ float4 launchRay(
 		}
 		else
 		{
-         if( sceneInfo.parameters.y==1 )
+         if( sceneInfo.skybox.y!=MATERIAL_NONE)
          {
-            // Background
-            Vertex normal = {0.f, 1.f, 0.f };
-            Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
-            float angle = 0.5f-dot( normal, dir);
-            angle = (angle>1.f) ? 1.f: angle;
-			   colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
+            colors[iteration] = skyboxMapping(sceneInfo,materials,textures,rayOrigin);
          }
          else
          {
-			   colors[iteration] = sceneInfo.backgroundColor;
+            if( sceneInfo.parameters.y==1 )
+            {
+               // Background
+               Vertex normal = {0.f, 1.f, 0.f };
+               Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
+               float angle = 0.5f-dot( normal, dir);
+               angle = (angle>1.f) ? 1.f: angle;
+			      colors[iteration] = (1.f-angle)*sceneInfo.backgroundColor;
+            }
+            else
+            {
+			      colors[iteration] = sceneInfo.backgroundColor;
+            }
          }
 			colorContributions[iteration] = 1.f;
 		}

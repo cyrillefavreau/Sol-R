@@ -6,7 +6,7 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-#define ADVANCED_GEOMETRY
+#undef ADVANCED_GEOMETRY
 
 // Constants
 #define NB_MAX_ITERATIONS 20
@@ -69,13 +69,15 @@ typedef struct
    int    pathTracingIteration;     // Current iteration for current frame
    int    maxPathTracingIterations; // Maximum number of iterations for current frame
    int4   misc;                     // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
-   // y: Timer
-   // z: Fog( 0: disabled, 1: enabled )
-   // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+                                    // y: Timer
+                                    // z: Fog( 0: disabled, 1: enabled )
+                                    // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
    int4    parameters;              // x: Double-sided triangles( 0:disabled, 1:enabled )
-   // y: Gradient background( 0:disabled, 1:enabled )
-   // z: Not used
-   // w: Not used
+                                    // y: Gradient background( 0:disabled, 1:enabled )
+                                    // z: Not used
+                                    // w: Not used
+   int4    skybox;                  // x: size
+                                    // y: material Id
 } SceneInfo;
 
 typedef struct
@@ -871,6 +873,78 @@ bool ellipsoidIntersection(
    return true;
 }
 
+/*
+________________________________________________________________________________
+
+Skybox mapping
+________________________________________________________________________________
+*/
+float4 skyboxMapping(
+   const SceneInfo*    sceneInfo,
+   CONST Material*     materials, 
+   CONST BitmapBuffer* textures,
+   const Ray*          ray
+   ) 
+{
+   CONST Material* material = &materials[(*sceneInfo).skybox.y];
+   float4 result = (*material).color;
+   // solve the equation sphere-ray to find the intersections
+   Vertex dir = normalize((*ray).direction-(*ray).origin); 
+
+   float a = 2.f*dot(dir,dir);
+   float b = 2.f*dot((*ray).origin,dir);
+   float c = dot((*ray).origin,(*ray).origin)-((*sceneInfo).skybox.x*(*sceneInfo).skybox.x);
+   float d = b*b-2.f*a*c;
+
+   if( d<=0.f || a == 0.f) return result;
+   float r = sqrt(d);
+   float t1 = (-b-r)/a;
+   float t2 = (-b+r)/a;
+
+   if( t1<=EPSILON && t2<=EPSILON ) return result; // both intersections are behind the ray origin
+
+   float t=0.f;
+   if( t1<=EPSILON ) 
+      t=t2;
+   else 
+      if( t2<=EPSILON )
+         t=t1;
+      else
+         t=(t1<t2) ? t1 : t2;
+
+   if( t<EPSILON ) return result; // Too close to intersection
+   Vertex intersection = normalize((*ray).origin+t*dir);
+
+   // Intersection found, no get skybox color
+
+   float U = ((atan2(intersection.x, intersection.z)/PI)+1.f)*.5f;
+   float V = (asin(intersection.y)/PI)+.5f;
+
+   int u=(*material).textureMapping.x*U;
+   int v=(*material).textureMapping.y*V;
+
+   if( (*material).textureMapping.x != 0 ) u%=(*material).textureMapping.x;
+   if( (*material).textureMapping.y != 0 ) v%=(*material).textureMapping.y;
+   if( u>=0 && u<(*material).textureMapping.x && v>=0 && v<(*material).textureMapping.y )
+   {
+      int A=(v*(*material).textureMapping.x+u)*(*material).textureMapping.w;
+      int B=(*material).textureMapping.x*(*material).textureMapping.y*(*material).textureMapping.w;
+      int index=A%B;
+
+      // Diffuse
+      int i=(*material).textureOffset.x+index;
+      BitmapBuffer r,g,b;
+      r = textures[i  ];
+      g = textures[i+1];
+      b = textures[i+2];
+      result.x = r/256.f;
+      result.y = g/256.f;
+      result.z = b/256.f;
+   }
+
+   return result;
+}
+
 #ifdef ADVANCED_GEOMETRY
 /*
 ________________________________________________________________________________
@@ -889,7 +963,6 @@ bool sphereIntersection(
    ) 
 {
    // solve the equation sphere-ray to find the intersections
-   //printf("p0=%.2f,%.2f,%.2f\n",(*sphere).size.x,(*sphere).size.y,(*sphere).size.z);
    Vertex O_C = (*ray).origin-(*sphere).p0;
    Vertex dir = normalize((*ray).direction); 
 
@@ -897,10 +970,8 @@ bool sphereIntersection(
    float b = 2.f*dot(O_C,dir);
    float c = dot(O_C,O_C)-((*sphere).size.x*(*sphere).size.x);
    float d = b*b-2.f*a*c;
-   //printf("%.2f,%.2f,%.2f,%.2f\n",a,b,c,d);
 
    if( d<=0.f || a == 0.f) return false;
-   //   printf("1\n");
    float r = sqrt(d);
    float t1 = (-b-r)/a;
    float t2 = (-b+r)/a;
@@ -2007,6 +2078,7 @@ inline float4 launchRay(
                }
                else
                {
+                   // No more intersections with primitives -> skybox
                    carryon = false;
                    colorContributions[iteration] = 1.f;                   
                }
@@ -2038,17 +2110,24 @@ inline float4 launchRay(
       else
       {
          // Background
-         if( (*sceneInfo).parameters.y==1 )
+         if( (*sceneInfo).skybox.y!=MATERIAL_NONE)
          {
-            Vertex normal = {0.f,1.f,0.f,0.f};
-            Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
-            float angle = 0.5f-dot( normal, dir);
-            angle = (angle>1.f) ? 1.f: angle;
-            colors[iteration] = (1.f-angle)*(*sceneInfo).backgroundColor;
+            colors[iteration] = skyboxMapping(sceneInfo,materials,textures,&rayOrigin);
          }
          else
          {
-            colors[iteration] = (*sceneInfo).backgroundColor;
+            if( (*sceneInfo).parameters.y==1 )
+            {
+               Vertex normal = {0.f,1.f,0.f,0.f};
+               Vertex dir = normalize(rayOrigin.direction-rayOrigin.origin);
+               float angle = 0.5f-dot( normal, dir);
+               angle = (angle>1.f) ? 1.f: angle;
+               colors[iteration] = (1.f-angle)*(*sceneInfo).backgroundColor;
+            }
+            else
+            {
+               colors[iteration] = (*sceneInfo).backgroundColor;
+            }
          }
          colorContributions[iteration] = 1.f;
       }

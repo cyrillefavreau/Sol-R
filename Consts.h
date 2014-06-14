@@ -38,8 +38,7 @@
 #undef USE_MANAGED_MEMORY
 
 // Raytracer features
-#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
-#define AUTOFOCUS
+#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  PHOTON_ENERGY
 #undef  DODGY_REFRACTIONS
 
