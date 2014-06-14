@@ -264,7 +264,7 @@ __device__ __INLINE__ float4 launchRay(
                    vectorReflection( rayOrigin.direction, O_E, normal );
                    reflectedTarget = closestIntersection - rayOrigin.direction;
                    */
-                   int t=(3+index+sceneInfo.misc.y)%(sceneInfo.width.x*sceneInfo.height.x);
+                   int t=(3+index+sceneInfo.misc.y)%(sceneInfo.size.x*sceneInfo.size.y);
                    reflectedTarget.x = normal.x+800000.f*randoms[t  ];
                    reflectedTarget.y = normal.y+800000.f*randoms[t+1];
                    reflectedTarget.z = normal.z+800000.f*randoms[t+2];
@@ -297,7 +297,7 @@ __device__ __INLINE__ float4 launchRay(
             float ratio = materials[primitives[closestPrimitive].materialId.x].color.w;
             ratio *= (attributes.y==0.f) ? 1000.f : 1.f;
 				int rindex = 3*sceneInfo.misc.y + sceneInfo.pathTracingIteration.x;
-				rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
+				rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y-3);
 				rayOrigin.direction.x += randoms[rindex  ]*ratio;
 				rayOrigin.direction.y += randoms[rindex+1]*ratio;
 				rayOrigin.direction.z += randoms[rindex+2]*ratio;
@@ -446,7 +446,7 @@ __global__ void k_standardRenderer(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = (stream_split+y)*sceneInfo.width.x+x;
+	int index = (stream_split+y)*sceneInfo.size.x+x;
 
    // Antialisazing
    float2 AArotatedGrid[4] =
@@ -459,7 +459,7 @@ __global__ void k_standardRenderer(
 
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
-   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+   if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ||
      (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
       sceneInfo.pathTracingIteration.x>0 && 
@@ -491,7 +491,7 @@ __global__ void k_standardRenderer(
       float a=(postProcessingInfo.param1.x/100000.f);
       int rindex;
       rindex = 3*(index+sceneInfo.misc.y);
-		rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x-3);
+		rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y-3);
 		ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
 		ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
 		ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
@@ -505,19 +505,19 @@ __global__ void k_standardRenderer(
 
    if( sceneInfo.misc.w == 1 ) // Isometric 3D
    {
-      ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.width.x/2));
-	   ray.direction.y = -ray.origin.z*0.001f*(float)(device_split+stream_split+y - (sceneInfo.height.x/2));
+      ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.size.x/2));
+	   ray.direction.y = -ray.origin.z*0.001f*(float)(device_split+stream_split+y - (sceneInfo.size.y/2));
 	   ray.origin.x = ray.direction.x;
 	   ray.origin.y = ray.direction.y;
    }
    else
    {
-      float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
+      float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
       float2 step;
-      step.x=ratio*6400.f/(float)sceneInfo.width.x;
-      step.y=6400.f/(float)sceneInfo.height.x;
-      ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
-      ray.direction.y = ray.direction.y + step.y*(float)(device_split+stream_split+y - (sceneInfo.height.x/2));
+      step.x=ratio*6400.f/(float)sceneInfo.size.x;
+      step.y=6400.f/(float)sceneInfo.size.y;
+      ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.size.x/2));
+      ray.direction.y = ray.direction.y + step.y*(float)(device_split+stream_split+y - (sceneInfo.size.y/2));
    }
 
 	vectorRotation( ray.origin, rotationCenter, angles );
@@ -568,7 +568,7 @@ __global__ void k_standardRenderer(
    {
       // Randomize light intensity
 	   int rindex = index+sceneInfo.misc.y;
-	   rindex %= (sceneInfo.width.x*sceneInfo.height.x);
+	   rindex %= (sceneInfo.size.x*sceneInfo.size.y);
       color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
    }
    
@@ -641,11 +641,11 @@ __global__ void k_fishEyeRenderer(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
-   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+   if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ||
      (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
       sceneInfo.pathTracingIteration.x>0 && 
@@ -668,7 +668,7 @@ __global__ void k_fishEyeRenderer(
       if( sceneInfo.pathTracingIteration.x >= NB_MAX_ITERATIONS )
       {
 		   int rindex = index + sceneInfo.pathTracingIteration.x;
-		   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+		   rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y);
 		   ray.direction.x += randoms[rindex  ]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		   ray.direction.y += randoms[rindex+1]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		   ray.direction.z += randoms[rindex+2]*postProcessingBuffer[index].w*postProcessingInfo.param2.x*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
@@ -680,12 +680,12 @@ __global__ void k_fishEyeRenderer(
 
    // Normal Y axis
    float2 step;
-   step.y=6400.f/(float)sceneInfo.height.x;
-   ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.height.x/2));
+   step.y=6400.f/(float)sceneInfo.size.y;
+   ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.size.y/2));
 
    // 360° X axis
-   step.x = 2.f*PI/sceneInfo.width.x;
-   step.y = 2.f*PI/sceneInfo.height.x;
+   step.x = 2.f*PI/sceneInfo.size.x;
+   step.y = 2.f*PI/sceneInfo.size.y;
 
    Vertex fishEyeAngles = {0.f,0.f,0.f};
    fishEyeAngles.y = angles.y + step.x*(float)x;
@@ -774,11 +774,11 @@ __global__ void k_anaglyphRenderer(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
-   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+   if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ||
      (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
       sceneInfo.pathTracingIteration.x>0 && 
@@ -802,18 +802,18 @@ __global__ void k_anaglyphRenderer(
 	Vertex intersection;
 	Ray eyeRay;
 
-   float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
+   float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
    float2 step;
-   step.x=ratio*6400.f/(float)sceneInfo.width.x;
-   step.y=6400.f/(float)sceneInfo.height.x;
+   step.x=ratio*6400.f/(float)sceneInfo.size.x;
+   step.y=6400.f/(float)sceneInfo.size.y;
 
    // Left eye
 	eyeRay.origin.x = origin.x - sceneInfo.width3DVision.x;
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
-	eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
-	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
+	eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.size.x/2));
+	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.size.y/2));
 	eyeRay.direction.z = direction.z;
 
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
@@ -837,8 +837,8 @@ __global__ void k_anaglyphRenderer(
 	eyeRay.origin.y = origin.y;
 	eyeRay.origin.z = origin.z;
 
-	eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2));
-	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
+	eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.size.x/2));
+	eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.size.y/2));
 	eyeRay.direction.z = direction.z;
 
 	vectorRotation( eyeRay.origin, rotationCenter, angles );
@@ -923,17 +923,17 @@ __global__ void k_3DVisionRenderer(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
-   if(index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ||
+   if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ||
      (sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
-   float focus = fabs(postProcessingBuffer[sceneInfo.width.x/2*sceneInfo.height.x/2].w - origin.z);
+   float focus = fabs(postProcessingBuffer[sceneInfo.size.x/2*sceneInfo.size.y/2].w - origin.z);
    float eyeSeparation = sceneInfo.width3DVision.x*(direction.z/focus);
 
    Vertex rotationCenter = {0.f,0.f,0.f};
@@ -952,12 +952,12 @@ __global__ void k_3DVisionRenderer(
 
 	float dof = postProcessingInfo.param1.x;
 	Vertex intersection;
-	int halfWidth  = sceneInfo.width.x/2;
+	int halfWidth  = sceneInfo.size.x/2;
 
-   float ratio=(float)sceneInfo.width.x/(float)sceneInfo.height.x;
+   float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
    float2 step;
-   step.x=ratio*6400.f/(float)sceneInfo.width.x;
-   step.y=6400.f/(float)sceneInfo.height.x;
+   step.x=ratio*6400.f/(float)sceneInfo.size.x;
+   step.y=6400.f/(float)sceneInfo.size.y;
 
    Ray eyeRay;
 	if( x<halfWidth ) 
@@ -967,8 +967,8 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-      eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) + halfWidth/2 ) + sceneInfo.width3DVision.x;
-		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
+      eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.size.x/2) + halfWidth/2 ) + sceneInfo.width3DVision.x;
+		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.size.y/2));
 		eyeRay.direction.z = direction.z;
 	}
 	else
@@ -978,8 +978,8 @@ __global__ void k_3DVisionRenderer(
 		eyeRay.origin.y = origin.y;
 		eyeRay.origin.z = origin.z;
 
-		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.width.x/2) - halfWidth/2) - sceneInfo.width3DVision.x;
-		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.height.x/2));
+		eyeRay.direction.x = direction.x - step.x*(float)(x - (sceneInfo.size.x/2) - halfWidth/2) - sceneInfo.width3DVision.x;
+		eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.size.y/2));
 		eyeRay.direction.z = direction.z;
 	}
 
@@ -1005,7 +1005,7 @@ __global__ void k_3DVisionRenderer(
    {
       // Randomize light intensity
 	   int rindex = index;
-	   rindex = rindex%(sceneInfo.width.x*sceneInfo.height.x);
+	   rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y);
       color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
    }
 
@@ -1045,10 +1045,10 @@ __global__ void k_default(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
 #if 1
    float4 localColor = postProcessingBuffer[index];
@@ -1058,7 +1058,7 @@ __global__ void k_default(
    }
 #else
    float4 localColor;
-   localColor.x = float(index)/float(sceneInfo.width.x*sceneInfo.height.x);
+   localColor.x = float(index)/float(sceneInfo.size.x*sceneInfo.size.y);
    localColor.y = 0.f;
    localColor.z = 0.f;
    localColor.w = 0.f;
@@ -1083,14 +1083,14 @@ __global__ void k_depthOfField(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
    
    float4 localColor = {0.f,0.f,0.f};
    float  depth=fabs(postProcessingBuffer[index].w-postProcessingInfo.param1.x)/sceneInfo.viewDistance.x;
-	int    wh = sceneInfo.width.x*sceneInfo.height.x;
+	int    wh = sceneInfo.size.x*sceneInfo.size.y;
 
 	for( int i=0; i<postProcessingInfo.param3.x; ++i )
 	{
@@ -1098,9 +1098,9 @@ __global__ void k_depthOfField(
 		int iy = (i+100)%wh;
 		int xx = x+depth*randoms[ix]*postProcessingInfo.param2.x;
 		int yy = y+depth*randoms[iy]*postProcessingInfo.param2.x;
-		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+		if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
 		{
-			int localIndex = yy*sceneInfo.width.x+xx;
+			int localIndex = yy*sceneInfo.size.x+xx;
 			if( localIndex>=0 && localIndex<wh )
 			{
 				localColor += postProcessingBuffer[localIndex];
@@ -1137,12 +1137,12 @@ __global__ void k_ambiantOcclusion(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
-   int    wh = sceneInfo.width.x*sceneInfo.height.x;
+   int    wh = sceneInfo.size.x*sceneInfo.size.y;
    float  occ = 0.f;
 	float4 localColor = postProcessingBuffer[index];
 	float  depth = localColor.w;
@@ -1159,9 +1159,9 @@ __global__ void k_ambiantOcclusion(
          c+=1.f;
          int xx = x+(X*postProcessingInfo.param2.x*randoms[ix]/10.f);
          int yy = y+(Y*postProcessingInfo.param2.x*randoms[iy]/10.f);
-			if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+			if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
 			{
-				int localIndex = yy*sceneInfo.width.x+xx;
+				int localIndex = yy*sceneInfo.size.x+xx;
 				if( postProcessingBuffer[localIndex].w>=depth)
 				{
 					occ += 1.f;
@@ -1207,12 +1207,12 @@ __global__ void k_radiosity(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
    
-   int    wh = sceneInfo.width.x*sceneInfo.height.x;
+   int    wh = sceneInfo.size.x*sceneInfo.size.y;
 
    int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
@@ -1220,13 +1220,13 @@ __global__ void k_radiosity(
 	for( int i=0; i<postProcessingInfo.param3.x; ++i )
 	{
 		int ix = (i+sceneInfo.misc.y+sceneInfo.pathTracingIteration.x)%wh;
-		int iy = (i+sceneInfo.misc.y+sceneInfo.width.x)%wh;
+		int iy = (i+sceneInfo.misc.y+sceneInfo.size.x)%wh;
 		int xx = x+randoms[ix]*postProcessingInfo.param2.x;
 		int yy = y+randoms[iy]*postProcessingInfo.param2.x;
 		localColor += postProcessingBuffer[index];
-		if( xx>=0 && xx<sceneInfo.width.x && yy>=0 && yy<sceneInfo.height.x )
+		if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
 		{
-			int localIndex = yy*sceneInfo.width.x+xx;
+			int localIndex = yy*sceneInfo.size.x+xx;
 			localColor += ( localIndex>=0 && localIndex<wh ) ? div*primitiveXYIds[localIndex].z/255 : 0.f;
       }
 	}
@@ -1252,10 +1252,10 @@ __global__ void k_oneColor(
 {
 	int x = blockDim.x*blockIdx.x + threadIdx.x;
 	int y = blockDim.y*blockIdx.y + threadIdx.y;
-	int index = y*sceneInfo.width.x+x;
+	int index = y*sceneInfo.size.x+x;
 
    // Beware out of bounds error! \[^_^]/
-   if( index>=sceneInfo.width.x*sceneInfo.height.x/occupancyParameters.x ) return;
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
    int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
    float4 localColor = postProcessingBuffer[index]/div;
@@ -1583,8 +1583,8 @@ extern "C" void d2h_bitmap(
    BitmapBuffer*        bitmap, 
    PrimitiveXYIdBuffer* primitivesXYIds )
 {
-   int offsetBitmap = sceneInfo.width.x*sceneInfo.height.x*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
-   int offsetXYIds  = sceneInfo.width.x*sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
+   int offsetBitmap = sceneInfo.size.x*sceneInfo.size.y*gColorDepth*sizeof(BitmapBuffer)/occupancyParameters.x;
+   int offsetXYIds  = sceneInfo.size.x*sceneInfo.size.y*sizeof(PrimitiveXYIdBuffer)/occupancyParameters.x;
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
@@ -1631,8 +1631,8 @@ extern "C" void cudaRender(
    LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
 	int2 size;
-	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x) / (occupancyParameters.x*occupancyParameters.y);
+	size.x = static_cast<int>(sceneInfo.size.x);
+	size.y = static_cast<int>(sceneInfo.size.y) / (occupancyParameters.x*occupancyParameters.y);
 
    dim3 grid;
    grid.x = (size.x+blockSize.x-1)/blockSize.x;
@@ -1724,7 +1724,7 @@ extern "C" void cudaRender(
 		      {
                k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
-                  device*(sceneInfo.height.x/occupancyParameters.x),
+                  device*(sceneInfo.size.y/occupancyParameters.x),
                   stream*size.y,
 #ifndef USE_MANAGED_MEMORY
 				      d_boundingBoxes[device],
@@ -1767,8 +1767,8 @@ extern "C" void cudaRender(
    // --------------------------------------------------------------------------------
    // Post processing on device 0, stream 0
    // --------------------------------------------------------------------------------
-	size.x = static_cast<int>(sceneInfo.width.x);
-	size.y = static_cast<int>(sceneInfo.height.x) / occupancyParameters.x;
+	size.x = static_cast<int>(sceneInfo.size.x);
+	size.y = static_cast<int>(sceneInfo.size.y) / occupancyParameters.x;
 
    grid.x = (size.x+blockSize.x-1)/blockSize.x;
    grid.y = (size.y+blockSize.y-1)/blockSize.y;

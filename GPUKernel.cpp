@@ -691,8 +691,8 @@ unsigned int GPUKernel::getPrimitiveAt( int x, int y )
 {
 	LOG_INFO(3,"GPUKernel::getPrimitiveAt(" << x << "," << y << ")" );
 	unsigned int returnValue = -1;
-	unsigned int index = y*m_sceneInfo.width.x+x;
-	if( index>=0 && index<static_cast<unsigned int>(m_sceneInfo.width.x*m_sceneInfo.height.x))
+	unsigned int index = y*m_sceneInfo.size.x+x;
+	if( index>=0 && index<static_cast<unsigned int>(m_sceneInfo.size.x*m_sceneInfo.size.y))
    {
 		returnValue = m_hPrimitivesXYIds[index].x;
    }
@@ -2063,8 +2063,8 @@ void GPUKernel::setSceneInfo(
 {
 	LOG_INFO(3,"GPUKernel::setSceneInfo" );
 	memset(&m_sceneInfo,0,sizeof(SceneInfo));
-	m_sceneInfo.width.x                = width;
-	m_sceneInfo.height.x               = height;
+	m_sceneInfo.size.x                = width;
+	m_sceneInfo.size.y               = height;
 	m_sceneInfo.transparentColor.x     = transparentColor;
 	m_sceneInfo.graphicsLevel.x        = shadowsEnabled;
 	m_sceneInfo.viewDistance.x         = viewDistance;
@@ -2909,8 +2909,8 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
    LOG_INFO(3,"Generating screenshot " << filename << " (Quality=" << quality << "/" << m_sceneInfo.nbRayIterations.x << ")");
    SceneInfo sceneInfo=m_sceneInfo;
    SceneInfo bakSceneInfo=m_sceneInfo;
-   sceneInfo.width.x =MAX_BITMAP_WIDTH;
-   sceneInfo.height.x=MAX_BITMAP_HEIGHT;
+   sceneInfo.size.x =MAX_BITMAP_WIDTH;
+   sceneInfo.size.y=MAX_BITMAP_HEIGHT;
    sceneInfo.maxPathTracingIterations.x=quality;
    for(int i(0);i<quality;++i)
    {
@@ -2934,7 +2934,7 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
             dst[i+1]=m_bitmap[size-i+1];
             dst[i+2]=m_bitmap[size-i+2];
          }
-         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.width.x,sceneInfo.height.x,gColorDepth,dst);
+         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.size.x,sceneInfo.size.y,gColorDepth,dst);
          delete [] dst;
          break;
       }
@@ -2947,7 +2947,7 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
             dst[i+1]=m_bitmap[size-i+1];
             dst[i+2]=m_bitmap[size-i  ];
          }
-         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.width.x,sceneInfo.height.x,gColorDepth,dst);
+         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.size.x,sceneInfo.size.y,gColorDepth,dst);
          delete [] dst;
          break;
       }

@@ -79,8 +79,8 @@ void RayTracer::InitializeRaytracer( const int width, const int height )
    LOG_INFO(1,"Intializing Raytracing engine");
 #endif // USE_OPENCL
    // Scene
-   gSceneInfo.width.x = width;
-   gSceneInfo.height.x = height;
+   gSceneInfo.size.x = width;
+   gSceneInfo.size.y = height;
    gSceneInfo.graphicsLevel.x = 4;
    gSceneInfo.nbRayIterations.x = 5;
    gSceneInfo.transparentColor.x =  0.f;

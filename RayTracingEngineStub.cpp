@@ -82,8 +82,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
       fogEffect << "," <<
       isometric3D);
 
-   gSceneInfoStub.width.x                   = width;
-   gSceneInfoStub.height.x                  = height;
+   gSceneInfoStub.size.x                    = width;
+   gSceneInfoStub.size.y                    = height;
    gSceneInfoStub.graphicsLevel.x           = graphicsLevel;
    gSceneInfoStub.nbRayIterations.x         = nbRayIterations;
    gSceneInfoStub.transparentColor.x        = static_cast<float>(transparentColor);
@@ -196,25 +196,25 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel( double timer, BitmapBuf
    gKernel->render_end();
    if(false && gSceneInfoStub.misc.x==otDelphi)
    {
-      BitmapBuffer* dst=new BitmapBuffer[gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth];
+      BitmapBuffer* dst=new BitmapBuffer[gSceneInfoStub.size.x*gSceneInfoStub.size.y*gColorDepth];
       BitmapBuffer* src=gKernel->getBitmap();
-      for(int y(0);y<gSceneInfoStub.height.x;++y)
+      for(int y(0);y<gSceneInfoStub.size.y;++y)
       {
-         for(int x(0);x<gSceneInfoStub.width.x*gColorDepth;x+=gColorDepth)
+         for(int x(0);x<gSceneInfoStub.size.x*gColorDepth;x+=gColorDepth)
          {
-            int indexSrc=(y*gSceneInfoStub.width.x*gColorDepth)+x;
-            int indexDst=(y+1)*(gSceneInfoStub.width.x*gColorDepth)-x-gColorDepth;
+            int indexSrc=(y*gSceneInfoStub.size.x*gColorDepth)+x;
+            int indexDst=(y+1)*(gSceneInfoStub.size.x*gColorDepth)-x-gColorDepth;
             dst[indexDst  ]  = src[indexSrc  ];
             dst[indexDst+1]  = src[indexSrc+1];
             dst[indexDst+2]  = src[indexSrc+2];
          }
       }
-      memcpy(image,dst,gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth);
+      memcpy(image,dst,gSceneInfoStub.size.x*gSceneInfoStub.size.y*gColorDepth);
       delete dst;
    }
    else
    {
-      memcpy(image,gKernel->getBitmap(),gSceneInfoStub.width.x*gSceneInfoStub.height.x*gColorDepth);
+      memcpy(image,gKernel->getBitmap(),gSceneInfoStub.size.x*gSceneInfoStub.size.y*gColorDepth);
    }
    return 0;
 }

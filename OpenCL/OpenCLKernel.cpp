@@ -526,7 +526,7 @@ void OpenCLKernel::render_begin( const float timer )
 	   {
          realignTexturesAndMaterials();
 
-         CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,   CL_TRUE, 0, m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(RandomBuffer), m_hRandoms,      0, NULL, NULL));
+         CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dRandoms,   CL_TRUE, 0, m_sceneInfo.size.x*m_sceneInfo.size.y*sizeof(RandomBuffer), m_hRandoms,      0, NULL, NULL));
          CHECKSTATUS(clEnqueueWriteBuffer( m_hQueue, m_dMaterials, CL_TRUE, 0, nbMaterials*sizeof(Material),   m_hMaterials,    0, NULL, NULL));
 		   m_materialsTransfered = true;
          //LOG_INFO(1,"Materials successfully transfered");
@@ -633,7 +633,7 @@ void OpenCLKernel::render_begin( const float timer )
       if( m_sceneInfo.parameters.w==1 && m_sceneInfo.pathTracingIteration.x==0 ) sceneInfo.graphicsLevel.x = 1;
 
       size_t szLocalWorkSize[] = { 1, 1 };
-      size_t szGlobalWorkSize[] = { m_sceneInfo.width.x/szLocalWorkSize[0], m_sceneInfo.height.x/szLocalWorkSize[1] };
+      size_t szGlobalWorkSize[] = { m_sceneInfo.size.x/szLocalWorkSize[0], m_sceneInfo.size.y/szLocalWorkSize[1] };
       int zero(0);
       LOG_INFO(3,"Running default rendering kernel");
 	   switch( sceneInfo.renderingType.x ) 
@@ -807,10 +807,10 @@ void OpenCLKernel::render_end()
 	// ------------------------------------------------------------
 	// Read back the results
 	// ------------------------------------------------------------
-   size_t size=m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(BitmapBuffer)*gColorDepth;
+   size_t size=m_sceneInfo.size.x*m_sceneInfo.size.y*sizeof(BitmapBuffer)*gColorDepth;
    LOG_INFO(3, m_hQueue << ", " << m_dBitmap << ", " << m_bitmap << " - Bitmap Size=" << size);
 	CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dBitmap, CL_TRUE, 0, size, m_bitmap, 0, NULL, NULL) );
-   size=m_sceneInfo.width.x*m_sceneInfo.height.x*sizeof(PrimitiveXYIdBuffer);
+   size=m_sceneInfo.size.x*m_sceneInfo.size.y*sizeof(PrimitiveXYIdBuffer);
    LOG_INFO(3,"PrimitivesID Size=" << size);
    CHECKSTATUS( clEnqueueReadBuffer( m_hQueue, m_dPrimitivesXYIds, CL_TRUE, 0, size, m_hPrimitivesXYIds, 0, NULL, NULL) );
    LOG_INFO(3,"Flushing queues");
@@ -828,7 +828,7 @@ void OpenCLKernel::render_end()
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-      ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
+      ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.size.x, m_sceneInfo.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
       if( m_sceneInfo.renderingType.x == vt3DVision )
       {

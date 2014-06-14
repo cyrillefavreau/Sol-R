@@ -328,7 +328,7 @@ void CudaKernel::render_end()
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-      ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
+      ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.size.x, m_sceneInfo.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
 #if 0
       if( m_sceneInfo.renderingType.x == vt3DVision )

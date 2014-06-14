@@ -288,13 +288,13 @@ __device__ __INLINE__ float4 primitiveShader(
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
-            int t = (index*3+sceneInfo.misc.y)%(sceneInfo.width.x*sceneInfo.height.x);
+            int t = (index*3+sceneInfo.misc.y)%(sceneInfo.size.x*sceneInfo.size.y);
             Material& m=materials[lightInformation[cptLamp].attribute.y];
             if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS &&
                 lightInformation[cptLamp].attribute.x>=0 &&
                 lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
-               t = t%(sceneInfo.width.x*sceneInfo.height.x-3);
+               t = t%(sceneInfo.size.x*sceneInfo.size.y-3);
                float a=10.f*sceneInfo.pathTracingIteration.x/float(sceneInfo.maxPathTracingIterations.x);
                center.x += m.innerIllumination.y*randoms[t  ]*a;
 				   center.y += m.innerIllumination.y*randoms[t+1]*a;
