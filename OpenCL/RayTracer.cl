@@ -1993,13 +1993,15 @@ inline float4 launchRay(
                    // Compute the BRDF for this ray (assuming Lambertian reflection)
                    BRDF=true;
                    Vertex O_E = rayOrigin.origin - closestIntersection;
+                   /*
                    vectorReflection( rayOrigin.direction, O_E, normal );
                    reflectedTarget = closestIntersection - rayOrigin.direction;
-                   int t=((index+(*sceneInfo).pathTracingIteration+(*sceneInfo).misc.y)*3)%((*sceneInfo).width*(*sceneInfo).height);
-                   reflectedTarget.x += 1000000.f*randoms[t  ];
-                   reflectedTarget.y += 1000000.f*randoms[t+1];
-                   reflectedTarget.z += 1000000.f*randoms[t+2];
-                   float cos_theta = dot(normalize(reflectedTarget),normalize(normal));
+                   */
+                   int t=(3+index+(*sceneInfo).misc.y)%((*sceneInfo).width*(*sceneInfo).height);
+                   reflectedTarget.x = normal.x+80000.f*randoms[t  ];
+                   reflectedTarget.y = normal.y+80000.f*randoms[t+1];
+                   reflectedTarget.z = normal.z+80000.f*randoms[t+2];
+                   float cos_theta = dot(normalize(reflectedTarget),normal);
                    //float reflectance=0.1f;
                    //float BDRF = 2.f*reflectance*cos_theta;
                    colorContributions[iteration] = 0.5f*fabs(cos_theta);                  

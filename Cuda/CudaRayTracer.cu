@@ -125,6 +125,7 @@ __device__ __INLINE__ float4 launchRay(
 	float4 colorBox = {0.f,0.f,0.f,0.f};
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
+   bool BRDF=false;
 
    // Reflected rays
    int reflectedRays=-1;
@@ -254,8 +255,29 @@ __device__ __INLINE__ float4 launchRay(
 				}
 				else 
 				{
-               colorContributions[iteration] = 1.f;
-					carryon = false;
+               if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS && !BRDF )
+               {
+                   // Compute the BRDF for this ray (assuming Lambertian reflection)
+                   BRDF=true;
+                   Vertex O_E = rayOrigin.origin - closestIntersection;
+                   /*
+                   vectorReflection( rayOrigin.direction, O_E, normal );
+                   reflectedTarget = closestIntersection - rayOrigin.direction;
+                   */
+                   int t=(3+index+sceneInfo.misc.y)%(sceneInfo.width.x*sceneInfo.height.x);
+                   reflectedTarget.x = normal.x+800000.f*randoms[t  ];
+                   reflectedTarget.y = normal.y+800000.f*randoms[t+1];
+                   reflectedTarget.z = normal.z+800000.f*randoms[t+2];
+                   float cos_theta = dot(normalize(reflectedTarget),normal);
+                   //float reflectance=0.1f;
+                   //float BDRF = 2.f*reflectance*cos_theta;
+                   colorContributions[iteration] = 0.5f*fabs(cos_theta);                  
+               }
+               else
+               {
+                   carryon = false;
+                   colorContributions[iteration] = 1.f;                   
+               }
 				}         
 			}
 

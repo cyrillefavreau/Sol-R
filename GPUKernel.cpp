@@ -1236,7 +1236,9 @@ void GPUKernel::streamDataToGPU()
    LOG_INFO(3,"Max primitives per box: " << m_maxPrimitivesPerBox );
 
    // Build global illumination structures
+#if 0
    buildLightInformationFromTexture(4);
+#endif // 0
 
    // Done
    LOG_INFO(3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame] << " primitives and " << m_nbActiveLamps[m_frame] << " lamps" ); 
@@ -2376,7 +2378,7 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    // Light from explicit light sources
    float size = m_sceneInfo.viewDistance.x/3.f;
    float pi = static_cast<float>(PI);
-#if 1
+#if 0
    for( unsigned int i(0); i<2; ++i)
    {
       LightInformation lightInformation;
