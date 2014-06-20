@@ -35,7 +35,7 @@ const std::string SCENEINFO = "SCENEINFO";
 const std::string PRIMITIVE = "PRIMITIVE";
 const std::string MATERIAL  = "MATERIAL";
 const std::string TEXTURE   = "TEXTURE";
-const size_t FORMAT_VERSION = 1;
+const size_t FORMAT_VERSION = 2;
 
 FileMarshaller::FileMarshaller()
 {

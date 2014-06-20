@@ -380,7 +380,8 @@ Vertex OBJReader::loadModelFromFile(
    const Vertex& scale,
    bool loadMaterials,
    int materialId,
-   bool allSpheres)
+   bool allSpheres,
+   bool autoCenter)
 {
    LOG_INFO(1,"Loading OBJ file " << filename );
    std::map<int,Vertex> vertices;
@@ -535,10 +536,13 @@ Vertex OBJReader::loadModelFromFile(
       objectScale.y = scale.y/os;
       objectScale.z = scale.z/os;
 
-      // Center align object
-      objectCenter.x = (minPos.x+maxPos.x) / 2.f;
-      objectCenter.y = (minPos.y+maxPos.y) / 2.f;
-      objectCenter.z = (minPos.z+maxPos.z) / 2.f;
+      if(autoCenter)
+      {
+         // Center align object
+         objectCenter.x = (minPos.x+maxPos.x) / 2.f;
+         objectCenter.y = (minPos.y+maxPos.y) / 2.f;
+         objectCenter.z = (minPos.z+maxPos.z) / 2.f;
+      }
       file.close();
    }
 

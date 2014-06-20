@@ -187,7 +187,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
    char*   filename,
    int     materialId,
+   int     autoScale,
    double  scale,
+   int     autoCenter,
    double& height);
 
 // ---------- File marshaller ----------

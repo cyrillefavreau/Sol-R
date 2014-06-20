@@ -68,7 +68,8 @@ public:
       const Vertex& scale, 
       bool loadMaterials,
       int  materialId,
-      bool allSpheres);
+      bool allSpheres,
+      bool autoCenter);
 
 private:
    void addLightComponent(

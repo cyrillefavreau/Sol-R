@@ -641,7 +641,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadMolecule(
 extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel( 
    char*   filename,
    int     materialId,
+   int     autoScale,
    double  scale,
+   int     autoCenter,
    double& height)
 {
    LOG_INFO(3,"RayTracer_LoadOBJModel");
@@ -654,12 +656,14 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
       filename,
       *gKernel,
       center,
-      true,
+      (autoScale==1),
       objectScale,
       true,
       materialId,
-      false);
-   height=-minPos.y/2.f;
+      false,
+      (autoCenter==1));
+
+   height=(autoCenter==1) ? 0.f : -minPos.y/2.f;
    return gKernel->getNbActivePrimitives();
 }
 
