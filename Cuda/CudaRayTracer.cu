@@ -20,13 +20,18 @@
 *
 */
 
+// Raytracer features
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#undef  PHOTON_ENERGY
+#undef  DODGY_REFRACTIONS
+#undef  PATH_TRACING
+
 // System
 #include <iostream>
 
 // Cuda
 #include <cuda_runtime_api.h>
 #include <cuda_runtime.h>
-//#include <helper_cuda.h>
 
 // Project
 #include "../Consts.h"
@@ -107,7 +112,7 @@ __device__ __INLINE__ float4 launchRay(
 	primitiveXYId.x = -1;
    primitiveXYId.z = 0;
    primitiveXYId.w = 0;
-   int currentmaterialId=-2;
+   int currentMaterialId=-2;
 
    // TODO
    float  colorContributions[NB_MAX_ITERATIONS+1];
@@ -125,12 +130,18 @@ __device__ __INLINE__ float4 launchRay(
 	float4 colorBox = {0.f,0.f,0.f,0.f};
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
-   bool BRDF=false;
 
    // Reflected rays
    int reflectedRays=-1;
    Ray reflectedRay;
    float reflectedRatio;
+
+#ifdef PATH_TRACING
+   // Path Tracing
+   Ray pathTracingRay;
+   float pathTracingRatio=0.f;
+   float4 pathTracingColor={0.f,0.f,0.f,0.f};
+#endif // PATH_TRACING
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( sceneInfo.graphicsLevel.x<3 ) ? 1 : sceneInfo.nbRayIterations.x+sceneInfo.pathTracingIteration.x;
@@ -150,12 +161,12 @@ __device__ __INLINE__ float4 launchRay(
 				rayOrigin,
 				iteration,  
 				closestPrimitive, closestIntersection, 
-				normal, areas, closestColor, colorBox, currentmaterialId);
+				normal, areas, closestColor, colorBox, currentMaterialId);
 		}
 
 		if( carryon ) 
 		{
-         currentmaterialId = primitives[closestPrimitive].materialId.x;
+         currentMaterialId = primitives[closestPrimitive].materialId.x;
 
 			if( iteration==0 )
 			{
@@ -168,6 +179,19 @@ __device__ __INLINE__ float4 launchRay(
 				firstIntersection = closestIntersection;
             latestIntersection=closestIntersection;
             
+#ifdef PATH_TRACING
+            // Path tracing
+            int t=(3+index+sceneInfo.misc.y)%(sceneInfo.size.x*sceneInfo.size.y);
+            Ray pathTracingRay;
+            pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
+            pathTracingRay.direction.x = normal.x+80000.f*randoms[t  ];
+            pathTracingRay.direction.y = normal.y+80000.f*randoms[t+1];
+            pathTracingRay.direction.z = normal.z+80000.f*randoms[t+2];
+
+            float cos_theta = dot(normalize(pathTracingRay.direction),normal);
+            pathTracingRatio = 0.5f*fabs(cos_theta);
+#endif // PATH_TRACING
+
             // Primitive ID for current pixel
             primitiveXYId.x = primitives[closestPrimitive].index.x;
 
@@ -255,29 +279,8 @@ __device__ __INLINE__ float4 launchRay(
 				}
 				else 
 				{
-               if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS && !BRDF )
-               {
-                   // Compute the BRDF for this ray (assuming Lambertian reflection)
-                   BRDF=true;
-                   Vertex O_E = rayOrigin.origin - closestIntersection;
-                   /*
-                   vectorReflection( rayOrigin.direction, O_E, normal );
-                   reflectedTarget = closestIntersection - rayOrigin.direction;
-                   */
-                   int t=(3+index+sceneInfo.misc.y)%(sceneInfo.size.x*sceneInfo.size.y);
-                   reflectedTarget.x = normal.x+800000.f*randoms[t  ];
-                   reflectedTarget.y = normal.y+800000.f*randoms[t+1];
-                   reflectedTarget.z = normal.z+800000.f*randoms[t+2];
-                   float cos_theta = dot(normalize(reflectedTarget),normal);
-                   //float reflectance=0.1f;
-                   //float BDRF = 2.f*reflectance*cos_theta;
-                   colorContributions[iteration] = 0.5f*fabs(cos_theta);                  
-               }
-               else
-               {
-                   carryon = false;
-                   colorContributions[iteration] = 1.f;                   
-               }
+                  carryon = false;
+                  colorContributions[iteration] = 1.f;                   
 				}         
 			}
 
@@ -330,9 +333,9 @@ __device__ __INLINE__ float4 launchRay(
 		iteration++;
 	}
 
+   Vertex areas = {0.f,0.f,0.f};
    if( sceneInfo.graphicsLevel.x>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration.x==iteration"
    {
-      Vertex areas = {0.f,0.f,0.f};
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
 			sceneInfo,
@@ -342,7 +345,7 @@ __device__ __INLINE__ float4 launchRay(
 			reflectedRay,
 			reflectedRays,  
 			closestPrimitive, closestIntersection, 
-         normal, areas, closestColor, colorBox, currentmaterialId) )
+         normal, areas, closestColor, colorBox, currentMaterialId) )
       {
          Vertex attributes;
          attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
@@ -363,6 +366,41 @@ __device__ __INLINE__ float4 launchRay(
       }
    }
    
+#ifdef PATH_TRACING
+   // Path Tracing
+   if( intersectionWithPrimitives(
+      sceneInfo,
+      boundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      materials, textures,
+      pathTracingRay,
+      0,  
+      closestPrimitive, closestIntersection, 
+      normal, areas, closestColor, colorBox, currentMaterialId) )
+   {
+      Vertex attributes;
+      pathTracingColor = primitiveShader( 
+         index,
+         sceneInfo, postProcessingInfo,
+         boundingBoxes, nbActiveBoxes, 
+         primitives, nbActivePrimitives, 
+         lightInformation, lightInformationSize, nbActiveLamps, 
+         materials, textures, randoms, 
+         pathTracingRay.origin, normal, closestPrimitive, 
+         closestIntersection, areas, closestColor,
+         iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
+   }
+   else
+   {
+      // Background
+      if( sceneInfo.skybox.y!=MATERIAL_NONE)
+      {
+         pathTracingColor = skyboxMapping(sceneInfo,materials,textures,pathTracingRay);
+      }
+   }
+   colors[0] += pathTracingColor*pathTracingRatio;
+#endif // PATH_TRACING
+
    for( int i=iteration-2; i>=0; --i)
    {
       colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];

@@ -6,7 +6,9 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-#undef ADVANCED_GEOMETRY
+#define ADVANCED_GEOMETRY
+#define PATH_TRACING
+#undef GLOBAL_ILLUMINATION
 
 // Constants
 #define NB_MAX_ITERATIONS 20
@@ -114,44 +116,44 @@ enum PrimitiveType
 
 typedef struct
 {
-   float4 innerIllumination; // x: Inner illumination
-   // y: Diffusion strength
-   // z: <not used>
-   // w: Noise
-   float4 color;             // Color( R,G,B )
-   float4 specular;          // x: Value
-   // y: Power
-   // z: <not used>
-   // w: <not used>
-   float  reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
-   float  refraction;        // Refraction index( ex: glass=1.33 )
-   float  transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
-   float  opacity;           // Opacity strength
-   int4   attributes;        // x: Fast transparency( off=0, on=1 ). Fast transparency produces no shadows 
-   //    and drops intersections if rays intersects primitive with the same material ID
-   // y: Procedural textures( off=0, on=1 )
-   // z: Wireframe( off=0, on=1 ). Wire frame produces no shading
-   // w: Wireframe Width
-   int4   textureMapping;    // x: U padding
-   // y: V padding
-   // z: Texture ID (Deprecated)
-   // w: Texture color depth
-   int4   textureOffset;     // x: Offset in the diffuse map
-   // y: Offset in the normal map
-   // z: Offset in the bump map
-   // w: Offset in the specular map
-   int4   textureIds;        // x: Diffuse map
-   // y: Normal map
-   // z: Bump map
-   // w: Specular map
+   float4 innerIllumination;  // x: Inner illumination
+                              // y: Diffusion strength
+                              // z: <not used>
+                              // w: Noise
+   float4 color;              // Color( R,G,B )
+   float4 specular;           // x: Value
+                              // y: Power
+                              // z: <not used>
+                              // w: <not used>
+   float  reflection;         // Reflection rate( No reflection=0 -> Full reflection=1 )
+   float  refraction;         // Refraction index( ex: glass=1.33 )
+   float  transparency;       // Transparency rate( Opaque=0 -> Full transparency=1 )
+   float  opacity;            // Opacity strength
+   int4   attributes;         // x: Fast transparency( off=0, on=1 ). Fast transparency produces no shadows 
+                              //    and drops intersections if rays intersects primitive with the same material ID
+                              // y: Procedural textures( off=0, on=1 )
+                              // z: Wireframe( off=0, on=1 ). Wire frame produces no shading
+                              // w: Wireframe Width
+   int4   textureMapping;     // x: U padding
+                              // y: V padding
+                              // z: Texture ID (Deprecated)
+                              // w: Texture color depth
+   int4   textureOffset;      // x: Offset in the diffuse map
+                              // y: Offset in the normal map
+                              // z: Offset in the bump map
+                              // w: Offset in the specular map
+   int4   textureIds;         // x: Diffuse map
+                              // y: Normal map
+                              // z: Bump map
+                              // w: Specular map
    int4   advancedTextureOffset; // x: Offset in the Reflection map
-   // y: Offset in the Transparency map
-   // z: not used
-   // w: not used
-   int4   advancedTextureIds;// x: Reflection map
-   // y: Transparency map
-   // z: not used
-   // w: not used
+                                 // y: Offset in the Transparency map
+                                 // z: Offset in the Ambient Occulsion map
+                                 // w: not used
+   int4   advancedTextureIds;    // x: Reflection map
+                                 // y: Transparency map
+                                 // z: Ambient Occulsion map
+                                 // w: not used
 } Material;
 
 typedef struct
@@ -485,9 +487,6 @@ void bumpMap(
    g = textures[i+1];
    b = textures[i+2];
    (*value)=10.f*(r+g+b)/768.f;
-   //(*intersection).x += d;
-   //(*intersection).y += d;
-   //(*intersection).z += d;
 }
 
 // ----------
@@ -542,6 +541,23 @@ void transparencyMap(
    (*attributes).z = 10.f*b/256.f;
 }
 
+// ----------
+// Ambient occlusion
+// --------------------
+void ambientOcclusionMap(
+   const int        index,
+   CONST Material*  material,
+   CONST BitmapBuffer*    textures,
+   Vertex*          advancedAttributes)
+{
+   int i = (*material).advancedTextureOffset.z + index;
+   BitmapBuffer r,g,b;
+   r = textures[i  ];
+   g = textures[i+1];
+   b = textures[i+2];
+   (*advancedAttributes).x=(r+g+b)/768.f;
+}
+
 #ifdef ADVANCED_GEOMETRY
 /*
 ________________________________________________________________________________
@@ -556,7 +572,8 @@ float4 sphereUVMapping(
    Vertex* intersection,
    Vertex* normal,
    Vertex* specular,
-   Vertex* attributes)
+   Vertex* attributes,
+   Vertex* advancedAttributes)
 {
    CONST Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
@@ -587,6 +604,7 @@ float4 sphereUVMapping(
       result.z = b/256.f;
 
       float strength=3.f;
+      float intensity=1.f;
       // Bump mapping
       if( (*material).textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection, &strength);
       // Normal mapping
@@ -597,6 +615,8 @@ float4 sphereUVMapping(
       if( (*material).advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
       // Transparency mapping
       if( (*material).advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
+      // Ambient occulusion mapping
+      if( (*material).advancedTextureIds.z!=TEXTURE_NONE) ambientOcclusionMap(index, material, textures, advancedAttributes);
    }
    return result; 
 }
@@ -615,7 +635,8 @@ float4 cubeMapping(
    Vertex* intersection,
    Vertex* normal,
    Vertex* specular,
-   Vertex* attributes)
+   Vertex* attributes,
+   Vertex* advancedAttributes)
 {
    CONST Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
@@ -687,6 +708,8 @@ float4 cubeMapping(
                if( (*material).advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
                // Transparency mapping
                if( (*material).advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
+               // Ambient occlusion mapping
+               if( (*material).advancedTextureIds.z!=TEXTURE_NONE) ambientOcclusionMap(index, material, textures, advancedAttributes);
             }
             break;
          }
@@ -711,7 +734,8 @@ float4 triangleUVMapping(
    const Vertex    areas,
    Vertex* normal,
    Vertex* specular,
-   Vertex* attributes)
+   Vertex* attributes,
+   Vertex* advancedAttributes)
 {
    CONST Material* material = &materials[(*primitive).materialId];
    float4 result = (*material).color;
@@ -754,7 +778,11 @@ float4 triangleUVMapping(
 
             float strength=3.f;
             // Bump mapping
-            if( (*material).textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection, &strength);
+            if( (*material).textureIds.z!=TEXTURE_NONE)
+            {
+               bumpMap(index, material, textures, intersection, &strength);
+               (*attributes).w *= strength/10.f;
+            }
             // Normal mapping
             if( (*material).textureIds.y!=TEXTURE_NONE) normalMap(index, material, textures, normal, strength);
             // Specular mapping
@@ -763,6 +791,8 @@ float4 triangleUVMapping(
             if( (*material).advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
             // Transparency mapping
             if( (*material).advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
+            // Ambient occulusion mapping
+            if( (*material).advancedTextureIds.z!=TEXTURE_NONE) ambientOcclusionMap(index, material, textures, advancedAttributes);
          }
       }
    }
@@ -1250,9 +1280,11 @@ bool planeIntersection(
       float4 color = materials[(*primitive).materialId].color;
       if( (*primitive).type == ptCamera || materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE )
       {
-         Vertex specular = {0.f,0.f,0.f,0.f}; // TODO?
+         // TODO?
+         Vertex specular = {0.f,0.f,0.f,0.f}; 
          Vertex attributes;
-         color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal, &specular, &attributes );
+         Vertex advancedAttributes;
+         color = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal, &specular, &attributes, &advancedAttributes );
          (*shadowIntensity) = color.w;
       }
 
@@ -1380,7 +1412,8 @@ float4 intersectionShader(
    const Vertex   areas,
    Vertex*        normal,
    Vertex*        specular,
-   Vertex*        attributes)
+   Vertex*        attributes,
+   Vertex*        advancedAttributes)
 {
    float4 colorAtIntersection = materials[(*primitive).materialId].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
@@ -1392,7 +1425,7 @@ float4 intersectionShader(
       {
          if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
          {
-            colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular, attributes );
+            colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
          }
          break;
       }
@@ -1402,7 +1435,7 @@ float4 intersectionShader(
       {
          if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
          {
-            colorAtIntersection = sphereUVMapping( primitive, materials, textures, intersection, normal, specular, attributes );
+            colorAtIntersection = sphereUVMapping( primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
          }
          break;
       }
@@ -1410,7 +1443,7 @@ float4 intersectionShader(
       {
          if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
          {
-            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes );
+            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
          }
          else 
          {
@@ -1444,7 +1477,7 @@ float4 intersectionShader(
       {
          if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
          {
-            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes);
+            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes);
          }
          break;
       }
@@ -1452,7 +1485,7 @@ float4 intersectionShader(
       {
          if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
          {
-            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes );
+            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
          }
          break;
       }
@@ -1460,8 +1493,7 @@ float4 intersectionShader(
 #else
    if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
    {
-      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes );
-      //printf("1. Reflection=%f\n", (*attributes).x);
+      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
    }
 #endif // ADVANCED_GEOMETRY
    return colorAtIntersection;
@@ -1572,6 +1604,47 @@ float processShadows(
    return result;
 }
 
+#ifdef GLOBAL_ILLUMINATION
+float4 globalIllumination(
+   CONST BoundingBox* boundingBoxes, const int nbActiveBoxes, 
+   CONST Primitive*  primitives, const int nbActivePrimitives,
+   CONST Material*   materials,
+   Vertex*           intersection)
+{
+   float d=500.f;
+   float4 color={0.f,0.f,0.f,0.f};
+   bool found=false;
+   int cptBoxes=0;
+   while(cptBoxes<nbActiveBoxes && !found)
+   {
+      // Intersection with Box
+      CONST BoundingBox* box = &boundingBoxes[cptBoxes];
+      Vertex boxCenter=((*box).parameters[0]+(*box).parameters[1])/2.f;
+      float len=length(boxCenter-(*intersection));
+      if(len<d)
+      {
+         // Intersection with primitive within boxes
+         int cptPrimitives=0;
+         while(cptPrimitives<(*box).nbPrimitives && !found )
+         {
+            CONST Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
+            Vertex primitiveCenter=((*primitive).p0+(*primitive).p1+(*primitive).p2)/3.f;
+            float len=length(primitiveCenter-(*intersection));
+            if(len<d)
+            {
+               CONST Material* material = &materials[(*primitive).materialId];
+               color += (*material).color*(1.f-(len/d));
+               found=true;
+            }
+            ++cptPrimitives;
+         }
+      }
+      ++cptBoxes;
+   }
+   return color;
+}
+#endif // GLOBAL_ILLUMINATION
+
 /*
 ________________________________________________________________________________
 
@@ -1608,6 +1681,7 @@ float4 primitiveShader(
 
    // Bump
    Vertex bumpNormal={0.f,0.f,0.f,0.f};
+   Vertex advancedAttributes={0.f,0.f,0.f,0.f};
 
    // Specular
    Vertex specular;
@@ -1616,7 +1690,7 @@ float4 primitiveShader(
    specular.z=(*material).specular.z;
 
    // Intersection color
-   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, &bumpNormal, &specular, attributes );
+   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, &bumpNormal, &specular, attributes, &advancedAttributes );
    (*normal) += bumpNormal;
    (*normal) = normalize((*normal));
 
@@ -1660,7 +1734,7 @@ float4 primitiveShader(
             {
                t = t%((*sceneInfo).size.x*(*sceneInfo).size.y-3);
                float a=10.f*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
-               
+
                center.x += (*m).innerIllumination.y*randoms[t  ]*a;
                center.y += (*m).innerIllumination.y*randoms[t+1]*a;
                center.z += (*m).innerIllumination.y*randoms[t+2]*a;
@@ -1755,14 +1829,32 @@ float4 primitiveShader(
          // Light impact on material
          (*closestColor) += intersectionColor*lampsColor;
 
-         // Saturate color
-         saturateVector(closestColor);
-
          (*refractionFromColor) = intersectionColor; // Refraction depending on color;
          saturateVector( totalBlinn );
       }
    }
-   return (*closestColor); // TODO
+   
+   // Ambient occlusion
+   if((*material).advancedTextureIds.z!=TEXTURE_NONE)
+   {
+      (*closestColor)*=advancedAttributes.x;
+   }
+
+#ifdef GLOBAL_ILLUMINATION
+   if(iteration==0)
+   {
+   (*closestColor) += globalIllumination(
+       boundingBoxes, nbActiveBoxes,
+       primitives,nbActivePrimitives,
+       materials,
+       intersection);
+   }
+#endif // GLOBAL_ILLUMINATION
+   
+    // Saturate color
+    saturateVector(closestColor);
+
+   return (*closestColor);
 }
 
 /*
@@ -1934,7 +2026,13 @@ inline float4 launchRay(
    int reflectedRays=-1;
    Ray reflectedRay;
    float reflectedRatio;
-   bool BRDF=false;
+
+#ifdef PATH_TRACING
+   // Path Tracing
+   Ray pathTracingRay;
+   float pathTracingRatio=0.f;
+   float4 pathTracingColor={0.f,0.f,0.f,0.f};
+#endif // PATH_TRACING
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( (*sceneInfo).graphicsLevel<3 ) ? 1 : (*sceneInfo).nbRayIterations+(*sceneInfo).pathTracingIteration;
@@ -1972,6 +2070,19 @@ inline float4 launchRay(
             firstIntersection=closestIntersection;
             latestIntersection=closestIntersection;
 
+#ifdef PATH_TRACING
+            // Path tracing
+            int t=(3+index+(*sceneInfo).misc.y)%((*sceneInfo).size.x*(*sceneInfo).size.y);
+            Ray pathTracingRay;
+            pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
+            pathTracingRay.direction.x = normal.x+80000.f*randoms[t  ];
+            pathTracingRay.direction.y = normal.y+80000.f*randoms[t+1];
+            pathTracingRay.direction.z = normal.z+80000.f*randoms[t+2];
+
+            float cos_theta = dot(normalize(pathTracingRay.direction),normal);
+            pathTracingRatio = 0.5f*fabs(cos_theta);
+#endif // PATH_TRACING
+
             // Primitive ID for current pixel
             (*primitiveXYId).x = primitives[closestPrimitive].index;
 
@@ -1982,6 +2093,8 @@ inline float4 launchRay(
          attributes.y=materials[primitives[closestPrimitive].materialId].transparency;
          attributes.z=materials[primitives[closestPrimitive].materialId].refraction;
          attributes.w=materials[primitives[closestPrimitive].materialId].opacity;
+
+         Vertex advancedAttributes={0.f,0.f,0.f,0.f};
 
          // Get object color
          rBlinn.w = attributes.y;
@@ -1994,7 +2107,7 @@ inline float4 launchRay(
             materials, textures, 
             randoms, rayOrigin.origin, &normal, 
             closestPrimitive, &closestIntersection, areas, &closestColor,
-            iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+            iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes);
 
          // Primitive illumination
          float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
@@ -2058,30 +2171,9 @@ inline float4 launchRay(
             }
             else 
             {
-               if( (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS && !BRDF )
-               {
-                   // Compute the BRDF for this ray (assuming Lambertian reflection)
-                   BRDF=true;
-                   Vertex O_E = rayOrigin.origin - closestIntersection;
-                   /*
-                   vectorReflection( rayOrigin.direction, O_E, normal );
-                   reflectedTarget = closestIntersection - rayOrigin.direction;
-                   */
-                   int t=(3+index+(*sceneInfo).misc.y)%((*sceneInfo).size.x*(*sceneInfo).size.y);
-                   reflectedTarget.x = normal.x+80000.f*randoms[t  ];
-                   reflectedTarget.y = normal.y+80000.f*randoms[t+1];
-                   reflectedTarget.z = normal.z+80000.f*randoms[t+2];
-                   float cos_theta = dot(normalize(reflectedTarget),normal);
-                   //float reflectance=0.1f;
-                   //float BDRF = 2.f*reflectance*cos_theta;
-                   colorContributions[iteration] = 0.5f*fabs(cos_theta);                  
-               }
-               else
-               {
-                   // No more intersections with primitives -> skybox
-                   carryon = false;
-                   colorContributions[iteration] = 1.f;                   
-               }
+               // No more intersections with primitives -> skybox
+               carryon = false;
+               colorContributions[iteration] = 1.f;                   
             }         
          }
 
@@ -2134,10 +2226,10 @@ inline float4 launchRay(
       iteration++;
    }
 
+   Vertex areas = {0.f,0.f,0.f,0.f};
    if( (*sceneInfo).graphicsLevel>=3 && reflectedRays != -1 ) // TODO: Draft mode should only test (*sceneInfo).pathTracingIteration==iteration
    {
-      Vertex areas = {0.f,0.f,0.f,0.f};
-      // TODO: Dodgy implementation		
+      // TODO: Dodgy implementation of reflections for transparent material
       if( intersectionWithPrimitives(
          sceneInfo,
          boundingBoxes, nbActiveBoxes,
@@ -2165,6 +2257,41 @@ inline float4 launchRay(
          (*primitiveXYId).w = shadowIntensity*255;
       }
    }
+
+#ifdef PATH_TRACING
+   // Path Tracing
+   if( intersectionWithPrimitives(
+      sceneInfo,
+      boundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      materials, textures,
+      &pathTracingRay,
+      0,  
+      &closestPrimitive, &closestIntersection, 
+      &normal, &areas, &colorBox, currentMaterialId) )
+   {
+      Vertex attributes;
+      pathTracingColor = primitiveShader( 
+         index,
+         sceneInfo, postProcessingInfo,
+         boundingBoxes, nbActiveBoxes, 
+         primitives, nbActivePrimitives, 
+         lightInformation, lightInformationSize, nbActiveLamps, 
+         materials, textures, randoms, 
+         pathTracingRay.origin, &normal, closestPrimitive, 
+         &closestIntersection, areas, &closestColor,
+         iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+   }
+   else
+   {
+      // Background
+      if( (*sceneInfo).skybox.y!=MATERIAL_NONE)
+      {
+         pathTracingColor = skyboxMapping(sceneInfo,materials,textures,&pathTracingRay);
+      }
+   }
+   colors[0] += pathTracingColor*pathTracingRatio;
+#endif // PATH_TRACING
 
    for( int i=iteration-2; i>=0; --i)
    {

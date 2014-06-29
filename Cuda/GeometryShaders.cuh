@@ -244,6 +244,7 @@ __device__ __INLINE__ float4 primitiveShader(
 
    // Bump
    Vertex bumpNormal={0.f,0.f,0.f};
+   Vertex advancedAttributes={0.f,0.f,0.f,0.f};
 
    // Specular
    Vertex specular;
@@ -252,7 +253,7 @@ __device__ __INLINE__ float4 primitiveShader(
    specular.z=material.specular.z;
 
    // Intersection color
-   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular, attributes );
+   float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular, attributes, advancedAttributes );
    normal += bumpNormal;
    normal = normalize(normal);
 
@@ -390,6 +391,12 @@ __device__ __INLINE__ float4 primitiveShader(
          // Light impact on material
 		   closestColor += intersectionColor*lampsColor;
 
+         // Ambient occlusion
+         if(material.advancedTextureIds.z!=TEXTURE_NONE)
+         {
+            closestColor*=advancedAttributes.x;
+         }
+         
          // Saturate color
 		   saturateVector(closestColor);
 

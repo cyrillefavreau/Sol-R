@@ -148,11 +148,11 @@ struct __ALIGN16__ Material
                              // w: Specular map
    int4   advancedTextureOffset;// x: Reflection map
                                 // y: Transparency map
-                                // z: not used
+                                // z: Ambiant Occulusion
                                 // w: not used
    int4   advancedTextureIds;   // x: Reflection map
                                 // y: Transparency map
-                                // z: not used
+                                // z: Ambiant Occulusion
                                 // w: not used
 };
 

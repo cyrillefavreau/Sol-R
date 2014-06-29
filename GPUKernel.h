@@ -195,7 +195,7 @@ public:
 		bool procedural,
       bool wireframe, int wireframeWidth,
 		float transparency, float opacity,
-	   int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId,
+	   int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId, int ambientOcclusionTextureId,
 		float specValue, float specPower, float specCoef,
       float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
       bool fastTransparency);
@@ -214,7 +214,7 @@ public:
       bool& wireframe,
       int& wireframeDepth,
 		float& transparency, float& opacity,
-      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId,
+      int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, int& reflectionTextureId, int& transparencyTextureId, int& ambientOcclusionTextureId,
 		float& specValue, float& specPower, float& specCoef,
       float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
       bool& fastTransparency);

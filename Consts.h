@@ -37,11 +37,6 @@
 //CUDA Specific
 #undef USE_MANAGED_MEMORY
 
-// Raytracer features
-#define  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
-#undef  PHOTON_ENERGY
-#undef  DODGY_REFRACTIONS
-
 // Consts
 const int MAX_GPU_COUNT     = 32;
 const int MAX_STREAM_COUNT  = 32;

@@ -167,7 +167,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
                   m.Kd.x,m.Kd.y,m.Kd.z,
                   m.noise,m.reflection,m.refraction, false, false, 0,
                   m.transparency, m.opacity,
-                  m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId,
+                  m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId, m.ambientOcclusionTextureId,
                   m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
                   m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
                   false );
@@ -313,7 +313,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             m.Kd.x,m.Kd.y,m.Kd.z,
             m.noise,m.reflection,m.refraction, false, false, 0,
             m.transparency, m.opacity,
-            m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId,
+            m.diffuseTextureId, m.normalTextureId, m.bumpTextureId, m.specularTextureId, m.reflectionTextureId, m.transparencyTextureId, m.ambientOcclusionTextureId,
             m.Ks.x, 100.f*m.Ks.y, m.Ks.z,
             m.illumination, innerDiffusion, innerDiffusion*diffusionRatio,
             false );

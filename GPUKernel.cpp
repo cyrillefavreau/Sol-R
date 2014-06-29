@@ -1770,7 +1770,7 @@ void GPUKernel::setMaterial(
 	bool  procedural,
 	bool  wireframe, int wireframeWidth,
 	float transparency, float opacity,
-	int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId, 
+	int diffuseTextureId, int normalTextureId, int bumpTextureId, int specularTextureId, int reflectionTextureId, int transparentTextureId, int ambientOcclusionTextureId,
 	float specValue, float specPower, float specCoef, 
    float innerIllumination, float illuminationDiffusion, float illuminationPropagation, 
    bool fastTransparency)
@@ -1834,7 +1834,7 @@ void GPUKernel::setMaterial(
       m_hMaterials[index].textureIds.w     = specularTextureId;
       m_hMaterials[index].advancedTextureIds.x     = reflectionTextureId;
       m_hMaterials[index].advancedTextureIds.y     = transparentTextureId;
-		m_hMaterials[index].advancedTextureIds.z     = TEXTURE_NONE;
+		m_hMaterials[index].advancedTextureIds.z     = ambientOcclusionTextureId;
 		m_hMaterials[index].advancedTextureIds.w     = TEXTURE_NONE;
       m_hMaterials[index].advancedTextureOffset.x  = 0;
       m_hMaterials[index].advancedTextureOffset.y  = 0;
@@ -1874,8 +1874,10 @@ void GPUKernel::setMaterial(
          // Advanced textures
          m_hMaterials[index].advancedTextureIds.x     = reflectionTextureId;
          m_hMaterials[index].advancedTextureIds.y     = transparentTextureId;
+         m_hMaterials[index].advancedTextureIds.z     = ambientOcclusionTextureId;
          m_hMaterials[index].advancedTextureOffset.x  = (reflectionTextureId==TEXTURE_NONE) ? 0: m_hTextures[reflectionTextureId].offset;
          m_hMaterials[index].advancedTextureOffset.y  = (transparentTextureId==TEXTURE_NONE) ? 0: m_hTextures[transparentTextureId].offset;
+         m_hMaterials[index].advancedTextureOffset.z  = (ambientOcclusionTextureId==TEXTURE_NONE) ? 0: m_hTextures[ambientOcclusionTextureId].offset;
       }
       else
       {
@@ -1955,7 +1957,7 @@ int GPUKernel::getMaterialAttributes(
 	bool&  wireframe, int& wireframeDepth,
 	float& transparency, float& opacity,
 	int& diffuseTextureId, int& normalTextureId, int& bumpTextureId, int& specularTextureId, 
-   int& reflectionTextureId, int& transparencyTextureId,
+   int& reflectionTextureId, int& transparencyTextureId, int& ambientOcclusionTextureId,
 	float& specValue, float& specPower, float& specCoef,
    float& innerIllumination, float& illuminationDiffusion, float& illuminationPropagation,
    bool& fastTransparency)
@@ -1973,13 +1975,14 @@ int GPUKernel::getMaterialAttributes(
 		transparency = m_hMaterials[index].transparency.x;
 		opacity      = m_hMaterials[index].opacity.x;
 		
-      diffuseTextureId = m_hMaterials[index].textureIds.x;
-		normalTextureId = m_hMaterials[index].textureIds.y;
-		bumpTextureId = m_hMaterials[index].textureIds.z;
-		specularTextureId= m_hMaterials[index].textureIds.w;
+      diffuseTextureId=m_hMaterials[index].textureIds.x;
+		normalTextureId=m_hMaterials[index].textureIds.y;
+		bumpTextureId=m_hMaterials[index].textureIds.z;
+		specularTextureId=m_hMaterials[index].textureIds.w;
+      reflectionTextureId=m_hMaterials[index].advancedTextureIds.x;
+		transparencyTextureId=m_hMaterials[index].advancedTextureIds.y;
+      ambientOcclusionTextureId=m_hMaterials[index].advancedTextureIds.z;
 
-      reflectionTextureId= m_hMaterials[index].advancedTextureIds.x;
-		transparencyTextureId= m_hMaterials[index].advancedTextureIds.y;
 		specValue = m_hMaterials[index].specular.x;
 		specPower = m_hMaterials[index].specular.y;
 		specCoef  = m_hMaterials[index].specular.w;

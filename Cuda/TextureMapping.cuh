@@ -121,6 +121,23 @@ __device__ __INLINE__ void transparencyMap(
    attributes.z = 10.f*b/256.f;
 }
 
+// ----------
+// Ambient occlusion
+// --------------------
+__device__ __INLINE__ void ambientOcclusionMap(
+   const int&       index,
+   const Material&  material,
+   BitmapBuffer*    textures,
+   Vertex&          advancedAttributes)
+{
+   int i = material.advancedTextureOffset.z + index;
+   BitmapBuffer r,g,b;
+   r = textures[i  ];
+   g = textures[i+1];
+   b = textures[i+2];
+   advancedAttributes.x=(r+g+b)/768.f;
+}
+
 __device__ __INLINE__ void juliaSet( 
 	const Primitive& primitive,
 	Material*        materials,
@@ -223,7 +240,8 @@ __device__ __INLINE__ float4 triangleUVMapping(
    const Vertex&    areas,
    Vertex&          normal,
    Vertex&          specular,
-   Vertex&          attributes)
+   Vertex&          attributes,
+   Vertex&          advancedAttributes)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -275,6 +293,8 @@ __device__ __INLINE__ float4 triangleUVMapping(
 			   if( material.advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
 			   // Transparency mapping
 			   if( material.advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
+            // Ambient occulusion mapping
+            if( material.advancedTextureIds.z!=TEXTURE_NONE) ambientOcclusionMap(index, material, textures, advancedAttributes);
          }
       }
 	}
@@ -295,7 +315,8 @@ __device__ __INLINE__ float4 sphereUVMapping(
 	Vertex&          intersection,
    Vertex&          normal,
    Vertex&          specular,
-   Vertex&          attributes
+   Vertex&          attributes,
+   Vertex&          advancedAttributes
    )
 {
    Material& material=materials[primitive.materialId.x];
@@ -337,6 +358,8 @@ __device__ __INLINE__ float4 sphereUVMapping(
       if( material.advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
       // Transparency mapping
       if( material.advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
+      // Ambient occulusion mapping
+      if( material.advancedTextureIds.z!=TEXTURE_NONE) ambientOcclusionMap(index, material, textures, advancedAttributes);
 	}
 	return result; 
 }
@@ -355,7 +378,8 @@ __device__ __INLINE__ float4 cubeMapping(
 	Vertex&          intersection,
    Vertex&          normal,
    Vertex&          specular,
-   Vertex&          attributes)
+   Vertex&          attributes,
+   Vertex&          advancedAttributes)
 {
    Material& material=materials[primitive.materialId.x];
 	float4 result = material.color;
@@ -426,6 +450,8 @@ __device__ __INLINE__ float4 cubeMapping(
 				   if( material.advancedTextureIds.x!=TEXTURE_NONE) reflectionMap(index, material, textures, attributes);
 				   // Transparency mapping
 				   if( material.advancedTextureIds.y!=TEXTURE_NONE) transparencyMap(index, material, textures, attributes);
+               // Ambient occulusion mapping
+               if( material.advancedTextureIds.z!=TEXTURE_NONE) ambientOcclusionMap(index, material, textures, advancedAttributes);
             }
             break;
          }
