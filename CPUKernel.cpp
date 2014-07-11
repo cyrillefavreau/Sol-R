@@ -23,7 +23,7 @@
 // System
 #include <iostream>
 #include <stdlib.h>
-#include <math>
+#include <math.h>
 
 // OpenGL
 #include <GL/freeglut.h>
@@ -1210,7 +1210,7 @@ void CPUKernel::makeColor(
       }
    case otJPEG: 
       {
-         mdc_index = (m_sceneInfo.width.x*m_sceneInfo.height.x-index)*gColorDepth; 
+         mdc_index = (m_sceneInfo.size.x*m_sceneInfo.size.y-index)*gColorDepth;
          // JPEG
          m_bitmap[mdc_index+2] = (char)(color.z*255.f); // Blue
          m_bitmap[mdc_index+1] = (char)(color.y*255.f); // Green
@@ -1490,7 +1490,7 @@ float4 CPUKernel::primitiveShader(
             {
                Primitive& lamp = m_hPrimitives[li.attribute.x];
                int t = 3*m_sceneInfo.misc.y;
-               t = t%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+               t = t%(m_sceneInfo.size.x*m_sceneInfo.size.y-3);
                center.x += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t  ]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
                center.y += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t+1]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
                center.z += m_hMaterials[lamp.materialId.x].innerIllumination.y*m_hRandoms[t+2]*m_sceneInfo.pathTracingIteration.x/float(m_sceneInfo.maxPathTracingIterations.x);
@@ -1810,7 +1810,7 @@ float4 CPUKernel::launchRay(
             float ratio = m_hMaterials[m_hPrimitives[closestPrimitive].materialId.x].color.w;
             ratio *= (m_hMaterials[m_hPrimitives[closestPrimitive].materialId.x].transparency.x==0.f) ? 1000.f : 1.f;
             int rindex = 3*m_sceneInfo.misc.y + m_sceneInfo.pathTracingIteration.x;
-            rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x);
+            rindex = rindex%(m_sceneInfo.size.x*m_sceneInfo.size.y);
             rayOrigin.direction.x += m_hRandoms[rindex  ]*ratio;
             rayOrigin.direction.y += m_hRandoms[rindex+1]*ratio;
             rayOrigin.direction.z += m_hRandoms[rindex+2]*ratio;
@@ -1945,11 +1945,11 @@ void CPUKernel::k_standardRenderer()
    int x;
    Vertex intersection;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y=0; y<m_sceneInfo.height.x; ++y )
+      for( int y=0; y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
 
          float dof = m_postProcessingInfo.param1.x;
 
@@ -1980,7 +1980,7 @@ void CPUKernel::k_standardRenderer()
                lightRay.direction = lightRay.origin;
 
                int rindex = 3*(index+m_sceneInfo.pathTracingIteration.x+m_sceneInfo.misc.y);
-		         rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		         rindex = rindex%(m_sceneInfo.size.x*m_sceneInfo.size.y-3);
 		         lightRay.direction.x += 1000.f*m_hRandoms[rindex  ]*m_postProcessingInfo.param1.x;
 		         lightRay.direction.y += 1000.f*m_hRandoms[rindex+1]*m_postProcessingInfo.param1.x;
 		         lightRay.direction.z += 1000.f*m_hRandoms[rindex+2]*m_postProcessingInfo.param1.x;
@@ -1992,13 +1992,13 @@ void CPUKernel::k_standardRenderer()
             /*
             // Path Tracing
             int rindex = 3*(index+m_sceneInfo.misc.y) + 5000;
-		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      rindex = rindex%(m_sceneInfo.size.x*m_sceneInfo.size.y-3);
 		      ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 
             rindex = 3*(index+m_sceneInfo.misc.y);
-		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      rindex = rindex%(m_sceneInfo.size.x*m_sceneInfo.size.y-3);
 		      ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
@@ -2009,19 +2009,19 @@ void CPUKernel::k_standardRenderer()
          {
             if( m_sceneInfo.misc.w == 1 ) // Isometric 3D
             {
-               ray.direction.x = ray.origin.z*0.001f*(float)(x - (m_sceneInfo.width.x/2));
-               ray.direction.y = -ray.origin.z*0.001f*(float)(y - (m_sceneInfo.height.x/2));
+               ray.direction.x = ray.origin.z*0.001f*(float)(x - (m_sceneInfo.size.x/2));
+               ray.direction.y = -ray.origin.z*0.001f*(float)(y - (m_sceneInfo.size.y/2));
                ray.origin.x = ray.direction.x;
                ray.origin.y = ray.direction.y;
             }
             else
             {
-               float ratio=(float)m_sceneInfo.width.x/(float)m_sceneInfo.height.x;
+               float ratio=(float)m_sceneInfo.size.x/(float)m_sceneInfo.size.y;
                float2 step;
-               step.x=ratio*6400.f/(float)m_sceneInfo.width.x;
-               step.y=6400.f/(float)m_sceneInfo.height.x;
-               ray.direction.x = ray.direction.x - step.x*(float)(x - (m_sceneInfo.width.x/2));
-               ray.direction.y = ray.direction.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
+               step.x=ratio*6400.f/(float)m_sceneInfo.size.x;
+               step.y=6400.f/(float)m_sceneInfo.size.y;
+               ray.direction.x = ray.direction.x - step.x*(float)(x - (m_sceneInfo.size.x/2));
+               ray.direction.y = ray.direction.y + step.y*(float)(y - (m_sceneInfo.size.y/2));
             }
             vectorRotation( ray.origin, rotationCenter, m_angles );
             vectorRotation( ray.direction, rotationCenter, m_angles );
@@ -2100,12 +2100,12 @@ void CPUKernel::k_fishEyeRenderer()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y=0; y<m_sceneInfo.height.x; ++y )
+      for( int y=0; y<m_sceneInfo.size.y; ++y )
       {
          float4 color = {0.f,0.f,0.f,0.f};
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
          Ray ray;
          ray.origin = m_viewPos;
          ray.direction = m_viewDir;
@@ -2120,13 +2120,13 @@ void CPUKernel::k_fishEyeRenderer()
          else
          {
 		      int rindex = 3*(index+m_sceneInfo.misc.y) + 5000;
-		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      rindex = rindex%(m_sceneInfo.size.x*m_sceneInfo.size.y-3);
 		      ray.origin.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.origin.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.origin.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 
             rindex = 3*(index+m_sceneInfo.misc.y);
-		      rindex = rindex%(m_sceneInfo.width.x*m_sceneInfo.height.x-3);
+		      rindex = rindex%(m_sceneInfo.size.x*m_sceneInfo.size.y-3);
 		      ray.direction.x += m_hRandoms[rindex  ]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.direction.y += m_hRandoms[rindex+1]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
 		      ray.direction.z += m_hRandoms[rindex+2]*m_postProcessingBuffer[index].w*m_postProcessingInfo.param1.x;//*float(sceneInfo.pathTracingIteration.x)/float(sceneInfo.maxPathTracingIterations.x);
@@ -2137,12 +2137,12 @@ void CPUKernel::k_fishEyeRenderer()
 
          // Normal Y axis
          float2 step;
-         step.y=6400.f/(float)m_sceneInfo.height.x;
-         ray.origin.y = ray.origin.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
+         step.y=6400.f/(float)m_sceneInfo.size.y;
+         ray.origin.y = ray.origin.y + step.y*(float)(y - (m_sceneInfo.size.y/2));
 
          // 360° X axis
-         step.x = 2.f*PI/static_cast<float>(m_sceneInfo.width.x);
-         step.y = 2.f*PI/static_cast<float>(m_sceneInfo.height.x);
+         step.x = 2.f*PI/static_cast<float>(m_sceneInfo.size.x);
+         step.y = 2.f*PI/static_cast<float>(m_sceneInfo.size.y);
 
          Vertex fishEyeAngles = {0.f,0.f,0.f};
          fishEyeAngles.y = m_angles.y + step.x*(float)x;
@@ -2192,11 +2192,11 @@ void CPUKernel::k_anaglyphRenderer()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y(0); y<m_sceneInfo.height.x; ++y )
+      for( int y(0); y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
          Vertex rotationCenter = {0.f,0.f,0.f};
 
          if( m_sceneInfo.pathTracingIteration.x == 0 )
@@ -2211,18 +2211,18 @@ void CPUKernel::k_anaglyphRenderer()
          Vertex intersection;
          Ray eyeRay;
 
-         float ratio=(float)m_sceneInfo.width.x/(float)m_sceneInfo.height.x;
+         float ratio=(float)m_sceneInfo.size.x/(float)m_sceneInfo.size.y;
          float2 step;
-         step.x=4.f*ratio*6400.f/(float)m_sceneInfo.width.x;
-         step.y=4.f*6400.f/(float)m_sceneInfo.height.x;
+         step.x=4.f*ratio*6400.f/(float)m_sceneInfo.size.x;
+         step.y=4.f*6400.f/(float)m_sceneInfo.size.y;
 
          // Left eye
          eyeRay.origin.x = m_viewPos.x + m_sceneInfo.width3DVision.x;
          eyeRay.origin.y = m_viewPos.y;
          eyeRay.origin.z = m_viewPos.z;
 
-         eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.width.x/2));
-         eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
+         eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.size.x/2));
+         eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.size.y/2));
          eyeRay.direction.z = m_viewDir.z;
 
          vectorRotation( eyeRay.origin, rotationCenter, m_angles );
@@ -2237,8 +2237,8 @@ void CPUKernel::k_anaglyphRenderer()
          eyeRay.origin.y = m_viewPos.y;
          eyeRay.origin.z = m_viewPos.z;
 
-         eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.width.x/2));
-         eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
+         eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.size.x/2));
+         eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.size.y/2));
          eyeRay.direction.z = m_viewDir.z;
 
          vectorRotation( eyeRay.origin, rotationCenter, m_angles );
@@ -2280,11 +2280,11 @@ void CPUKernel::k_3DVisionRenderer()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y(0); y<m_sceneInfo.height.x; ++y )
+      for( int y(0); y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
 
          Vertex rotationCenter = {0.f,0.f,0.f};
 
@@ -2298,12 +2298,12 @@ void CPUKernel::k_3DVisionRenderer()
 
          float dof = m_postProcessingInfo.param1.x;
          Vertex intersection;
-         int halfWidth  = m_sceneInfo.width.x/2;
+         int halfWidth  = m_sceneInfo.size.x/2;
 
-         float ratio=(float)m_sceneInfo.width.x/(float)m_sceneInfo.height.x;
+         float ratio=(float)m_sceneInfo.size.x/(float)m_sceneInfo.size.y;
          float2 step;
-         step.x=ratio*6400.f/(float)m_sceneInfo.width.x;
-         step.y=6400.f/(float)m_sceneInfo.height.x;
+         step.x=ratio*6400.f/(float)m_sceneInfo.size.x;
+         step.y=6400.f/(float)m_sceneInfo.size.y;
 
          Ray eyeRay;
          if( x<halfWidth ) 
@@ -2313,8 +2313,8 @@ void CPUKernel::k_3DVisionRenderer()
             eyeRay.origin.y = m_viewPos.y;
             eyeRay.origin.z = m_viewPos.z;
 
-            eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.width.x/2) + halfWidth/2 );
-            eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
+            eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.size.x/2) + halfWidth/2 );
+            eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.size.y/2));
             eyeRay.direction.z = m_viewDir.z;
          }
          else
@@ -2324,8 +2324,8 @@ void CPUKernel::k_3DVisionRenderer()
             eyeRay.origin.y = m_viewPos.y;
             eyeRay.origin.z = m_viewPos.z;
 
-            eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.width.x/2) - halfWidth/2);
-            eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.height.x/2));
+            eyeRay.direction.x = m_viewDir.x - step.x*(float)(x - (m_sceneInfo.size.x/2) - halfWidth/2);
+            eyeRay.direction.y = m_viewDir.y + step.y*(float)(y - (m_sceneInfo.size.y/2));
             eyeRay.direction.z = m_viewDir.z;
          }
 
@@ -2363,11 +2363,11 @@ void CPUKernel::k_default()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y(0); y<m_sceneInfo.height.x; ++y )
+      for( int y(0); y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
          float4 localColor = m_postProcessingBuffer[index];
 
          if(m_sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
@@ -2392,24 +2392,24 @@ void CPUKernel::k_depthOfField()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y(0); y<m_sceneInfo.height.x; ++y )
+      for( int y(0); y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
          float  depth = m_postProcessingInfo.param2.x*m_postProcessingBuffer[index].w;
-         int    wh = m_sceneInfo.width.x*m_sceneInfo.height.x;
+         int    wh = m_sceneInfo.size.x*m_sceneInfo.size.y;
 
          float4 localColor = {0.f,0.f,0.f};
          for( int i=0; i<m_postProcessingInfo.param3.x; ++i )
          {
             int ix = i%wh;
-            int iy = (i+m_sceneInfo.width.x)%wh;
+            int iy = (i+m_sceneInfo.size.x)%wh;
             int xx = x+static_cast<int>(depth*m_hRandoms[ix]*0.5f);
             int yy = y+static_cast<int>(depth*m_hRandoms[iy]*0.5f);
-            if( xx>=0 && xx<m_sceneInfo.width.x && yy>=0 && yy<m_sceneInfo.height.x )
+            if( xx>=0 && xx<m_sceneInfo.size.x && yy>=0 && yy<m_sceneInfo.size.y )
             {
-               int localIndex = yy*m_sceneInfo.width.x+xx;
+               int localIndex = yy*m_sceneInfo.size.x+xx;
                if( localIndex>=0 && localIndex<wh )
                {
                   localColor.x += m_postProcessingBuffer[localIndex].x;
@@ -2452,11 +2452,11 @@ void CPUKernel::k_ambiantOcclusion()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y(0); y<m_sceneInfo.height.x; ++y )
+      for( int y(0); y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
+         int index = y*m_sceneInfo.size.x+x;
          float occ = 0.f;
          float4 localColor = m_postProcessingBuffer[index];
          float  depth = localColor.w;
@@ -2468,9 +2468,9 @@ void CPUKernel::k_ambiantOcclusion()
             {
                int xx = x+X;
                int yy = y+Y;
-               if( xx>=0 && xx<m_sceneInfo.width.x && yy>=0 && yy<m_sceneInfo.height.x )
+               if( xx>=0 && xx<m_sceneInfo.size.x && yy>=0 && yy<m_sceneInfo.size.y )
                {
-                  int localIndex = yy*m_sceneInfo.width.x+xx;
+                  int localIndex = yy*m_sceneInfo.size.x+xx;
                   if( m_postProcessingBuffer[localIndex].w>=depth)
                   {
                      occ += 1.f;
@@ -2512,12 +2512,12 @@ void CPUKernel::k_radiosity()
 {
    int x;
 #pragma omp parallel for
-   for( x=0; x<m_sceneInfo.width.x; ++x )
+   for( x=0; x<m_sceneInfo.size.x; ++x )
    {
-      for( int y(0); y<m_sceneInfo.height.x; ++y )
+      for( int y(0); y<m_sceneInfo.size.y; ++y )
       {
-         int index = y*m_sceneInfo.width.x+x;
-         int    wh = m_sceneInfo.width.x*m_sceneInfo.height.x;
+         int index = y*m_sceneInfo.size.x+x;
+         int    wh = m_sceneInfo.size.x*m_sceneInfo.size.y;
 
          int div = (m_sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (m_sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
@@ -2525,15 +2525,15 @@ void CPUKernel::k_radiosity()
          for( int i=0; i<m_postProcessingInfo.param3.x; ++i )
          {
             int ix = (i+m_sceneInfo.pathTracingIteration.x)%wh;
-            int iy = (i+m_sceneInfo.width.x)%wh;
+            int iy = (i+m_sceneInfo.size.x)%wh;
             int xx = x+static_cast<int>(m_hRandoms[ix]*m_postProcessingInfo.param2.x/10.f);
             int yy = y+static_cast<int>(m_hRandoms[iy]*m_postProcessingInfo.param2.x/10.f);
             localColor.x += m_postProcessingBuffer[index].x;
             localColor.y += m_postProcessingBuffer[index].y;
             localColor.z += m_postProcessingBuffer[index].z;
-            if( xx>=0 && xx<m_sceneInfo.width.x && yy>=0 && yy<m_sceneInfo.height.x )
+            if( xx>=0 && xx<m_sceneInfo.size.x && yy>=0 && yy<m_sceneInfo.size.y )
             {
-               int localIndex = yy*m_sceneInfo.width.x+xx;
+               int localIndex = yy*m_sceneInfo.size.x+xx;
                localColor.x += ( localIndex>=0 && localIndex<wh ) ? div*m_hPrimitivesXYIds[localIndex].z/255 : 0.f;
                localColor.y += ( localIndex>=0 && localIndex<wh ) ? div*m_hPrimitivesXYIds[localIndex].z/255 : 0.f;
                localColor.z += ( localIndex>=0 && localIndex<wh ) ? div*m_hPrimitivesXYIds[localIndex].z/255 : 0.f;
@@ -2574,7 +2574,7 @@ void CPUKernel::render_begin( const float timer )
    GPUKernel::render_begin(timer);
    if( m_postProcessingBuffer==nullptr )
    {
-      m_postProcessingBuffer = new float4[m_sceneInfo.width.x*m_sceneInfo.height.x];
+      m_postProcessingBuffer = new float4[m_sceneInfo.size.x*m_sceneInfo.size.y];
    }
 
    switch( m_sceneInfo.renderingType.x ) 
@@ -2604,7 +2604,7 @@ void CPUKernel::render_end()
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-      ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.width.x, m_sceneInfo.height.x, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
+      ::glTexImage2D(GL_TEXTURE_2D, 0, 3, m_sceneInfo.size.x, m_sceneInfo.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
       ::glBegin(GL_QUADS);
       ::glTexCoord2f(1.f, 1.f);
       ::glVertex3f(-1.f, 1.f, 0.f);
