@@ -247,8 +247,14 @@ __device__ __INLINE__ float4 triangleUVMapping(
 	float4 result = material.color;
 
 	Vertex T = (primitive.vt0*areas.x+primitive.vt1*areas.y+primitive.vt2*areas.z)/(areas.x+areas.y+areas.z);
-   int u = T.x*material.textureMapping.x;
-	int v = T.y*material.textureMapping.y;
+   float2 mappingOffset={0.f,0.f};
+   if(material.attributes.y==1)
+   {
+       mappingOffset.x=material.mappingOffset.x*sceneInfo.misc.y;
+       mappingOffset.y=material.mappingOffset.y*sceneInfo.misc.y;
+   }
+   int u = T.x*material.textureMapping.x+mappingOffset.x;
+	int v = T.y*material.textureMapping.y+mappingOffset.y;
 
 	u = u%material.textureMapping.x;
 	v = v%material.textureMapping.y;

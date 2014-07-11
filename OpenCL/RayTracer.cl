@@ -8,12 +8,10 @@ typedef int           Lamp;
 
 #define ADVANCED_GEOMETRY
 #define PATH_TRACING
-#undef GLOBAL_ILLUMINATION
 
 // Constants
-#define NB_MAX_ITERATIONS 20
+#define NB_MAX_ITERATIONS 10
 #define CONST __global
-//#define CONST __constant
 
 #define NB_MAX_MATERIALS 65536 // Last 30 materials are reserved
 #define gColorDepth 3
@@ -154,6 +152,7 @@ typedef struct
                                  // y: Transparency map
                                  // z: Ambient Occulsion map
                                  // w: not used
+   float2 mappingOffset;         // Texture mapping offsets based on sceneInfo.misc.y
 } Material;
 
 typedef struct
@@ -337,9 +336,13 @@ void makeColor(
    case otDelphi: 
       {
          // Delphi
-         bitmap[mdc_index  ] = (BitmapBuffer)((*color).z*255.f); // Blue
-         bitmap[mdc_index+1] = (BitmapBuffer)((*color).y*255.f); // Green
-         bitmap[mdc_index+2] = (BitmapBuffer)((*color).x*255.f); // Red
+         int y=index/(*sceneInfo).size.y;
+         int x=index%(*sceneInfo).size.x;
+         int i=(y+1)*(*sceneInfo).size.y-x-1;
+         i *= gColorDepth;
+         bitmap[i  ] = (BitmapBuffer)((*color).z*255.f); // Blue
+         bitmap[i+1] = (BitmapBuffer)((*color).y*255.f); // Green
+         bitmap[i+2] = (BitmapBuffer)((*color).x*255.f); // Red
          break;
       }
    case otJPEG: 
@@ -604,7 +607,6 @@ float4 sphereUVMapping(
       result.z = b/256.f;
 
       float strength=3.f;
-      float intensity=1.f;
       // Bump mapping
       if( (*material).textureIds.z!=TEXTURE_NONE) bumpMap(index, material, textures, intersection, &strength);
       // Normal mapping
@@ -741,8 +743,14 @@ float4 triangleUVMapping(
    float4 result = (*material).color;
 
    Vertex T = ((*primitive).vt0*areas.x+(*primitive).vt1*areas.y+(*primitive).vt2*areas.z)/(areas.x+areas.y+areas.z);
-   int u = T.x*(*material).textureMapping.x;
-   int v = T.y*(*material).textureMapping.y;
+   float2 mappingOffset={0.f,0.f};
+   if((*material).attributes.y==1)
+   {
+       mappingOffset.x=(*material).mappingOffset.x*(*sceneInfo).misc.y;
+       mappingOffset.y=(*material).mappingOffset.y*(*sceneInfo).misc.y;
+   }
+   int u = T.x*(*material).textureMapping.x + mappingOffset.x;
+   int v = T.y*(*material).textureMapping.y + mappingOffset.y;
 
    u = u%(*material).textureMapping.x;
    v = v%(*material).textureMapping.y;
@@ -1604,47 +1612,6 @@ float processShadows(
    return result;
 }
 
-#ifdef GLOBAL_ILLUMINATION
-float4 globalIllumination(
-   CONST BoundingBox* boundingBoxes, const int nbActiveBoxes, 
-   CONST Primitive*  primitives, const int nbActivePrimitives,
-   CONST Material*   materials,
-   Vertex*           intersection)
-{
-   float d=500.f;
-   float4 color={0.f,0.f,0.f,0.f};
-   bool found=false;
-   int cptBoxes=0;
-   while(cptBoxes<nbActiveBoxes && !found)
-   {
-      // Intersection with Box
-      CONST BoundingBox* box = &boundingBoxes[cptBoxes];
-      Vertex boxCenter=((*box).parameters[0]+(*box).parameters[1])/2.f;
-      float len=length(boxCenter-(*intersection));
-      if(len<d)
-      {
-         // Intersection with primitive within boxes
-         int cptPrimitives=0;
-         while(cptPrimitives<(*box).nbPrimitives && !found )
-         {
-            CONST Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
-            Vertex primitiveCenter=((*primitive).p0+(*primitive).p1+(*primitive).p2)/3.f;
-            float len=length(primitiveCenter-(*intersection));
-            if(len<d)
-            {
-               CONST Material* material = &materials[(*primitive).materialId];
-               color += (*material).color*(1.f-(len/d));
-               found=true;
-            }
-            ++cptPrimitives;
-         }
-      }
-      ++cptBoxes;
-   }
-   return color;
-}
-#endif // GLOBAL_ILLUMINATION
-
 /*
 ________________________________________________________________________________
 
@@ -1840,17 +1807,6 @@ float4 primitiveShader(
       (*closestColor)*=advancedAttributes.x;
    }
 
-#ifdef GLOBAL_ILLUMINATION
-   if(iteration==0)
-   {
-   (*closestColor) += globalIllumination(
-       boundingBoxes, nbActiveBoxes,
-       primitives,nbActivePrimitives,
-       materials,
-       intersection);
-   }
-#endif // GLOBAL_ILLUMINATION
-   
     // Saturate color
     saturateVector(closestColor);
 
@@ -2093,8 +2049,6 @@ inline float4 launchRay(
          attributes.y=materials[primitives[closestPrimitive].materialId].transparency;
          attributes.z=materials[primitives[closestPrimitive].materialId].refraction;
          attributes.w=materials[primitives[closestPrimitive].materialId].opacity;
-
-         Vertex advancedAttributes={0.f,0.f,0.f,0.f};
 
          // Get object color
          rBlinn.w = attributes.y;

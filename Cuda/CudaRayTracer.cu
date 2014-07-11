@@ -21,10 +21,10 @@
 */
 
 // Raytracer features
-#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  PHOTON_ENERGY
 #undef  DODGY_REFRACTIONS
-#undef  PATH_TRACING
+#define PATH_TRACING
 
 // System
 #include <iostream>
@@ -189,7 +189,7 @@ __device__ __INLINE__ float4 launchRay(
             pathTracingRay.direction.z = normal.z+80000.f*randoms[t+2];
 
             float cos_theta = dot(normalize(pathTracingRay.direction),normal);
-            pathTracingRatio = 0.5f*fabs(cos_theta);
+            pathTracingRatio = 0.3f*fabs(cos_theta);
 #endif // PATH_TRACING
 
             // Primitive ID for current pixel

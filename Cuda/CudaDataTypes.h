@@ -154,6 +154,7 @@ struct __ALIGN16__ Material
                                 // y: Transparency map
                                 // z: Ambiant Occulusion
                                 // w: not used
+   float2 mappingOffset;        // Texture mapping offsets based on sceneInfo.misc.y
 };
 
 // Bounding Box Structure

@@ -65,9 +65,13 @@ __device__ __INLINE__ void makeColor(
       case otDelphi: 
 	   {
 		   // Delphi
-		   bitmap[mdc_index  ] = (BitmapBuffer)(color.z*255.f); // Blue
-      	bitmap[mdc_index+1] = (BitmapBuffer)(color.y*255.f); // Green
-		   bitmap[mdc_index+2] = (BitmapBuffer)(color.x*255.f); // Red
+         int y=index/sceneInfo.size.y;
+         int x=index%sceneInfo.size.x;
+         int i=(y+1)*sceneInfo.size.y-x-1;
+         i *= gColorDepth;		   
+         bitmap[i  ] = (BitmapBuffer)(color.z*255.f); // Blue
+      	bitmap[i+1] = (BitmapBuffer)(color.y*255.f); // Green
+		   bitmap[i+2] = (BitmapBuffer)(color.x*255.f); // Red
          break;
 	   }
       case otJPEG: 

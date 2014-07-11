@@ -607,7 +607,7 @@ __device__ __INLINE__ bool triangleIntersection(
    {
       // Double Sided triangles
       // Reject triangles with normal opposite to ray.
-      Vertex N=normalize(ray.direction-ray.origin);
+      Vertex N=normalize(ray.direction);
       if( processingShadows )
       {
          if( dot(N,normal)<=0.f ) return false;

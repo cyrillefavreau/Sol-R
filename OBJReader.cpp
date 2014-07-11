@@ -135,14 +135,12 @@ unsigned int OBJReader::loadMaterialsFromFile(
    GPUKernel& kernel,
    int materialId)
 {
+   LOG_INFO(1,"Loading material library from " << filename);
    const float innerDiffusion=1000.f;
    const float diffusionRatio=4.f;
 
-   std::string materialsFilename(filename);
-   materialsFilename += ".mtl";
-
    std::string id("");
-   std::ifstream file(materialsFilename.c_str());
+   std::ifstream file(filename.c_str());
    if( file.is_open() )
    {
       while( file.good() )
@@ -188,8 +186,9 @@ unsigned int OBJReader::loadMaterialsFromFile(
             material.specularTextureId     = MATERIAL_NONE;
             material.reflectionTextureId   = MATERIAL_NONE;
             material.transparencyTextureId = MATERIAL_NONE;
+            material.ambientOcclusionTextureId = MATERIAL_NONE;
             materials[id].isSketchupLightMaterial = false;
-            material.opacity = kernel.getSceneInfo().viewDistance.x;
+            material.opacity = 0.f;
             material.noise = 0.f;
             materials[id] = material;
             materials[id].Ks.x = 1.f;
@@ -269,8 +268,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
-            materials[id].reflection   = 1.f; 
-            materials[id].transparency = 0.9f+(d/10.f);
+            materials[id].reflection   = 0.5f; 
+            materials[id].transparency = 0.5f+(d/50.f);
             materials[id].refraction   = 1.1f;
             materials[id].noise = 0.f;
          }
@@ -398,12 +397,7 @@ Vertex OBJReader::loadModelFromFile(
    {
       noExtFilename = filename.substr(0, pos);
    }
-
-   // Load materials
-   if( loadMaterials )
-   {
-      loadMaterialsFromFile( noExtFilename, materials, kernel, materialId );
-   }
+   std::replace(noExtFilename.begin(), noExtFilename.end(), '\\', '/');
 
    // Load model vertices
    std::string modelFilename(noExtFilename);
@@ -422,6 +416,14 @@ Vertex OBJReader::loadModelFromFile(
          line.erase( std::remove(line.begin(), line.end(), '\r'), line.end());
          if( line.length() > 1 ) 
          {
+            if( loadMaterials && line.find("mtllib")!=std::string::npos )
+            {
+               // Load materials
+               std::string materialFileName=line.substr(7);
+               std::string folder=noExtFilename.substr(0,noExtFilename.rfind('/'));
+               materialFileName=folder+'/'+materialFileName;
+               loadMaterialsFromFile( materialFileName, materials, kernel, materialId );
+            }
             if( line[0] == 'v' )
             {
                // Vertices

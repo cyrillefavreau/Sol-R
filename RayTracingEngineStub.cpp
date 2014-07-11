@@ -666,7 +666,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
       false,
       (autoCenter==1));
 
-   height=(autoCenter==1) ? 0.f : -minPos.y/2.f;
+   height=-minPos.y/2.f;
    return gKernel->getNbActivePrimitives();
 }
 

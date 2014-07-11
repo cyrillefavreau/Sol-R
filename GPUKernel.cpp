@@ -1840,7 +1840,8 @@ void GPUKernel::setMaterial(
       m_hMaterials[index].advancedTextureOffset.y  = 0;
       m_hMaterials[index].advancedTextureOffset.z  = 0;
       m_hMaterials[index].advancedTextureOffset.w  = 0;
-      
+      m_hMaterials[index].mappingOffset.x = 1.f;
+      m_hMaterials[index].mappingOffset.y = 1.f;     
 #ifdef USE_KINECT
       switch(diffuseTextureId)
       {
@@ -2338,6 +2339,8 @@ void GPUKernel::realignTexturesAndMaterials()
             m_hMaterials[i].advancedTextureIds.y     = transparencyTextureId;
             m_hMaterials[i].advancedTextureOffset.x  = (reflectionTextureId==TEXTURE_NONE) ? 0: m_hTextures[reflectionTextureId].offset;
             m_hMaterials[i].advancedTextureOffset.y  = (transparencyTextureId==TEXTURE_NONE) ? 0: m_hTextures[transparencyTextureId].offset;
+            m_hMaterials[i].mappingOffset.x = 1.f;
+            m_hMaterials[i].mappingOffset.y = 0.f;
          }
          else
          {
@@ -2361,6 +2364,8 @@ void GPUKernel::realignTexturesAndMaterials()
             m_hMaterials[i].advancedTextureOffset.y  = 0;
             m_hMaterials[i].advancedTextureOffset.z  = 0;
             m_hMaterials[i].advancedTextureOffset.w  = 0;
+            m_hMaterials[i].mappingOffset.x = 1.f;
+            m_hMaterials[i].mappingOffset.y = 1.f;
          }
       }
 
