@@ -23,7 +23,7 @@
 #pragma once
 
 #include <vector_types.h>
-#include "../consts.h"
+#include "../Consts.h"
 
 typedef float4        Vertex;
 typedef int4          PrimitiveXYIdBuffer;

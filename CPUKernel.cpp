@@ -22,6 +22,8 @@
 
 // System
 #include <iostream>
+#include <stdlib.h>
+#include <math>
 
 // OpenGL
 #include <GL/freeglut.h>

@@ -174,7 +174,9 @@ ________________________________________________________________________________
 */
 void CudaKernel::render_begin( const float timer )
 {
+#ifdef WIN32
    if( m_sceneInfo.pathTracingIteration.x==0 ) m_counter=GetTickCount();
+#endif // WIN32
    GPUKernel::render_begin(timer);
    if( m_refresh )
    {
@@ -317,10 +319,12 @@ void CudaKernel::render_end()
    // GPU -> CPU Data transfers
    d2h_bitmap( m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds );
 
+#ifdef WIN32
    if( m_sceneInfo.pathTracingIteration.x==m_sceneInfo.maxPathTracingIterations.x-1 )
    {
       LOG_INFO(1,"Rendering completed in " << GetTickCount()-m_counter << " ms");
    }
+#endif // WIN32
    if( m_sceneInfo.misc.x == 0 )
    {
       ::glEnable(GL_TEXTURE_2D);
