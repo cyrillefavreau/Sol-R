@@ -52,6 +52,7 @@ const long NB_MAX_FRAMES     = 512;
 const long NB_MAX_LIGHTINFORMATIONS = 512;
 const long MAX_BITMAP_WIDTH  = 1920;
 const long MAX_BITMAP_HEIGHT = 1080;
+const long MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 
 // Constants
 #define MATERIAL_NONE -1
@@ -63,7 +64,7 @@ const long MAX_BITMAP_HEIGHT = 1080;
 // Globals
 #define PI 3.14159265358979323846f
 #define EPSILON 1.f
-#define REBOUND_EPSILON 0.00001f
+#define REBOUND_EPSILON 0.00015f
 
 // Skybox matrerials
 const int SKYBOX_FRONT_MATERIAL  = NB_MAX_MATERIALS-2;
