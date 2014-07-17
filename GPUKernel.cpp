@@ -2853,6 +2853,7 @@ void GPUKernel::setPointSize( const float pointSize )
 void GPUKernel::render_begin( const float timer )
 {
    LOG_INFO(3,"GPUKernel::render_begin");
+   m_sceneInfo.misc.y=rand()%10000;
  #ifdef USE_OCULUS
    if( m_oculus && m_sensorFusion && m_sensorFusion->IsAttachedToSensor() )
    {

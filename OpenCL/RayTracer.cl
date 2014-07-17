@@ -24,7 +24,7 @@ typedef int           Lamp;
 // Globals
 #define PI 3.14159265358979323846f
 #define EPSILON 1.f
-#define REBOUND_EPSILON 0.00001f
+#define REBOUND_EPSILON 0.00015f
 
 // Kinect
 #define KINECT_COLOR_WIDTH  640
@@ -36,6 +36,11 @@ typedef int           Lamp;
 #define KINECT_DEPTH_HEIGHT 240
 #define KINECT_DEPTH_DEPTH  2
 #define KINECT_DEPTH_SIZE   320*240*2
+
+#define MAX_BITMAP_WIDTH    1920
+#define MAX_BITMAP_HEIGHT   1080
+#define MAX_BITMAP_SIZE     2073600 // 1920x1080
+
 
 // 3D vision type
 enum VisionType
@@ -254,12 +259,12 @@ void vectorRefraction(
    const float  n2 )
 {
    (*refracted) = incident;
-   if(n1!=n2 && n2!=0.f) 
+   float eta = n1/n2;
+   float c1 = -dot(incident,normal);
+   float cs2 = 1.f-eta*eta*(1.f-c1*c1);
+   if(cs2>=0.f) 
    {
-      float r = n1/n2;
-      float cosI = dot( incident, normal );
-      float cosT2 = 1.f - r*r*(1.f - cosI*cosI);
-      (*refracted) = r*incident + (r*cosI-sqrt( fabs(cosT2) ))*normal;
+      (*refracted) = eta*incident + (eta*c1-sqrt(cs2))*normal;
    }
 }
 
@@ -1694,12 +1699,11 @@ float4 primitiveShader(
             center.y = lightInformation[cptLamp].location.y;
             center.z = lightInformation[cptLamp].location.z;
 
-            int t = (3*(index+(*sceneInfo).misc.y+(*sceneInfo).pathTracingIteration))%((*sceneInfo).size.x*(*sceneInfo).size.y);
+            int t = (index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
             CONST Material* m=&materials[lightInformation[cptLamp].attribute.y];
 
             if( (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS && lightInformation[cptLamp].attribute.x>=0 && lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
-               t = t%((*sceneInfo).size.x*(*sceneInfo).size.y-3);
                float a=10.f*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
 
                center.x += (*m).innerIllumination.y*randoms[t  ]*a;
@@ -1937,7 +1941,6 @@ inline float4 launchRay(
    const Ray*       ray, 
    const SceneInfo* sceneInfo,
    const PostProcessingInfo* postProcessingInfo,
-   Vertex*          intersection,
    float*           depthOfField,
    CONST PrimitiveXYIdBuffer* primitiveXYId)
 {
@@ -1983,12 +1986,10 @@ inline float4 launchRay(
    Ray reflectedRay;
    float reflectedRatio;
 
-#ifdef PATH_TRACING
-   // Path Tracing
+   // Global illumination
    Ray pathTracingRay;
    float pathTracingRatio=0.f;
    float4 pathTracingColor={0.f,0.f,0.f,0.f};
-#endif // PATH_TRACING
 
    float4 rBlinn = {0.f,0.f,0.f,0.f};
    int currentMaxIteration = ( (*sceneInfo).graphicsLevel<3 ) ? 1 : (*sceneInfo).nbRayIterations+(*sceneInfo).pathTracingIteration;
@@ -2026,18 +2027,18 @@ inline float4 launchRay(
             firstIntersection=closestIntersection;
             latestIntersection=closestIntersection;
 
-#ifdef PATH_TRACING
-            // Path tracing
-            int t=(3+index+(*sceneInfo).misc.y)%((*sceneInfo).size.x*(*sceneInfo).size.y);
-            Ray pathTracingRay;
-            pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
-            pathTracingRay.direction.x = normal.x+80000.f*randoms[t  ];
-            pathTracingRay.direction.y = normal.y+80000.f*randoms[t+1];
-            pathTracingRay.direction.z = normal.z+80000.f*randoms[t+2];
+            if((*sceneInfo).parameters.z==1 )
+            {
+               // Global illumination
+               int t=(index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
+               pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
+               pathTracingRay.direction.x = normal.x+80000.f*randoms[t  ];
+               pathTracingRay.direction.y = normal.y+80000.f*randoms[t+1];
+               pathTracingRay.direction.z = normal.z+80000.f*randoms[t+2];
 
-            float cos_theta = dot(normalize(pathTracingRay.direction),normal);
-            pathTracingRatio = 0.5f*fabs(cos_theta);
-#endif // PATH_TRACING
+               float cos_theta = dot(normalize(pathTracingRay.direction),normal);
+               pathTracingRatio = 0.5f*fabs(cos_theta);
+            }
 
             // Primitive ID for current pixel
             (*primitiveXYId).x = primitives[closestPrimitive].index;
@@ -2093,9 +2094,8 @@ inline float4 launchRay(
             }
 
             // Actual refraction
-            Vertex O_E = normalize(rayOrigin.origin - closestIntersection);
-            vectorRefraction( &rayOrigin.direction, O_E, refraction, normal, initialRefraction );
-            reflectedTarget = closestIntersection-rayOrigin.direction;
+            Vertex O_E = normalize(closestIntersection-rayOrigin.origin);
+            vectorRefraction( &reflectedTarget, O_E, refraction, normal, initialRefraction );
 
             colorContributions[iteration]=transparency-a;
 
@@ -2104,11 +2104,9 @@ inline float4 launchRay(
 
             if( reflectedRays==-1 && attributes.x!=0.f ) // Reflection
             {
-               vectorReflection( reflectedRay.direction, O_E, normal );
-               Vertex rt = closestIntersection - reflectedRay.direction;
-
-               reflectedRay.origin = closestIntersection+rt*REBOUND_EPSILON;
-               reflectedRay.direction = rt;
+               vectorReflection(reflectedRay.direction,O_E,normal );
+               reflectedRay.origin    = closestIntersection+reflectedRay.direction*REBOUND_EPSILON;
+               reflectedRay.direction = closestIntersection+reflectedRay.direction;
                reflectedRatio = attributes.x;
                reflectedRays=iteration;
             }
@@ -2118,9 +2116,8 @@ inline float4 launchRay(
             rayLength+=segmentLength;
             if(attributes.x!=0.f) // Reflection
             {
-               Vertex O_E = rayOrigin.origin - closestIntersection;
-               vectorReflection( rayOrigin.direction, O_E, normal );
-               reflectedTarget = closestIntersection - rayOrigin.direction;
+               Vertex O_E = normalize(closestIntersection-rayOrigin.origin);
+               vectorReflection( reflectedTarget, O_E, normal );
                colorContributions[iteration] = attributes.x;
             }
             else 
@@ -2138,7 +2135,7 @@ inline float4 launchRay(
          recursiveBlinn.z=(rBlinn.z>recursiveBlinn.z) ? rBlinn.z:recursiveBlinn.z;
 
          rayOrigin.origin    = closestIntersection+reflectedTarget*REBOUND_EPSILON; 
-         rayOrigin.direction = reflectedTarget;
+         rayOrigin.direction = closestIntersection+reflectedTarget;
 
          // Noise management
          if( (*sceneInfo).pathTracingIteration != 0 && materials[primitives[closestPrimitive].materialId].color.w != 0.f)
@@ -2146,8 +2143,7 @@ inline float4 launchRay(
             // Randomize view
             float ratio = materials[primitives[closestPrimitive].materialId].color.w;
             ratio *= (attributes.y==0.f) ? 1000.f : 1.f;
-            int rindex = 3*(*sceneInfo).misc.y + (*sceneInfo).pathTracingIteration;
-            rindex = rindex%((*sceneInfo).size.x*(*sceneInfo).size.y);
+            int rindex = (index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
             rayOrigin.direction.x += randoms[rindex  ]*ratio;
             rayOrigin.direction.y += randoms[rindex+1]*ratio;
             rayOrigin.direction.z += randoms[rindex+2]*ratio;
@@ -2212,40 +2208,43 @@ inline float4 launchRay(
       }
    }
 
-#ifdef PATH_TRACING
-   // Path Tracing
-   if( intersectionWithPrimitives(
-      sceneInfo,
-      boundingBoxes, nbActiveBoxes,
-      primitives, nbActivePrimitives,
-      materials, textures,
-      &pathTracingRay,
-      0,  
-      &closestPrimitive, &closestIntersection, 
-      &normal, &areas, &colorBox, currentMaterialId) )
+   if((*sceneInfo).parameters.z==1 && (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS)
    {
-      Vertex attributes;
-      pathTracingColor = primitiveShader( 
-         index,
-         sceneInfo, postProcessingInfo,
-         boundingBoxes, nbActiveBoxes, 
-         primitives, nbActivePrimitives, 
-         lightInformation, lightInformationSize, nbActiveLamps, 
-         materials, textures, randoms, 
-         pathTracingRay.origin, &normal, closestPrimitive, 
-         &closestIntersection, areas, &closestColor,
-         iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
-   }
-   else
-   {
-      // Background
-      if( (*sceneInfo).skybox.y!=MATERIAL_NONE)
+      // Global illumination
+      /*
+      if( intersectionWithPrimitives(
+         sceneInfo,
+         boundingBoxes, nbActiveBoxes,
+         primitives, nbActivePrimitives,
+         materials, textures,
+         &pathTracingRay,
+         0,  
+         &closestPrimitive, &closestIntersection, 
+         &normal, &areas, &colorBox, -2))
       {
-         pathTracingColor = skyboxMapping(sceneInfo,materials,textures,&pathTracingRay);
+         Vertex attributes;
+         pathTracingColor = primitiveShader( 
+            index,
+            sceneInfo, postProcessingInfo,
+            boundingBoxes, nbActiveBoxes, 
+            primitives, nbActivePrimitives, 
+            lightInformation, lightInformationSize, nbActiveLamps, 
+            materials, textures, randoms, 
+            pathTracingRay.origin, &normal, closestPrimitive, 
+            &closestIntersection, areas, &closestColor,
+            iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
       }
+      else
+      */
+      {
+         // Background
+         if( (*sceneInfo).skybox.y!=MATERIAL_NONE)
+         {
+            pathTracingColor = skyboxMapping(sceneInfo,materials,textures,&pathTracingRay);
+         }
+      }
+      colors[0] += pathTracingColor*pathTracingRatio;
    }
-   colors[0] += pathTracingColor*pathTracingRatio;
-#endif // PATH_TRACING
 
    for( int i=iteration-2; i>=0; --i)
    {
@@ -2253,8 +2252,6 @@ inline float4 launchRay(
    }
    intersectionColor = colors[0];
    intersectionColor += recursiveBlinn;
-
-   (*intersection) = closestIntersection;
 
    float len = length(firstIntersection - (*ray).origin);
    (*depthOfField) = len;
@@ -2319,10 +2316,16 @@ __kernel void k_standardRenderer(
 {
    int x = get_global_id(0);
    int y = get_global_id(1);
-   int index = y*sceneInfo.size.x+x;
+   int index = (stream_split+y)*sceneInfo.size.x+x;
 
-   float dof = postProcessingInfo.param1;
-   float4 color = {0.f,0.f,0.f,0.f};
+   // Antialisazing
+   float2 AArotatedGrid[4] =
+   {
+      {  3.f,  5.f },
+      {  5.f, -3.f },
+      { -3.f, -5.f },
+      { -5.f,  3.f }
+   };
 
    // Beware out of bounds error!
    // And only process pixels that need extra rendering
@@ -2342,30 +2345,20 @@ __kernel void k_standardRenderer(
       rotationCenter = origin;
    }
 
-   bool antialiasingActivated = (sceneInfo.misc.w == 2);
+   bool antialiasingActivated=(sceneInfo.misc.w==2);
 
-   if( sceneInfo.pathTracingIteration == 0 )
-   {
-      postProcessingBuffer[index].x = 0.f;
-      postProcessingBuffer[index].y = 0.f;
-      postProcessingBuffer[index].z = 0.f;
-      postProcessingBuffer[index].w = 0.f;
-   }
    if( postProcessingInfo.type!=ppe_depthOfField && sceneInfo.pathTracingIteration>=NB_MAX_ITERATIONS )
    {
       // Randomize view for natural depth of field
-      float a=postProcessingInfo.param1/100000.f;
-      int rindex;
-      rindex = 3*(index+sceneInfo.misc.y);
-      rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y-3);
+      float a=postProcessingInfo.param1/20000.f;
+      int rindex=(index+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-2);
       ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].w*a;
       ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
-      ray.origin.z += randoms[rindex+2]*postProcessingBuffer[index].w*a;
    }
 
-   Vertex intersection;
+    float dof=0.f;
 
-   if( sceneInfo.misc.w == 1 ) // Isometric 3D
+   if(sceneInfo.misc.w==1) // Isometric 3D
    {
       ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.size.x/2));
       ray.direction.y = -ray.origin.z*0.001f*(float)(device_split+stream_split+y - (sceneInfo.size.y/2));
@@ -2385,24 +2378,14 @@ __kernel void k_standardRenderer(
    vectorRotation( &ray.origin, rotationCenter, angles );
    vectorRotation( &ray.direction, rotationCenter, angles );
 
-   // Antialisazing
-   float2 AArotatedGrid[4] =
-   {
-      {  3.f,  5.f },
-      {  5.f, -3.f },
-      { -3.f, -5.f },
-      { -5.f,  3.f }
-   };
-
-   if( sceneInfo.pathTracingIteration>primitiveXYIds[index].y && sceneInfo.pathTracingIteration>0 && sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS ) return;
-
+   float4 color = {0.f,0.f,0.f,0.f};
    Ray r=ray;
    if( antialiasingActivated )
    {
       for( int I=0; I<4; ++I )
       {
-         r.direction.x = ray.direction.x + 1.f*AArotatedGrid[I].x;
-         r.direction.y = ray.direction.y + 1.f*AArotatedGrid[I].y;
+         r.direction.x = ray.direction.x + AArotatedGrid[I].x;
+         r.direction.y = ray.direction.y + AArotatedGrid[I].y;
          float4 c = launchRay(
             index,
             boundingBoxes, nbActiveBoxes,
@@ -2412,7 +2395,6 @@ __kernel void k_standardRenderer(
             randoms,
             &r, 
             &sceneInfo, &postProcessingInfo,
-            &intersection,
             &dof,
             &primitiveXYIds[index]);
          color += c;
@@ -2420,8 +2402,8 @@ __kernel void k_standardRenderer(
    }
    else
    {
-      r.direction.x = ray.direction.x + 1.f*AArotatedGrid[sceneInfo.pathTracingIteration%4].x;
-      r.direction.y = ray.direction.y + 1.f*AArotatedGrid[sceneInfo.pathTracingIteration%4].y;
+      r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration%4].x;
+      r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration%4].y;
    }
    color += launchRay(
       index,
@@ -2432,29 +2414,27 @@ __kernel void k_standardRenderer(
       randoms,
       &r, 
       &sceneInfo, &postProcessingInfo,
-      &intersection,
       &dof,
       &primitiveXYIds[index]);
 
-   if( sceneInfo.parameters.z==1 )
+   if(sceneInfo.parameters.z==2)
    {
       // Randomize light intensity
-      int rindex = index;
-      rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y);
+      int rindex = (index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
       color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
    }
 
-   if( antialiasingActivated )
+   if(antialiasingActivated)
    {
       color /= 5.f;
    }
 
-   if( sceneInfo.pathTracingIteration == 0 )
+   if(sceneInfo.pathTracingIteration==0)
    {
       postProcessingBuffer[index].w = dof;
    }
 
-   if( sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS )
+   if(sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS)
    {
       postProcessingBuffer[index].x = color.x;
       postProcessingBuffer[index].y = color.y;
@@ -2517,7 +2497,6 @@ __kernel void k_anaglyphRenderer(
    }
 
    float dof = postProcessingInfo.param1;
-   Vertex intersection;
    Ray eyeRay;
 
    float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
@@ -2546,7 +2525,6 @@ __kernel void k_anaglyphRenderer(
       randoms,
       &eyeRay, 
       &sceneInfo, &postProcessingInfo,
-      &intersection,
       &dof,
       &primitiveXYIds[index]);
 
@@ -2571,7 +2549,6 @@ __kernel void k_anaglyphRenderer(
       randoms,
       &eyeRay, 
       &sceneInfo, &postProcessingInfo,
-      &intersection,
       &dof,
       &primitiveXYIds[index]);
 
@@ -2647,7 +2624,6 @@ __kernel void k_3DVisionRenderer(
    }
 
    float dof = postProcessingInfo.param1;
-   Vertex intersection;
    int halfWidth  = sceneInfo.size.x/2;
 
    float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
@@ -2693,13 +2669,11 @@ __kernel void k_3DVisionRenderer(
       randoms,
       &eyeRay, 
       &sceneInfo, &postProcessingInfo,
-      &intersection,
       &dof,
       &primitiveXYIds[index]);
 
    // Randomize light intensity
-   int rindex = index;
-   rindex = rindex%(sceneInfo.size.x*sceneInfo.size.y);
+   int rindex = (index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
    color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
 
    // Contribute to final image
@@ -2917,11 +2891,34 @@ __kernel void k_radiosity(
    // Beware out of bounds error!
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
+   float4 localColor = {0.f,0.f,0.f,0.f};
+#if 1
+    float a=(1.f/NB_MAX_ITERATIONS)*primitiveXYIds[index].y;
+    /*
+    float r=0.f,g=0.f,b=0.f;
+    switch(primitiveXYIds[index].y)
+    {
+        case 1 : r=1.f;g=1.f;b=1.f; break; // white
+        case 2 : r=1.f;g=0.f;b=0.f; break; // red
+        case 3 : r=0.f;g=1.f;b=0.f; break; // green
+        case 4 : r=0.f;g=0.f;b=1.f; break; // blue
+        case 5 : r=1.f;g=1.f;b=0.f; break; // yellow
+        case 6 : r=0.f;g=1.f;b=1.f; break; // purple
+        case 7 : r=1.f;g=0.f;b=1.f; break; // ??
+        case 8 : r=0.5f;g=0.5f;b=0.5f; break;
+        case 9 : r=0.5f;g=0.f;b=0.f; break;
+        case 10: r=0.f;g=0.5f;b=0.f; break;
+        case 11: r=0.f;g=0.f;b=0.5f; break;
+    }
+    */
+   localColor.x = a;
+   localColor.y = a;
+   localColor.z = a;
+#else
    int wh = sceneInfo.size.x*sceneInfo.size.y;
 
    float div = (sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS) ? (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1) : 1.f;
 
-   float4 localColor = {0.f,0.f,0.f,0.f};
    for( int i=0; i<postProcessingInfo.param3; ++i )
    {
       int ix = (i+sceneInfo.misc.y+sceneInfo.pathTracingIteration)%wh;
@@ -2937,6 +2934,7 @@ __kernel void k_radiosity(
    }
    localColor /= postProcessingInfo.param3;
    localColor /= div;
+#endif // 1
    localColor.w = 1.f;
    makeColor( &sceneInfo, &localColor, bitmap, index ); 
 }

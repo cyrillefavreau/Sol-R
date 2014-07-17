@@ -422,8 +422,8 @@ void OpenCLKernel::recompileKernels(const std::string& filename)
       m_kAmbientOcclusion = clCreateKernel( hProgram, "k_ambientOcclusion", &status );
 		CHECKSTATUS(status);
 
-      //m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
-      m_kRadiosity = clCreateKernel( hProgram, "k_contrast", &status );
+      m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
+      //m_kRadiosity = clCreateKernel( hProgram, "k_contrast", &status );
 		CHECKSTATUS(status);
 
 		LOG_INFO(1,"clReleaseProgram");
@@ -767,7 +767,6 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kAmbientOcclusion, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_radiosity:
-         /*
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
@@ -775,13 +774,6 @@ void OpenCLKernel::render_begin( const float timer )
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
 	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 5, sizeof(cl_mem),   (void*)&m_dRandoms ));
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
-	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
-         */
-         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
-         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
-         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
-	      CHECKSTATUS(clSetKernelArg( m_kRadiosity, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
-         CHECKSTATUS(clSetKernelArg( m_kRadiosity, 4, sizeof(cl_mem),   (void*)&m_dBitmap ));
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
 	   case ppe_oneColor:
