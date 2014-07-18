@@ -21,7 +21,7 @@
 */
 
 // Raytracer features
-#undef  EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
 #undef  PHOTON_ENERGY
 #undef  DODGY_REFRACTIONS
 
@@ -180,9 +180,9 @@ __device__ __INLINE__ float4 launchRay(
                // Global illumination
                int t=(index+sceneInfo.pathTracingIteration.x+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
                pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
-               pathTracingRay.direction.x = normal.x+20000.f*randoms[t  ];
-               pathTracingRay.direction.y = normal.y+20000.f*randoms[t+1];
-               pathTracingRay.direction.z = normal.z+20000.f*randoms[t+2];
+               pathTracingRay.direction.x = normal.x+80000.f*randoms[t  ];
+               pathTracingRay.direction.y = normal.y+80000.f*randoms[t+1];
+               pathTracingRay.direction.z = normal.z+80000.f*randoms[t+2];
 
                float cos_theta = dot(normalize(pathTracingRay.direction),normal);
                pathTracingRatio = 0.3f*fabs(cos_theta);
