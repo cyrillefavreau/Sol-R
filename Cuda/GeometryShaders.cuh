@@ -281,28 +281,23 @@ __device__ __INLINE__ float4 primitiveShader(
 #endif // EXTENDED_FEATURES
 
 	   closestColor *= material.innerIllumination.x;
-      int C=(lightInformationSize>1) ? 2 : 1;
-	   for( int cpt=0; cpt<C; ++cpt ) 
+	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
-         int cptLamp = (sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x%lightInformationSize+C-1) : 0;
+         int cptLamp = (sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x%lightInformationSize) : 0;
          if(lightInformation[cptLamp].attribute.x != primitive.index.x)
 		   {
 			   Vertex center;
    		   // randomize lamp center
-            center.x = lightInformation[cptLamp].location.x;
-            center.y = lightInformation[cptLamp].location.y;
-            center.z = lightInformation[cptLamp].location.z;
+            center = lightInformation[cptLamp].location;
 
             int t=(index+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
             Material& m=materials[lightInformation[cptLamp].attribute.y];
-            if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS &&
-                lightInformation[cptLamp].attribute.x>=0 &&
-                lightInformation[cptLamp].attribute.x<nbActivePrimitives)
+            if( sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
             {
-               float a=10.f*sceneInfo.pathTracingIteration.x/sceneInfo.maxPathTracingIterations.x;
-               center.x += m.innerIllumination.y*randoms[t  ]*a;
-				   center.y += m.innerIllumination.y*randoms[t+1]*a;
-				   center.z += m.innerIllumination.y*randoms[t+2]*a;
+               float a=m.innerIllumination.y*10.f*sceneInfo.pathTracingIteration.x/sceneInfo.maxPathTracingIterations.x;
+               center.x += randoms[t  ]*a;
+				   center.y += randoms[t+1]*a;
+				   center.z += randoms[t+2]*a;
             }
 
 		      Vertex lightRay = center-intersection;

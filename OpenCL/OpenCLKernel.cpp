@@ -816,10 +816,10 @@ void OpenCLKernel::render_end()
    if( m_sceneInfo.misc.x == 0 )
    {
       ::glEnable(GL_TEXTURE_2D);
-      ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-      ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      //::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      //::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      ::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+      //::glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
       ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.size.x, m_sceneInfo.size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, m_bitmap);
 
       if( m_sceneInfo.renderingType.x == vt3DVision )
@@ -930,6 +930,7 @@ void OpenCLKernel::reshape()
 {
    LOG_INFO(1,"OpenCLKernel::reshape");
    GPUKernel::reshape();
+   /*
  	if( m_dRandoms ) CHECKSTATUS(clReleaseMemObject(m_dRandoms));
    if( m_dPostProcessingBuffer ) CHECKSTATUS(clReleaseMemObject(m_dPostProcessingBuffer));
    if( m_dPrimitivesXYIds ) CHECKSTATUS(clReleaseMemObject(m_dPrimitivesXYIds));
@@ -941,6 +942,7 @@ void OpenCLKernel::reshape()
 	m_dRandoms             = clCreateBuffer( m_hContext, CL_MEM_READ_ONLY,  size*sizeof(RandomBuffer),         0, &errorCode);
    m_dPostProcessingBuffer= clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PostProcessingBuffer), 0, &errorCode);
    m_dPrimitivesXYIds     = clCreateBuffer( m_hContext, CL_MEM_READ_WRITE, size*sizeof(PrimitiveXYIdBuffer),  0, &errorCode);
+   */
 }
 
 int OpenCLKernel::getNumPlatforms()

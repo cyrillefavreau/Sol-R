@@ -533,10 +533,10 @@ __global__ void k_standardRenderer(
    }
    else
    {
-      float ratio=sceneInfo.size.x/sceneInfo.size.y;
+      float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
       float2 step;
-      step.x=ratio*6400.f/sceneInfo.size.x;
-      step.y=6400.f/sceneInfo.size.y;
+      step.x=ratio*6400.f/(float)sceneInfo.size.x;
+      step.y=6400.f/(float)sceneInfo.size.y;
       ray.direction.x = ray.direction.x - step.x*(x - (sceneInfo.size.x/2));
       ray.direction.y = ray.direction.y + step.y*(device_split+stream_split+y - (sceneInfo.size.y/2));
    }
@@ -1626,7 +1626,7 @@ extern "C" void cudaRender(
    dim3 blocks;
    blocks.x = blockSize.x;
    blocks.y = blockSize.y;
-   blocks.z = blockSize.z;
+   blocks.z = 1;
 
    for( int device(0); device<occupancyParameters.x; ++device )
    {
@@ -1707,7 +1707,7 @@ extern "C" void cudaRender(
             {
                k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
                   occupancyParameters,
-                  device*(sceneInfo.size.y/occupancyParameters.x),
+                  device*(size.y/occupancyParameters.x),
                   stream*size.y,
 #ifndef USE_MANAGED_MEMORY
                   d_boundingBoxes[device],

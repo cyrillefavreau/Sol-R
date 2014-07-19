@@ -78,33 +78,33 @@ void RayTracer::InitializeRaytracer( const int width, const int height )
 #else
    LOG_INFO(1,"Intializing Raytracing engine");
 #endif // USE_OPENCL
-   // Scene
-   gSceneInfo.size.x = width;
-   gSceneInfo.size.y = height;
-   gSceneInfo.graphicsLevel.x = 4;
-   gSceneInfo.nbRayIterations.x = 5;
-   gSceneInfo.transparentColor.x =  0.f;
-   gSceneInfo.viewDistance.x = 100000.f;
-   gSceneInfo.shadowIntensity.x = 0.9f;
-   gSceneInfo.width3DVision.x = 1.3f;
-   gSceneInfo.backgroundColor.x = 1.f;
-   gSceneInfo.backgroundColor.y = 1.f;
-   gSceneInfo.backgroundColor.z = 1.f;
-   gSceneInfo.backgroundColor.w = 0.f;
-   gSceneInfo.renderingType.x = vtStandard;
-   gSceneInfo.renderBoxes.x = 0;
-   gSceneInfo.pathTracingIteration.x = 0;
-   gSceneInfo.maxPathTracingIterations.x = gTotalPathTracingIterations;
-   gSceneInfo.misc = gMisc;
-
-   gPostProcessingInfo.type.x   = ppe_none;
-   gPostProcessingInfo.param1.x = 10000.f;
-   gPostProcessingInfo.param2.x = 1000.f;
-   gPostProcessingInfo.param3.x = 200;
-
-   // Kernel
    if(!gKernel) 
    {
+      // Scene
+      gSceneInfo.size.x = width;
+      gSceneInfo.size.y = height;
+      gSceneInfo.graphicsLevel.x = 4;
+      gSceneInfo.nbRayIterations.x = 5;
+      gSceneInfo.transparentColor.x =  0.f;
+      gSceneInfo.viewDistance.x = 100000.f;
+      gSceneInfo.shadowIntensity.x = 0.9f;
+      gSceneInfo.width3DVision.x = 1.3f;
+      gSceneInfo.backgroundColor.x = 1.f;
+      gSceneInfo.backgroundColor.y = 1.f;
+      gSceneInfo.backgroundColor.z = 1.f;
+      gSceneInfo.backgroundColor.w = 0.f;
+      gSceneInfo.renderingType.x = vtStandard;
+      gSceneInfo.renderBoxes.x = 0;
+      gSceneInfo.pathTracingIteration.x = 0;
+      gSceneInfo.maxPathTracingIterations.x = gTotalPathTracingIterations;
+      gSceneInfo.misc = gMisc;
+
+      gPostProcessingInfo.type.x   = ppe_none;
+      gPostProcessingInfo.param1.x = 10000.f;
+      gPostProcessingInfo.param2.x = 1000.f;
+      gPostProcessingInfo.param3.x = 200;
+
+      // Kernel
       gKernel = new GenericGPUKernel(0, 480, gOpenCLPlatform, gOpenCLDevice);
       gSceneInfo.pathTracingIteration.x = 0; 
       gKernel->setSceneInfo( gSceneInfo );

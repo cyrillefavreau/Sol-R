@@ -394,7 +394,7 @@ void GPUKernel::cleanup()
 
 void GPUKernel::reshape()
 {
-   m_randomsTransfered=false;
+   //m_randomsTransfered=false;
 }
 
 /*
@@ -1236,7 +1236,7 @@ void GPUKernel::streamDataToGPU()
    LOG_INFO(3,"Max primitives per box: " << m_maxPrimitivesPerBox );
 
    // Build global illumination structures
-#if 0
+#if 1
    buildLightInformationFromTexture(4);
 #endif // 0
 
@@ -2208,7 +2208,7 @@ bool GPUKernel::loadTextureFromFile( const int index, const std::string& filenam
 
 void GPUKernel::reorganizeLights()
 {
-   LOG_INFO(3,"GPUKernel::reorganizeLights()");
+   LOG_INFO(1,"GPUKernel::reorganizeLights()");
    BoxContainer::iterator it=m_boundingBoxes[m_frame][0].begin();
    while( it!=m_boundingBoxes[m_frame][0].end() )
    {
@@ -2227,18 +2227,18 @@ void GPUKernel::reorganizeLights()
                int i(0);
                while( !found && i<m_nbActiveLamps[m_frame] )
                {
-                  LOG_INFO(3,"[Box " << (*it).first << "] Lamp " << i << "/" << m_nbActiveLamps[m_frame] << " = " << m_hLamps[i] << ", Primitive index=" << primitive.index.x );
+                  LOG_INFO(1,"[Box " << (*it).first << "] Lamp " << i << "/" << m_nbActiveLamps[m_frame] << " = " << m_hLamps[i] << ", Primitive index=" << primitive.index.x );
                   if( m_hLamps[i]==primitive.index.x)
                   {
-                     LOG_INFO(3,"Lamp " << i << " FOUND" );
+                     LOG_INFO(1,"Lamp " << i << " FOUND" );
                      found = true;
                   }
                   ++i;
                }
 
-               if( !found )
+               if( found )
                {
-                  LOG_INFO(3,"Add light information");
+                  LOG_INFO(1,"Add light information");
                   LightInformation lightInformation;
                   lightInformation.location.x = primitive.p0.x;
                   lightInformation.location.y = primitive.p0.y;
@@ -2250,7 +2250,7 @@ void GPUKernel::reorganizeLights()
                   lightInformation.color.z = material.color.z;
                   lightInformation.color.w = 0.f; // not used
 
-                  LOG_INFO(3,
+                  LOG_INFO(1,
                      "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << "," <<
                      m_lightInformation[m_lightInformationSize].attribute.y << ":" <<
                      m_lightInformation[m_lightInformationSize].location.x << "," <<
@@ -2270,6 +2270,15 @@ void GPUKernel::reorganizeLights()
       }
       ++it;
    }
+   /*
+   if(m_lightInformationSize!=0.f)
+   {
+      for( int i(0); i<10; ++i)
+      {
+         m_hMaterials[LIGHT_MATERIAL_010+i].innerIllumination.x = 5.f/m_lightInformationSize;
+      }
+   }
+   */
    LOG_INFO(3,"Reorganized " << m_lightInformationSize << " Lights" );
 }
 
@@ -2390,19 +2399,24 @@ void GPUKernel::buildLightInformationFromTexture( unsigned int index )
    // Light from explicit light sources
    float size = m_sceneInfo.viewDistance.x/3.f;
    float pi = static_cast<float>(PI);
-#if 0
-   for( unsigned int i(0); i<2; ++i)
+#if 1
+   const size_t nbLights(0);
+   for( unsigned int i(0); i<nbLights; ++i)
    {
       LightInformation lightInformation;
-      lightInformation.location.x = rand()%10000 - 5000.f;
-      lightInformation.location.y = 5000.f+rand()%5000;
-      lightInformation.location.z = rand()%10000 - 5000.f;
+      lightInformation.location.x = rand()%20000 - 10000.f;
+      lightInformation.location.y = 10000.f+rand()%10000;
+      lightInformation.location.z = rand()%20000 - 10000.f;
       lightInformation.attribute.x = -1;
       lightInformation.attribute.y = (LIGHT_MATERIAL_010+i%10);
       lightInformation.color.x = rand()%50/100.f+0.5f;
       lightInformation.color.y = rand()%50/100.f+0.5f;
       lightInformation.color.z = rand()%50/100.f+0.5f;
-      lightInformation.color.w = 2.f;
+      lightInformation.color.w = 0.f;
+
+      m_hMaterials[lightInformation.attribute.y].innerIllumination.x=0.5f/(nbLights+1);
+      m_hMaterials[DEFAULT_LIGHT_MATERIAL].innerIllumination.x=0.5f/(nbLights+1);
+
       m_lightInformation[m_nbActiveLamps[m_frame]+m_lightInformationSize] = lightInformation;
       m_lightInformationSize++;
    }
@@ -2853,7 +2867,11 @@ void GPUKernel::setPointSize( const float pointSize )
 void GPUKernel::render_begin( const float timer )
 {
    LOG_INFO(3,"GPUKernel::render_begin");
+   LOG_INFO(3,"Scene size: " << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y);
+
+   // Random
    m_sceneInfo.misc.y=rand()%10000;
+
  #ifdef USE_OCULUS
    if( m_oculus && m_sensorFusion && m_sensorFusion->IsAttachedToSensor() )
    {
@@ -2922,8 +2940,8 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
    LOG_INFO(3,"Generating screenshot " << filename << " (Quality=" << quality << "/" << m_sceneInfo.nbRayIterations.x << ")");
    SceneInfo sceneInfo=m_sceneInfo;
    SceneInfo bakSceneInfo=m_sceneInfo;
-   sceneInfo.size.x =MAX_BITMAP_WIDTH;
-   sceneInfo.size.y=MAX_BITMAP_HEIGHT;
+   //sceneInfo.size.x =MAX_BITMAP_WIDTH;
+   //sceneInfo.size.y=MAX_BITMAP_HEIGHT;
    sceneInfo.maxPathTracingIterations.x=quality;
    for(int i(0);i<quality;++i)
    {
@@ -2934,7 +2952,7 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
       LOG_INFO(3,"Frame " << i << " generated");
    }
    LOG_INFO(3,"Saving bitmap to disk");
-   size_t size=MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT*gColorDepth;
+   size_t size=sceneInfo.size.x*sceneInfo.size.y*gColorDepth;
    switch(sceneInfo.misc.x)
    {
    case otOpenGL:
