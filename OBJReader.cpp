@@ -160,6 +160,11 @@ unsigned int OBJReader::loadMaterialsFromFile(
             if( id.length() != 0 )
             {
                MaterialMTL& m = materials[id];
+               
+               // Grey material is reflective!!! :-)
+               if(m.Kd.x>0.4f && m.Kd.x>0.6f && fabs(m.Kd.x-m.Kd.y)<0.01f && fabs(m.Kd.y-m.Kd.z)<0.01f) m.reflection=0.5f;
+
+               // Add material to kernel
                kernel.setMaterial(
                   m.index,
                   m.Kd.x,m.Kd.y,m.Kd.z,
@@ -268,8 +273,8 @@ unsigned int OBJReader::loadMaterialsFromFile(
             // Specular values
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
-            materials[id].reflection   = 0.5f; 
-            materials[id].transparency = 0.5f+(d/50.f);
+            materials[id].reflection   = 1.f; 
+            materials[id].transparency = 0.9f+(d/10.f);
             materials[id].refraction   = 1.1f;
             materials[id].noise = 0.f;
          }
@@ -304,9 +309,15 @@ unsigned int OBJReader::loadMaterialsFromFile(
          }
       }
 
+      // Last remaining material
       if( id.length() != 0 )
       {
          MaterialMTL& m = materials[id];
+
+         // Grey material is reflective!!! :-)
+         if(m.Kd.x>0.4f && m.Kd.x>0.6f && fabs(m.Kd.x-m.Kd.y)<0.01f && fabs(m.Kd.y-m.Kd.z)<0.01f) m.reflection=0.5f;
+
+         // Add material to kernel
          kernel.setMaterial(
             m.index,
             m.Kd.x,m.Kd.y,m.Kd.z,

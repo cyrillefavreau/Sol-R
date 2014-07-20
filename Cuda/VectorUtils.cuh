@@ -85,12 +85,15 @@ __device__ __INLINE__ void vectorRefraction(
 	const float  n2 )
 {
 	refracted = incident;
-   float eta = n1/n2;
-   float c1 = -dot(incident,normal);
-   float cs2 = 1.f-eta*eta*(1.f-c1*c1);
-   if(cs2>=0.f) 
+   if(n2!=0.f)
    {
-      refracted = eta*incident + (eta*c1-sqrt(cs2))*normal;
+      float eta = n1/n2;
+      float c1 = -dot(incident,normal);
+      float cs2 = 1.f-eta*eta*(1.f-c1*c1);
+      if(cs2>=0.f) 
+      {
+         refracted = eta*incident + (eta*c1-sqrt(cs2))*normal;
+      }
    }
 }
 

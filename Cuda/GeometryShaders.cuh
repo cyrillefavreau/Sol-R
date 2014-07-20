@@ -151,29 +151,22 @@ __device__ __INLINE__ float processShadows(
 				{
 
 					bool hit = false;
-#ifdef EXTENDED_GEOMETRY
-					switch(primitive.type.x)
-					{
-					case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); break;
-               case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity); break;
-					case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity); break;
-					case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, true ); break;
-					case ptCamera   : hit=false; break;
-					default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
-					}
-#else
-               hit = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, true );
-#endif
-
-#ifdef EXTENDED_FEATURES
-               if( hit && sceneInfo.transparentColor.x!=0.f)
+               if(sceneInfo.parameters.y==1)
                {
-		            float4 closestColor = intersectionShader( 
-			            sceneInfo, primitive, materials, textures, 
-			            intersection, areas );
-                  hit = ((closestColor.x+closestColor.y+closestColor.z)>sceneInfo.transparentColor.x);
+					   switch(primitive.type.x)
+					   {
+					   case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); break;
+                  case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity); break;
+					   case ptCylinder :	hit=cylinderIntersection ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity); break;
+					   case ptTriangle :	hit=triangleIntersection ( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, true ); break;
+					   case ptCamera   : hit=false; break;
+					   default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false ); break;
+					   }
                }
-#endif // EXTENDED_FEATURES
+               else
+               {
+                  hit = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, true );
+               }
 
                if( hit )
 					{
@@ -269,17 +262,6 @@ __device__ __INLINE__ float4 primitiveShader(
 
    if( sceneInfo.graphicsLevel.x>0 )
    {
-		// Final color
-#ifdef EXTENDED_FEATURES
-      // TODO: Bump effect
-      if( materials[primitive.materialId.x].textureIds.x != TEXTURE_NONE)
-      {
-         normal.x = normal.x*0.7f+intersectionColor.x*0.3f;
-         normal.y = normal.y*0.7f+intersectionColor.y*0.3f;
-         normal.z = normal.z*0.7f+intersectionColor.z*0.3f;
-      }
-#endif // EXTENDED_FEATURES
-
 	   closestColor *= material.innerIllumination.x;
 	   for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
 	   {
@@ -318,11 +300,9 @@ __device__ __INLINE__ float4 primitiveShader(
 
                if( sceneInfo.graphicsLevel.x>0 )
                {
-//#ifdef PHOTON_ENERGY
                   float photonEnergy = sqrt(lightRayLength/m.innerIllumination.z);
                   photonEnergy = (photonEnergy>1.f) ? 1.f : photonEnergy;
                   photonEnergy = (photonEnergy<0.f) ? 0.f : photonEnergy;
-//#endif // PHOTON_ENERGY
 
                   lightRay = normalize(lightRay);
 

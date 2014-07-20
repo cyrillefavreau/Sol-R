@@ -307,7 +307,6 @@ __device__ __INLINE__ float4 triangleUVMapping(
 	return result; 
 }
 
-#ifdef EXTENDED_GEOMETRY
 /*
 ________________________________________________________________________________
 
@@ -465,7 +464,6 @@ __device__ __INLINE__ float4 cubeMapping(
 	}
 	return result;
 }
-#endif // EXTENDED_GEOMETRY
 
 __device__ __INLINE__ bool wireFrameMapping( float x, float y, int width, const Primitive& primitive )
 {

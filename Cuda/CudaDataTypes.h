@@ -69,8 +69,8 @@ struct SceneInfo
                                      // z: Fog( 0:disabled, 1:enabled )
                                      // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
    int4    parameters;               // x: Double-sided triangles( 0:disabled, 1:enabled )
-                                     // y: Gradient background( 0:disabled, 1:enabled )
-                                     // z: Advanced features( 0:disabled, 1:enabled )
+                                     // y: Extended geometry ( 0:disabled, 1:enabled )
+                                     // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
                                      // w: Draft mode(0:disabled, 1:enabled)
    int4    skybox;                   // x: size
                                      // y: material Id

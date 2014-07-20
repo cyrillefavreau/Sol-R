@@ -6,9 +6,6 @@ typedef unsigned char BitmapBuffer;
 typedef float         RandomBuffer;
 typedef int           Lamp;
 
-#define ADVANCED_GEOMETRY
-#define PATH_TRACING
-
 // Constants
 #define NB_MAX_ITERATIONS 10
 #define CONST __global
@@ -78,9 +75,9 @@ typedef struct
                                     // z: Fog( 0: disabled, 1: enabled )
                                     // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
    int4    parameters;              // x: Double-sided triangles( 0:disabled, 1:enabled )
-                                    // y: Gradient background( 0:disabled, 1:enabled )
-                                    // z: Not used
-                                    // w: Not used
+                                    // y: Extended geometry ( 0:disabled, 1:enabled )
+                                    // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
+                                    // w: Draft mode(0:disabled, 1:enabled)
    int4    skybox;                  // x: size
                                     // y: material Id
 } SceneInfo;
@@ -259,12 +256,15 @@ void vectorRefraction(
    const float  n2 )
 {
    (*refracted) = incident;
-   float eta = n1/n2;
-   float c1 = -dot(incident,normal);
-   float cs2 = 1.f-eta*eta*(1.f-c1*c1);
-   if(cs2>=0.f) 
+   if(n2!=0.f)
    {
-      (*refracted) = eta*incident + (eta*c1-sqrt(cs2))*normal;
+      float eta = n1/n2;
+      float c1 = -dot(incident,normal);
+      float cs2 = 1.f-eta*eta*(1.f-c1*c1);
+      if(cs2>=0.f) 
+      {
+         (*refracted) = eta*incident + (eta*c1-sqrt(cs2))*normal;
+      }
    }
 }
 
@@ -566,7 +566,6 @@ void ambientOcclusionMap(
    (*advancedAttributes).x=(r+g+b)/768.f;
 }
 
-#ifdef ADVANCED_GEOMETRY
 /*
 ________________________________________________________________________________
 
@@ -724,7 +723,6 @@ float4 cubeMapping(
    }
    return result;
 }
-#endif // ADVANCED_GEOMETRY
 
 /*
 ________________________________________________________________________________
@@ -988,7 +986,6 @@ float4 skyboxMapping(
    return result;
 }
 
-#ifdef ADVANCED_GEOMETRY
 /*
 ________________________________________________________________________________
 
@@ -1005,6 +1002,7 @@ bool sphereIntersection(
    float*     shadowIntensity
    ) 
 {
+    bool back=false;
    // solve the equation sphere-ray to find the intersections
    Vertex O_C = (*ray).origin-(*sphere).p0;
    Vertex dir = normalize((*ray).direction); 
@@ -1023,7 +1021,10 @@ bool sphereIntersection(
 
    float t=0.f;
    if( t1<=EPSILON ) 
+   {
+       back=true;
       t=t2;
+   }
    else 
       if( t2<=EPSILON )
          t=t1;
@@ -1048,19 +1049,11 @@ bool sphereIntersection(
       (*normal) = (*intersection)-newCenter;
    }
    (*normal)=normalize(*normal);
+   if(back) (*normal) *= -1.f; 
 
    // Shadow management
    r = dot(dir,(*normal));
    (*shadowIntensity)=(materials[(*sphere).materialId].transparency != 0.f) ? (1.f-fabs(r)) : 1.f;
-
-#if EXTENDED_FEATURES
-   // Power textures
-   if (materials[(*sphere).materialId].textureInfo.y != TEXTURE_NONE && materials[(*sphere).materialId].transparency != 0 ) 
-   {
-      Vertex color = sphereUVMapping(sphere, materials, textures, intersection, timer );
-      return ((color.x+color.y+color.z) >= (*sceneInfo).transparentColor.x ); 
-   }
-#endif // 0
 
    return true;
 }
@@ -1308,8 +1301,6 @@ bool planeIntersection(
    }
    return collision;
 }
-#endif // ADVANCED_GEOMETRY
-
 
 /*
 ________________________________________________________________________________
@@ -1431,84 +1422,87 @@ float4 intersectionShader(
    float4 colorAtIntersection = materials[(*primitive).materialId].color;
    colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
 
-#ifdef ADVANCED_GEOMETRY
-   switch( (*primitive).type ) 
+   if((*sceneInfo).parameters.y==1)
    {
-   case ptCylinder:
+      switch( (*primitive).type ) 
       {
-         if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
+      case ptCylinder:
          {
-            colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
-         }
-         break;
-      }
-   case ptEnvironment:
-   case ptSphere:
-   case ptEllipsoid:
-      {
-         if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-         {
-            colorAtIntersection = sphereUVMapping( primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
-         }
-         break;
-      }
-   case ptCheckboard :
-      {
-         if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
-         {
-            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
-         }
-         else 
-         {
-            int x = (*sceneInfo).viewDistance + (((*intersection).x - (*primitive).p0.x)/(*primitive).size.x);
-            int z = (*sceneInfo).viewDistance + (((*intersection).z - (*primitive).p0.z)/(*primitive).size.x);
-            if(x%2==0) 
+            if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
             {
-               if (z%2==0) 
-               {
-                  colorAtIntersection.x = 1.f-colorAtIntersection.x;
-                  colorAtIntersection.y = 1.f-colorAtIntersection.y;
-                  colorAtIntersection.z = 1.f-colorAtIntersection.z;
-               }
+               colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
+            }
+            break;
+         }
+      case ptEnvironment:
+      case ptSphere:
+      case ptEllipsoid:
+         {
+            if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
+            {
+               colorAtIntersection = sphereUVMapping( primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
+            }
+            break;
+         }
+      case ptCheckboard :
+         {
+            if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+            {
+               colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes );
             }
             else 
             {
-               if (z%2!=0) 
+               int x = (*sceneInfo).viewDistance + (((*intersection).x - (*primitive).p0.x)/(*primitive).size.x);
+               int z = (*sceneInfo).viewDistance + (((*intersection).z - (*primitive).p0.z)/(*primitive).size.x);
+               if(x%2==0) 
                {
-                  colorAtIntersection.x = 1.f-colorAtIntersection.x;
-                  colorAtIntersection.y = 1.f-colorAtIntersection.y;
-                  colorAtIntersection.z = 1.f-colorAtIntersection.z;
+                  if (z%2==0) 
+                  {
+                     colorAtIntersection.x = 1.f-colorAtIntersection.x;
+                     colorAtIntersection.y = 1.f-colorAtIntersection.y;
+                     colorAtIntersection.z = 1.f-colorAtIntersection.z;
+                  }
+               }
+               else 
+               {
+                  if (z%2!=0) 
+                  {
+                     colorAtIntersection.x = 1.f-colorAtIntersection.x;
+                     colorAtIntersection.y = 1.f-colorAtIntersection.y;
+                     colorAtIntersection.z = 1.f-colorAtIntersection.z;
+                  }
                }
             }
+            break;
          }
-         break;
-      }
-   case ptXYPlane:
-   case ptYZPlane:
-   case ptXZPlane:
-   case ptCamera:
-      {
-         if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+      case ptXYPlane:
+      case ptYZPlane:
+      case ptXZPlane:
+      case ptCamera:
          {
-            colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes);
+            if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+            {
+               colorAtIntersection = cubeMapping( sceneInfo, primitive, materials, textures, intersection, normal, specular, attributes, advancedAttributes);
+            }
+            break;
          }
-         break;
-      }
-   case ptTriangle:
-      {
-         if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+      case ptTriangle:
          {
-            colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
+            if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+            {
+               colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
+            }
+            break;
          }
-         break;
       }
    }
-#else
-   if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+   else
    {
-      colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
+      if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE ) 
+      {
+         colorAtIntersection = triangleUVMapping( sceneInfo, primitive, materials, textures, intersection, areas, normal, specular, attributes, advancedAttributes );
+      }
    }
-#endif // ADVANCED_GEOMETRY
    return colorAtIntersection;
 }
 
@@ -1567,19 +1561,22 @@ float processShadows(
             if( (*primitive).index!=objectId && materials[(*primitive).materialId].attributes.x==0)
             {
                bool hit = false;
-#ifdef ADVANCED_GEOMETRY
-               switch((*primitive).type)
+               if((*sceneInfo).parameters.y==1)
                {
-               case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-               case ptCylinder : hit=cylinderIntersection ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-               case ptCamera   : hit=false; break;
-               case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-               case ptTriangle : hit=triangleIntersection ( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, true ); break;
-               default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false ); break;
+                  switch((*primitive).type)
+                  {
+                  case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+                  case ptCylinder : hit=cylinderIntersection ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+                  case ptCamera   : hit=false; break;
+                  case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+                  case ptTriangle : hit=triangleIntersection ( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, true ); break;
+                  default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false ); break;
+                  }
                }
-#else
-               hit=triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, true );
-#endif // ADVANCED_GEOMETRY
+               else
+               {
+                  hit=triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, true );
+               }
                if( hit )
                {
                   Vertex O_I = intersection-r.origin;
@@ -1674,17 +1671,6 @@ float4 primitiveShader(
 
    if( (*sceneInfo).graphicsLevel>0 )
    {
-      // Final color
-#ifdef EXTENDED_FEATURES
-      // TODO: Bump effect
-      if( materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-      {
-         (*normal).x = (*normal).x*0.7f+intersectionColor.x*0.3f;
-         (*normal).y = (*normal).y*0.7f+intersectionColor.y*0.3f;
-         (*normal).z = (*normal).z*0.7f+intersectionColor.z*0.3f;
-      }
-#endif // EXTENDED_FEATURES
-
       (*closestColor) *= (*material).innerIllumination.x;
       int C=(lightInformationSize>1) ? 2 : 1;
       for( int c=0; c<C; ++c ) 
@@ -1871,19 +1857,22 @@ inline bool intersectionWithPrimitives(
                {
                   Vertex areas = {0.f,0.f,0.f,0.f};
                   i = false;
-#ifdef ADVANCED_GEOMETRY
-                  switch( (*primitive).type )
+                  if((*sceneInfo).parameters.y==1)
                   {
-                  case ptEnvironment :
-                  case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
-                  case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
-                  case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-                  case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
-                  default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
+                     switch( (*primitive).type )
+                     {
+                     case ptEnvironment :
+                     case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
+                     case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
+                     case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+                     case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
+                     default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
+                     }
                   }
-#else
-                  i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false );
-#endif // ADVANCED_GEOMETRY
+                  else
+                  {
+                     i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false );
+                  }
 
                   float distance = length(intersection-r.origin);
                   if( i && distance>EPSILON && distance<minDistance ) 
