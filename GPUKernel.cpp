@@ -2304,6 +2304,9 @@ void GPUKernel::realignTexturesAndMaterials()
       int specularTextureId     = m_hMaterials[i].textureIds.w;
       int reflectionTextureId   = m_hMaterials[i].advancedTextureIds.x;
       int transparencyTextureId = m_hMaterials[i].advancedTextureIds.y;
+      
+      if(diffuseTextureId!=TEXTURE_NONE) LOG_INFO(1,"Material " << i << ": ids=" << diffuseTextureId);
+      
       switch(diffuseTextureId)
       {
       case TEXTURE_MANDELBROT:
