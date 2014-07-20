@@ -472,9 +472,11 @@ __device__ __INLINE__ float4 launchRay(
 * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_standardRenderer(
+#ifdef WIN32
    const int2   occupancyParameters,
    int          device_split,
    int          stream_split,
+#endif // WIN32
    BoundingBox* BoundingBoxes, int nbActiveBoxes,
    Primitive* primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
@@ -491,7 +493,11 @@ __global__ void k_standardRenderer(
 {
    int x = blockDim.x*blockIdx.x + threadIdx.x;
    int y = blockDim.y*blockIdx.y + threadIdx.y;
+#ifdef WIN32
    int index = (stream_split+y)*sceneInfo.size.x+x;
+#else
+   int index = y*sceneInfo.size.x+x;
+#endif // WIN32
 
    // Antialisazing
    float2 AArotatedGrid[4] =
@@ -504,11 +510,13 @@ __global__ void k_standardRenderer(
 
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
+#ifdef WIN32
    if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x || (
-#ifdef USE_PRIMITIVESXY
+#else
+   if(index>=sceneInfo.size.x*sceneInfo.size.y || (
+#endif // WIN32
       sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
-#endif // USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
@@ -537,7 +545,11 @@ __global__ void k_standardRenderer(
    if(sceneInfo.misc.w==1) // Isometric 3D
    {
       ray.direction.x = ray.origin.z*0.001f*(x - (sceneInfo.size.x/2));
+#ifdef WIN32
       ray.direction.y = -ray.origin.z*0.001f*(device_split+stream_split+y - (sceneInfo.size.y/2));
+#else
+      ray.direction.y = -ray.origin.z*0.001f*(y - (sceneInfo.size.y/2));
+#endif // WIN32
       ray.origin.x = ray.direction.x;
       ray.origin.y = ray.direction.y;
    }
@@ -548,7 +560,11 @@ __global__ void k_standardRenderer(
       step.x=ratio*6400.f/(float)sceneInfo.size.x;
       step.y=6400.f/(float)sceneInfo.size.y;
       ray.direction.x = ray.direction.x - step.x*(x - (sceneInfo.size.x/2));
+#ifdef WIN32
       ray.direction.y = ray.direction.y + step.y*(device_split+stream_split+y - (sceneInfo.size.y/2));
+#else
+      ray.direction.y = ray.direction.y + step.y*(y - (sceneInfo.size.y/2));
+#endif // WIN32
    }
 
    vectorRotation( ray.origin, rotationCenter, angles );
@@ -1575,7 +1591,7 @@ ________________________________________________________________________________
 GPU -> CPU data transfers
 ________________________________________________________________________________
 */
-extern "C" void d2h_bitmap( 
+extern "C" void d2h_bitmap(
    int2           occupancyParameters,
    SceneInfo      sceneInfo,
    BitmapBuffer*        bitmap, 
@@ -1720,9 +1736,11 @@ extern "C" void cudaRender(
          default:
             {
                k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+#ifdef WIN32
                   occupancyParameters,
                   device*(size.y/occupancyParameters.x),
                   stream*size.y,
+#endif // WIN32
 #ifndef USE_MANAGED_MEMORY
                   d_boundingBoxes[device],
 #else

@@ -334,7 +334,7 @@ public:
 
    void resetAddingIndex() { m_addingIndex = 0; };
    void doneWithAdding( const bool& doneWithAdding ) {  m_doneWithAdding = doneWithAdding; };
-   void resetFrame(  );
+   void resetFrame();
    void resetAll();
 
    void setDistortion( const float distortion ) { m_distortion = distortion; };

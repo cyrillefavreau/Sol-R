@@ -31,6 +31,7 @@
 	#endif
 	#include <windows.h>
 #else
+#include <iostream>
 #include <string>
 #endif // WIN32
 
@@ -76,6 +77,9 @@ inline std::string getTimestamp()
 	   }
 #endif // 0
 #else
-	#define LOG_INFO( __level, __msg )
-	#define LOG_ERROR( __msg )
+	#define LOG_INFO( __level, __msg ) \
+	{ \
+		if( __level==1) std::cout << __msg << std::endl; \
+	}
+	#define LOG_ERROR( __msg ) std::cerr << __msg << std::endl;
 #endif
