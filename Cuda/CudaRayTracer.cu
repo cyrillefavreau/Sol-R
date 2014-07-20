@@ -22,7 +22,6 @@
 
 // Raytracer features
 #define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
-#define USE_PRIMITIVESXY
 
 // System
 #include <iostream>
@@ -106,11 +105,9 @@ __device__ __INLINE__ float4 launchRay(
    Ray    rayOrigin         = ray;
    float  initialRefraction = 1.f;
    int    iteration         = 0;
-#ifdef USE_PRIMITIVESXY
    primitiveXYId.x = -1;
    primitiveXYId.z = 0;
    primitiveXYId.w = 0;
-#endif // USE_PRIMITIVESXY
    int currentMaterialId=-2;
 
    // TODO
@@ -189,10 +186,8 @@ __device__ __INLINE__ float4 launchRay(
                pathTracingRatio = 0.3f*fabs(cos_theta);
             }
 
-#ifdef USE_PRIMITIVESXY
             // Primitive ID for current pixel
             primitiveXYId.x = primitives[closestPrimitive].index.x;
-#endif // USE_PRIMITIVESXY
          }
 
          Vertex attributes;
@@ -215,11 +210,9 @@ __device__ __INLINE__ float4 launchRay(
             closestPrimitive, closestIntersection, areas, closestColor,
             iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
 
-#ifdef USE_PRIMITIVESXY
          // Primitive illumination
          float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
          primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
-#endif // USE_PRIMITIVESXY
 
          float segmentLength=length(closestIntersection-latestIntersection);
          latestIntersection=closestIntersection;
@@ -357,9 +350,7 @@ __device__ __INLINE__ float4 launchRay(
             refractionFromColor, shadowIntensity, rBlinn, attributes );
          colors[reflectedRays] += color*reflectedRatio;
 
-#ifdef USE_PRIMITIVESXY
          primitiveXYId.w = shadowIntensity*255;
-#endif // USE_PRIMITIVESXY
       }
    }
 
@@ -432,9 +423,7 @@ __device__ __INLINE__ float4 launchRay(
    }
 
    // Primitive information
-#ifdef USE_PRIMITIVESXY
    primitiveXYId.y = iteration;
-#endif // USE_PRIMITIVESXY
 
    // Depth of field
    intersectionColor -= colorBox;
@@ -472,11 +461,9 @@ __device__ __INLINE__ float4 launchRay(
 * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_standardRenderer(
-#ifdef WIN32
    const int2   occupancyParameters,
    int          device_split,
    int          stream_split,
-#endif // WIN32
    BoundingBox* BoundingBoxes, int nbActiveBoxes,
    Primitive* primitives, int nbActivePrimitives,
    LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
@@ -493,11 +480,7 @@ __global__ void k_standardRenderer(
 {
    int x = blockDim.x*blockIdx.x + threadIdx.x;
    int y = blockDim.y*blockIdx.y + threadIdx.y;
-#ifdef WIN32
    int index = (stream_split+y)*sceneInfo.size.x+x;
-#else
-   int index = y*sceneInfo.size.x+x;
-#endif // WIN32
 
    // Antialisazing
    float2 AArotatedGrid[4] =
@@ -510,11 +493,7 @@ __global__ void k_standardRenderer(
 
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
-#ifdef WIN32
    if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x || (
-#else
-   if(index>=sceneInfo.size.x*sceneInfo.size.y || (
-#endif // WIN32
       sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
       sceneInfo.pathTracingIteration.x>0 && 
@@ -545,11 +524,7 @@ __global__ void k_standardRenderer(
    if(sceneInfo.misc.w==1) // Isometric 3D
    {
       ray.direction.x = ray.origin.z*0.001f*(x - (sceneInfo.size.x/2));
-#ifdef WIN32
       ray.direction.y = -ray.origin.z*0.001f*(device_split+stream_split+y - (sceneInfo.size.y/2));
-#else
-      ray.direction.y = -ray.origin.z*0.001f*(y - (sceneInfo.size.y/2));
-#endif // WIN32
       ray.origin.x = ray.direction.x;
       ray.origin.y = ray.direction.y;
    }
@@ -560,11 +535,7 @@ __global__ void k_standardRenderer(
       step.x=ratio*6400.f/(float)sceneInfo.size.x;
       step.y=6400.f/(float)sceneInfo.size.y;
       ray.direction.x = ray.direction.x - step.x*(x - (sceneInfo.size.x/2));
-#ifdef WIN32
       ray.direction.y = ray.direction.y + step.y*(device_split+stream_split+y - (sceneInfo.size.y/2));
-#else
-      ray.direction.y = ray.direction.y + step.y*(y - (sceneInfo.size.y/2));
-#endif // WIN32
    }
 
    vectorRotation( ray.origin, rotationCenter, angles );
@@ -690,10 +661,8 @@ __global__ void k_fishEyeRenderer(
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
    if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x || (
-#ifdef USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
-#endif // USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
@@ -811,10 +780,8 @@ __global__ void k_anaglyphRenderer(
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
    if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x || (
-#ifdef USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
-#endif // USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
@@ -951,10 +918,8 @@ __global__ void k_3DVisionRenderer(
    // Beware out of bounds error! \[^_^]/
    // And only process pixels that need extra rendering
    if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x || (
-#ifdef USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
       primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
-#endif // USE_PRIMITIVESXY
       sceneInfo.pathTracingIteration.x>0 && 
       sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
 
@@ -1736,11 +1701,9 @@ extern "C" void cudaRender(
          default:
             {
                k_standardRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
-#ifdef WIN32
                   occupancyParameters,
                   device*(size.y/occupancyParameters.x),
                   stream*size.y,
-#endif // WIN32
 #ifndef USE_MANAGED_MEMORY
                   d_boundingBoxes[device],
 #else
