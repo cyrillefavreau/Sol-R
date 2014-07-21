@@ -423,7 +423,9 @@ void OpenCLKernel::recompileKernels(const std::string& filename)
 		CHECKSTATUS(status);
 
       m_kRadiosity = clCreateKernel( hProgram, "k_radiosity", &status );
-      //m_kRadiosity = clCreateKernel( hProgram, "k_contrast", &status );
+		CHECKSTATUS(status);
+
+      m_kFilter = clCreateKernel( hProgram, "k_filter", &status );
 		CHECKSTATUS(status);
 
 		LOG_INFO(1,"clReleaseProgram");
@@ -469,6 +471,7 @@ void OpenCLKernel::releaseKernels()
    if( m_kDepthOfField )     { CHECKSTATUS(clReleaseKernel(m_kDepthOfField)); m_kDepthOfField=0; }
    if( m_kAmbientOcclusion ) { CHECKSTATUS(clReleaseKernel(m_kAmbientOcclusion)); m_kAmbientOcclusion=0; }
    if( m_kRadiosity )        { CHECKSTATUS(clReleaseKernel(m_kRadiosity)); m_kRadiosity=0; }
+   if( m_kFilter )           { CHECKSTATUS(clReleaseKernel(m_kFilter)); m_kFilter=0; }
 
    m_primitivesTransfered=false;
    m_materialsTransfered=false;
@@ -777,9 +780,14 @@ void OpenCLKernel::render_begin( const float timer )
          CHECKSTATUS(clSetKernelArg( m_kRadiosity, 6, sizeof(cl_mem),   (void*)&m_dBitmap ));
 	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 		   break;
-	   case ppe_oneColor:
-         // TODO!
-         break;
+	   case ppe_filter:
+         CHECKSTATUS(clSetKernelArg( m_kFilter, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+         CHECKSTATUS(clSetKernelArg( m_kFilter, 1, sizeof(SceneInfo),(void*)&sceneInfo ));
+         CHECKSTATUS(clSetKernelArg( m_kFilter, 2, sizeof(PostProcessingInfo),   (void*)&m_postProcessingInfo ));
+	      CHECKSTATUS(clSetKernelArg( m_kFilter, 3, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+         CHECKSTATUS(clSetKernelArg( m_kFilter, 4, sizeof(cl_mem),   (void*)&m_dBitmap ));
+	      CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kFilter, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
+		   break;
 	   default:
          CHECKSTATUS(clSetKernelArg( m_kDefault, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
          CHECKSTATUS(clSetKernelArg( m_kDefault, 1, sizeof(SceneInfo),(void*)&sceneInfo ));

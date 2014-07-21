@@ -1212,6 +1212,7 @@ __global__ void k_radiosity(
    localColor /= postProcessingInfo.param3.x;
    localColor /= div;
 
+   saturateVector( localColor );
    localColor.w = 1.f;
 
    makeColor( sceneInfo, localColor, bitmap, index ); 
@@ -1223,9 +1224,10 @@ ________________________________________________________________________________
 Post Processing Effect: Radiosity
 ________________________________________________________________________________
 */
-__global__ void k_oneColor(
+__global__ void k_filter(
    const int2            occupancyParameters,
    SceneInfo             sceneInfo,
+   PostProcessingInfo    postProcessingInfo,
    PostProcessingBuffer* postProcessingBuffer,
    BitmapBuffer*         bitmap) 
 {
@@ -1235,21 +1237,107 @@ __global__ void k_oneColor(
 
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
-   int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
-   float4 localColor = postProcessingBuffer[index]/div;
-   if(fabs(localColor.x-sceneInfo.backgroundColor.x)>sceneInfo.transparentColor.x || 
-      fabs(localColor.y-sceneInfo.backgroundColor.y)>sceneInfo.transparentColor.x ||
-      fabs(localColor.z-sceneInfo.backgroundColor.z)>sceneInfo.transparentColor.x )
+   // Filters
+#define NB_FILTERS 6
+   const int2 filterSize[NB_FILTERS] = 
    {
-      float totalColor = (localColor.x+localColor.y+localColor.z)/3.f;
-      localColor.x = totalColor;
-      localColor.y = totalColor;
-      localColor.z = totalColor;
+       { 3, 3 }, 
+       { 5, 5 }, 
+       { 3, 3 }, 
+       { 3, 3 }, 
+       { 5, 5 }, 
+       { 5, 5 }
+   };
+
+   const float2 filterFactors[NB_FILTERS] = 
+   {
+       { 1.f, 128.f }, 
+       { 1.f, 0.f }, 
+       { 1.f, 0.f }, 
+       { 1.f, 0.f }, 
+       { 0.2f, 0.f }, 
+       { 0.125f, 0.f }
+   }; // Factor and Bias
+
+   const float filterInfo[NB_FILTERS][5][5] =
+   {
+      { // Emboss
+         {-1.0f,-1.0f, 0.0f, 0.0f, 0.0f },
+         {-1.0f, 0.0f, 1.0f, 0.0f, 0.0f },
+         { 0.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      { // Find edges
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         {-1.0f,-1.0f, 2.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      {  // Sharpen
+         {-1.0f,-1.0f,-1.0f, 0.0f, 0.0f },
+         {-1.0f, 9.0f,-1.0f, 0.0f, 0.0f },
+         {-1.0f,-1.0f,-1.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      { // Blur
+         { 0.0f, 0.2f, 0.0f, 0.0f, 0.0f },
+         { 0.2f, 0.2f, 0.2f, 0.0f, 0.0f },
+         { 0.0f, 0.2f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      { // Motion Blur
+         { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 1.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f }
+      },
+      { // Subtle Sharpen
+         {-1.0f,-1.0f,-1.0f,-1.0f,-1.0f },
+         {-1.0f, 2.0f, 2.0f, 2.0f,-1.0f },
+         {-1.0f, 2.0f, 8.0f, 2.0f,-1.0f },
+         {-1.0f, 2.0f, 2.0f, 2.0f,-1.0f },
+         {-1.0f,-1.0f,-1.0f,-1.0f,-1.0f }
+      }
+   };
+
+   float4 localColor={0.f,0.f,0.f,0.f};
+   float4 color={0.f,0.f,0.f,0.f};
+   if(postProcessingInfo.param3.x<NB_FILTERS)
+   {
+      //multiply every value of the filter with corresponding image pixel 
+      for(int filterX = 0; filterX < filterSize[postProcessingInfo.param3.x].x; filterX++)
+      {
+         for(int filterY = 0; filterY < filterSize[postProcessingInfo.param3.x].y; filterY++) 
+         { 
+            int imageX=(x-filterSize[postProcessingInfo.param3.x].x/2+filterX+sceneInfo.size.x)%sceneInfo.size.x; 
+            int imageY=(y-filterSize[postProcessingInfo.param3.x].y/2+filterY+sceneInfo.size.y)%sceneInfo.size.y; 
+            int localIndex=imageY*sceneInfo.size.x+imageX;
+            float4 c=postProcessingBuffer[localIndex];
+            if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+            {
+               c /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+            }
+            localColor.x += c.x*filterInfo[postProcessingInfo.param3.x][filterX][filterY]; 
+            localColor.y += c.y*filterInfo[postProcessingInfo.param3.x][filterX][filterY]; 
+            localColor.z += c.z*filterInfo[postProcessingInfo.param3.x][filterX][filterY]; 
+         }
+      }
+      //truncate values smaller than zero and larger than 255 
+      color.x += min(max(filterFactors[postProcessingInfo.param3.x].x*localColor.x+filterFactors[postProcessingInfo.param3.x].y/255.f, 0.f), 1.f);
+      color.y += min(max(filterFactors[postProcessingInfo.param3.x].x*localColor.y+filterFactors[postProcessingInfo.param3.x].y/255.f, 0.f), 1.f);
+      color.z += min(max(filterFactors[postProcessingInfo.param3.x].x*localColor.z+filterFactors[postProcessingInfo.param3.x].y/255.f, 0.f), 1.f);
    }
-   //localColor /= div;
+
+   saturateVector( color );
    localColor.w = 1.f;
-   makeColor( sceneInfo, localColor, bitmap, index ); 
+
+   makeColor( sceneInfo, color, bitmap, index ); 
 }
 
 extern "C" void reshape_scene(
@@ -1790,10 +1878,11 @@ extern "C" void cudaRender(
             d_randoms[device], 
             d_bitmap[device] );
          break;
-      case ppe_oneColor:
-         k_oneColor<<<grid,blocks,0,d_streams[device][0]>>>(
+      case ppe_filter:
+         k_filter<<<grid,blocks,0,d_streams[device][0]>>>(
             occupancyParameters,
             sceneInfo, 
+            postProcessingInfo, 
             d_postProcessingBuffer[device],
             d_bitmap[device] );
          break;

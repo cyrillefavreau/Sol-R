@@ -220,7 +220,7 @@ enum PostProcessingType
    ppe_depthOfField,      // Depth of field
    ppe_ambientOcclusion,  // Ambient occlusion
    ppe_radiosity,         // Radiosity
-   ppe_oneColor
+   ppe_filter             // Various Filters
 };
 
 // Post processing information

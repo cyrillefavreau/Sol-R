@@ -114,6 +114,7 @@ private:
 	cl_kernel        m_kDepthOfField;
 	cl_kernel        m_kAmbientOcclusion;
 	cl_kernel        m_kRadiosity;
+	cl_kernel        m_kFilter;
 
 private:
 

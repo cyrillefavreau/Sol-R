@@ -71,15 +71,15 @@ typedef struct
    int    pathTracingIteration;     // Current iteration for current frame
    int    maxPathTracingIterations; // Maximum number of iterations for current frame
    int4   misc;                     // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
-                                    // y: Timer
-                                    // z: Fog( 0: disabled, 1: enabled )
-                                    // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+   // y: Timer
+   // z: Fog( 0: disabled, 1: enabled )
+   // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
    int4    parameters;              // x: Double-sided triangles( 0:disabled, 1:enabled )
-                                    // y: Extended geometry ( 0:disabled, 1:enabled )
-                                    // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
-                                    // w: Draft mode(0:disabled, 1:enabled)
+   // y: Extended geometry ( 0:disabled, 1:enabled )
+   // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
+   // w: Draft mode(0:disabled, 1:enabled)
    int4    skybox;                  // x: size
-                                    // y: material Id
+   // y: material Id
 } SceneInfo;
 
 typedef struct
@@ -117,43 +117,43 @@ enum PrimitiveType
 typedef struct
 {
    float4 innerIllumination;  // x: Inner illumination
-                              // y: Diffusion strength
-                              // z: <not used>
-                              // w: Noise
+   // y: Diffusion strength
+   // z: <not used>
+   // w: Noise
    float4 color;              // Color( R,G,B )
    float4 specular;           // x: Value
-                              // y: Power
-                              // z: <not used>
-                              // w: <not used>
+   // y: Power
+   // z: <not used>
+   // w: <not used>
    float  reflection;         // Reflection rate( No reflection=0 -> Full reflection=1 )
    float  refraction;         // Refraction index( ex: glass=1.33 )
    float  transparency;       // Transparency rate( Opaque=0 -> Full transparency=1 )
    float  opacity;            // Opacity strength
    int4   attributes;         // x: Fast transparency( off=0, on=1 ). Fast transparency produces no shadows 
-                              //    and drops intersections if rays intersects primitive with the same material ID
-                              // y: Procedural textures( off=0, on=1 )
-                              // z: Wireframe( off=0, on=1 ). Wire frame produces no shading
-                              // w: Wireframe Width
+   //    and drops intersections if rays intersects primitive with the same material ID
+   // y: Procedural textures( off=0, on=1 )
+   // z: Wireframe( off=0, on=1 ). Wire frame produces no shading
+   // w: Wireframe Width
    int4   textureMapping;     // x: U padding
-                              // y: V padding
-                              // z: Texture ID (Deprecated)
-                              // w: Texture color depth
+   // y: V padding
+   // z: Texture ID (Deprecated)
+   // w: Texture color depth
    int4   textureOffset;      // x: Offset in the diffuse map
-                              // y: Offset in the normal map
-                              // z: Offset in the bump map
-                              // w: Offset in the specular map
+   // y: Offset in the normal map
+   // z: Offset in the bump map
+   // w: Offset in the specular map
    int4   textureIds;         // x: Diffuse map
-                              // y: Normal map
-                              // z: Bump map
-                              // w: Specular map
+   // y: Normal map
+   // z: Bump map
+   // w: Specular map
    int4   advancedTextureOffset; // x: Offset in the Reflection map
-                                 // y: Offset in the Transparency map
-                                 // z: Offset in the Ambient Occulsion map
-                                 // w: not used
+   // y: Offset in the Transparency map
+   // z: Offset in the Ambient Occulsion map
+   // w: not used
    int4   advancedTextureIds;    // x: Reflection map
-                                 // y: Transparency map
-                                 // z: Ambient Occulsion map
-                                 // w: not used
+   // y: Transparency map
+   // z: Ambient Occulsion map
+   // w: not used
    float2 mappingOffset;         // Texture mapping offsets based on sceneInfo.misc.y
 } Material;
 
@@ -749,8 +749,8 @@ float4 triangleUVMapping(
    float2 mappingOffset={0.f,0.f};
    if((*material).attributes.y==1)
    {
-       mappingOffset.x=(*material).mappingOffset.x*(*sceneInfo).misc.y;
-       mappingOffset.y=(*material).mappingOffset.y*(*sceneInfo).misc.y;
+      mappingOffset.x=(*material).mappingOffset.x*(*sceneInfo).misc.y;
+      mappingOffset.y=(*material).mappingOffset.y*(*sceneInfo).misc.y;
    }
    int u = T.x*(*material).textureMapping.x + mappingOffset.x;
    int v = T.y*(*material).textureMapping.y + mappingOffset.y;
@@ -1002,7 +1002,7 @@ bool sphereIntersection(
    float*     shadowIntensity
    ) 
 {
-    bool back=false;
+   bool back=false;
    // solve the equation sphere-ray to find the intersections
    Vertex O_C = (*ray).origin-(*sphere).p0;
    Vertex dir = normalize((*ray).direction); 
@@ -1022,7 +1022,7 @@ bool sphereIntersection(
    float t=0.f;
    if( t1<=EPSILON ) 
    {
-       back=true;
+      back=true;
       t=t2;
    }
    else 
@@ -1790,15 +1790,15 @@ float4 primitiveShader(
          saturateVector( totalBlinn );
       }
    }
-   
+
    // Ambient occlusion
    if((*material).advancedTextureIds.z!=TEXTURE_NONE)
    {
       (*closestColor)*=advancedAttributes.x;
    }
 
-    // Saturate color
-    saturateVector(closestColor);
+   // Saturate color
+   saturateVector(closestColor);
 
    return (*closestColor);
 }
@@ -2202,26 +2202,26 @@ inline float4 launchRay(
       // Global illumination
       /*
       if( intersectionWithPrimitives(
-         sceneInfo,
-         boundingBoxes, nbActiveBoxes,
-         primitives, nbActivePrimitives,
-         materials, textures,
-         &pathTracingRay,
-         0,  
-         &closestPrimitive, &closestIntersection, 
-         &normal, &areas, &colorBox, -2))
+      sceneInfo,
+      boundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      materials, textures,
+      &pathTracingRay,
+      0,  
+      &closestPrimitive, &closestIntersection, 
+      &normal, &areas, &colorBox, -2))
       {
-         Vertex attributes;
-         pathTracingColor = primitiveShader( 
-            index,
-            sceneInfo, postProcessingInfo,
-            boundingBoxes, nbActiveBoxes, 
-            primitives, nbActivePrimitives, 
-            lightInformation, lightInformationSize, nbActiveLamps, 
-            materials, textures, randoms, 
-            pathTracingRay.origin, &normal, closestPrimitive, 
-            &closestIntersection, areas, &closestColor,
-            iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+      Vertex attributes;
+      pathTracingColor = primitiveShader( 
+      index,
+      sceneInfo, postProcessingInfo,
+      boundingBoxes, nbActiveBoxes, 
+      primitives, nbActivePrimitives, 
+      lightInformation, lightInformationSize, nbActiveLamps, 
+      materials, textures, randoms, 
+      pathTracingRay.origin, &normal, closestPrimitive, 
+      &closestIntersection, areas, &closestColor,
+      iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
       }
       else
       */
@@ -2345,7 +2345,7 @@ __kernel void k_standardRenderer(
       ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].w*a;
    }
 
-    float dof=0.f;
+   float dof=0.f;
 
    if(sceneInfo.misc.w==1) // Isometric 3D
    {
@@ -2882,24 +2882,24 @@ __kernel void k_radiosity(
 
    float4 localColor = {0.f,0.f,0.f,0.f};
 #if 1
-    float a=(1.f/NB_MAX_ITERATIONS)*primitiveXYIds[index].y;
-    /*
-    float r=0.f,g=0.f,b=0.f;
-    switch(primitiveXYIds[index].y)
-    {
-        case 1 : r=1.f;g=1.f;b=1.f; break; // white
-        case 2 : r=1.f;g=0.f;b=0.f; break; // red
-        case 3 : r=0.f;g=1.f;b=0.f; break; // green
-        case 4 : r=0.f;g=0.f;b=1.f; break; // blue
-        case 5 : r=1.f;g=1.f;b=0.f; break; // yellow
-        case 6 : r=0.f;g=1.f;b=1.f; break; // purple
-        case 7 : r=1.f;g=0.f;b=1.f; break; // ??
-        case 8 : r=0.5f;g=0.5f;b=0.5f; break;
-        case 9 : r=0.5f;g=0.f;b=0.f; break;
-        case 10: r=0.f;g=0.5f;b=0.f; break;
-        case 11: r=0.f;g=0.f;b=0.5f; break;
-    }
-    */
+   float a=(1.f/NB_MAX_ITERATIONS)*primitiveXYIds[index].y;
+   /*
+   float r=0.f,g=0.f,b=0.f;
+   switch(primitiveXYIds[index].y)
+   {
+   case 1 : r=1.f;g=1.f;b=1.f; break; // white
+   case 2 : r=1.f;g=0.f;b=0.f; break; // red
+   case 3 : r=0.f;g=1.f;b=0.f; break; // green
+   case 4 : r=0.f;g=0.f;b=1.f; break; // blue
+   case 5 : r=1.f;g=1.f;b=0.f; break; // yellow
+   case 6 : r=0.f;g=1.f;b=1.f; break; // purple
+   case 7 : r=1.f;g=0.f;b=1.f; break; // ??
+   case 8 : r=0.5f;g=0.5f;b=0.5f; break;
+   case 9 : r=0.5f;g=0.f;b=0.f; break;
+   case 10: r=0.f;g=0.5f;b=0.f; break;
+   case 11: r=0.f;g=0.f;b=0.5f; break;
+   }
+   */
    localColor.x = a;
    localColor.y = a;
    localColor.z = a;
@@ -2934,11 +2934,11 @@ ________________________________________________________________________________
 Post Processing Effect: Default
 ________________________________________________________________________________
 */
-__kernel void k_contrast(
+__kernel void k_filter(
    const int2                     occupancyParameters,
    SceneInfo                      sceneInfo,
-   PostProcessingInfo             PostProcessingInfo,
-   CONST PostProcessingBuffer* postProcessingBuffer,
+   PostProcessingInfo             postProcessingInfo,
+   CONST PostProcessingBuffer*    postProcessingBuffer,
    __global BitmapBuffer*         bitmap) 
 {
    int x = get_global_id(0);
@@ -2947,38 +2947,110 @@ __kernel void k_contrast(
    // Beware out of bounds error!
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
-   float4 localColor = postProcessingBuffer[index];
-   const int step = 8;
-   int c=0;
-   float4 color={0.f,0.f,0.f,0.f};
-   for( int X=-step; X<step; ++X )
+   // Filters
+#define NB_FILTERS 6
+   const int2 filterSize[NB_FILTERS] = 
    {
-      for( int Y=-step; Y<step; ++Y )
+       { 3, 3 }, 
+       { 5, 5 }, 
+       { 3, 3 }, 
+       { 3, 3 }, 
+       { 5, 5 }, 
+       { 5, 5 }
+   };
+
+   const float2 filterFactors[NB_FILTERS] = 
+   {
+       { 1.f, 128.f }, 
+       { 1.f, 0.f }, 
+       { 1.f, 0.f }, 
+       { 1.f, 0.f }, 
+       { 0.2f, 0.f }, 
+       { 0.125f, 0.f }
+   }; // Factor and Bias
+
+
+   const float filterInfo[NB_FILTERS][5][5] =
+   {
+      { // Emboss
+         {-1.0f,-1.0f, 0.0f, 0.0f, 0.0f },
+         {-1.0f, 0.0f, 1.0f, 0.0f, 0.0f },
+         { 0.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      { // Find edges
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         {-1.0f,-1.0f, 2.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      {  // Sharpen
+         {-1.0f,-1.0f,-1.0f, 0.0f, 0.0f },
+         {-1.0f, 9.0f,-1.0f, 0.0f, 0.0f },
+         {-1.0f,-1.0f,-1.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      { // Blur
+         { 0.0f, 0.2f, 0.0f, 0.0f, 0.0f },
+         { 0.2f, 0.2f, 0.2f, 0.0f, 0.0f },
+         { 0.0f, 0.2f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }
+      },
+      { // Motion Blur
+         { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 1.0f, 0.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 1.0f, 0.0f },
+         { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f }
+      },
+      { // Subtle Sharpen
+         {-1.0f,-1.0f,-1.0f,-1.0f,-1.0f },
+         {-1.0f, 2.0f, 2.0f, 2.0f,-1.0f },
+         {-1.0f, 2.0f, 8.0f, 2.0f,-1.0f },
+         {-1.0f, 2.0f, 2.0f, 2.0f,-1.0f },
+         {-1.0f,-1.0f,-1.0f,-1.0f,-1.0f }
+      }
+   };
+
+   float4 localColor={0.f,0.f,0.f,0.f};
+   float4 color={0.f,0.f,0.f,0.f};
+   if(postProcessingInfo.param3<NB_FILTERS)
+   {
+      //multiply every value of the filter with corresponding image pixel 
+      for(int filterX = 0; filterX < filterSize[postProcessingInfo.param3].x; filterX++)
       {
-         if( X!=0 || Y!=0 )
-         {
-            int xx = x+X;
-            int yy = y+Y;
-            if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
-            {
-               int localIndex = yy*sceneInfo.size.x+xx;
-               color += max(localColor,postProcessingBuffer[localIndex]);
-               ++c;
-            }
+         for(int filterY = 0; filterY < filterSize[postProcessingInfo.param3].y; filterY++) 
+         { 
+            int imageX=(x-filterSize[postProcessingInfo.param3].x/2+filterX+sceneInfo.size.x)%sceneInfo.size.x; 
+            int imageY=(y-filterSize[postProcessingInfo.param3].y/2+filterY+sceneInfo.size.y)%sceneInfo.size.y; 
+            int localIndex=imageY*sceneInfo.size.x+imageX;
+           
+            float4 c=postProcessingBuffer[localIndex];
+           if(sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS)
+           {
+              c /= (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1);
+           }
+            
+            localColor.x += c.x*filterInfo[postProcessingInfo.param3][filterX][filterY]; 
+            localColor.y += c.y*filterInfo[postProcessingInfo.param3][filterX][filterY]; 
+            localColor.z += c.z*filterInfo[postProcessingInfo.param3][filterX][filterY]; 
          }
       }
+      //truncate values smaller than zero and larger than 255 
+      float factor=filterFactors[postProcessingInfo.param3].x;
+      float bias=filterFactors[postProcessingInfo.param3].y;
+      color.x += min(max(factor*localColor.x+bias/255.f, 0.f), 1.f);
+      color.y += min(max(factor*localColor.y+bias/255.f, 0.f), 1.f);
+      color.z += min(max(factor*localColor.z+bias/255.f, 0.f), 1.f);
    }
-   color/=c;
-   localColor=(localColor*0.5f+color*0.5f);
 
-   if(sceneInfo.pathTracingIteration>NB_MAX_ITERATIONS)
-   {
-      localColor /= (float)(sceneInfo.pathTracingIteration-NB_MAX_ITERATIONS+1);
-   }
-   saturateVector( &localColor );
+   saturateVector( &color );
 
    localColor.w = 1.f;
 
-   makeColor( &sceneInfo, &localColor, bitmap, index ); 
+   makeColor( &sceneInfo, &color, bitmap, index ); 
 }
-
