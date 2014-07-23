@@ -549,7 +549,7 @@ void getKernelCode(std::string& gOpenCLCode) {
   gOpenCLCode+="   η ½ τεψτυςεσΫι«±έ»";
   gOpenCLCode+="   β ½ τεψτυςεσΫι«²έ»";
   gOpenCLCode+="   ¨ªαττςιβυτεσ©®ω ª½ ¨ς«η«β©―·¶Έ®ζ»";
-  gOpenCLCode+="   ¨ªαττςιβυτεσ©®ϊ ½ ±°®ζªβ―²µ¶®ζ»";
+  gOpenCLCode+="――   ¨ªαττςιβυτεσ©®ϊ ½ ±°®ζªβ―²µ¶®ζ»";
   gOpenCLCode+="ύ";
   gOpenCLCode+="";
   gOpenCLCode+="―― ­­­­­­­­­­";
@@ -2971,6 +2971,7 @@ void getKernelCode(std::string& gOpenCLCode) {
   gOpenCLCode+="       ϋ °®²ζ¬ °®ζ ύ¬ ";
   gOpenCLCode+="       ϋ °®±²µζ¬ °®ζ ύ";
   gOpenCLCode+="   ύ» ―― Ζαγτος αξδ Βιασ";
+  gOpenCLCode+="";
   gOpenCLCode+="";
   gOpenCLCode+="   γοξστ ζμοατ ζιμτεςΙξζοΫΞΒίΖΙΜΤΕÒΣέΫµέΫµέ ½";
   gOpenCLCode+="   ϋ";

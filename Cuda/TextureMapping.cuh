@@ -118,7 +118,7 @@ __device__ __INLINE__ void transparencyMap(
    g = textures[i+1];
    b = textures[i+2];
    attributes.y *= (r+g+b)/768.f;
-   attributes.z = 10.f*b/256.f;
+   //attributes.z = 10.f*b/256.f;
 }
 
 // ----------
