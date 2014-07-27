@@ -182,7 +182,7 @@ Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
    returnValue.z = fabs( max.z - min.z );
 
    // Resize to fit required size
-   float ratio = scale / returnValue.y;
+   float ratio = scale / std::max(returnValue.x,std::max(returnValue.y,returnValue.z));
    kernel.scalePrimitives( ratio, 0, NB_MAX_BOXES );
 
    LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z );
