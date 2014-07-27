@@ -2021,9 +2021,9 @@ inline float4 launchRay(
                // Global illumination
                int t=(index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
                pathTracingRay.origin = -(closestIntersection+normal*REBOUND_EPSILON); 
-               pathTracingRay.direction.x = -(normal.x+80000.f*randoms[t  ]);
-               pathTracingRay.direction.y = -(normal.y+80000.f*randoms[t+1]);
-               pathTracingRay.direction.z = -(normal.z+80000.f*randoms[t+2]);
+               pathTracingRay.direction.x = normal.x+800000.f*randoms[t  ];
+               pathTracingRay.direction.y = normal.y+800000.f*randoms[t+1];
+               pathTracingRay.direction.z = normal.z+800000.f*randoms[t+2];
 
                float cos_theta = dot(normalize(pathTracingRay.direction),normal);
                pathTracingRatio = 0.5f*fabs(cos_theta);
