@@ -493,7 +493,6 @@ Vertex OBJReader::loadModelFromFile(
                      float Xb = Xa-vertex.x;
                      vertex.x = Xb;
                   }
-                  vertex.x=1.f-vertex.x;
 
                   if( vertex.y<0.f )
                   {
