@@ -202,8 +202,8 @@ GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
 	LOG_INFO(3, "CPU: PostProcessingInfo: " << sizeof(PostProcessingInfo) );
 	LOG_INFO(3, "Textures " << NB_MAX_TEXTURES );
 
-   m_viewPos.x = 0.f; m_viewPos.y = 0.f; m_viewPos.z = 0.f;
-   m_viewDir.x = 0.f; m_viewDir.y = 0.f; m_viewDir.z = 0.f;
+   m_viewPos.x = 0.f; m_viewPos.y = 0.f; m_viewPos.z = 0.f; m_viewPos.w = 0.f;
+   m_viewDir.x = 0.f; m_viewDir.y = 0.f; m_viewDir.z = 0.f; m_viewDir.w = 0.f; 
 
 #if USE_KINECT
 	// Initialize Kinect
@@ -411,13 +411,9 @@ void GPUKernel::setCamera(
 		dir.x << "," << dir.y << "," << dir.z << " : "  <<
 		angles.x << "," << angles.y << "," << angles.z << ")" 
 		);
-	m_viewPos.x   = eye.x;
-	m_viewPos.y   = eye.y;
-	m_viewPos.z   = eye.z;
-	m_viewDir   = dir;
-	m_angles.x  = angles.x;
-	m_angles.y  = angles.y;
-	m_angles.z  = angles.z;
+	m_viewPos = eye;
+	m_viewDir = dir;
+	m_angles  = angles;
    m_refresh   = true;
 }
 

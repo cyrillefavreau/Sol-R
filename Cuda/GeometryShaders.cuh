@@ -136,7 +136,7 @@ __device__ __INLINE__ float processShadows(
    while( result<(sceneInfo.shadowIntensity.x-sceneInfo.backgroundColor.w) && cptBoxes<nbActiveBoxes )
 	{
 		BoundingBox& box = boudingBoxes[cptBoxes];
-		if( boxIntersection(box, r, 0.f, minDistance))
+		if( boxIntersection(box, r, 0.05f, minDistance))
 		{
 			int cptPrimitives = 0;
 			while( result<sceneInfo.shadowIntensity.x && cptPrimitives<box.nbPrimitives.x)
@@ -287,7 +287,14 @@ __device__ __INLINE__ float4 primitiveShader(
             if( lightRayLength<m.innerIllumination.z )
             {
                float4 shadowColor = {0.f,0.f,0.f,0.f};
-               if( sceneInfo.graphicsLevel.x>3 && 
+			      // --------------------------------------------------------------------------------
+			      // Lambert
+			      // --------------------------------------------------------------------------------
+               lightRay = normalize(lightRay);
+	            float lambert = dot(normal,lightRay);
+
+               if( lambert>0.f && 
+                   sceneInfo.graphicsLevel.x>3 && 
                    iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
                    material.innerIllumination.x==0.f ) 
 			      {
@@ -304,12 +311,6 @@ __device__ __INLINE__ float4 primitiveShader(
                   photonEnergy = (photonEnergy>1.f) ? 1.f : photonEnergy;
                   photonEnergy = (photonEnergy<0.f) ? 0.f : photonEnergy;
 
-                  lightRay = normalize(lightRay);
-
-			         // --------------------------------------------------------------------------------
-			         // Lambert
-			         // --------------------------------------------------------------------------------
-	               float lambert = dot(normal,lightRay); // (postProcessingInfo.type.x==ppe_ambientOcclusion) ? 0.6f : dot(normal,lightRay);
                   // Transparent materials are lighted on both sides but the amount of light received by the "dark side" 
                   // depends on the transparency rate.
                   lambert *= (lambert<0.f) ? -materials[primitive.materialId.x].transparency.x : 1.f;

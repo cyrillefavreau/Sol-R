@@ -532,8 +532,8 @@ __global__ void k_standardRenderer(
    {
       float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
       float2 step;
-      step.x=ratio*6400.f/(float)sceneInfo.size.x;
-      step.y=6400.f/(float)sceneInfo.size.y;
+      step.x=ratio*angles.w/(float)sceneInfo.size.x;
+      step.y=angles.w/(float)sceneInfo.size.y;
       ray.direction.x = ray.direction.x - step.x*(x - (sceneInfo.size.x/2));
       ray.direction.y = ray.direction.y + step.y*(device_split+stream_split+y - (sceneInfo.size.y/2));
    }
@@ -684,7 +684,7 @@ __global__ void k_fishEyeRenderer(
 
    // Normal Y axis
    float2 step;
-   step.y=6400.f/(float)sceneInfo.size.y;
+   step.y=angles.w/(float)sceneInfo.size.y;
    ray.direction.y = ray.direction.y + step.y*(float)(split_y+y - (sceneInfo.size.y/2));
 
    // 360° X axis
@@ -796,8 +796,8 @@ __global__ void k_anaglyphRenderer(
 
    float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
    float2 step;
-   step.x=ratio*6400.f/(float)sceneInfo.size.x;
-   step.y=6400.f/(float)sceneInfo.size.y;
+   step.x=ratio*angles.w/(float)sceneInfo.size.x;
+   step.y=angles.w/(float)sceneInfo.size.y;
 
    // Left eye
    eyeRay.origin.x = origin.x - sceneInfo.width3DVision.x;
@@ -937,8 +937,8 @@ __global__ void k_3DVisionRenderer(
 
    float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
    float2 step;
-   step.x=ratio*6400.f/(float)sceneInfo.size.x;
-   step.y=6400.f/(float)sceneInfo.size.y;
+   step.x=ratio*angles.w/(float)sceneInfo.size.x;
+   step.y=angles.w/(float)sceneInfo.size.y;
 
    Ray eyeRay;
    if( x<halfWidth ) 
