@@ -274,7 +274,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             line = line.substr(2);
             float d=static_cast<float>(atof(line.c_str()));
             materials[id].reflection   = 1.f; 
-            materials[id].transparency = 0.9f+(d/10.f);
+            materials[id].transparency = 0.5f+(d/50.f);
             materials[id].refraction   = 1.1f;
             materials[id].noise = 0.f;
          }

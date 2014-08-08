@@ -186,7 +186,7 @@ extern "C" RAYTRACINGENGINE_API
    LOG_INFO(3,"RayTracer_SetCamera");
    Vertex eye     = { static_cast<float>(eye_x),   static_cast<float>(eye_y),   static_cast<float>(eye_z)};
    Vertex dir     = { static_cast<float>(dir_x),   static_cast<float>(dir_y),   static_cast<float>(dir_z)};
-   Vertex angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z)};
+   Vertex angles  = { static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z), 6400.f };
    gKernel->setCamera( eye, dir, angles );
 }
 
