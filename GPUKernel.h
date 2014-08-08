@@ -348,7 +348,7 @@ public:
 
 public:
 
-   std::string getGPUDescription() { return m_gpuDescription; };
+   virtual std::string getGPUDescription() = 0;
 
 
 public:

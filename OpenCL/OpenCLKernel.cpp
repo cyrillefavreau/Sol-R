@@ -970,3 +970,8 @@ std::string OpenCLKernel::getDeviceDescription(const int platform, const int dev
 {
    return m_devicesDescription[platform][device];
 }
+
+std::string OpenCLKernel::getGPUDescription()
+{
+   return m_devicesDescription[m_platform][m_device];
+}

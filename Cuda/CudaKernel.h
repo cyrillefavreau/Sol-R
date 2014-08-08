@@ -56,6 +56,10 @@ public:
    void render_end();
 
 public:
+   
+   virtual std::string getGPUDescription();
+
+public:
 
    void setBlockSize( int x, int y, int z)    { m_blockSize.x = x; m_blockSize.y = y; m_blockSize.z = z; };
    void setSharedMemSize( int sharedMemSize ) { m_sharedMemSize = sharedMemSize; };

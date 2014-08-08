@@ -969,7 +969,7 @@ int GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDep
    boxSteps.z = ( boxSteps.z == 0.f ) ? 1 : boxSteps.z;
 
    // Create boxes in Rubik's cube mode :-)
-   int maxPrimitivesPerBox(0);
+   size_t maxPrimitivesPerBox(0);
    BoxContainer::iterator it=(m_boundingBoxes[m_frame][boundingBoxesDepth-1]).begin();
    while( it != (m_boundingBoxes[m_frame][boundingBoxesDepth-1]).end() )
    {

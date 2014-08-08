@@ -547,3 +547,8 @@ void CudaKernel::recompileKernels(const std::string&)
 {
    LOG_ERROR("Not implemented");
 }
+
+std::string CudaKernel::getGPUDescription()
+{
+   return m_gpuDescription;
+}

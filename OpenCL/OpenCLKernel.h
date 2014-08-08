@@ -76,6 +76,10 @@ public:
 
 public:
 
+   virtual std::string getGPUDescription();
+
+public:
+
    static void populateOpenCLInformation();
    static int getNumPlatforms();
    static std::string getPlatformDescription(const int platform);
