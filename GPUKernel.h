@@ -377,8 +377,8 @@ public:
 protected:
 
    // Bounding boxes management
-   int processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate );
-   void processOutterBoxes( const int boxSize, const int boundingBoxesDepth );
+   int processBoxes( const int boxSize, bool simulate );
+   int processOutterBoxes( const int boxSize, const int boundingBoxesDepth );
    bool updateBoundingBox( CPUBoundingBox& box );
    bool updateOutterBoundingBox( CPUBoundingBox& box, const int depth );
    void resetBox( CPUBoundingBox& box, bool resetPrimitives );

@@ -868,7 +868,7 @@ void GPUKernel::resetBox( CPUBoundingBox& box, bool resetPrimitives )
 	box.parameters[1].z = -m_sceneInfo.viewDistance.x;
 }
 
-int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulate )
+int GPUKernel::processBoxes( const int boxSize, bool simulate )
 {
    Vertex boxSteps;
    boxSteps.x = ( m_maxPos[m_frame].x - m_minPos[m_frame].x ) / boxSize;
@@ -879,12 +879,12 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
    boxSteps.y = ( boxSteps.y == 0.f ) ? 1 : boxSteps.y;
    boxSteps.z = ( boxSteps.z == 0.f ) ? 1 : boxSteps.z;
 
-   nbActiveBoxes = 0;
    std::map<unsigned int,unsigned int> primitivesPerBox;
 
    int p(0);
 
    // Add primitives to boxes
+   int maxPrimitivesPerBox(0);
    std::map<long,CPUPrimitive>::iterator it = (m_primitives[m_frame]).begin();
    while( it != (m_primitives[m_frame]).end() )
    {
@@ -900,7 +900,6 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
       {
          if( primitivesPerBox.find(B) == primitivesPerBox.end() )
          {
-            nbActiveBoxes++;
             primitivesPerBox[B] = 0;
          }
          else
@@ -936,6 +935,7 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          {
             //LOG_INFO(3, "Adding primitive to box " << B);
             m_boundingBoxes[m_frame][0][B].primitives.push_back(p);
+            if(m_boundingBoxes[m_frame][0][B].primitives.size()>maxPrimitivesPerBox) maxPrimitivesPerBox=m_boundingBoxes[m_frame][0][B].primitives.size();
          }
       }
       ++p;
@@ -952,11 +952,11 @@ int GPUKernel::processBoxes( const int boxSize, int& nbActiveBoxes, bool simulat
          itb++;
       }
    }
-
-   return abs(m_optimalNbOfBoxes-nbActiveBoxes);
+   LOG_INFO(1,"Maximum number of primitives per box=" << maxPrimitivesPerBox << " for level 0");
+   return maxPrimitivesPerBox;
 }
 
-void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDepth )
+int GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDepth )
 {
    LOG_INFO(3,"processOutterBoxes(" << boxSize << "," << boundingBoxesDepth << ")");
    Vertex boxSteps;
@@ -968,8 +968,8 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
    boxSteps.y = ( boxSteps.y == 0.f ) ? 1 : boxSteps.y;
    boxSteps.z = ( boxSteps.z == 0.f ) ? 1 : boxSteps.z;
 
-
    // Create boxes in Rubik's cube mode :-)
+   int maxPrimitivesPerBox(0);
    BoxContainer::iterator it=(m_boundingBoxes[m_frame][boundingBoxesDepth-1]).begin();
    while( it != (m_boundingBoxes[m_frame][boundingBoxesDepth-1]).end() )
    {
@@ -977,18 +977,12 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
 
       Vertex center=box.center;
       
-      // CAUTION:
-      // DODGY CODE!! If logging removed -> Weird exception in Delphi (Floating point errors)
-      
-      //LOG_INFO(1,"BoxSteps=" << boxSteps.x <<","<< boxSteps.y << "," << boxSteps.z);
-      //LOG_INFO(1,"center=" << center.x <<","<< center.y << "," << center.z);
-      //LOG_INFO(1,"m_minPos[m_frame]=" << m_minPos[m_frame].x <<","<< m_minPos[m_frame].y << "," << m_minPos[m_frame].z);
       int X = static_cast<int>(( center.x - m_minPos[m_frame].x ) / boxSteps.x);
       int Y = static_cast<int>(( center.y - m_minPos[m_frame].y ) / boxSteps.y);
       int Z = static_cast<int>(( center.z - m_minPos[m_frame].z ) / boxSteps.z);
       int B = (X*boxSize*boxSize + Y*boxSize + Z);
 
-      B++; // Index 0 is used to store lights
+      B++; // Index 0 is used to store lights, so we start storing primitives from index 1
 
       // Box B
 	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[0].x = m_sceneInfo.viewDistance.x;
@@ -998,6 +992,7 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
 	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].y = -m_sceneInfo.viewDistance.x;
 	   m_boundingBoxes[m_frame][boundingBoxesDepth][B].parameters[1].z = -m_sceneInfo.viewDistance.x;
       m_boundingBoxes[m_frame][boundingBoxesDepth][B].primitives.push_back((*it).first);
+      if(m_boundingBoxes[m_frame][boundingBoxesDepth][B].primitives.size()>maxPrimitivesPerBox) maxPrimitivesPerBox=m_boundingBoxes[m_frame][boundingBoxesDepth][B].primitives.size();
       ++it;
    }
    LOG_INFO(3,"Depth " << boundingBoxesDepth << ": " << m_boundingBoxes[m_frame][boundingBoxesDepth].size() << " created" );
@@ -1009,6 +1004,8 @@ void GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDe
       updateOutterBoundingBox((*itb).second, boundingBoxesDepth-1);
       itb++;
    }
+   LOG_INFO(1,"Maximum number of sub-boxes per box=" << maxPrimitivesPerBox << " for level " << boundingBoxesDepth);
+   return maxPrimitivesPerBox;
 }
 
 int GPUKernel::compactBoxes( bool reconstructBoxes )
@@ -1023,29 +1020,30 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       resetBox(m_boundingBoxes[m_frame][m_treeDepth][0],true);
       int gridGranularity(2);
+      int gridDivider(4);
       m_treeDepth=0;
       int nbBoxes = static_cast<int>(m_primitives[m_frame].size());
       while( nbBoxes>gridGranularity )
       {
          ++m_treeDepth;
-         nbBoxes /= 4;
+         nbBoxes /= gridDivider;
       }
-      LOG_INFO(3, "Scene depth=" << m_treeDepth );
 
-      int activeBoxes(12000); // deprecated
-      processBoxes(activeBoxes, activeBoxes, false );
+      // Dispatch primitives into level 0 boxes
+      int nbMaxPrimitivesPerBox=processBoxes(12000,false);
 
-      // TODO: Parallelize!!
-
-      int treeDepth=0;
-      nbBoxes = static_cast<int>(m_primitives[m_frame].size());
+      // Construct sub-boxes (level 1 and +)
+      m_treeDepth=0;
+      int nbMaxSubBoxesPerBox=0;
+      nbBoxes=static_cast<int>(m_primitives[m_frame].size());
       do
       {
-         ++treeDepth;
-         processOutterBoxes(nbBoxes,treeDepth);
-         nbBoxes /= 4;
+         ++m_treeDepth;
+         nbMaxSubBoxesPerBox = processOutterBoxes(nbBoxes,m_treeDepth);
+         nbBoxes /= gridDivider;
       }
-	  while( nbBoxes>gridGranularity );
+	   while(/*nbMaxSubBoxesPerBox<nbMaxPrimitivesPerBox &&*/ nbBoxes>gridGranularity);
+      LOG_INFO(1, "Scene depth=" << m_treeDepth );
    }
 
    LOG_INFO(3,"Streaming data to GPU");
@@ -1149,7 +1147,7 @@ void GPUKernel::streamDataToGPU()
 
       if( itob==m_boundingBoxes[m_frame][maxDepth].begin() )
       {
-         LOG_INFO(3,"Box 0 of higher level (" << maxDepth << ") contains ligths");
+         LOG_INFO(3,"Box 0 of higher level (" << 0 << ") contains ligths");
          m_lightInformationSize = 0;
          m_hBoundingBoxes[boxIndex].parameters[0].x = -m_sceneInfo.viewDistance.x;
          m_hBoundingBoxes[boxIndex].parameters[0].y = -m_sceneInfo.viewDistance.x;
@@ -2157,7 +2155,7 @@ void GPUKernel::saveToFile(const std::string& filename)
 // ---------- Kinect ----------
 bool GPUKernel::loadTextureFromFile( const int index, const std::string& filename )
 {
-   LOG_INFO(1,"Loading texture from file " << filename << " into slot " << index << "/" << m_nbActiveTextures );
+   LOG_INFO(3,"Loading texture from file " << filename << " into slot " << index << "/" << m_nbActiveTextures );
    bool result(false);
 
    if( filename.length() != 0 )
@@ -2301,7 +2299,7 @@ void GPUKernel::realignTexturesAndMaterials()
       int reflectionTextureId   = m_hMaterials[i].advancedTextureIds.x;
       int transparencyTextureId = m_hMaterials[i].advancedTextureIds.y;
       
-      if(diffuseTextureId!=TEXTURE_NONE) LOG_INFO(1,"Material " << i << ": ids=" << diffuseTextureId);
+      if(diffuseTextureId!=TEXTURE_NONE) LOG_INFO(3,"Material " << i << ": ids=" << diffuseTextureId);
       
       switch(diffuseTextureId)
       {
