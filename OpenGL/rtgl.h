@@ -646,6 +646,7 @@ typedef int bool;
    void RAYTRACINGENGINE_API glTranslatef( GLfloat x, GLfloat y, GLfloat z );
    void RAYTRACINGENGINE_API glRotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z );
    void RAYTRACINGENGINE_API glPointSize(GLfloat size);
+   void RAYTRACINGENGINE_API glReadPixels(GLint x,GLint y,GLsizei width,GLsizei height,GLenum format,GLenum type,GLvoid * data);
 
    // Raytracer specific
 #ifdef USE_OPENCL
@@ -708,7 +709,6 @@ typedef int bool;
 #define glColorMask(...)
 #define glPolygonOffset(...)
 #define glCullFace(...)
-#define glReadPixels(...)
 #define glCopyTexSubImage2D(...)
 #define glMultMatrixf(...)
 #define glutWireCube(...)

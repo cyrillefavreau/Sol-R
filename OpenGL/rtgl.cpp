@@ -740,3 +740,8 @@ void RayTracer::glPointSize(GLfloat size)
 {
    RayTracer::gKernel->setPointSize(size);
 }
+
+void RAYTRACINGENGINE_API RayTracer::glReadPixels(GLint x,GLint y,GLsizei width,GLsizei height,GLenum format,GLenum type,GLvoid * data)
+{
+   ::glReadPixels(x,y,width,height,format,type,data);
+}
