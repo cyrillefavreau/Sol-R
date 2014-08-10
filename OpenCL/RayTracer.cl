@@ -38,6 +38,8 @@ typedef int           Lamp;
 #define MAX_BITMAP_HEIGHT   1080
 #define MAX_BITMAP_SIZE     2073600 // 1920x1080
 
+#define STANDARD_LUNINANCE_STRENGTH 0.6f
+#define SKYBOX_LUNINANCE_STRENGTH   0.4f
 
 // 3D vision type
 enum VisionType
@@ -53,6 +55,14 @@ enum OutputType
    otOpenGL = 0,
    otDelphi = 1,
    otJPEG   = 2
+};
+
+enum AdvancedIllumination
+{
+   aiNone = 0,
+   aiGlobalIllumination,
+   aiAdvancedGlobalIllumination,
+   aiRandomIllumination
 };
 
 // Scene information
@@ -1547,7 +1557,7 @@ float processShadows(
    while( result<(*sceneInfo).shadowIntensity && cptBoxes<nbActiveBoxes )
    {
       CONST BoundingBox* box = &boudingBoxes[cptBoxes];
-      if(boxIntersection(box, &r, 0.f, minDistance))
+      if(boxIntersection(box, &r, 0.05f, minDistance))
       {
          int cptPrimitives = 0;
          while( result<(*sceneInfo).shadowIntensity && cptPrimitives<(*box).nbPrimitives)
@@ -1704,7 +1714,15 @@ float4 primitiveShader(
             if( lightRayLength<(*m).innerIllumination.z )
             {
                float4 shadowColor = {0.f,0.f,0.f,0.f};
-               if( (*sceneInfo).graphicsLevel>3 && 
+
+               // --------------------------------------------------------------------------------
+               // Lambert
+               // --------------------------------------------------------------------------------
+               lightRay = normalize(lightRay);
+               float lambert = dot((*normal),lightRay); 
+
+               if(lambert>0.f && 
+                  (*sceneInfo).graphicsLevel>3 && 
                   iteration<4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
                   (*material).innerIllumination.x==0.f ) 
                {
@@ -1722,11 +1740,6 @@ float4 primitiveShader(
                   photonEnergy = (photonEnergy>1.f) ? 1.f : photonEnergy;
                   photonEnergy = (photonEnergy<0.f) ? 0.f : photonEnergy;
 
-                  lightRay = normalize(lightRay);
-                  // --------------------------------------------------------------------------------
-                  // Lambert
-                  // --------------------------------------------------------------------------------
-                  float lambert = dot((*normal),lightRay); 
                   // Transparent materials are lighted on both sides but the amount of light received by the dark side
                   // depends on the transparency rate.
                   lambert *= (lambert<0.f) ? -materials[(*primitive).materialId].transparency : 1.f;
@@ -2016,17 +2029,19 @@ inline float4 launchRay(
             firstIntersection=closestIntersection;
             latestIntersection=closestIntersection;
 
-            if((*sceneInfo).parameters.z==1 )
+            if((*sceneInfo).parameters.z==aiGlobalIllumination || (*sceneInfo).parameters.z==aiAdvancedGlobalIllumination)
             {
                // Global illumination
                int t=(index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
-               pathTracingRay.origin = -(closestIntersection+normal*REBOUND_EPSILON); 
-               pathTracingRay.direction.x = normal.x+800000.f*randoms[t  ];
-               pathTracingRay.direction.y = normal.y+800000.f*randoms[t+1];
-               pathTracingRay.direction.z = normal.z+800000.f*randoms[t+2];
+               pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
+               pathTracingRay.direction.x = normal.x+80.f*randoms[t  ];
+               pathTracingRay.direction.y = normal.y+80.f*randoms[t+1];
+               pathTracingRay.direction.z = normal.z+80.f*randoms[t+2];
 
                float cos_theta = dot(normalize(pathTracingRay.direction),normal);
-               pathTracingRatio = 0.5f*fabs(cos_theta);
+               if(cos_theta<0.f) pathTracingRay.direction=-pathTracingRay.direction;
+               pathTracingRay.direction+=closestIntersection;
+               pathTracingRatio=fabs(cos_theta);
             }
 
             // Primitive ID for current pixel
@@ -2197,39 +2212,52 @@ inline float4 launchRay(
       }
    }
 
-   if((*sceneInfo).parameters.z==1 && (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS)
+   if(((*sceneInfo).parameters.z==aiGlobalIllumination || (*sceneInfo).parameters.z==aiAdvancedGlobalIllumination) && 
+      (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS)
    {
-      // Global illumination
-      /*
-      if( intersectionWithPrimitives(
-      sceneInfo,
-      boundingBoxes, nbActiveBoxes,
-      primitives, nbActivePrimitives,
-      materials, textures,
-      &pathTracingRay,
-      0,  
-      &closestPrimitive, &closestIntersection, 
-      &normal, &areas, &colorBox, -2))
+      if((*sceneInfo).parameters.z==aiAdvancedGlobalIllumination)
       {
-      Vertex attributes;
-      pathTracingColor = primitiveShader( 
-      index,
-      sceneInfo, postProcessingInfo,
-      boundingBoxes, nbActiveBoxes, 
-      primitives, nbActivePrimitives, 
-      lightInformation, lightInformationSize, nbActiveLamps, 
-      materials, textures, randoms, 
-      pathTracingRay.origin, &normal, closestPrimitive, 
-      &closestIntersection, areas, &closestColor,
-      iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+         // Global illumination
+         if( intersectionWithPrimitives(
+            sceneInfo,
+            boundingBoxes, nbActiveBoxes,
+            primitives, nbActivePrimitives,
+            materials, textures,
+            &pathTracingRay,
+            10,  
+            &closestPrimitive, &closestIntersection, 
+            &normal, &areas, &colorBox, MATERIAL_NONE))
+         {
+            Vertex attributes;
+            pathTracingColor = primitiveShader( 
+               index,
+               sceneInfo, postProcessingInfo,
+               boundingBoxes, nbActiveBoxes, 
+               primitives, nbActivePrimitives, 
+               lightInformation, lightInformationSize, nbActiveLamps, 
+               materials, textures, randoms, 
+               pathTracingRay.origin, &normal, closestPrimitive, 
+               &closestIntersection, areas, &closestColor,
+               iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+            pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
+         }
+         else
+         {
+            // Background
+            if( (*sceneInfo).skybox.y!=MATERIAL_NONE)
+            {
+               pathTracingColor=skyboxMapping(sceneInfo,materials,textures,&pathTracingRay);
+               pathTracingRatio*=SKYBOX_LUNINANCE_STRENGTH;
+            }
+         }
       }
       else
-      */
       {
          // Background
          if( (*sceneInfo).skybox.y!=MATERIAL_NONE)
          {
-            pathTracingColor = skyboxMapping(sceneInfo,materials,textures,&pathTracingRay);
+            pathTracingColor=skyboxMapping(sceneInfo,materials,textures,&pathTracingRay);
+            pathTracingRatio*=0.5f;
          }
       }
       colors[0] += pathTracingColor*pathTracingRatio;
@@ -2358,8 +2386,8 @@ __kernel void k_standardRenderer(
    {
       float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
       float2 step;
-      step.x=ratio*6400.f/(float)sceneInfo.size.x;
-      step.y=6400.f/(float)sceneInfo.size.y;
+      step.x=ratio*angles.w/(float)sceneInfo.size.x;
+      step.y=angles.w/(float)sceneInfo.size.y;
       ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.size.x/2));
       ray.direction.y = ray.direction.y + step.y*(float)(device_split+stream_split+y - (sceneInfo.size.y/2));
    }
@@ -2406,7 +2434,7 @@ __kernel void k_standardRenderer(
       &dof,
       &primitiveXYIds[index]);
 
-   if(sceneInfo.parameters.z==2)
+   if(sceneInfo.parameters.z==aiRandomIllumination)
    {
       // Randomize light intensity
       int rindex = (index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
@@ -2490,8 +2518,8 @@ __kernel void k_anaglyphRenderer(
 
    float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
    float2 step;
-   step.x=4.f*ratio*6400.f/(float)sceneInfo.size.x;
-   step.y=4.f*6400.f/(float)sceneInfo.size.y;
+   step.x=4.f*ratio*angles.w/(float)sceneInfo.size.x;
+   step.y=4.f*angles.w/(float)sceneInfo.size.y;
 
    // Left eye
    eyeRay.origin.x = origin.x + eyeSeparation;
@@ -2617,8 +2645,8 @@ __kernel void k_3DVisionRenderer(
 
    float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
    float2 step;
-   step.x=ratio*6400.f/(float)sceneInfo.size.x;
-   step.y=6400.f/(float)sceneInfo.size.y;
+   step.x=ratio*angles.w/(float)sceneInfo.size.x;
+   step.y=angles.w/(float)sceneInfo.size.y;
 
    Ray eyeRay;
    if( x<halfWidth ) 

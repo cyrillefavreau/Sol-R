@@ -884,7 +884,7 @@ int GPUKernel::processBoxes( const int boxSize, bool simulate )
    int p(0);
 
    // Add primitives to boxes
-   int maxPrimitivesPerBox(0);
+   size_t maxPrimitivesPerBox(0);
    std::map<long,CPUPrimitive>::iterator it = (m_primitives[m_frame]).begin();
    while( it != (m_primitives[m_frame]).end() )
    {
@@ -953,7 +953,7 @@ int GPUKernel::processBoxes( const int boxSize, bool simulate )
       }
    }
    LOG_INFO(1,"Maximum number of primitives per box=" << maxPrimitivesPerBox << " for level 0");
-   return maxPrimitivesPerBox;
+   return static_cast<int>(maxPrimitivesPerBox);
 }
 
 int GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDepth )
@@ -1005,7 +1005,7 @@ int GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDep
       itb++;
    }
    LOG_INFO(1,"Maximum number of sub-boxes per box=" << maxPrimitivesPerBox << " for level " << boundingBoxesDepth);
-   return maxPrimitivesPerBox;
+   return static_cast<int>(maxPrimitivesPerBox);
 }
 
 int GPUKernel::compactBoxes( bool reconstructBoxes )

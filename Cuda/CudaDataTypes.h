@@ -41,12 +41,45 @@ enum VisionType
    vtFishEye  = 3
 };
 
+enum GeometryComplexity
+{
+   gcTrianglesOnly    = 0,
+   gcExtendedGeometry = 1
+};
+
+enum DoubleSidedTriangles
+{
+   dtDoubleSidedTrianglesOff = 0,
+   dtDoubleSidedTrianglesOn  = 1
+};
+
+enum DraftMode
+{
+   dmDraftModeOff = 0,
+   dmDraftModeOn  = 1
+};
+
+enum CameraModes
+{
+   cmStandard     = 0,
+   cmIsometric3D  = 1,
+   cmAntialiazing = 2
+};
+
 // Bitmap format
 enum OutputType
 {
    otOpenGL = 0,                     // RGB 24bit
    otDelphi = 1,                     // BGR 24bit
    otJPEG   = 2                      // RGB 24bit inverted bitmap
+};
+
+enum AdvancedIllumination
+{
+   aiNone = 0,
+   aiGlobalIllumination,
+   aiAdvancedGlobalIllumination,
+   aiRandomIllumination
 };
 
 // Scene information
@@ -70,7 +103,7 @@ struct SceneInfo
                                      // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
    int4    parameters;               // x: Double-sided triangles( 0:disabled, 1:enabled )
                                      // y: Extended geometry ( 0:disabled, 1:enabled )
-                                     // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
+                                     // z: Advanced features( 0:disabled, 1:global illumination, 2: advanced global illumination, 3: random lightning )
                                      // w: Draft mode(0:disabled, 1:enabled)
    int4    skybox;                   // x: size
                                      // y: material Id

@@ -173,17 +173,19 @@ __device__ __INLINE__ float4 launchRay(
             firstIntersection = closestIntersection;
             latestIntersection=closestIntersection;
 
-            if( sceneInfo.parameters.z==1 )
+            if( sceneInfo.parameters.z==aiGlobalIllumination || sceneInfo.parameters.z==aiAdvancedGlobalIllumination )
             {
                // Global illumination
                int t=(index+sceneInfo.pathTracingIteration.x+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
-               pathTracingRay.origin = -closestIntersection+normal*REBOUND_EPSILON; 
-               pathTracingRay.direction.x = -(normal.x+80000.f*randoms[t  ]);
-               pathTracingRay.direction.y = -(normal.y+80000.f*randoms[t+1]);
-               pathTracingRay.direction.z = -(normal.z+80000.f*randoms[t+2]);
+               pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
+               pathTracingRay.direction.x = normal.x+80.f*randoms[t  ];
+               pathTracingRay.direction.y = normal.y+80.f*randoms[t+1];
+               pathTracingRay.direction.z = normal.z+80.f*randoms[t+2];
 
                float cos_theta = dot(normalize(pathTracingRay.direction),normal);
-               pathTracingRatio = 0.3f*fabs(cos_theta);
+               if(cos_theta<0.f) pathTracingRay.direction=-pathTracingRay.direction;
+               pathTracingRay.direction+=closestIntersection;
+               pathTracingRatio=fabs(cos_theta);
             }
 
             // Primitive ID for current pixel
@@ -354,39 +356,52 @@ __device__ __INLINE__ float4 launchRay(
       }
    }
 
-   if( sceneInfo.parameters.z==1 && sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
+   if((sceneInfo.parameters.z==aiGlobalIllumination || sceneInfo.parameters.z==aiAdvancedGlobalIllumination) && 
+      sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
    {
-      // Global illumination
-      /*
-      if( intersectionWithPrimitives(
-         sceneInfo,
-         boundingBoxes, nbActiveBoxes,
-         primitives, nbActivePrimitives,
-         materials, textures,
-         pathTracingRay,
-         0,  
-         closestPrimitive, closestIntersection, 
-         normal, areas, closestColor, colorBox,-2))
+      if( sceneInfo.parameters.z==aiAdvancedGlobalIllumination )
       {
-         Vertex attributes;
-         pathTracingColor = primitiveShader( 
-            index,
-            sceneInfo, postProcessingInfo,
-            boundingBoxes, nbActiveBoxes, 
-            primitives, nbActivePrimitives, 
-            lightInformation, lightInformationSize, nbActiveLamps, 
-            materials, textures, randoms, 
-            pathTracingRay.origin, normal, closestPrimitive, 
-            closestIntersection, areas, closestColor,
-            iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
+         // Global illumination
+         if( intersectionWithPrimitives(
+            sceneInfo,
+            boundingBoxes, nbActiveBoxes,
+            primitives, nbActivePrimitives,
+            materials, textures,
+            pathTracingRay,
+            NB_MAX_ITERATIONS,  
+            closestPrimitive, closestIntersection, 
+            normal, areas, closestColor, colorBox,MATERIAL_NONE))
+         {
+            Vertex attributes;
+            pathTracingColor = primitiveShader( 
+               index,
+               sceneInfo, postProcessingInfo,
+               boundingBoxes, nbActiveBoxes, 
+               primitives, nbActivePrimitives, 
+               lightInformation, lightInformationSize, nbActiveLamps, 
+               materials, textures, randoms, 
+               pathTracingRay.origin, normal, closestPrimitive, 
+               closestIntersection, areas, closestColor,
+               iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
+            pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
+         }
+         else
+         {
+            // Background
+            if( sceneInfo.skybox.y!=MATERIAL_NONE)
+            {
+               pathTracingColor = skyboxMapping(sceneInfo,materials,textures,pathTracingRay);
+               pathTracingRatio*=SKYBOX_LUNINANCE_STRENGTH;
+            }
+         }
       }
       else
-      */
       {
          // Background
          if( sceneInfo.skybox.y!=MATERIAL_NONE)
          {
             pathTracingColor = skyboxMapping(sceneInfo,materials,textures,pathTracingRay);
+            pathTracingRatio*=SKYBOX_LUNINANCE_STRENGTH;
          }
       }
       colors[0] += pathTracingColor*pathTracingRatio;
@@ -580,7 +595,7 @@ __global__ void k_standardRenderer(
       dof,
       primitiveXYIds[index]);
 
-   if(sceneInfo.parameters.z==2)
+   if(sceneInfo.parameters.z==aiRandomIllumination)
    {
       // Randomize light intensity
       int rindex=(index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
@@ -981,7 +996,7 @@ __global__ void k_3DVisionRenderer(
       dof,
       primitiveXYIds[index]);
 
-   if( sceneInfo.parameters.z==2 )
+   if( sceneInfo.parameters.z==aiRandomIllumination )
    {
       // Randomize light intensity
       int rindex=(index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
