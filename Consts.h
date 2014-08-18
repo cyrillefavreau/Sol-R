@@ -51,7 +51,7 @@ const int NB_MAX_TEXTURES   = 512;
 const int NB_MAX_FRAMES     = 512;
 const int NB_MAX_LIGHTINFORMATIONS = 512;
 const int MAX_BITMAP_WIDTH  = 2*1920;
-const int MAX_BITMAP_HEIGHT = MAX_BITMAP_WIDTH*0.8; //2*1080;
+const int MAX_BITMAP_HEIGHT = static_cast<const int>(MAX_BITMAP_WIDTH*0.8f); //2*1080;
 const int MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 
 // Constants
