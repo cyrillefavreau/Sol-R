@@ -138,6 +138,10 @@ __device__ __INLINE__ float4 skyboxMapping(
 
    if( material.textureMapping.x != 0 ) u%=material.textureMapping.x;
    if( material.textureMapping.y != 0 ) v%=material.textureMapping.y;
+
+   u=material.textureMapping.x-u;
+   v=material.textureMapping.y-v;
+
    if( u>=0 && u<material.textureMapping.x && v>=0 && v<material.textureMapping.y )
    {
       int A=(v*material.textureMapping.x+u)*material.textureMapping.w;

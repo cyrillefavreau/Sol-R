@@ -67,7 +67,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_InitializeKernel( bool activeLoggi
 extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel();
 extern "C" RAYTRACINGENGINE_API int RayTracer_ResetKernel();
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char* filename, int quality);
+extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char* filename,int width,int height,int quality);
 
 // ---------- Camera ----------
 extern "C" RAYTRACINGENGINE_API void RayTracer_SetCamera( 

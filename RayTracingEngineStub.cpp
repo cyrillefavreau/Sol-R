@@ -703,9 +703,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight( int index )
    return gKernel->getLight(index);
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char* filename, int quality)
+extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char* filename,int width,int height,int quality)
 {
-   gKernel->generateScreenshot(filename,quality);
+   gKernel->generateScreenshot(filename,width,height,quality);
    return 0;
 }
 

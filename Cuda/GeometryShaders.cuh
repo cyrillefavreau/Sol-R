@@ -254,7 +254,7 @@ __device__ __INLINE__ float4 primitiveShader(
    normal += bumpNormal;
    normal = normalize(normal);
 
-	if( material.innerIllumination.x!=0.f || material.attributes.z!=0 )
+	if( /*material.innerIllumination.x!=0.f || */ material.attributes.z!=0 )
    {
       // Wireframe returns constant color
 		return intersectionColor; 
@@ -291,7 +291,7 @@ __device__ __INLINE__ float4 primitiveShader(
 			      // Lambert
 			      // --------------------------------------------------------------------------------
                lightRay = normalize(lightRay);
-	            float lambert = dot(normal,lightRay);
+	            float lambert = material.innerIllumination.x+dot(normal,lightRay);
 
                if( lambert>0.f && 
                    sceneInfo.graphicsLevel.x>3 && 
@@ -330,6 +330,7 @@ __device__ __INLINE__ float4 primitiveShader(
                      // Randomize lamp intensity depending on material noise, for more realistic rendering
                      lambert *= (1.f+randoms[t]*material.innerIllumination.w*100.f); 
                   }
+
 			         lambert *= (1.f-shadowIntensity);
                   lambert += sceneInfo.backgroundColor.w;
                   lambert *= (1.f-photonEnergy);

@@ -152,7 +152,7 @@ struct __ALIGN16__ Material
    float4 innerIllumination; // x: Inner illumination
                              // y: Diffusion strength
                              // z: <not used>
-                             // w: Noise
+                             // w: Illuminance
    float4 color;             // Color( R,G,B )
    float4 specular;          // x: Value
                              // y: Power

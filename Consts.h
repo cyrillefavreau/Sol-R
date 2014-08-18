@@ -42,17 +42,17 @@
 #define MAX_STREAM_COUNT  32
 #define NB_MAX_ITERATIONS 10
 
-const long BOUNDING_BOXES_TREE_DEPTH = 64;
-const long NB_MAX_BOXES      = 1500000;
-const long NB_MAX_PRIMITIVES = 1500000;
-const long NB_MAX_LAMPS      = 512;
-const long NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
-const long NB_MAX_TEXTURES   = 512;
-const long NB_MAX_FRAMES     = 512;
-const long NB_MAX_LIGHTINFORMATIONS = 512;
-const long MAX_BITMAP_WIDTH  = 1920;
-const long MAX_BITMAP_HEIGHT = 1080;
-const long MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
+const int BOUNDING_BOXES_TREE_DEPTH = 64;
+const int NB_MAX_BOXES      = 1500000;
+const int NB_MAX_PRIMITIVES = 1500000;
+const int NB_MAX_LAMPS      = 512;
+const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
+const int NB_MAX_TEXTURES   = 512;
+const int NB_MAX_FRAMES     = 512;
+const int NB_MAX_LIGHTINFORMATIONS = 512;
+const int MAX_BITMAP_WIDTH  = 2*1920;
+const int MAX_BITMAP_HEIGHT = MAX_BITMAP_WIDTH*0.8; //2*1080;
+const int MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 
 // Constants
 #define MATERIAL_NONE -1
@@ -65,8 +65,8 @@ const long MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 #define PI 3.14159265358979323846f
 #define EPSILON 1.f
 #define REBOUND_EPSILON 0.00002f
-#define STANDARD_LUNINANCE_STRENGTH 0.6f
-#define SKYBOX_LUNINANCE_STRENGTH   0.4f
+#define STANDARD_LUNINANCE_STRENGTH 0.1f
+#define SKYBOX_LUNINANCE_STRENGTH   0.2f
 
 // Skybox matrerials
 const int SKYBOX_FRONT_MATERIAL  = NB_MAX_MATERIALS-2;

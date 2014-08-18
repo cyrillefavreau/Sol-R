@@ -925,7 +925,7 @@ int GPUKernel::processBoxes( const int boxSize, bool simulate )
          }
          
          // Lights
-         if( primitive.materialId!=MATERIAL_NONE && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f )
+         if( primitive.materialId==DEFAULT_LIGHT_MATERIAL /* !=DEFAULT_LIGHT_MATERIAL && m_hMaterials[primitive.materialId].innerIllumination.x!=0.f*/ )
          {
             // Lights are added to first box of higher level
             m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
@@ -2932,23 +2932,24 @@ void GPUKernel::switchOculusVR()
 
 }
 
-void GPUKernel::generateScreenshot(const std::string& filename,const int quality)
+void GPUKernel::generateScreenshot(const std::string& filename,const int width,const int height,const int quality)
 {
-   LOG_INFO(3,"Generating screenshot " << filename << " (Quality=" << quality << "/" << m_sceneInfo.nbRayIterations.x << ")");
+   LOG_INFO(1,"Generating screenshot " << filename << " (Quality=" << quality << ", Size=" << MAX_BITMAP_WIDTH << "x" << MAX_BITMAP_HEIGHT << ")");
    SceneInfo sceneInfo=m_sceneInfo;
    SceneInfo bakSceneInfo=m_sceneInfo;
-   //sceneInfo.size.x =MAX_BITMAP_WIDTH;
-   //sceneInfo.size.y=MAX_BITMAP_HEIGHT;
+   sceneInfo.size.x=std::min(width,MAX_BITMAP_WIDTH);
+   sceneInfo.size.y=std::min(height,MAX_BITMAP_HEIGHT);
    sceneInfo.maxPathTracingIterations.x=quality;
    for(int i(0);i<quality;++i)
    {
+      long t=GetTickCount();
       sceneInfo.pathTracingIteration.x=i;
       m_sceneInfo=sceneInfo;
       render_begin(0);
       render_end();
-      LOG_INFO(3,"Frame " << i << " generated");
+      LOG_INFO(1,"Frame " << i << " generated in " << GetTickCount()-t << "ms");
    }
-   LOG_INFO(3,"Saving bitmap to disk");
+   LOG_INFO(1,"Saving bitmap to disk");
    size_t size=sceneInfo.size.x*sceneInfo.size.y*gColorDepth;
    switch(sceneInfo.misc.x)
    {
@@ -2982,7 +2983,7 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int quality
       break;
    }
    m_sceneInfo=bakSceneInfo;
-   LOG_INFO(3,"Screenshot successfully generated!");
+   LOG_INFO(1,"Screenshot successfully generated!");
 }
 
 #ifdef USE_OCULUS

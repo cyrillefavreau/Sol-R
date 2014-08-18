@@ -1682,29 +1682,24 @@ float4 primitiveShader(
    if( (*sceneInfo).graphicsLevel>0 )
    {
       (*closestColor) *= (*material).innerIllumination.x;
-      int C=(lightInformationSize>1) ? 2 : 1;
+      int C=1; // (lightInformationSize>1) ? 2 : 1;
       for( int c=0; c<C; ++c ) 
       {
          int cptLamp = ((*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS) ? ((*sceneInfo).pathTracingIteration%lightInformationSize+C-1) : 0;
 
          if(lightInformation[cptLamp].attribute.x != (*primitive).index)
          {
-            Vertex center;
             // randomize lamp center
-            center.x = lightInformation[cptLamp].location.x;
-            center.y = lightInformation[cptLamp].location.y;
-            center.z = lightInformation[cptLamp].location.z;
+            Vertex center=lightInformation[cptLamp].location;
 
             int t = (index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
             CONST Material* m=&materials[lightInformation[cptLamp].attribute.y];
-
             if( (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS && lightInformation[cptLamp].attribute.x>=0 && lightInformation[cptLamp].attribute.x<nbActivePrimitives)
             {
-               float a=10.f*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
-
-               center.x += (*m).innerIllumination.y*randoms[t  ]*a;
-               center.y += (*m).innerIllumination.y*randoms[t+1]*a;
-               center.z += (*m).innerIllumination.y*randoms[t+2]*a;
+               float a=(*m).innerIllumination.y*10.f*(*sceneInfo).pathTracingIteration/(float)((*sceneInfo).maxPathTracingIterations);
+               center.x += randoms[t  ]*a;
+               center.y += randoms[t+1]*a;
+               center.z += randoms[t+2]*a;
             }
 
             Vertex lightRay = center - (*intersection);
@@ -2228,18 +2223,27 @@ inline float4 launchRay(
             &closestPrimitive, &closestIntersection, 
             &normal, &areas, &colorBox, MATERIAL_NONE))
          {
-            Vertex attributes;
-            pathTracingColor = primitiveShader( 
-               index,
-               sceneInfo, postProcessingInfo,
-               boundingBoxes, nbActiveBoxes, 
-               primitives, nbActivePrimitives, 
-               lightInformation, lightInformationSize, nbActiveLamps, 
-               materials, textures, randoms, 
-               pathTracingRay.origin, &normal, closestPrimitive, 
-               &closestIntersection, areas, &closestColor,
-               iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
-            pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
+            CONST Material* material = &materials[primitives[closestPrimitive].materialId];
+            if( (*material).innerIllumination.x!=0.f )
+            {
+               pathTracingColor=(*material).color;
+               pathTracingRatio=0.5f+(*material).innerIllumination.x*0.5f;
+            }
+            else
+            {
+               Vertex attributes;
+               pathTracingColor = primitiveShader( 
+                  index,
+                  sceneInfo, postProcessingInfo,
+                  boundingBoxes, nbActiveBoxes, 
+                  primitives, nbActivePrimitives, 
+                  lightInformation, lightInformationSize, nbActiveLamps, 
+                  materials, textures, randoms, 
+                  pathTracingRay.origin, &normal, closestPrimitive, 
+                  &closestIntersection, areas, &closestColor,
+                  iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+                  pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
+            }
          }
          else
          {

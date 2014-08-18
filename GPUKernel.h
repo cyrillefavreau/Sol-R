@@ -99,7 +99,7 @@ public:
 	virtual void render_begin( const float timer );
    virtual void render_end() = 0;
    BitmapBuffer* getBitmap() { return m_bitmap; };
-   void generateScreenshot(const std::string& filename,const int quality);
+   void generateScreenshot(const std::string& filename,const int width,const int height,const int quality);
 
 public:
 

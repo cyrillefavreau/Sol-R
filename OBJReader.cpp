@@ -486,27 +486,30 @@ Vertex OBJReader::loadModelFromFile(
                }
                else if( line[1] == 't' )
                {  
+#if 1
                   // Texture coordinates
                   if( vertex.x<0.f )
                   {
                      int Xa = static_cast<int>(fabs(vertex.x));
-                     float Xb = Xa-vertex.x;
+                     float Xb = (Xa+1.f)-vertex.x;
+                     //float Xb = (Xa+1.f)-vertex.x;
                      vertex.x = Xb;
                   }
 
                   if( vertex.y<0.f )
                   {
                      int Ya = static_cast<int>(fabs(vertex.y));
-                     float Yb = Ya-vertex.y;
+                     float Yb = (Ya+1.f)-vertex.y;
                      vertex.y = Yb;
                   }
 
                   if( vertex.z<0.f )
                   {
                      int Za = static_cast<int>(fabs(vertex.z))+1;
-                     float Zb = Za-vertex.z;
+                     float Zb = (Za+1.f)-vertex.z;
                      vertex.z = Zb;
                   }
+#endif // 0
                   //LOG_INFO(1,"[2] vt=" << vertex.x << "," << vertex.y );
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
