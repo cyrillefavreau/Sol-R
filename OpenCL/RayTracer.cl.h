@@ -1,6 +1,11 @@
 #pragma once
 #include <string>
 void getKernelCode(std::string& gOpenCLCode) {
+  gOpenCLCode+="―― Γοπωςιηθτ ¨Γ© ²°±΄ Γωςιμμε Ζαφςεαυ ­ Αμμ Òιηθτσ Òεσεςφεδ";
+  gOpenCLCode+="―― Υξαυτθοςιϊεδ γοπωιξη οζ τθισ ζιμε¬ φια αξω νεδιυν ισ στςιγτμω πςοθιβιτεδ";
+  gOpenCLCode+="―― Πςοπςιεταςω αξδ γοξζιδεξτιαμ";
+  gOpenCLCode+="―― Χςιττεξ βω Γωςιμμε Ζαφςεαυ Όγωςιμμείζαφςεαυΐθοτναιμ®γονΎ";
+  gOpenCLCode+="";
   gOpenCLCode+="―― Τωπεδεζσ";
   gOpenCLCode+="τωπεδεζ ζμοατ΄        Φεςτεψ»";
   gOpenCLCode+="τωπεδεζ ιξτ΄          ΠςινιτιφεΨΩΙδΒυζζες»";
