@@ -172,7 +172,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
 
    if( buffer != nullptr )
    {
-#if 0
+#if 1
 	   //Vertical Flip
       size_t size=width*height*actual_comps;
       BitmapBuffer* revBuffer=new BitmapBuffer[size];
@@ -186,7 +186,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string& filename, Texture
 #endif
 
       if( textureInformations[index].buffer!=nullptr ) delete [] textureInformations[index].buffer;
-#if 0
+#if 1
       textureInformations[index].buffer = revBuffer;
 #else
       textureInformations[index].buffer = buffer;
