@@ -2212,6 +2212,7 @@ inline float4 launchRay(
       }
    }
 
+   bool test=true;
    if(((*sceneInfo).parameters.z==aiGlobalIllumination || (*sceneInfo).parameters.z==aiAdvancedGlobalIllumination) && 
       (*sceneInfo).pathTracingIteration>=NB_MAX_ITERATIONS)
    {
@@ -2224,17 +2225,20 @@ inline float4 launchRay(
             primitives, nbActivePrimitives,
             materials, textures,
             &pathTracingRay,
-            10,  
+            NB_MAX_ITERATIONS,  
             &closestPrimitive, &closestIntersection, 
             &normal, &areas, &colorBox, MATERIAL_NONE))
          {
-            CONST Material* material = &materials[primitives[closestPrimitive].materialId];
-            if( (*material).innerIllumination.x!=0.f )
+            if(primitives[closestPrimitive].materialId!=MATERIAL_NONE)
             {
-               pathTracingColor=(*material).color;
-               pathTracingRatio=0.5f+(*material).innerIllumination.x*0.5f;
+               CONST Material* material = &materials[primitives[closestPrimitive].materialId];
+               if( (*material).innerIllumination.x!=0.f )
+               {
+                  colors[0]=(*material).color*(*material).innerIllumination.x*pathTracingRatio;
+                  test=false;
+               }
             }
-            else
+            if(test)
             {
                Vertex attributes;
                pathTracingColor = primitiveShader( 
@@ -2269,15 +2273,22 @@ inline float4 launchRay(
             pathTracingRatio*=0.5f;
          }
       }
-      colors[0] += pathTracingColor*pathTracingRatio;
+      if(test) colors[0] += pathTracingColor*pathTracingRatio;
    }
 
-   for( int i=iteration-2; i>=0; --i)
+   if(test)
    {
-      colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
+       for( int i=iteration-2; i>=0; --i)
+       {
+          colors[i] = colors[i]*(1.f-colorContributions[i]) + colors[i+1]*colorContributions[i];
+       }
+       intersectionColor = colors[0];
+       intersectionColor += recursiveBlinn;
    }
-   intersectionColor = colors[0];
-   intersectionColor += recursiveBlinn;
+   else
+   {
+      intersectionColor = colors[0];
+   }
 
    float len = length(firstIntersection - (*ray).origin);
    (*depthOfField) = len;
