@@ -284,7 +284,7 @@ void GPUKernel::initBuffers()
    if( m_bitmap ) delete m_bitmap;
    size*=gColorDepth;
    m_bitmap = new BitmapBuffer[size];
-   memset(m_bitmap,0,size);
+   memset(m_bitmap,0,size*sizeof(BitmapBuffer));
    LOG_INFO(3, m_bitmap << " - Bitmap Size=" << size);
 
 #ifdef USE_OCULUS
@@ -995,8 +995,8 @@ int GPUKernel::processOutterBoxes( const int boxSize, const int boundingBoxesDep
 
 int GPUKernel::compactBoxes( bool reconstructBoxes )
 {
-	LOG_INFO(1,"GPUKernel::compactBoxes (" << (reconstructBoxes ? "true" : "false") << ")" );
-   LOG_INFO(1,"Number of primitives: " << m_primitives[m_frame].size());
+	LOG_INFO(3,"GPUKernel::compactBoxes (" << (reconstructBoxes ? "true" : "false") << ")" );
+   LOG_INFO(3,"Number of primitives: " << m_primitives[m_frame].size());
    // First box of highest level is dedicated to light sources
    int boundingBoxesDepth(0);
    m_primitivesTransfered = false;
@@ -2187,7 +2187,7 @@ bool GPUKernel::loadTextureFromFile( const int index, const std::string& filenam
 
 void GPUKernel::reorganizeLights()
 {
-   LOG_INFO(1,"GPUKernel::reorganizeLights()");
+   LOG_INFO(3,"GPUKernel::reorganizeLights()");
    BoxContainer::iterator it=m_boundingBoxes[m_frame][0].begin();
    while( it!=m_boundingBoxes[m_frame][0].end() )
    {
@@ -2930,8 +2930,10 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int width,c
       long t=GetTickCount();
       sceneInfo.pathTracingIteration.x=i;
       m_sceneInfo=sceneInfo;
+      LOG_INFO(1,"Rendering frame " << i << "...");
       render_begin(0);
       render_end();
+      LOG_INFO(1,"Frame " << i << " rendered!");
       int avg=GetTickCount()-t;
       int left=static_cast<int>(static_cast<float>(quality-i)*static_cast<float>(avg)/1000.f);
       LOG_INFO(1,"Frame " << i << " generated in " << avg << "ms (" << left << " seconds left...)");

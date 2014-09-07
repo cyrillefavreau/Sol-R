@@ -1731,6 +1731,7 @@ extern "C" void cudaRender(
    blocks.y = blockSize.y;
    blocks.z = 1;
 
+   LOG_INFO(3,"Running rendering kernel...");
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
@@ -1849,6 +1850,7 @@ extern "C" void cudaRender(
       }
       //checkCudaErrors(cudaThreadSynchronize());
    }
+   LOG_INFO(3,"Rendering kernel done!");
 
    // --------------------------------------------------------------------------------
    // Post processing on device 0, stream 0
@@ -1864,6 +1866,7 @@ extern "C" void cudaRender(
    blocks.y = blockSize.y;
    blocks.z = blockSize.z;
 
+   LOG_INFO(3,"Running post-processing kernel...");
    for( int device(0); device<occupancyParameters.x; ++device )
    {
       checkCudaErrors(cudaSetDevice(device));
@@ -1932,4 +1935,5 @@ extern "C" void cudaRender(
          LOG_ERROR("********************************************************************************");
       }
    }
+   LOG_INFO(3,"Post-processing kernel done!");
 }
