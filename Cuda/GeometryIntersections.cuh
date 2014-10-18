@@ -1154,7 +1154,6 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 	r.direction = ray.direction-ray.origin;
 	computeRayAttributes( r );
 
-   float4 intersections = {sceneInfo.backgroundColor.x,sceneInfo.backgroundColor.y,sceneInfo.backgroundColor.z,0.f}; 
    Vertex intersection = ray.origin;
 	Vertex normal       = {0.f,0.f,0.f};
 	bool i = false;
@@ -1169,8 +1168,8 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       colors[i].z=0.f;
       colors[i].w=sceneInfo.viewDistance.x;
    }
-   bool normals[MAXDEPTH];
-   memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
+   //bool normals[MAXDEPTH];
+   //memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
 
    int cptBoxes = 0;
    while(cptBoxes<nbActiveBoxes)
@@ -1254,10 +1253,12 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                      for( int j(MAXDEPTH-1); j>=i; --j)
                      {
                         colors[j+1]=colors[j];
-                        normals[j+1]=normals[j];
-                        colors[j] = color;
+                        //normals[j+1]=normals[j];
+                        float a=dot(normalize(r.direction-r.origin),normal);
+                        a*=(dist<postProcessingInfo.param1.x) ? 0.2f : 1.f;
+                        colors[j] = color*(fabs(a));
                         colors[j].w = dist;
-                        normals[j] = (dot(r.direction,normal)>=0.f);
+                        //normals[j] = (a>=0.f);
                      }
                      break;
                   }
@@ -1272,16 +1273,26 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       }
 	}
    
-   for( int i(MAXDEPTH-2); i>=0; --i)
+   float D=0.f;
+   float4 color=colors[0];
+   for( int i(1); i<MAXDEPTH; ++i)
    {
-      float alpha=1.f-((colors[i+1].w-colors[0].w)/postProcessingInfo.param2.x);
-
-      colors[i].x=colors[i+1].x*(1.f-alpha) + colors[i].x*alpha;
-      colors[i].y=colors[i+1].y*(1.f-alpha) + colors[i].y*alpha;
-      colors[i].z=colors[i+1].z*(1.f-alpha) + colors[i].z*alpha;
+      if( i%2==1 )
+      {
+         D+=(colors[i].w-colors[i-1].w);
+      }
+      float alpha=D/postProcessingInfo.param2.x;
+      color.x += colors[i].x*alpha;
+      color.y += colors[i].y*alpha;
+      color.z += colors[i].z*alpha;
    }
-   normalize(colors[0]);
-   return colors[0];
+   color.x += sceneInfo.backgroundColor.x;
+   color.y += sceneInfo.backgroundColor.y;
+   color.z += sceneInfo.backgroundColor.z;
+   color.w = 0.f;
+   normalize(color);
+   color.w = colors[0].w;
+   return color;
 }
 
    /*

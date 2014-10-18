@@ -144,7 +144,7 @@ __device__ __INLINE__ float4 launchRayTracing(
    float4 colorBox = {0.f,0.f,0.f,0.f};
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
-   
+  
    // Reflected rays
    int reflectedRays=-1;
    Ray reflectedRay;
