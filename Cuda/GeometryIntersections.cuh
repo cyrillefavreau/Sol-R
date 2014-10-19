@@ -1159,7 +1159,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 	bool i = false;
 	float shadowIntensity = 0.f;
 
-   const int MAXDEPTH=20;
+   const int MAXDEPTH=10;
    float4 colors[MAXDEPTH];
    for( int i(0); i<MAXDEPTH; ++i)
    {
@@ -1189,31 +1189,11 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 				   switch( primitive.type.x )
 				   {
 				   case ptEnvironment :
-               case ptSphere:
-                  {
-						   i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); 
-						   break;
-					   }
-				   case ptCylinder: 
-					   {
-						   i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); 
-						   break;
-					   }
-               case ptEllipsoid:
-                  {
-						   i = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity );
-                     break;
-                  }
-               case ptTriangle:
-                  {
-						   i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, false ); 
-                     break;
-                  }
-				   default: 
-					   {
-						   i = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false); 
-						   break;
-					   }
+               case ptSphere    : i = sphereIntersection  ( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); break;
+				   case ptCylinder  : i = cylinderIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity ); break;
+               case ptEllipsoid : i = ellipsoidIntersection( sceneInfo, primitive, materials, r, intersection, normal, shadowIntensity );break;
+               case ptTriangle  : i = triangleIntersection( sceneInfo, primitive, r, intersection, normal, areas, shadowIntensity, false ); break;
+				   default          : i = planeIntersection   ( sceneInfo, primitive, materials, textures, r, intersection, normal, shadowIntensity, false); break;
 				   }
             }
             else
@@ -1223,44 +1203,47 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
             if(i)
             {
    		      float  dist = length(intersection-r.origin);
-               float4 color=material.color*(1.f-material.transparency.x);
-               if(sceneInfo.graphicsLevel.x!=0)
+               if( dist>postProcessingInfo.param1.x )
                {
-                  Vertex attributes;
-                  attributes.x=material.reflection.x;
-                  attributes.y=material.transparency.x;
-                  attributes.z=material.refraction.x;
-                  attributes.w=material.opacity.x;
-                  float4 rBlinn = {0.f,0.f,0.f,0.f};
-                  float4 refractionFromColor;
-                  float4 closestColor = material.color;
-                  shadowIntensity=0.f;
-                  color=primitiveShader( 
-                     index,
-                     sceneInfo, postProcessingInfo,
-                     boundingBoxes, nbActiveBoxes, 
-                     primitives, nbActivePrimitives, 
-                     lightInformation, lightInformationSize, nbActiveLamps,
-                     materials, textures, 
-                     randoms, r.origin, normal, 
-                     box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
-                     0, refractionFromColor, shadowIntensity, rBlinn, attributes );
-               }
-               for( int i(0); i<MAXDEPTH; ++i)
-               {
-                  if( dist<colors[i].w )
+                  float4 color=material.color*0.5f;
+                  if(sceneInfo.graphicsLevel.x!=0)
                   {
-                     for( int j(MAXDEPTH-1); j>=i; --j)
+                     color*=(1.f-material.transparency.x);
+                     Vertex attributes;
+                     attributes.x=material.reflection.x;
+                     attributes.y=material.transparency.x;
+                     attributes.z=material.refraction.x;
+                     attributes.w=material.opacity.x;
+                     float4 rBlinn = {0.f,0.f,0.f,0.f};
+                     float4 refractionFromColor;
+                     float4 closestColor = material.color;
+                     shadowIntensity=0.f;
+                     color=primitiveShader( 
+                        index,
+                        sceneInfo, postProcessingInfo,
+                        boundingBoxes, nbActiveBoxes, 
+                        primitives, nbActivePrimitives, 
+                        lightInformation, lightInformationSize, nbActiveLamps,
+                        materials, textures, 
+                        randoms, r.origin, normal, 
+                        box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
+                        0, refractionFromColor, shadowIntensity, rBlinn, attributes );
+                  }
+                  for( int i(0); i<MAXDEPTH; ++i)
+                  {
+                     if( dist<colors[i].w )
                      {
-                        colors[j+1]=colors[j];
-                        //normals[j+1]=normals[j];
-                        float a=dot(normalize(r.direction-r.origin),normal);
-                        a*=(dist<postProcessingInfo.param1.x) ? 0.2f : 1.f;
-                        colors[j] = color*(fabs(a));
-                        colors[j].w = dist;
-                        //normals[j] = (a>=0.f);
+                        for( int j(MAXDEPTH-1); j>=i; --j)
+                        {
+                           colors[j+1]=colors[j];
+                           //normals[j+1]=normals[j];
+                           float a=dot(normalize(r.direction-r.origin),normal);
+                           colors[j] = color*(fabs(a));
+                           colors[j].w = dist;
+                           //normals[j] = (a>=0.f);
+                        }
+                        break;
                      }
-                     break;
                   }
                }
             }

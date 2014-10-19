@@ -35,8 +35,8 @@ const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 512;
 const int NB_MAX_FRAMES     = 512;
 const int NB_MAX_LIGHTINFORMATIONS = 512;
-const int MAX_BITMAP_WIDTH  = 1920;
-const int MAX_BITMAP_HEIGHT = 1080;
+const int MAX_BITMAP_WIDTH  = 2*1920;
+const int MAX_BITMAP_HEIGHT = 2*1080;
 const int MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 
 // Constants
