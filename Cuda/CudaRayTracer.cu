@@ -603,34 +603,17 @@ __global__ void k_standardRenderer(
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
          float4 c;
-         if( sceneInfo.misc.w==cmVolumeRendering )
-         {
-            c=launchVolumeRendering(
-               index,
-               BoundingBoxes, nbActiveBoxes,
-               primitives, nbActivePrimitives,
-               lightInformation, lightInformationSize, nbActiveLamps,
-               materials, textures, 
-               randoms,
-               r, 
-               sceneInfo, postProcessingInfo,
-               dof,
-               primitiveXYIds[index]);
-         }
-         else
-         {
-            c=launchRayTracing(
-               index,
-               BoundingBoxes, nbActiveBoxes,
-               primitives, nbActivePrimitives,
-               lightInformation, lightInformationSize, nbActiveLamps,
-               materials, textures, 
-               randoms,
-               r, 
-               sceneInfo, postProcessingInfo,
-               dof,
-               primitiveXYIds[index]);
-         }
+		c=launchRayTracing(
+		   index,
+		   BoundingBoxes, nbActiveBoxes,
+		   primitives, nbActivePrimitives,
+		   lightInformation, lightInformationSize, nbActiveLamps,
+		   materials, textures,
+		   randoms,
+		   r,
+		   sceneInfo, postProcessingInfo,
+		   dof,
+		   primitiveXYIds[index]);
          color += c;
       }
    }
@@ -639,34 +622,204 @@ __global__ void k_standardRenderer(
       r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
       r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
    }
-   if( sceneInfo.misc.w==cmVolumeRendering )
+  color += launchRayTracing(
+	 index,
+	 BoundingBoxes, nbActiveBoxes,
+	 primitives, nbActivePrimitives,
+	 lightInformation, lightInformationSize, nbActiveLamps,
+	 materials, textures,
+	 randoms,
+	 r,
+	 sceneInfo, postProcessingInfo,
+	 dof,
+	 primitiveXYIds[index]);
+
+   if(sceneInfo.parameters.z==aiRandomIllumination)
    {
-      color += launchVolumeRendering(
-         index,
-         BoundingBoxes, nbActiveBoxes,
-         primitives, nbActivePrimitives,
-         lightInformation, lightInformationSize, nbActiveLamps,
-         materials, textures,
-         randoms,
-         r, 
-         sceneInfo, postProcessingInfo,
-         dof,
-         primitiveXYIds[index]);
+      // Randomize light intensity
+      int rindex=(index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
+      color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+   }
+
+   if(antialiasingActivated)
+   {
+      color /= 5.f;
+   }
+
+   if(sceneInfo.pathTracingIteration.x==0)
+   {
+      postProcessingBuffer[index].colorInfo.w = dof;
+   }
+
+   if(sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)
+   {
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
+
+      postProcessingBuffer[index].sceneInfo.x = color.x;
+      postProcessingBuffer[index].sceneInfo.y = color.y;
+      postProcessingBuffer[index].sceneInfo.z = color.z;
    }
    else
    {
-      color += launchRayTracing(
-         index,
-         BoundingBoxes, nbActiveBoxes,
-         primitives, nbActivePrimitives,
-         lightInformation, lightInformationSize, nbActiveLamps,
-         materials, textures,
-         randoms,
-         r, 
-         sceneInfo, postProcessingInfo,
-         dof,
-         primitiveXYIds[index]);
+      postProcessingBuffer[index].sceneInfo.x = (primitiveXYIds[index].z>0) ? max(postProcessingBuffer[index].sceneInfo.x,color.x) : color.x;
+      postProcessingBuffer[index].sceneInfo.y = (primitiveXYIds[index].z>0) ? max(postProcessingBuffer[index].sceneInfo.y,color.y) : color.y;
+      postProcessingBuffer[index].sceneInfo.z = (primitiveXYIds[index].z>0) ? max(postProcessingBuffer[index].sceneInfo.z,color.z) : color.z;
+
+      postProcessingBuffer[index].colorInfo.x += postProcessingBuffer[index].sceneInfo.x;
+      postProcessingBuffer[index].colorInfo.y += postProcessingBuffer[index].sceneInfo.y;
+      postProcessingBuffer[index].colorInfo.z += postProcessingBuffer[index].sceneInfo.z;
    }
+}
+
+/*!
+* ------------------------------------------------------------------------------------------------------------------------
+* \brief      This kernel processes a "standard" image, meaning that the screen is a single image for
+*             which every pixel is a ray of light entering the same camera.
+* ------------------------------------------------------------------------------------------------------------------------
+* \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
+* \param[in]  device_split Y coordinate from where the current GPU should start working
+* \param[in]  stream_split Y coordinate from where the current stream should start working
+* \param[in]  BoundingBoxes Pointer to the array of bounding boxes
+* \param[in]  nbActiveBoxes Number of bounding boxes
+* \param[in]  primitives Pointer to the array of primitives
+* \param[in]  nbActivePrimitives Number of primitives
+* \param[in]  lightInformation Pointer to the array of light positions and intensities (Used for global illumination)
+* \param[in]  lightInformationSize Number of lights
+* \param[in]  nbActiveLamps Number of lamps
+* \param[in]  materials Pointer to the array of materials
+* \param[in]  textures Pointer to the array of textures
+* \param[in]  randoms Pointer to the array of random floats (GPUs are not good at generating numbers, done by the CPU)
+* \param[in]  origin Camera position
+* \param[in]  direction Camera LookAt
+* \param[in]  angles Angles applied to the camera. The rotation center is {0,0,0}
+* \param[in]  sceneInfo Information about the scene and environment
+* \param[in]  postProcessingInfo Information about PostProcessing effect
+* \param[out] postProcessingBuffer Pointer to the output array of color information
+* \param[out] primitiveXYIds Pointer to the array containing the Id of the primitivive for each pixel
+* ------------------------------------------------------------------------------------------------------------------------
+*/
+__global__ void k_volumeRenderer(
+   const int2   occupancyParameters,
+   int          device_split,
+   int          stream_split,
+   BoundingBox* BoundingBoxes, int nbActiveBoxes,
+   Primitive* primitives, int nbActivePrimitives,
+   LightInformation* lightInformation, int lightInformationSize, int nbActiveLamps,
+   Material*    materials,
+   BitmapBuffer* textures,
+   RandomBuffer* randoms,
+   Vertex        origin,
+   Vertex        direction,
+   Vertex        angles,
+   SceneInfo     sceneInfo,
+   PostProcessingInfo postProcessingInfo,
+   PostProcessingBuffer* postProcessingBuffer,
+   PrimitiveXYIdBuffer*  primitiveXYIds)
+{
+   int x = blockDim.x*blockIdx.x + threadIdx.x;
+   int y = blockDim.y*blockIdx.y + threadIdx.y;
+   int index = (stream_split+y)*sceneInfo.size.x+x;
+
+   // Antialisazing
+   float2 AArotatedGrid[4] =
+   {
+      {  3.f,  5.f },
+      {  5.f, -3.f },
+      { -3.f, -5.f },
+      { -5.f,  3.f }
+   };
+
+   // Beware out of bounds error! \[^_^]/
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x || (
+      sceneInfo.pathTracingIteration.x>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration.x>0 &&
+      sceneInfo.pathTracingIteration.x<=NB_MAX_ITERATIONS)) return;
+
+   Ray ray;
+   ray.origin = origin;
+   ray.direction = direction;
+
+   Vertex rotationCenter = {0.f,0.f,0.f,0.f};
+   if( sceneInfo.renderingType.x==vt3DVision)
+   {
+      rotationCenter = origin;
+   }
+
+   bool antialiasingActivated=(sceneInfo.misc.w==2);
+
+   if( postProcessingInfo.type.x!=ppe_depthOfField && sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
+   {
+      // Randomize view for natural depth of field
+      float a=(postProcessingInfo.param1.x/20000.f);
+      int rindex=index+sceneInfo.misc.y%(MAX_BITMAP_SIZE-2);
+      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*a;
+      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*a;
+   }
+
+   float dof = 0.f;
+   if(sceneInfo.misc.w==1) // Isometric 3D
+   {
+      ray.direction.x = ray.origin.z*0.001f*(x - (sceneInfo.size.x/2));
+      ray.direction.y = -ray.origin.z*0.001f*(device_split+stream_split+y - (sceneInfo.size.y/2));
+      ray.origin.x = ray.direction.x;
+      ray.origin.y = ray.direction.y;
+   }
+   else
+   {
+      float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
+      float2 step;
+      step.x=ratio*angles.w/(float)sceneInfo.size.x;
+      step.y=angles.w/(float)sceneInfo.size.y;
+      ray.direction.x = ray.direction.x - step.x*(x - (sceneInfo.size.x/2));
+      ray.direction.y = ray.direction.y + step.y*(device_split+stream_split+y - (sceneInfo.size.y/2));
+   }
+
+   vectorRotation( ray.origin, rotationCenter, angles );
+   vectorRotation( ray.direction, rotationCenter, angles );
+
+   float4 color = {0.f,0.f,0.f,0.f};
+   Ray r=ray;
+   if( antialiasingActivated )
+   {
+      for( int I=0; I<4; ++I )
+      {
+         r.direction.x = ray.direction.x + AArotatedGrid[I].x;
+         r.direction.y = ray.direction.y + AArotatedGrid[I].y;
+         float4 c;
+		c=launchVolumeRendering(
+		   index,
+		   BoundingBoxes, nbActiveBoxes,
+		   primitives, nbActivePrimitives,
+		   lightInformation, lightInformationSize, nbActiveLamps,
+		   materials, textures,
+		   randoms,
+		   r,
+		   sceneInfo, postProcessingInfo,
+		   dof,
+		   primitiveXYIds[index]);
+         color += c;
+      }
+   }
+   else
+   {
+      r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
+      r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
+   }
+  color += launchVolumeRendering(
+	 index,
+	 BoundingBoxes, nbActiveBoxes,
+	 primitives, nbActivePrimitives,
+	 lightInformation, lightInformationSize, nbActiveLamps,
+	 materials, textures,
+	 randoms,
+	 r,
+	 sceneInfo, postProcessingInfo,
+	 dof,
+	 primitiveXYIds[index]);
 
    if(sceneInfo.parameters.z==aiRandomIllumination)
    {
@@ -1880,6 +2033,30 @@ extern "C" void cudaRender(
                   d_lightInformation[device], objects.w, objects.z,
                   d_materials[device], d_textures[device], 
                   d_randoms[device], origin, direction, angles, sceneInfo, 
+                  postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
+               break;
+            }
+         case vtVolumeRendering:
+            {
+               k_volumeRenderer<<<grid,blocks,0,d_streams[device][stream]>>>(
+                  occupancyParameters,
+                  device*(size.y/occupancyParameters.x),
+                  stream*size.y,
+#ifndef USE_MANAGED_MEMORY
+                  d_boundingBoxes[device],
+#else
+                  boundingBoxes,
+#endif
+                  objects.x,
+#ifndef USE_MANAGED_MEMORY
+                  d_primitives[device],
+#else
+                  primitives,
+#endif
+                  objects.y,
+                  d_lightInformation[device], objects.w, objects.z,
+                  d_materials[device], d_textures[device],
+                  d_randoms[device], origin, direction, angles, sceneInfo,
                   postProcessingInfo, d_postProcessingBuffer[device], d_primitivesXYIds[device]);
                break;
             }

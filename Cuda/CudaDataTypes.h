@@ -27,7 +27,8 @@ enum VisionType
    vtStandard = 0,
    vtAnaglyph = 1,
    vt3DVision = 2,
-   vtFishEye  = 3
+   vtFishEye  = 3,
+   vtVolumeRendering = 4
 };
 
 enum GeometryComplexity
@@ -90,7 +91,7 @@ struct SceneInfo
    int4    misc;                     // x: Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
                                      // y: Timer
                                      // z: Fog( 0:disabled, 1:enabled )
-                                     // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2, volumeRendering=3 )
+                                     // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
    int4    parameters;               // x: Double-sided triangles( 0:disabled, 1:enabled )
                                      // y: Extended geometry ( 0:disabled, 1:enabled )
                                      // z: Advanced features( 0:disabled, 1:global illumination, 2: advanced global illumination, 3: random lightning )
