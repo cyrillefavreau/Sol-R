@@ -2575,7 +2575,7 @@ void CPUKernel::render_begin( const float timer )
    case ppe_depthOfField    : k_depthOfField(); break;
    case ppe_ambientOcclusion: k_ambiantOcclusion(); break;
    case ppe_radiosity       : k_radiosity(); break;
-   case ppe_oneColor        : k_oneColor(); break;
+   case ppe_filter          : k_oneColor(); break;
    default                  : k_default(); break;
    }
 }

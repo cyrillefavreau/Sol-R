@@ -130,22 +130,24 @@ typedef struct {
 #endif
 
 GPUKernel::GPUKernel(bool activeLogging, int optimalNbOfBoxes)
- : m_optimalNbOfBoxes(optimalNbOfBoxes),
-   m_hPrimitives(nullptr), 
+  : m_counter(0),
+    m_maxPrimitivesPerBox(0),
+	m_optimalNbOfBoxes(optimalNbOfBoxes),
+	m_hPrimitives(nullptr),
 	m_hMaterials(nullptr), 
-   m_hLamps(nullptr),
-   m_hBoundingBoxes(nullptr),
+	m_hLamps(nullptr),
+	m_hBoundingBoxes(nullptr),
 	m_hPrimitivesXYIds(nullptr),
 	m_hRandoms(nullptr), 
 	m_nbActiveMaterials(-1),
-   m_nbActiveTextures(0),
-   m_lightInformationSize(0),
+	m_nbActiveTextures(0),
+	m_lightInformationSize(0),
 	m_activeLogging(activeLogging),
-   m_lightInformation(nullptr),
-   m_oculus(false),
-   m_pointSize(1.f),
-   m_morph(0.f),
-   m_nbFrames(0),
+	m_lightInformation(nullptr),
+	m_oculus(false),
+	m_pointSize(1.f),
+	m_morph(0.f),
+	m_nbFrames(0),
 #if USE_KINECT
 	m_hVideo(0), m_hDepth(0), 
 	m_skeletons(0), m_hNextDepthFrameEvent(0), m_hNextVideoFrameEvent(0), m_hNextSkeletonEvent(0),
@@ -2927,16 +2929,20 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int width,c
    sceneInfo.maxPathTracingIterations.x=quality;
    for(int i(0);i<quality;++i)
    {
+#ifdef WIN32
       long t=GetTickCount();
+#endif
       sceneInfo.pathTracingIteration.x=i;
       m_sceneInfo=sceneInfo;
       LOG_INFO(1,"Rendering frame " << i << "...");
       render_begin(0);
       render_end();
       LOG_INFO(1,"Frame " << i << " rendered!");
+#ifdef WIN32
       int avg=GetTickCount()-t;
       int left=static_cast<int>(static_cast<float>(quality-i)*static_cast<float>(avg)/1000.f);
       LOG_INFO(1,"Frame " << i << " generated in " << avg << "ms (" << left << " seconds left...)");
+#endif
    }
    LOG_INFO(1,"Saving bitmap to disk");
    size_t size=sceneInfo.size.x*sceneInfo.size.y*gColorDepth;
