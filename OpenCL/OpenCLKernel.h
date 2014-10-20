@@ -96,6 +96,7 @@ private:
 	cl_kernel        m_kAnaglyphRenderer;
 	cl_kernel        m_k3DVisionRenderer;
 	cl_kernel        m_kFishEyeRenderer;
+	cl_kernel        m_kVolumeRenderer;
 
    // Post processing kernels
 	cl_kernel        m_kDefault;

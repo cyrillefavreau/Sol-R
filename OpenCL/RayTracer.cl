@@ -17,6 +17,7 @@ typedef struct
 
 // Constants
 #define NB_MAX_ITERATIONS 10
+#define MAXDEPTH 10
 #define CONST __global
 
 #define NB_MAX_MATERIALS 65536 // Last 30 materials are reserved
@@ -1925,7 +1926,8 @@ ________________________________________________________________________________
 Intersections with primitives
 ________________________________________________________________________________
 */
-inline int intersectionsWithPrimitives(
+inline float4 intersectionsWithPrimitives(
+   const int index,
    const SceneInfo* sceneInfo,
    CONST BoundingBox* boundingBoxes, 
    const int nbActiveBoxes,
@@ -1933,52 +1935,109 @@ inline int intersectionsWithPrimitives(
    const int nbActivePrimitives,
    CONST Material* materials, 
    CONST BitmapBuffer* textures,
+   CONST LightInformation* lightInformation, const int lightInformationSize, const int nbActiveLamps,
+   CONST RandomBuffer* randoms,
+   const PostProcessingInfo*   postProcessingInfo,
    const Ray* ray)
 {
-   int intersections = 0;
-
    Ray r;
    r.origin    = (*ray).origin;
    r.direction = (*ray).direction-(*ray).origin;
    computeRayAttributes( &r );
 
-   Vertex intersection = {0.f,0.f,0.f,0.f};
+   Vertex intersection = (*ray).origin;
    Vertex normal       = {0.f,0.f,0.f,0.f};
    bool i = false;
+   float shadowIntensity = 0.f;
 
-   int cptBoxes=0;
-   while( cptBoxes<nbActiveBoxes )
+   float4 colors[MAXDEPTH];
+   for( int i=0; i<MAXDEPTH; ++i)
+   {
+      colors[i].x=0.f;
+      colors[i].y=0.f;
+      colors[i].z=0.f;
+      colors[i].w=(*sceneInfo).viewDistance;
+   }
+   //bool normals[MAXDEPTH];
+   //memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
+
+   int cptBoxes = 0;
+   while(cptBoxes<nbActiveBoxes)
    {
       CONST BoundingBox* box = &boundingBoxes[cptBoxes];
       if( boxIntersection(box, &r, 0.f, (*sceneInfo).viewDistance) )
       {
-            // Intersection with primitive within boxes
-            for( int cptPrimitives = 0; cptPrimitives<(*box).nbPrimitives; ++cptPrimitives )
-            { 
-               CONST Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
+         // Intersection with primitive within boxes
+         for( int cptPrimitives = 0; cptPrimitives<(*box).nbPrimitives; ++cptPrimitives )
+         { 
+            i = false;
+            CONST Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
+            CONST Material* material = &materials[(*primitive).materialId];
+            Vertex areas = {0.f,0.f,0.f,0.f};
+            if((*sceneInfo).parameters.y==1)  // Extended geometry
+            {
+               switch( (*primitive).type )
                {
-                  Vertex areas = {0.f,0.f,0.f,0.f};
-                  i = false;
-                  float shadowIntensity;
-                  if((*sceneInfo).parameters.y==1)
-                  {
-                     switch( (*primitive).type )
-                     {
-                     case ptEnvironment :
-                     case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
-                     case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
-                     case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-                     case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
-                     default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
-                     }
-                  }
-                  else
-                  {
-                     i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false );
-                  }
-                  if(i) ++intersections;
+               case ptEnvironment :
+               case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
+               case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
+               case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
+               case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
+               default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
                }
             }
+            else
+            {
+               i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false );
+            }
+            if(i)
+            {
+               float  dist = length(intersection-r.origin);
+               if( dist>(*postProcessingInfo).param1 )
+               {
+                  float4 color=(*material).color*0.5f;
+                  if((*sceneInfo).graphicsLevel!=0)
+                  {
+                     color*=(1.f-(*material).transparency);
+                     Vertex attributes;
+                     attributes.x=(*material).reflection;
+                     attributes.y=(*material).transparency;
+                     attributes.z=(*material).refraction;
+                     attributes.w=(*material).opacity;
+                     float4 rBlinn = {0.f,0.f,0.f,0.f};
+                     float4 refractionFromColor;
+                     float4 closestColor = (*material).color;
+                     shadowIntensity=0.f;
+                     color=primitiveShader( 
+                        index,
+                        sceneInfo, postProcessingInfo,
+                        boundingBoxes, nbActiveBoxes, 
+                        primitives, nbActivePrimitives, 
+                        lightInformation, lightInformationSize, nbActiveLamps,
+                        materials, textures, 
+                        randoms, r.origin, &normal, 
+                        (*box).startIndex+cptPrimitives, &intersection, areas, &closestColor,
+                        0, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
+                  }
+                  for( int i=0; i<MAXDEPTH; ++i)
+                  {
+                     if( dist<colors[i].w )
+                     {
+                        for( int j=MAXDEPTH-1; j>=i; --j)
+                        {
+                           colors[j+1]=colors[j];
+                           //normals[j+1]=normals[j];
+                           float a=dot(normalize(r.direction-r.origin),normal);
+                           colors[j] = color*(fabs(a));
+                           colors[j].w = dist;
+                           //normals[j] = (a>=0.f);
+                        }
+                        break;
+                     }
+                  }
+               }
+            }
+         }
          ++cptBoxes;
       }
       else
@@ -1986,10 +2045,30 @@ inline int intersectionsWithPrimitives(
          cptBoxes += (*box).indexForNextBox.x;
       }
    }
-   return intersections;
+
+   float D=0.f;
+   float4 color={0.f,0.f,0.f,0.f}; //colors[0];
+   for( int i=1; i<MAXDEPTH; ++i)
+   {
+      if( i%2==1 )
+      {
+         D+=(colors[i].w-colors[i-1].w);
+      }
+      float alpha=D/(*postProcessingInfo).param2;
+      color.x += colors[i].x*alpha;
+      color.y += colors[i].y*alpha;
+      color.z += colors[i].z*alpha;
+   }
+   color.x += (*sceneInfo).backgroundColor.x;
+   color.y += (*sceneInfo).backgroundColor.y;
+   color.z += (*sceneInfo).backgroundColor.z;
+   color.w = 0.f;
+   color  = normalize(color);
+   color.w = colors[0].w;
+   return color;
 }
 
-inline float4 launchRay(
+inline float4 launchVolumeRendering(
    const int index,
    CONST BoundingBox* boundingBoxes, 
    const int nbActiveBoxes,
@@ -2007,26 +2086,22 @@ inline float4 launchRay(
    float*           depthOfField,
    CONST PrimitiveXYIdBuffer* primitiveXYId)
 {
-   float4 intersectionColor   = {0.f,0.f,0.f,0.f};
    (*primitiveXYId).x = -1;
    (*primitiveXYId).y = 1;
    (*primitiveXYId).z = 0;
-         int interserctions = intersectionsWithPrimitives(
-            sceneInfo,
-            boundingBoxes, nbActiveBoxes,
-            primitives, nbActivePrimitives,
-            materials, textures,
-            ray);
-   if(interserctions!=0) 
-   {
-       intersectionColor.x=interserctions*0.1f;
-       intersectionColor.y=interserctions*0.1f;
-       intersectionColor.z=interserctions*0.1f;
-   }
+   float4 intersectionColor = intersectionsWithPrimitives(
+      index,
+      sceneInfo,
+      boundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      materials, textures,
+      lightInformation, lightInformationSize, nbActiveLamps,
+      randoms,
+      postProcessingInfo,
+      ray);
    return intersectionColor;
 }
 
-#if 0
 /*
 ________________________________________________________________________________
 
@@ -2434,7 +2509,6 @@ inline float4 launchRayTracing(
    saturateVector( &intersectionColor );
    return intersectionColor;
 }
-#endif // 0
 
 /*
 ________________________________________________________________________________
@@ -2536,7 +2610,7 @@ __kernel void k_standardRenderer(
       {
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
-         float4 c = launchRay(
+         float4 c = launchRayTracing(
             index,
             boundingBoxes, nbActiveBoxes,
             primitives, nbActivePrimitives,
@@ -2555,7 +2629,169 @@ __kernel void k_standardRenderer(
       r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration%4].x;
       r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration%4].y;
    }
-   color += launchRay(
+   color += launchRayTracing(
+      index,
+      boundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      lightInformation, lightInformationSize, nbActiveLamps,
+      materials, textures, 
+      randoms,
+      &r, 
+      &sceneInfo, &postProcessingInfo,
+      &dof,
+      &primitiveXYIds[index]);
+
+   if(sceneInfo.parameters.z==aiRandomIllumination)
+   {
+      // Randomize light intensity
+      int rindex = (index+sceneInfo.misc.y)%MAX_BITMAP_SIZE;
+      color += sceneInfo.backgroundColor*randoms[rindex]*5.f;
+   }
+
+   if(antialiasingActivated)
+   {
+      color /= 5.f;
+   }
+
+   if(sceneInfo.pathTracingIteration==0)
+   {
+      postProcessingBuffer[index].colorInfo.w = dof;
+   }
+
+   if(sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS)
+   {
+      postProcessingBuffer[index].colorInfo.x = color.x;
+      postProcessingBuffer[index].colorInfo.y = color.y;
+      postProcessingBuffer[index].colorInfo.z = color.z;
+   }
+   else
+   {
+      postProcessingBuffer[index].colorInfo.x += color.x;
+      postProcessingBuffer[index].colorInfo.y += color.y;
+      postProcessingBuffer[index].colorInfo.z += color.z;
+   }
+}
+
+/*
+________________________________________________________________________________
+
+Standard renderer
+________________________________________________________________________________
+*/
+__kernel void k_volumeRenderer(
+   const int2                     occupancyParameters,
+   int device_split,
+   int stream_split,
+   CONST BoundingBox*    boundingBoxes, 
+   int                            nbActiveBoxes,
+   CONST Primitive*      primitives, 
+   int                            nbActivePrimitives,
+   CONST LightInformation*     lightInformation, 
+   int                            lightInformationSize, 
+   int                            nbActiveLamps,
+   CONST Material*       materials,
+   CONST BitmapBuffer*   textures,
+   CONST RandomBuffer*   randoms,
+   Vertex                         origin,
+   Vertex                         direction,
+   Vertex                         angles,
+   const SceneInfo                sceneInfo,
+   const PostProcessingInfo       postProcessingInfo,
+   CONST PostProcessingBuffer* postProcessingBuffer,
+   CONST PrimitiveXYIdBuffer*  primitiveXYIds)
+{
+   int x = get_global_id(0);
+   int y = get_global_id(1);
+   int index = (stream_split+y)*sceneInfo.size.x+x;
+
+   // Antialisazing
+   float2 AArotatedGrid[4] =
+   {
+      {  3.f,  5.f },
+      {  5.f, -3.f },
+      { -3.f, -5.f },
+      { -5.f,  3.f }
+   };
+
+   // Beware out of bounds error!
+   // And only process pixels that need extra rendering
+   if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ||
+      (sceneInfo.pathTracingIteration>primitiveXYIds[index].y &&   // Still need to process iterations
+      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      sceneInfo.pathTracingIteration>0 && 
+      sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS)) return;
+
+   Ray ray;
+   ray.origin = origin;
+   ray.direction = direction;
+
+   Vertex rotationCenter = {0.f,0.f,0.f,0.f};
+   if( sceneInfo.renderingType==vt3DVision)
+   {
+      rotationCenter = origin;
+   }
+
+   bool antialiasingActivated=(sceneInfo.misc.w==2);
+
+   if( postProcessingInfo.type!=ppe_depthOfField && sceneInfo.pathTracingIteration>=NB_MAX_ITERATIONS )
+   {
+      // Randomize view for natural depth of field
+      float a=postProcessingInfo.param1/20000.f;
+      int rindex=(index+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-2);
+      ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*a;
+      ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*a;
+   }
+
+   float dof=0.f;
+
+   if(sceneInfo.misc.w==1) // Isometric 3D
+   {
+      ray.direction.x = ray.origin.z*0.001f*(float)(x - (sceneInfo.size.x/2));
+      ray.direction.y = -ray.origin.z*0.001f*(float)(device_split+stream_split+y - (sceneInfo.size.y/2));
+      ray.origin.x = ray.direction.x;
+      ray.origin.y = ray.direction.y;
+   }
+   else
+   {
+      float ratio=(float)sceneInfo.size.x/(float)sceneInfo.size.y;
+      float2 step;
+      step.x=ratio*angles.w/(float)sceneInfo.size.x;
+      step.y=angles.w/(float)sceneInfo.size.y;
+      ray.direction.x = ray.direction.x - step.x*(float)(x - (sceneInfo.size.x/2));
+      ray.direction.y = ray.direction.y + step.y*(float)(device_split+stream_split+y - (sceneInfo.size.y/2));
+   }
+
+   vectorRotation( &ray.origin, rotationCenter, angles );
+   vectorRotation( &ray.direction, rotationCenter, angles );
+
+   float4 color = {0.f,0.f,0.f,0.f};
+   Ray r=ray;
+   if( antialiasingActivated )
+   {
+      for( int I=0; I<4; ++I )
+      {
+         r.direction.x = ray.direction.x + AArotatedGrid[I].x;
+         r.direction.y = ray.direction.y + AArotatedGrid[I].y;
+         float4 c = launchVolumeRendering(
+            index,
+            boundingBoxes, nbActiveBoxes,
+            primitives, nbActivePrimitives,
+            lightInformation, lightInformationSize, nbActiveLamps,
+            materials, textures, 
+            randoms,
+            &r, 
+            &sceneInfo, &postProcessingInfo,
+            &dof,
+            &primitiveXYIds[index]);
+         color += c;
+      }
+   }
+   else
+   {
+      r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration%4].x;
+      r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration%4].y;
+   }
+   color += launchVolumeRendering(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
@@ -2666,7 +2902,7 @@ __kernel void k_anaglyphRenderer(
    //vectorRotation( eyeRay.origin, rotationCenter, angles );
    vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
-   float4 colorLeft = launchRay(
+   float4 colorLeft = launchRayTracing(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
@@ -2690,7 +2926,7 @@ __kernel void k_anaglyphRenderer(
    //vectorRotation( eyeRay.origin, rotationCenter, angles );
    vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
-   float4 colorRight = launchRay(
+   float4 colorRight = launchRayTracing(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,
@@ -2810,7 +3046,7 @@ __kernel void k_3DVisionRenderer(
    vectorRotation( &eyeRay.origin,    rotationCenter, angles );
    vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
-   float4 color = launchRay(
+   float4 color = launchRayTracing(
       index,
       boundingBoxes, nbActiveBoxes,
       primitives, nbActivePrimitives,

@@ -1257,7 +1257,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 	}
    
    float D=0.f;
-   float4 color=colors[0];
+   float4 color={0.f,0.f,0.f,0.f}; //colors[0];
    for( int i(1); i<MAXDEPTH; ++i)
    {
       if( i%2==1 )

@@ -257,6 +257,7 @@ OpenCLKernel::OpenCLKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox
    m_kAnaglyphRenderer(0),
    m_k3DVisionRenderer(0),
    m_kFishEyeRenderer(0),
+   m_kVolumeRenderer(0),
    m_kDefault(0),
    m_kDepthOfField(0),
    m_kAmbientOcclusion(0),
@@ -395,6 +396,9 @@ void OpenCLKernel::recompileKernels(const std::string& filename)
       m_kFishEyeRenderer = clCreateKernel( hProgram, "k_fishEyeRenderer", &status );
 		CHECKSTATUS(status);
 
+		m_kVolumeRenderer = clCreateKernel( hProgram, "k_volumeRenderer", &status );
+		CHECKSTATUS(status);
+
       // Post-processing kernels
 		LOG_INFO(1,"Creating Post-processing kernels");
       m_kDefault = clCreateKernel( hProgram, "k_default", &status );
@@ -449,6 +453,7 @@ void OpenCLKernel::releaseKernels()
    if( m_kAnaglyphRenderer ) { CHECKSTATUS(clReleaseKernel(m_kAnaglyphRenderer)); m_kAnaglyphRenderer=0; }
    if( m_k3DVisionRenderer ) { CHECKSTATUS(clReleaseKernel(m_k3DVisionRenderer)); m_k3DVisionRenderer=0; }
    if( m_kFishEyeRenderer )  { CHECKSTATUS(clReleaseKernel(m_kFishEyeRenderer));  m_kFishEyeRenderer=0; }
+   if( m_kVolumeRenderer )   { CHECKSTATUS(clReleaseKernel(m_kVolumeRenderer));   m_kVolumeRenderer=0; }
 
    // Post processing kernels
    if( m_kDefault )          { CHECKSTATUS(clReleaseKernel(m_kDefault)); m_kDefault=0; }
@@ -700,6 +705,31 @@ void OpenCLKernel::render_begin( const float timer )
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
             CHECKSTATUS(clSetKernelArg( m_kFishEyeRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
 	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kFishEyeRenderer, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
+			   break;
+		   }
+	   case vtVolumeRendering:
+		   {
+	         CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 0, sizeof(cl_int2),  (void*)&m_occupancyParameters ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 1, sizeof(cl_int),   (void*)&zero )); 
+	         CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 2, sizeof(cl_int),   (void*)&zero ));
+	         CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 3, sizeof(cl_mem),   (void*)&m_dBoundingBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 4, sizeof(cl_int),   (void*)&nbBoxes ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 5, sizeof(cl_mem),   (void*)&m_dPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 6, sizeof(cl_int),   (void*)&nbPrimitives ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 7, sizeof(cl_mem),   (void*)&m_dLightInformation ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 8, sizeof(cl_int),   (void*)&m_lightInformationSize ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer, 9, sizeof(cl_int),   (void*)&nbLamps ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,10, sizeof(cl_mem),   (void*)&m_dMaterials ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,11, sizeof(cl_mem),   (void*)&m_dTextures ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,12, sizeof(cl_mem),   (void*)&m_dRandoms ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,13, sizeof(Vertex),   (void*)&m_viewPos ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,14, sizeof(Vertex),   (void*)&m_viewDir ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,15, sizeof(Vertex),   (void*)&m_angles ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,16, sizeof(SceneInfo),(void*)&sceneInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,17, sizeof(PostProcessingInfo),(void*)&m_postProcessingInfo ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,18, sizeof(cl_mem),   (void*)&m_dPostProcessingBuffer ));
+            CHECKSTATUS(clSetKernelArg( m_kVolumeRenderer,19, sizeof(cl_mem),   (void*)&m_dPrimitivesXYIds ));
+	         CHECKSTATUS(clEnqueueNDRangeKernel( m_hQueue, m_kVolumeRenderer, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
 			   break;
 		   }
 	   default:
