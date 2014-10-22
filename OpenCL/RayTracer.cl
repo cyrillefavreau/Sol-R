@@ -1996,7 +1996,7 @@ inline float4 intersectionsWithPrimitives(
                if( dist>(*postProcessingInfo).param1 )
                {
                   float4 color=(*material).color*0.5f;
-                  if((*sceneInfo).graphicsLevel!=0)
+                  if(false && (*sceneInfo).graphicsLevel!=0)
                   {
                      color*=(1.f-(*material).transparency);
                      Vertex attributes;

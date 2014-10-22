@@ -1205,7 +1205,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
    		      float  dist = length(intersection-r.origin);
                if( dist>postProcessingInfo.param1.x )
                {
-                  float4 color=material.color*0.5f;
+                  float4 color=material.color;
                   if(sceneInfo.graphicsLevel.x!=0)
                   {
                      color*=(1.f-material.transparency.x);
@@ -1237,8 +1237,8 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                         {
                            colors[j+1]=colors[j];
                            //normals[j+1]=normals[j];
-                           float a=dot(normalize(r.direction-r.origin),normal);
-                           colors[j] = color*(fabs(a));
+                           //float a=dot(normalize(r.direction-r.origin),normal);
+                           colors[j] = color; //*(fabs(a));
                            colors[j].w = dist;
                            //normals[j] = (a>=0.f);
                         }
@@ -1256,8 +1256,25 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       }
 	}
    
+   float D=colors[0].w;
+   float4 color=colors[0]*0.3f;
+   const int precision=1000;
+   const float step=(sceneInfo.viewDistance.x-D)/float(precision);
+   float alpha=1.f/postProcessingInfo.param2.x;
+   int c=1;
+   for( int i(0); i<precision && c<MAXDEPTH-1; ++i)
+   {
+      if(D<colors[c].w)
+      {
+         color.x+=colors[c].x*alpha;
+         color.y+=colors[c].y*alpha;
+         color.z+=colors[c].z*alpha;
+      }
+      D+=step;
+      if( D>=colors[c+1].w ) ++c;
+   }
+#if 0
    float D=0.f;
-   float4 color={0.f,0.f,0.f,0.f}; //colors[0];
    for( int i(1); i<MAXDEPTH; ++i)
    {
       if( i%2==1 )
@@ -1272,6 +1289,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
    color.x += sceneInfo.backgroundColor.x;
    color.y += sceneInfo.backgroundColor.y;
    color.z += sceneInfo.backgroundColor.z;
+#endif // 0
    color.w = 0.f;
    normalize(color);
    color.w = colors[0].w;
