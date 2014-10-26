@@ -44,6 +44,7 @@
 #endif // USE_OCULUS
 
 const unsigned int MAX_SOURCE_SIZE = 65535*2;
+const unsigned int AABB_MAGIC_NUMBER = 6400; //6400;
 
 Vertex min2( const Vertex a, const Vertex b)
 {
@@ -1017,7 +1018,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
       }
 
       // Dispatch primitives into level 0 boxes
-      int nbMaxPrimitivesPerBox=processBoxes(6400,false);
+      int nbMaxPrimitivesPerBox=processBoxes(AABB_MAGIC_NUMBER,false);
 
       // Construct sub-boxes (level 1 and +)
       m_treeDepth=0;
@@ -1339,9 +1340,9 @@ void GPUKernel::displayBoxesInfo()
 	}
 }
 
-void GPUKernel::rotatePrimitives( Vertex rotationCenter, Vertex angles, unsigned int from, unsigned int to )
+void GPUKernel::rotatePrimitives( const Vertex& rotationCenter, const Vertex& angles )
 {
-	LOG_INFO(3,"GPUKernel::rotatePrimitives(" << from << "->" << to << ")" );
+	LOG_INFO(3,"GPUKernel::rotatePrimitives" );
 
    m_primitivesTransfered = false;
 	Vertex cosAngles, sinAngles;
@@ -1421,22 +1422,16 @@ void GPUKernel::rotatePrimitives( Vertex rotationCenter, Vertex angles, unsigned
    }
 }
 
-void GPUKernel::translatePrimitives( Vertex translation, unsigned int from, unsigned int to )
+void GPUKernel::translatePrimitives( const Vertex& translation )
 {
-	LOG_INFO(3,"GPUKernel::translatePrimitives(" << from << "->" << to << ")" );
+	LOG_INFO(1,"GPUKernel::translatePrimitives (" << m_boundingBoxes[m_frame][0].size() << ")" );
    m_primitivesTransfered = false;
-#pragma omp parallel
    for( BoxContainer::iterator itb=m_boundingBoxes[m_frame][0].begin(); itb!=m_boundingBoxes[m_frame][0].end(); ++itb )
    {
       #pragma omp single nowait
       {
          CPUBoundingBox& box = (*itb).second;
-         for( int i(0); i<2; ++i )
-         {
-            box.parameters[i].x += translation.x;
-            box.parameters[i].y += translation.y;
-            box.parameters[i].z += translation.z;
-         }
+         resetBox(box,false);
 
          for( std::vector<long>::iterator it=box.primitives.begin(); it!=box.primitives.end(); ++it )
 		   {
@@ -1456,6 +1451,20 @@ void GPUKernel::translatePrimitives( Vertex translation, unsigned int from, unsi
                primitive.p2.y += translation.y;
                primitive.p2.z += translation.z;
             }
+         }
+      }
+   }
+
+   // Update bounding boxes
+   for( int b(1); b<BOUNDING_BOXES_TREE_DEPTH; ++b )
+   {
+   #pragma omp parallel
+      for( BoxContainer::iterator itb=m_boundingBoxes[m_frame][b].begin(); itb!=m_boundingBoxes[m_frame][b].end(); ++itb )
+      {
+         #pragma omp single nowait
+         {
+            CPUBoundingBox& box = (*itb).second;
+            updateOutterBoundingBox(box,b-1);
          }
       }
    }
@@ -1590,7 +1599,7 @@ void GPUKernel::rotateBox( CPUBoundingBox& box, Vertex rotationCenter, Vertex co
    rotateVector( box.parameters[1], rotationCenter, cosAngles, sinAngles );
 }
 
-void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles )
+void GPUKernel::rotatePrimitive( CPUPrimitive& primitive, const Vertex& rotationCenter, const Vertex& cosAngles, const Vertex& sinAngles )
 {
 	LOG_INFO(3,"GPUKernel::rotatePrimitive" );
    rotateVector( primitive.p0, rotationCenter, cosAngles, sinAngles );
@@ -2208,7 +2217,7 @@ void GPUKernel::reorganizeLights()
                int i(0);
                while( !found && i<m_nbActiveLamps[m_frame] )
                {
-                  LOG_INFO(1,"[Box " << (*it).first << "] Lamp " << i << "/" << m_nbActiveLamps[m_frame] << " = " << m_hLamps[i] << ", Primitive index=" << primitive.index.x );
+                  LOG_INFO(3,"[Box " << (*it).first << "] Lamp " << i << "/" << m_nbActiveLamps[m_frame] << " = " << m_hLamps[i] << ", Primitive index=" << primitive.index.x );
                   if( m_hLamps[i]==primitive.index.x)
                   {
                      LOG_INFO(1,"Lamp " << i << " FOUND" );

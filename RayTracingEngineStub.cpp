@@ -308,7 +308,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RotatePrimitives(
       Vertex rotationCenter = { static_cast<float>(rx), static_cast<float>(ry),  static_cast<float>(rz) };
       Vertex angles = { static_cast<float>(ax), static_cast<float>(ay),  static_cast<float>(az) };
 
-      gKernel->rotatePrimitives( rotationCenter, angles, fromBoxId, toBoxId );
+      gKernel->rotatePrimitives( rotationCenter, angles );
       gKernel->compactBoxes(false);
    }
    catch( ... )
@@ -639,6 +639,8 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
 	OBJReader objReader;
    float s(static_cast<float>(scale));
    Vertex objectScale = {s,s,s};
+   CPUBoundingBox aabb;
+   CPUBoundingBox inAABB;
 	Vertex minPos = objReader.loadModelFromFile(
       filename,
       *gKernel,
@@ -648,7 +650,9 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadOBJModel(
       true,
       materialId,
       false,
-      (autoCenter==1));
+      (autoCenter==1),
+      aabb,
+      false, inAABB);
 
    height=-minPos.y/2.f;
    return gKernel->getNbActivePrimitives();

@@ -1159,7 +1159,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 	bool i = false;
 	float shadowIntensity = 0.f;
 
-   const int MAXDEPTH=10;
+   const int MAXDEPTH=20;
    float4 colors[MAXDEPTH];
    for( int i(0); i<MAXDEPTH; ++i)
    {
@@ -1168,8 +1168,10 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       colors[i].z=0.f;
       colors[i].w=sceneInfo.viewDistance.x;
    }
-   //bool normals[MAXDEPTH];
-   //memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
+#if VOLUME_RENDERING_NORMALS
+   bool normals[MAXDEPTH];
+   memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
+#endif // VOLUME_RENDERING_NORMALS
 
    int cptBoxes = 0;
    while(cptBoxes<nbActiveBoxes)
@@ -1236,11 +1238,13 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                         for( int j(MAXDEPTH-1); j>=i; --j)
                         {
                            colors[j+1]=colors[j];
-                           //normals[j+1]=normals[j];
-                           //float a=dot(normalize(r.direction-r.origin),normal);
+                           float a=dot(normalize(r.direction-r.origin),normal);
                            colors[j] = color; //*(fabs(a));
                            colors[j].w = dist;
-                           //normals[j] = (a>=0.f);
+#if VOLUME_RENDERING_NORMALS
+                           normals[j+1]=normals[j];
+                           normals[j] = (a<0.f);
+#endif // VOLUME_RENDERING_NORMALS
                         }
                         break;
                      }
@@ -1256,22 +1260,39 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       }
 	}
    
+#if VOLUME_RENDERING_NORMALS
+   float D=normals[0] ? 0.f : D=colors[0].w;
+   int C=normals[0] ? 1 : -1;
+#else
    float D=colors[0].w;
-   float4 color=colors[0]*0.3f;
-   const int precision=1000;
+#endif // VOLUME_RENDERING_NORMALS
+   
+   float4 color=colors[0]*0.1f;
+   const int precision=500;
    const float step=(sceneInfo.viewDistance.x-D)/float(precision);
    float alpha=1.f/postProcessingInfo.param2.x;
    int c=1;
+
    for( int i(0); i<precision && c<MAXDEPTH-1; ++i)
    {
+#if VOLUME_RENDERING_NORMALS
+      if(D<colors[c].w && C!=0)
+#else
       if(D<colors[c].w)
+#endif // VOLUME_RENDERING_NORMALS
       {
          color.x+=colors[c].x*alpha;
          color.y+=colors[c].y*alpha;
          color.z+=colors[c].z*alpha;
       }
       D+=step;
-      if( D>=colors[c+1].w ) ++c;
+      if( D>=colors[c+1].w )
+      { 
+         ++c;
+#if VOLUME_RENDERING_NORMALS
+         C+=normals[c] ? 1 : -1;
+#endif // VOLUME_RENDERING_NORMALS
+      }
    }
 #if 0
    float D=0.f;

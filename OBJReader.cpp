@@ -330,27 +330,32 @@ void OBJReader::addLightComponent(
    const Vertex& center,
    const Vertex& objectCenter,
    const Vertex& objectScale,
-   const int material)
+   const int material,
+   CPUBoundingBox& aabb)
 {
    size_t len=solrVertices.size();
    if( len!=0 )
    {
       Vertex lightCenter={0.f,0.f,0.f};
-      Vertex minPos={ 1000000.f, 1000000.f, 1000000.f};
-      Vertex maxPos={-1000000.f,-1000000.f,-1000000.f};
+      aabb.parameters[0].x = 1000000.f;
+      aabb.parameters[0].y = 1000000.f;
+      aabb.parameters[0].z = 1000000.f;
+      aabb.parameters[1].x = -1000000.f;
+      aabb.parameters[1].y = -1000000.f;
+      aabb.parameters[1].z = -1000000.f;
       for( size_t i(0); i<len;++i)
       {
-         minPos.x = std::min(solrVertices[i].x,minPos.x);
-         maxPos.x = std::max(solrVertices[i].x,maxPos.x);
-         minPos.y = std::min(solrVertices[i].y,minPos.y);
-         maxPos.y = std::max(solrVertices[i].y,maxPos.y);
-         minPos.z = std::min(solrVertices[i].z,minPos.z);
-         maxPos.z = std::max(solrVertices[i].z,maxPos.z);
+         aabb.parameters[0].x = std::min(solrVertices[i].x,aabb.parameters[0].x);
+         aabb.parameters[1].x = std::max(solrVertices[i].x,aabb.parameters[1].x);
+         aabb.parameters[0].y = std::min(solrVertices[i].y,aabb.parameters[0].y);
+         aabb.parameters[1].y = std::max(solrVertices[i].y,aabb.parameters[1].y);
+         aabb.parameters[0].z = std::min(solrVertices[i].z,aabb.parameters[0].z);
+         aabb.parameters[1].z = std::max(solrVertices[i].z,aabb.parameters[1].z);
       }
-      lightCenter.x = (maxPos.x+minPos.x)/2.f;
-      lightCenter.y = (maxPos.y+minPos.y)/2.f;
-      lightCenter.z = (maxPos.z+minPos.z)/2.f;
-      Vertex L={maxPos.x-minPos.x,maxPos.y-minPos.y,maxPos.z-minPos.z};
+      lightCenter.x = (aabb.parameters[1].x+aabb.parameters[0].x)/2.f;
+      lightCenter.y = (aabb.parameters[1].y+aabb.parameters[0].y)/2.f;
+      lightCenter.z = (aabb.parameters[1].z+aabb.parameters[0].z)/2.f;
+      Vertex L={aabb.parameters[1].x-aabb.parameters[0].x,aabb.parameters[1].y-aabb.parameters[0].y,aabb.parameters[1].z-aabb.parameters[0].z};
       float radius = sqrt(L.x*L.x+L.y*L.y+L.z*L.z)/2.f;
                   
       int nbPrimitives = kernel.addPrimitive( ptSphere );
@@ -376,7 +381,10 @@ Vertex OBJReader::loadModelFromFile(
    bool loadMaterials,
    int materialId,
    bool allSpheres,
-   bool autoCenter)
+   bool autoCenter,
+   CPUBoundingBox& aabb,
+   const bool& checkInAABB,
+   const CPUBoundingBox& inAABB)
 {
    LOG_INFO(1,"Loading OBJ file " << filename );
    std::map<int,Vertex> vertices;
@@ -384,8 +392,12 @@ Vertex OBJReader::loadModelFromFile(
    std::map<int,Vertex> textureCoordinates;
    std::map<std::string,MaterialMTL> materials;
 
-   Vertex minPos = { 100000.f, 100000.f, 100000.f };
-   Vertex maxPos = {-100000.f,-100000.f,-100000.f };
+   aabb.parameters[0].x = 100000.f;
+   aabb.parameters[0].y = 100000.f;
+   aabb.parameters[0].z = 100000.f;
+   aabb.parameters[1].x = -100000.f;
+   aabb.parameters[1].y = -100000.f;
+   aabb.parameters[1].z = -100000.f;
 
    std::string noExtFilename(filename);
    size_t pos(noExtFilename.find(".obj"));
@@ -506,14 +518,14 @@ Vertex OBJReader::loadModelFromFile(
                      ++index_vertices;
 
                      // min
-                     minPos.x = (vertex.x < minPos.x) ? vertex.x : minPos.x;
-                     minPos.y = (vertex.y < minPos.y) ? vertex.y : minPos.y;
-                     minPos.z = (vertex.z < minPos.z) ? vertex.z : minPos.z;
+                     aabb.parameters[0].x = (vertex.x < aabb.parameters[0].x) ? vertex.x : aabb.parameters[0].x;
+                     aabb.parameters[0].y = (vertex.y < aabb.parameters[0].y) ? vertex.y : aabb.parameters[0].y;
+                     aabb.parameters[0].z = (vertex.z < aabb.parameters[0].z) ? vertex.z : aabb.parameters[0].z;
              
                      // max
-                     maxPos.x = (vertex.x > maxPos.x) ? vertex.x : maxPos.x;
-                     maxPos.y = (vertex.y > maxPos.y) ? vertex.y : maxPos.y;
-                     maxPos.z = (vertex.z > maxPos.z) ? vertex.z : maxPos.z;
+                     aabb.parameters[1].x = (vertex.x > aabb.parameters[1].x) ? vertex.x : aabb.parameters[1].x;
+                     aabb.parameters[1].y = (vertex.y > aabb.parameters[1].y) ? vertex.y : aabb.parameters[1].y;
+                     aabb.parameters[1].z = (vertex.z > aabb.parameters[1].z) ? vertex.z : aabb.parameters[1].z;
                   }
                }
 
@@ -523,13 +535,29 @@ Vertex OBJReader::loadModelFromFile(
       file.close();
    }
 
+   LOG_INFO(1, "AABB: (" << aabb.parameters[0].x << "," << aabb.parameters[0].y << "," << aabb.parameters[0].z << "),(" << aabb.parameters[1].x << "," << aabb.parameters[1].y << "," << aabb.parameters[1].z << ")" );
+   LOG_INFO(1, "inAABB: (" << inAABB.parameters[0].x << "," << inAABB.parameters[0].y << "," << inAABB.parameters[0].z << "),(" << inAABB.parameters[1].x << "," << inAABB.parameters[1].y << "," << inAABB.parameters[1].z << ")" );
+
+   Vertex objectSize = {0.f,0.f,0.f};
+   if( checkInAABB )
+   {
+      if( aabb.parameters[0].x<inAABB.parameters[0].x ) return objectSize;
+      if( aabb.parameters[0].y<inAABB.parameters[0].y ) return objectSize;
+      if( aabb.parameters[0].z<inAABB.parameters[0].z ) return objectSize;
+
+      if( aabb.parameters[1].x>inAABB.parameters[1].x ) return objectSize;
+      if( aabb.parameters[1].y>inAABB.parameters[1].y ) return objectSize;
+      if( aabb.parameters[1].z>inAABB.parameters[1].z ) return objectSize;
+   }
+
    LOG_INFO(1,"Object contains " << vertices.size() << " vertices");
 
+   // Scale object
    Vertex objectCenter = objectPosition;
    Vertex objectScale  = scale;
    if( autoScale )
    {
-      float os = std::max( maxPos.x - minPos.x, std::max ( maxPos.y - minPos.y, maxPos.z - minPos.z ));
+      float os = std::max( aabb.parameters[1].x - aabb.parameters[0].x, std::max ( aabb.parameters[1].y - aabb.parameters[0].y, aabb.parameters[1].z - aabb.parameters[0].z ));
       objectScale.x = scale.x/os;
       objectScale.y = scale.y/os;
       objectScale.z = scale.z/os;
@@ -537,11 +565,10 @@ Vertex OBJReader::loadModelFromFile(
       if(autoCenter)
       {
          // Center align object
-         objectCenter.x = (minPos.x+maxPos.x) / 2.f;
-         objectCenter.y = (minPos.y+maxPos.y) / 2.f;
-         objectCenter.z = (minPos.z+maxPos.z) / 2.f;
+         objectCenter.x = (aabb.parameters[0].x+aabb.parameters[1].x) / 2.f;
+         objectCenter.y = (aabb.parameters[0].y+aabb.parameters[1].y) / 2.f;
+         objectCenter.z = (aabb.parameters[0].z+aabb.parameters[1].z) / 2.f;
       }
-      file.close();
    }
 
    // Load model faces
@@ -570,7 +597,7 @@ Vertex OBJReader::loadModelFromFile(
                {
                   if( line!=component )
                   {
-                     addLightComponent(kernel,solrVertices,objectPosition,objectCenter,objectScale,sketchupMaterial);
+                     addLightComponent(kernel,solrVertices,objectPosition,objectCenter,objectScale,sketchupMaterial,aabb);
                   }
                   component=line;
                }
@@ -716,20 +743,20 @@ Vertex OBJReader::loadModelFromFile(
       // Remaining SoL-R lights
       if( solrVertices.size()!=0 )
       {
-         addLightComponent(kernel,solrVertices,objectPosition,objectCenter,objectScale,sketchupMaterial);
+         addLightComponent(kernel,solrVertices,objectPosition,objectCenter,objectScale,sketchupMaterial,aabb);
       }
 
    }
-   Vertex objectSize;
-   objectSize.x = (maxPos.x - minPos.x)*objectScale.x;
-   objectSize.y = (maxPos.y - minPos.y)*objectScale.y;
-   objectSize.z = (maxPos.z - minPos.z)*objectScale.z;
+
+   objectSize.x = (aabb.parameters[1].x - aabb.parameters[0].x);
+   objectSize.y = (aabb.parameters[1].y - aabb.parameters[0].y);
+   objectSize.z = (aabb.parameters[1].z - aabb.parameters[0].z);
    
    LOG_INFO(1,"--------------------------------------------------------------------------------");
    LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
    LOG_INFO(1, "Nb Vertices: " << kernel.getNbActivePrimitives() );
-   LOG_INFO(1, "Min        : " << minPos.x << "," << minPos.y << "," << minPos.z );
-   LOG_INFO(1, "Max        : " << maxPos.x << "," << maxPos.y << "," << maxPos.z );
+   LOG_INFO(1, "Min        : " << aabb.parameters[0].x << "," << aabb.parameters[0].y << "," << aabb.parameters[0].z );
+   LOG_INFO(1, "Max        : " << aabb.parameters[1].x << "," << aabb.parameters[1].y << "," << aabb.parameters[1].z );
    LOG_INFO(1, "Center     : " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
    LOG_INFO(1, "Scale      : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
    LOG_INFO(1, "Object size: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );

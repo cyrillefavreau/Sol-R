@@ -114,13 +114,13 @@ public:
    void scalePrimitives( float scale, unsigned int from, unsigned int to );
 
    // Rotation
-   void rotatePrimitives( Vertex rotationCenter, Vertex angles, unsigned int from, unsigned int to );
-	void rotatePrimitive( CPUPrimitive& primitive, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles );
+   void rotatePrimitives( const Vertex& rotationCenter, const Vertex& angles );
+	void rotatePrimitive( CPUPrimitive& primitive, const Vertex& rotationCenter, const Vertex& cosAngles, const Vertex& sinAngles );
    void rotateBox( CPUBoundingBox& box, Vertex rotationCenter, Vertex cosAngles, Vertex sinAngles );
    Vertex getRotation() { return m_rotation; }
 
    // Translation
-   void translatePrimitives( Vertex translation, unsigned int from, unsigned int to );
+   void translatePrimitives( const Vertex& );
    Vertex getTranslation() { return m_translation; }
 
    // Morphing

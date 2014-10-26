@@ -55,7 +55,10 @@ public:
       bool loadMaterials,
       int  materialId,
       bool allSpheres,
-      bool autoCenter);
+      bool autoCenter,
+      CPUBoundingBox& aabb,
+      const bool& checkInAABB,
+      const CPUBoundingBox& inAABB);
 
 private:
    void addLightComponent(
@@ -64,5 +67,6 @@ private:
       const Vertex& center,
       const Vertex& objectCenter,
       const Vertex& objectScale,
-      const int material);
+      const int material,
+      CPUBoundingBox& aabb);
 };

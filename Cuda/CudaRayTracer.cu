@@ -564,6 +564,7 @@ __global__ void k_standardRenderer(
 
    bool antialiasingActivated=(sceneInfo.misc.w==2);
 
+#if 1
    if( postProcessingInfo.type.x!=ppe_depthOfField && sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
    {
       // Randomize view for natural depth of field
@@ -572,6 +573,7 @@ __global__ void k_standardRenderer(
       ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*a;
       ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*a;
    }
+#endif 
 
    float dof = 0.f;
    if(sceneInfo.misc.w==1) // Isometric 3D
@@ -617,11 +619,13 @@ __global__ void k_standardRenderer(
          color += c;
       }
    }
+#if 1
    else
    {
       r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
       r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
    }
+#endif //0
   color += launchRayTracing(
 	 index,
 	 BoundingBoxes, nbActiveBoxes,
