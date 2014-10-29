@@ -1451,6 +1451,7 @@ void GPUKernel::translatePrimitives( const Vertex& translation )
                primitive.p2.y += translation.y;
                primitive.p2.z += translation.z;
             }
+            updateBoundingBox(box);
          }
       }
    }

@@ -216,9 +216,6 @@ __device__ __INLINE__ float4 launchRayTracing(
          attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
          attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
          
-         // Primitive illumination
-         primitiveXYId.z = (materials[primitives[closestPrimitive].materialId.x].innerIllumination.x!=0.f) ? 1 : 0;
-         
          // Get object color
          rBlinn.w = attributes.y;
          colors[iteration] =
@@ -233,6 +230,17 @@ __device__ __INLINE__ float4 launchRayTracing(
             closestPrimitive, closestIntersection, areas, closestColor,
             iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
 
+#if 0
+         // TO REMOVE
+         float D=(length(closestIntersection-rayOrigin.origin)-postProcessingInfo.param2.x)/length(rayOrigin.direction);
+         attributes.y *= 1.f-D;
+         if(attributes.y<0.f) attributes.y=0.f;
+         if(attributes.y>1.f) attributes.y=1.f;
+#endif // 0
+
+         // Primitive illumination
+         float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
+         primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
 
          float segmentLength=length(closestIntersection-latestIntersection);
          latestIntersection=closestIntersection;
@@ -538,10 +546,10 @@ __global__ void k_standardRenderer(
    // Antialisazing
    float2 AArotatedGrid[4] =
    {
-      {  3.f,  5.f },
-      {  5.f, -3.f },
-      { -3.f, -5.f },
-      { -5.f,  3.f }
+      {  0.3f,  0.5f },
+      {  0.5f, -0.3f },
+      { -0.3f, -0.5f },
+      { -0.5f,  0.3f }
    };
 
    // Beware out of bounds error! \[^_^]/
