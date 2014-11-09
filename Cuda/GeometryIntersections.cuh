@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#define VOLUME_RENDERING_NORMALS
 
 // Project
 #include "VectorUtils.cuh"
@@ -717,6 +718,7 @@ ________________________________________________________________________________
 */
 __device__ __INLINE__ bool intersectionWithPrimitives(
 	const SceneInfo& sceneInfo,
+   const PostProcessingInfo& postProcessingInfo,
 	BoundingBox* boundingBoxes, const int& nbActiveBoxes,
 	Primitive* primitives, const int& nbActivePrimitives,
 	Material* materials, BitmapBuffer* textures,
@@ -803,6 +805,15 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
                   }
 
 				      float distance = length(intersection-r.origin);
+#ifdef BOOLEAN_OPERATOR
+                  // TO REMOVE
+                  Vertex wholeCenter={0.f,0.f,postProcessingInfo.param2.x};
+				      float distanceToCenter = length(intersection-wholeCenter);
+                  if( primitive.materialId.x%4!=0 ) 
+                     i &= (distanceToCenter>postProcessingInfo.param1.x);
+                  // TO REMOVE
+#endif // 0
+
 				      if( i && distance>EPSILON && distance<minDistance ) 
 				      {
 					      // Only keep intersection with the closest object
@@ -1159,7 +1170,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
 	bool i = false;
 	float shadowIntensity = 0.f;
 
-   const int MAXDEPTH=20;
+   const int MAXDEPTH=10;
    float4 colors[MAXDEPTH];
    for( int i(0); i<MAXDEPTH; ++i)
    {
@@ -1168,11 +1179,12 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       colors[i].z=0.f;
       colors[i].w=sceneInfo.viewDistance.x;
    }
-#if VOLUME_RENDERING_NORMALS
-   bool normals[MAXDEPTH];
+#ifdef VOLUME_RENDERING_NORMALS
+   int normals[MAXDEPTH];
    memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
 #endif // VOLUME_RENDERING_NORMALS
 
+   int nbIntersections=0;
    int cptBoxes = 0;
    while(cptBoxes<nbActiveBoxes)
 	{
@@ -1207,6 +1219,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
    		      float  dist = length(intersection-r.origin);
                if( dist>postProcessingInfo.param1.x )
                {
+                  ++nbIntersections;
                   float4 color=material.color;
                   if(sceneInfo.graphicsLevel.x!=0)
                   {
@@ -1235,17 +1248,21 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                   {
                      if( dist<colors[i].w )
                      {
+                        float a=dot(normalize(ray.direction-ray.origin),normal);
                         for( int j(MAXDEPTH-1); j>=i; --j)
                         {
                            colors[j+1]=colors[j];
-                           float a=dot(normalize(r.direction-r.origin),normal);
-                           colors[j] = color; //*(fabs(a));
-                           colors[j].w = dist;
-#if VOLUME_RENDERING_NORMALS
+#ifdef VOLUME_RENDERING_NORMALS
                            normals[j+1]=normals[j];
-                           normals[j] = (a<0.f);
 #endif // VOLUME_RENDERING_NORMALS
                         }
+                        colors[i].x = color.x*fabs(a);
+                        colors[i].y = color.y*fabs(a);
+                        colors[i].z = color.z*fabs(a);
+                        colors[i].w = dist;
+#ifdef VOLUME_RENDERING_NORMALS
+                        normals[i] = (a<0.f) ? -1 : 1;
+#endif // VOLUME_RENDERING_NORMALS
                         break;
                      }
                   }
@@ -1260,59 +1277,43 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       }
 	}
    
-#if VOLUME_RENDERING_NORMALS
-   float D=normals[0] ? 0.f : D=colors[0].w;
-   int C=normals[0] ? 1 : -1;
-#else
-   float D=colors[0].w;
-#endif // VOLUME_RENDERING_NORMALS
-   
-   float4 color=colors[0]*0.1f;
-   const int precision=500;
-   const float step=(sceneInfo.viewDistance.x-D)/float(precision);
-   float alpha=1.f/postProcessingInfo.param2.x;
-   int c=1;
-
-   for( int i(0); i<precision && c<MAXDEPTH-1; ++i)
+   float4 color=colors[0]*sceneInfo.backgroundColor.w;
+   if( nbIntersections>0 )
    {
-#if VOLUME_RENDERING_NORMALS
-      if(D<colors[c].w && C!=0)
-#else
-      if(D<colors[c].w)
-#endif // VOLUME_RENDERING_NORMALS
+      int N=0;
+      float D=colors[0].w;
+      const int precision=500;
+      const float step=sceneInfo.viewDistance.x/float(precision);
+      float alpha=1.f/postProcessingInfo.param2.x;
+      int c=0;
+      for( int i(0); i<precision && c<MAXDEPTH-1; ++i)
       {
-         color.x+=colors[c].x*alpha;
-         color.y+=colors[c].y*alpha;
-         color.z+=colors[c].z*alpha;
+         if(D>colors[c].w && N==0)
+         {
+            color.x+=colors[c].x*alpha;
+            color.y+=colors[c].y*alpha;
+            color.z+=colors[c].z*alpha;
+         }
+         D+=step;
+         if( D>=colors[c+1].w )
+         { 
+            ++c;
+#ifdef VOLUME_RENDERING_NORMALS
+            N+=normals[c];
+#endif // VOLUME_RENDERING_NORMALS
+         }
       }
-      D+=step;
-      if( D>=colors[c+1].w )
+      color.w = 0.f;
+      normalize(color);
+      /*
+      if(length(color)<sceneInfo.backgroundColor.w) 
       { 
-         ++c;
-#if VOLUME_RENDERING_NORMALS
-         C+=normals[c] ? 1 : -1;
-#endif // VOLUME_RENDERING_NORMALS
+         color.x=1.f; 
+         color.y=1.f; 
+         color.z=0.f; 
       }
+      */
    }
-#if 0
-   float D=0.f;
-   for( int i(1); i<MAXDEPTH; ++i)
-   {
-      if( i%2==1 )
-      {
-         D+=(colors[i].w-colors[i-1].w);
-      }
-      float alpha=D/postProcessingInfo.param2.x;
-      color.x += colors[i].x*alpha;
-      color.y += colors[i].y*alpha;
-      color.z += colors[i].z*alpha;
-   }
-   color.x += sceneInfo.backgroundColor.x;
-   color.y += sceneInfo.backgroundColor.y;
-   color.z += sceneInfo.backgroundColor.z;
-#endif // 0
-   color.w = 0.f;
-   normalize(color);
    color.w = colors[0].w;
    return color;
 }

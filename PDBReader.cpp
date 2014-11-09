@@ -216,6 +216,7 @@ Vertex PDBReader::loadAtomsFromFile(
 					if( atomName == elements[i].name )
 					{
 						found = true;
+                  LOG_INFO(1,"Found atom " << atomName );
 						switch( materialType )
 						{
 						case 1: 
@@ -232,6 +233,10 @@ Vertex PDBReader::loadAtomsFromFile(
 					}
 					++i;
 				}
+            if( !found )
+            {
+               LOG_ERROR("Could not find atom " << atomName );
+            }
 
 				if( geometryType!=gtBackbone || atom.isBackbone ) 
 				{

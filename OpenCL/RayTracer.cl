@@ -1950,6 +1950,7 @@ inline float4 intersectionsWithPrimitives(
    bool i = false;
    float shadowIntensity = 0.f;
 
+   int normals[MAXDEPTH];
    float4 colors[MAXDEPTH];
    for( int i=0; i<MAXDEPTH; ++i)
    {
@@ -1957,10 +1958,10 @@ inline float4 intersectionsWithPrimitives(
       colors[i].y=0.f;
       colors[i].z=0.f;
       colors[i].w=(*sceneInfo).viewDistance;
+      normals[i] = 0;
    }
-   //bool normals[MAXDEPTH];
-   //memset(&normals[0],0,sizeof(bool)*MAXDEPTH);
 
+   int nbIntersections=0;
    int cptBoxes = 0;
    while(cptBoxes<nbActiveBoxes)
    {
@@ -1995,7 +1996,9 @@ inline float4 intersectionsWithPrimitives(
                float  dist = length(intersection-r.origin);
                if( dist>(*postProcessingInfo).param1 )
                {
-                  float4 color=(*material).color*0.5f;
+                  ++nbIntersections;
+                  float4 color=(*material).color;
+#if 0
                   if(false && (*sceneInfo).graphicsLevel!=0)
                   {
                      color*=(1.f-(*material).transparency);
@@ -2019,19 +2022,23 @@ inline float4 intersectionsWithPrimitives(
                         (*box).startIndex+cptPrimitives, &intersection, areas, &closestColor,
                         0, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
                   }
+#endif // 0
                   for( int i=0; i<MAXDEPTH; ++i)
                   {
                      if( dist<colors[i].w )
                      {
+                        float a=dot(normalize(r.direction-r.origin),normal);
                         for( int j=MAXDEPTH-1; j>=i; --j)
                         {
                            colors[j+1]=colors[j];
-                           //normals[j+1]=normals[j];
-                           float a=dot(normalize(r.direction-r.origin),normal);
-                           colors[j] = color*(fabs(a));
-                           colors[j].w = dist;
-                           //normals[j] = (a>=0.f);
+                           normals[j+1]=normals[j];
                         }
+                        colors[i].x = color.x*fabs(a);
+                        colors[i].y = color.y*fabs(a);
+                        colors[i].z = color.z*fabs(a);
+                        
+                        colors[i].w = dist;
+                        normals[i] = (a>0.f) ? -1 : 1;
                         break;
                      }
                   }
@@ -2046,25 +2053,42 @@ inline float4 intersectionsWithPrimitives(
       }
    }
 
-   float D=0.f;
-   float4 color={0.f,0.f,0.f,0.f}; //colors[0];
+   float4 color=colors[0]*(*sceneInfo).backgroundColor.w;
+#if 0
+   if( nbIntersections>0 )
+   {
+      int N=0;
+      float D=0;
+      const int precision=1024;
+      const float step=(*sceneInfo).viewDistance/(float)precision;
+      float alpha=((*postProcessingInfo).param2!=0.f) ? 1.f/(100.f*(*postProcessingInfo).param2) : 1.f;
+      int c=0;
+      for( int i=0; i<precision && c<MAXDEPTH-1; ++i)
+      {
+         if(D>colors[c].w && N==0)
+         {
+            color.x+=colors[c].x*alpha;
+            color.y+=colors[c].y*alpha;
+            color.z+=colors[c].z*alpha;
+         }
+         D+=step;
+         if( D>=colors[c+1].w )
+         { 
+            ++c;
+            N+=normals[c];
+         }
+      }
+   }
+#else
+   float alpha=(*sceneInfo).backgroundColor.w;
    for( int i=1; i<MAXDEPTH; ++i)
    {
-      if( i%2==1 )
-      {
-         D+=(colors[i].w-colors[i-1].w);
-      }
-      float alpha=D/(*postProcessingInfo).param2;
-      color.x += colors[i].x*alpha;
-      color.y += colors[i].y*alpha;
-      color.z += colors[i].z*alpha;
+        color.x+=colors[i].x*alpha;
+        color.y+=colors[i].y*alpha;
+        color.z+=colors[i].z*alpha;
    }
-   color.x += (*sceneInfo).backgroundColor.x;
-   color.y += (*sceneInfo).backgroundColor.y;
-   color.z += (*sceneInfo).backgroundColor.z;
-   color.w = 0.f;
-   color  = normalize(color);
-   color.w = colors[0].w;
+#endif // 0
+   color.w=colors[0].w;
    return color;
 }
 

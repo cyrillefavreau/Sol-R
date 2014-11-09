@@ -5,9 +5,6 @@
  * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
  */
 
-// Raytracer features
-#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
-
 // System
 #include <iostream>
 
@@ -56,7 +53,7 @@ __device__ __INLINE__ float4 launchVolumeRendering(
    LightInformation* lightInformation, const int& lightInformationSize, const int& nbActiveLamps,
    Material*  materials, BitmapBuffer* textures,
    RandomBuffer*    randoms,
-   const Ray&       ray, 
+   const Ray&       ray,
    const SceneInfo& sceneInfo,
    const PostProcessingInfo& postProcessingInfo,
    float&           depthOfField,
@@ -127,7 +124,7 @@ __device__ __INLINE__ float4 launchRayTracing(
    primitiveXYId.z = 0;
    primitiveXYId.w = 0;
    int currentMaterialId=-2;
-
+   
    // TODO
    float  colorContributions[NB_MAX_ITERATIONS+1];
    float4 colors[NB_MAX_ITERATIONS+1];
@@ -166,7 +163,7 @@ __device__ __INLINE__ float4 launchRayTracing(
       if( carryon ) 
       {
          carryon = intersectionWithPrimitives(
-            sceneInfo,
+            sceneInfo, postProcessingInfo,
             boundingBoxes, nbActiveBoxes,
             primitives, nbActivePrimitives,
             materials, textures,
@@ -354,7 +351,7 @@ __device__ __INLINE__ float4 launchRayTracing(
    {
       // TODO: Dodgy implementation		
       if( intersectionWithPrimitives(
-         sceneInfo,
+         sceneInfo, postProcessingInfo,
          boundingBoxes, nbActiveBoxes,
          primitives, nbActivePrimitives,
          materials, textures,
@@ -390,7 +387,7 @@ __device__ __INLINE__ float4 launchRayTracing(
       {
          // Global illumination
          if( intersectionWithPrimitives(
-            sceneInfo,
+            sceneInfo, postProcessingInfo,
             boundingBoxes, nbActiveBoxes,
             primitives, nbActivePrimitives,
             materials, textures,
@@ -461,6 +458,16 @@ __device__ __INLINE__ float4 launchRayTracing(
    }
 
    float len=length(firstIntersection-ray.origin);
+   
+#ifdef DEPTH_TRANSPARENCY
+   // Transparency depending on distance and does not apply to light emitting materials
+   if( len<postProcessingInfo.param1.x && materials[primitives[closestPrimitive].materialId.x].innerIllumination.x==0.f)
+   {
+      intersectionColor /= 2.f;
+   }
+   // Transparency depending on distance
+#endif // DEPTH_TRANSPARENCY
+
    depthOfField = len;
    if( closestPrimitive != -1 )
    {
@@ -572,7 +579,7 @@ __global__ void k_standardRenderer(
 
    bool antialiasingActivated=(sceneInfo.misc.w==2);
 
-#if 1
+#ifdef NATURAL_DEPTHOFFIELD
    if( postProcessingInfo.type.x!=ppe_depthOfField && sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS )
    {
       // Randomize view for natural depth of field
@@ -581,7 +588,7 @@ __global__ void k_standardRenderer(
       ray.origin.x += randoms[rindex  ]*postProcessingBuffer[index].colorInfo.w*a;
       ray.origin.y += randoms[rindex+1]*postProcessingBuffer[index].colorInfo.w*a;
    }
-#endif 
+#endif // NATURAL_DEPTHOFFIELD
 
    float dof = 0.f;
    if(sceneInfo.misc.w==1) // Isometric 3D

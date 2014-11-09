@@ -35,7 +35,7 @@ const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 512;
 const int NB_MAX_FRAMES     = 512;
 const int NB_MAX_LIGHTINFORMATIONS = 512;
-const int MAX_BITMAP_WIDTH  = 2*1024;
+const int MAX_BITMAP_WIDTH  = 2*2048;
 const int MAX_BITMAP_HEIGHT = 2*2048;
 const int MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 
@@ -52,6 +52,11 @@ const int MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 #define REBOUND_EPSILON 0.00002f
 #define STANDARD_LUNINANCE_STRENGTH 0.1f
 #define SKYBOX_LUNINANCE_STRENGTH   0.2f
+//#define BOOLEAN_OPERATOR
+#define EXTENDED_GEOMETRY      // Includes spheres, cylinders, etc
+#define NATURAL_DEPTHOFFIELD
+//#define VOLUME_RENDERING_NORMALS
+//#define DEPTH_TRANSPARENCY
 
 // Skybox matrerials
 const int SKYBOX_FRONT_MATERIAL  = NB_MAX_MATERIALS-2;
