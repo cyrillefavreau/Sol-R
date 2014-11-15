@@ -535,9 +535,6 @@ Vertex OBJReader::loadModelFromFile(
       file.close();
    }
 
-   LOG_INFO(1, "AABB: (" << aabb.parameters[0].x << "," << aabb.parameters[0].y << "," << aabb.parameters[0].z << "),(" << aabb.parameters[1].x << "," << aabb.parameters[1].y << "," << aabb.parameters[1].z << ")" );
-   LOG_INFO(1, "inAABB: (" << inAABB.parameters[0].x << "," << inAABB.parameters[0].y << "," << inAABB.parameters[0].z << "),(" << inAABB.parameters[1].x << "," << inAABB.parameters[1].y << "," << inAABB.parameters[1].z << ")" );
-
    Vertex objectSize = {0.f,0.f,0.f};
    if( checkInAABB )
    {
@@ -748,9 +745,9 @@ Vertex OBJReader::loadModelFromFile(
 
    }
 
-   objectSize.x = (aabb.parameters[1].x - aabb.parameters[0].x);
-   objectSize.y = (aabb.parameters[1].y - aabb.parameters[0].y);
-   objectSize.z = (aabb.parameters[1].z - aabb.parameters[0].z);
+   objectSize.x = objectScale.x*(aabb.parameters[1].x - aabb.parameters[0].x);
+   objectSize.y = objectScale.y*(aabb.parameters[1].y - aabb.parameters[0].y);
+   objectSize.z = objectScale.z*(aabb.parameters[1].z - aabb.parameters[0].z);
    
    LOG_INFO(1,"--------------------------------------------------------------------------------");
    LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
@@ -760,6 +757,9 @@ Vertex OBJReader::loadModelFromFile(
    LOG_INFO(1, "Center     : " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z );
    LOG_INFO(1, "Scale      : " << objectScale.x << "," << objectScale.y << "," << objectScale.z );
    LOG_INFO(1, "Object size: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
+   LOG_INFO(1, "AABB       : (" << aabb.parameters[0].x << "," << aabb.parameters[0].y << "," << aabb.parameters[0].z << "),(" << aabb.parameters[1].x << "," << aabb.parameters[1].y << "," << aabb.parameters[1].z << ")" );
+   LOG_INFO(1, "inAABB     : (" << inAABB.parameters[0].x << "," << inAABB.parameters[0].y << "," << inAABB.parameters[0].z << "),(" << inAABB.parameters[1].x << "," << inAABB.parameters[1].y << "," << inAABB.parameters[1].z << ")" );
+
    LOG_INFO(1,"--------------------------------------------------------------------------------");
    return objectSize;
 }

@@ -216,7 +216,7 @@ Vertex PDBReader::loadAtomsFromFile(
 					if( atomName == elements[i].name )
 					{
 						found = true;
-                  LOG_INFO(1,"Found atom " << atomName );
+                  LOG_INFO(3,"Found atom " << atomName );
 						switch( materialType )
 						{
 						case 1: 

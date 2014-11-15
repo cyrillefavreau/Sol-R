@@ -940,7 +940,7 @@ int GPUKernel::processBoxes( const int boxSize, bool simulate )
          itb++;
       }
    }
-   LOG_INFO(1,"Maximum number of primitives per box=" << maxPrimitivesPerBox << " for level 0");
+   LOG_INFO(3,"Maximum number of primitives per box=" << maxPrimitivesPerBox << " for level 0");
    return static_cast<int>(maxPrimitivesPerBox);
 }
 
@@ -2221,7 +2221,7 @@ void GPUKernel::reorganizeLights()
                   LOG_INFO(3,"[Box " << (*it).first << "] Lamp " << i << "/" << m_nbActiveLamps[m_frame] << " = " << m_hLamps[i] << ", Primitive index=" << primitive.index.x );
                   if( m_hLamps[i]==primitive.index.x)
                   {
-                     LOG_INFO(1,"Lamp " << i << " FOUND" );
+                     LOG_INFO(3,"Lamp " << i << " FOUND" );
                      found = true;
                   }
                   ++i;
@@ -2229,7 +2229,7 @@ void GPUKernel::reorganizeLights()
 
                if( found )
                {
-                  LOG_INFO(1,"Add light information");
+                  LOG_INFO(3,"Add light information");
                   LightInformation lightInformation;
                   lightInformation.location.x = primitive.p0.x;
                   lightInformation.location.y = primitive.p0.y;
@@ -2241,7 +2241,7 @@ void GPUKernel::reorganizeLights()
                   lightInformation.color.z = material.color.z;
                   lightInformation.color.w = 0.f; // not used
 
-                  LOG_INFO(1,
+                  LOG_INFO(3,
                      "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << "," <<
                      m_lightInformation[m_lightInformationSize].attribute.y << ":" <<
                      m_lightInformation[m_lightInformationSize].location.x << "," <<
