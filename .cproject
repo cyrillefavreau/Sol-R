@@ -155,14 +155,10 @@
 			</storageModule>
 			<storageModule moduleId="com.nvidia.cuda.ide.build.project.ICudaProjectConfiguration">
 				<executable devicelink="false">
-					<ptx major="3" minor="0"/>
 					<ptx major="3" minor="5"/>
-					<sass major="3" minor="0"/>
 					<sass major="3" minor="5"/>
-					<ptx major="2" minor="0"/>
-					<sass major="2" minor="0"/>
 				</executable>
-				<editor-arch major="3" minor="0"/>
+				<editor-arch major="3" minor="5"/>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
@@ -210,4 +206,5 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

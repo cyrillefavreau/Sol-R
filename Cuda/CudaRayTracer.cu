@@ -379,6 +379,7 @@ __device__ __INLINE__ float4 launchRayTracing(
       }
    }
 
+   depthOfField = sceneInfo.viewDistance.x;
    bool test(true);
    if((sceneInfo.parameters.z==aiGlobalIllumination || sceneInfo.parameters.z==aiAdvancedGlobalIllumination) && 
       sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
@@ -420,6 +421,7 @@ __device__ __INLINE__ float4 launchRayTracing(
                   closestIntersection, areas, closestColor,
                   iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
             }
+            depthOfField=length(firstIntersection-ray.origin);
          }
          else
          {
@@ -456,36 +458,24 @@ __device__ __INLINE__ float4 launchRayTracing(
    {
       intersectionColor = colors[0];
    }
-
-   float len=length(firstIntersection-ray.origin);
    
 #ifdef DEPTH_TRANSPARENCY
    // Transparency depending on distance and does not apply to light emitting materials
-   if( len<postProcessingInfo.param1.x && materials[primitives[closestPrimitive].materialId.x].innerIllumination.x==0.f)
+   if( depthOfField<postProcessingInfo.param1.x && materials[primitives[closestPrimitive].materialId.x].innerIllumination.x==0.f)
    {
       intersectionColor /= 2.f;
    }
    // Transparency depending on distance
 #endif // DEPTH_TRANSPARENCY
 
-   depthOfField = len;
-   if( closestPrimitive != -1 )
-   {
-      Primitive& primitive=primitives[closestPrimitive];
-      if( materials[primitive.materialId.x].attributes.z==1 ) // Wireframe
-      {
-         len = sceneInfo.viewDistance.x;
-      }
-   }
-
    // --------------------------------------------------
    // Background color
    // --------------------------------------------------
    float D1 = sceneInfo.viewDistance.x*0.95f;
-   if( sceneInfo.misc.z==1 && len>D1)
+   if( sceneInfo.misc.z==1 && depthOfField>D1)
    {
       float D2 = sceneInfo.viewDistance.x*0.05f;
-      float a = len - D1;
+      float a = depthOfField - D1;
       float b = 1.f-(a/D2);
       intersectionColor = intersectionColor*b + sceneInfo.backgroundColor*(1.f-b);
    }
@@ -1489,7 +1479,7 @@ __global__ void k_radiosity(
 /*
 ________________________________________________________________________________
 
-Post Processing Effect: Radiosity
+Post Processing Effect: Filters
 ________________________________________________________________________________
 */
 __global__ void k_filter(
@@ -1603,9 +1593,58 @@ __global__ void k_filter(
    }
 
    saturateVector( color );
-   localColor.w = 1.f;
+   color.w = 1.f;
 
    makeColor( sceneInfo, color, bitmap, index ); 
+}
+
+/*
+________________________________________________________________________________
+
+Post Processing Effect: Filters
+________________________________________________________________________________
+*/
+__global__ void k_cartoon(
+   const int2            occupancyParameters,
+   SceneInfo             sceneInfo,
+   PostProcessingInfo    postProcessingInfo,
+   PostProcessingBuffer* postProcessingBuffer,
+   BitmapBuffer*         bitmap)
+{
+   int x = blockDim.x*blockIdx.x + threadIdx.x;
+   int y = blockDim.y*blockIdx.y + threadIdx.y;
+   int index = y*sceneInfo.size.x+x;
+
+   // Beware out of bounds error! \[^_^]/
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
+
+   float4 color=postProcessingBuffer[index].colorInfo;
+
+   const float4 colormap[10] =
+   {
+	  { 0.8f, 0.7f, 0.7f, 0.f },
+	  { 0.7f, 0.7f, 0.7f, 0.f },
+	  { 0.7f, 0.7f, 0.9f, 0.f },
+	  { 0.9f, 0.4f, 0.4f, 0.f },
+	  { 0.9f, 0.9f, 0.9f, 0.f },
+	  { 0.0f, 0.5f, 0.6f, 0.f },
+	  { 0.0f, 0.0f, 0.7f, 0.f },
+	  { 0.8f, 0.6f, 0.3f, 0.f },
+	  { 0.9f, 0.8f, 0.4f, 0.f },
+	  { 0.9f, 0.3f, 0.3f, 0.f }
+   };
+
+   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
+      color /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
+
+   color.w = 0.f;
+   normalize(color);
+   int l = length(color)*10;
+   color = colormap[l];
+   saturateVector( color );
+   color.w = 1.f;
+
+   makeColor( sceneInfo, color, bitmap, index );
 }
 
 extern "C" void reshape_scene(
@@ -2178,6 +2217,14 @@ extern "C" void cudaRender(
             occupancyParameters,
             sceneInfo, 
             postProcessingInfo, 
+            d_postProcessingBuffer[device],
+            d_bitmap[device] );
+         break;
+      case ppe_cartoon:
+         k_cartoon<<<grid,blocks,0,d_streams[device][0]>>>(
+            occupancyParameters,
+            sceneInfo,
+            postProcessingInfo,
             d_postProcessingBuffer[device],
             d_bitmap[device] );
          break;
