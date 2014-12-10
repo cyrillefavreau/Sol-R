@@ -367,7 +367,7 @@ Vertex PDBReader::loadAtomsFromFile(
          bool addAtom( true );
 
          int m = atom.materialId;
-			if( useModels && (atom.chainId%2==chainSelection) )
+			if( !useModels /*&& (atom.chainId%2==chainSelection)*/ )
 			{
             //addAtom = false;
             radius = stickRadius;

@@ -141,6 +141,7 @@ __device__ __INLINE__ float4 launchRayTracing(
    float4 colorBox = {0.f,0.f,0.f,0.f};
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
+   depthOfField = sceneInfo.viewDistance.x;
   
    // Reflected rays
    int reflectedRays=-1;
@@ -177,6 +178,12 @@ __device__ __INLINE__ float4 launchRayTracing(
       {
          currentMaterialId = primitives[closestPrimitive].materialId.x;
 
+         Vertex attributes;
+         attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
+         attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
+         attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
+         attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
+         
          if( iteration==0 )
          {
             colors[iteration].x = 0.f;
@@ -187,6 +194,7 @@ __device__ __INLINE__ float4 launchRayTracing(
 
             firstIntersection = closestIntersection;
             latestIntersection=closestIntersection;
+            depthOfField=length(firstIntersection-ray.origin);
 
             if( sceneInfo.parameters.z==aiGlobalIllumination || sceneInfo.parameters.z==aiAdvancedGlobalIllumination )
             {
@@ -200,19 +208,13 @@ __device__ __INLINE__ float4 launchRayTracing(
                float cos_theta = dot(normalize(pathTracingRay.direction),normal);
                if(cos_theta<0.f) pathTracingRay.direction=-pathTracingRay.direction;
                pathTracingRay.direction+=closestIntersection;
-               pathTracingRatio=fabs(cos_theta);
+               pathTracingRatio=(1.f-attributes.y)*fabs(cos_theta);
             }
 
             // Primitive ID for current pixel
             primitiveXYId.x = primitives[closestPrimitive].index.x;
          }
 
-         Vertex attributes;
-         attributes.x=materials[primitives[closestPrimitive].materialId.x].reflection.x;
-         attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
-         attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
-         attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
-         
          // Get object color
          rBlinn.w = attributes.y;
          colors[iteration] =
@@ -379,7 +381,6 @@ __device__ __INLINE__ float4 launchRayTracing(
       }
    }
 
-   depthOfField = sceneInfo.viewDistance.x;
    bool test(true);
    if((sceneInfo.parameters.z==aiGlobalIllumination || sceneInfo.parameters.z==aiAdvancedGlobalIllumination) && 
       sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
@@ -421,7 +422,6 @@ __device__ __INLINE__ float4 launchRayTracing(
                   closestIntersection, areas, closestColor,
                   iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
             }
-            depthOfField=length(firstIntersection-ray.origin);
          }
          else
          {
@@ -543,10 +543,10 @@ __global__ void k_standardRenderer(
    // Antialisazing
    float2 AArotatedGrid[4] =
    {
-      {  0.3f,  0.5f },
-      {  0.5f, -0.3f },
-      { -0.3f, -0.5f },
-      { -0.5f,  0.3f }
+      {  3.f,  5.f },
+      {  5.f, -3.f },
+      { -3.f, -5.f },
+      { -5.f,  3.f }
    };
 
    // Beware out of bounds error! \[^_^]/
@@ -607,8 +607,8 @@ __global__ void k_standardRenderer(
    {
       for( int I=0; I<4; ++I )
       {
-         r.direction.x = ray.direction.x + AArotatedGrid[I].x;
-         r.direction.y = ray.direction.y + AArotatedGrid[I].y;
+         r.origin.x += AArotatedGrid[I].x;
+         r.origin.y += AArotatedGrid[I].y;
          float4 c;
 		c=launchRayTracing(
 		   index,
@@ -624,13 +624,14 @@ __global__ void k_standardRenderer(
          color += c;
       }
    }
-#if 1
-   else
+   else if(sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
    {
-      r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
-      r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
+      // Antialiazing
+      r.direction.x += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
+      r.direction.y += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
+      //r.origin.x += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
+      //r.origin.y += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
    }
-#endif //0
   color += launchRayTracing(
 	 index,
 	 BoundingBoxes, nbActiveBoxes,
@@ -1332,7 +1333,7 @@ __global__ void k_depthOfField(
    for( int i=0; i<postProcessingInfo.param3.x; ++i )
    {
       int ix = i%wh;
-      int iy = (i+100)%wh;
+      int iy = (i+1000)%wh;
       int xx = x+depth*randoms[ix]*postProcessingInfo.param2.x;
       int yy = y+depth*randoms[iy]*postProcessingInfo.param2.x;
       if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
@@ -1618,29 +1619,8 @@ __global__ void k_cartoon(
    // Beware out of bounds error! \[^_^]/
    if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
 
-   float4 color=postProcessingBuffer[index].colorInfo;
-
-   const float4 colormap[10] =
-   {
-	  { 0.8f, 0.7f, 0.7f, 0.f },
-	  { 0.7f, 0.7f, 0.7f, 0.f },
-	  { 0.7f, 0.7f, 0.9f, 0.f },
-	  { 0.9f, 0.4f, 0.4f, 0.f },
-	  { 0.9f, 0.9f, 0.9f, 0.f },
-	  { 0.0f, 0.5f, 0.6f, 0.f },
-	  { 0.0f, 0.0f, 0.7f, 0.f },
-	  { 0.8f, 0.6f, 0.3f, 0.f },
-	  { 0.9f, 0.8f, 0.4f, 0.f },
-	  { 0.9f, 0.3f, 0.3f, 0.f }
-   };
-
-   if(sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS)
-      color /= (float)(sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1);
-
-   color.w = 0.f;
-   normalize(color);
-   int l = length(color)*10;
-   color = colormap[l];
+   float  depth=sceneInfo.viewDistance.x/fabs(postProcessingBuffer[index].colorInfo.w-postProcessingInfo.param1.x);
+   float4 color = { depth, depth, depth, 0.f };
    saturateVector( color );
    color.w = 1.f;
 

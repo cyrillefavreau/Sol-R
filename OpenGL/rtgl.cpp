@@ -286,7 +286,7 @@ void RayTracer::glRasterPos2f (GLfloat x, GLfloat y)
 
 void RayTracer::glRasterPos3f(GLfloat x, GLfloat y, GLfloat z)
 {
-   TODO: ::glRasterPos3f(x,y,z);
+   ::glRasterPos3f(x,y,z);
 }
 
 void RayTracer::glTexParameterf (GLenum target, GLenum pname, GLfloat param)

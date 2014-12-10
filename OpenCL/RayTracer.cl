@@ -1950,7 +1950,7 @@ inline float4 intersectionsWithPrimitives(
    bool i = false;
    float shadowIntensity = 0.f;
 
-   int normals[MAXDEPTH];
+   //int normals[MAXDEPTH];
    float4 colors[MAXDEPTH];
    for( int i=0; i<MAXDEPTH; ++i)
    {
@@ -1958,7 +1958,7 @@ inline float4 intersectionsWithPrimitives(
       colors[i].y=0.f;
       colors[i].z=0.f;
       colors[i].w=(*sceneInfo).viewDistance;
-      normals[i] = 0;
+      //normals[i] = 0;
    }
 
    int nbIntersections=0;
@@ -1993,7 +1993,7 @@ inline float4 intersectionsWithPrimitives(
             }
             if(i)
             {
-               float  dist = length(intersection-r.origin);
+               float dist = length(intersection-r.origin);
                if( dist>(*postProcessingInfo).param1 )
                {
                   ++nbIntersections;
@@ -2027,20 +2027,30 @@ inline float4 intersectionsWithPrimitives(
                   {
                      if( dist<colors[i].w )
                      {
-                        float a=dot(normalize(r.direction-r.origin),normal);
+                        float a=fabs(dot(normalize(r.direction-r.origin),normal));
+                        a *= dist/(*sceneInfo).viewDistance;
                         for( int j=MAXDEPTH-1; j>=i; --j)
                         {
                            colors[j+1]=colors[j];
-                           normals[j+1]=normals[j];
+                           //normals[j+1]=normals[j];
                         }
-                        colors[i].x = color.x*fabs(a);
-                        colors[i].y = color.y*fabs(a);
-                        colors[i].z = color.z*fabs(a);
-                        
+                        colors[i] = color*a;
                         colors[i].w = dist;
-                        normals[i] = (a>0.f) ? -1 : 1;
+                        //normals[i] = (a>0.f) ? -1 : 1;
                         break;
                      }
+                     /*
+                     for( int j=0; j<MAXDEPTH-1; ++j)
+                     {
+                        if( fabs(colors[j+1].w - colors[j].w) < (*postProcessingInfo).param2*10.f)
+                        {
+                            colors[i].x = 1.f;
+                            colors[i].y = 1.f;
+                            colors[i].z = 0.f;
+                            break;
+                        }
+                     }
+                     */
                   }
                }
             }
@@ -2053,7 +2063,7 @@ inline float4 intersectionsWithPrimitives(
       }
    }
 
-   float4 color=colors[0]*(*sceneInfo).backgroundColor.w;
+   //float4 color=colors[0]*(*sceneInfo).backgroundColor.w;
 #if 0
    if( nbIntersections>0 )
    {
@@ -2067,9 +2077,7 @@ inline float4 intersectionsWithPrimitives(
       {
          if(D>colors[c].w && N==0)
          {
-            color.x+=colors[c].x*alpha;
-            color.y+=colors[c].y*alpha;
-            color.z+=colors[c].z*alpha;
+            color += colors[c] * alpha;
          }
          D+=step;
          if( D>=colors[c+1].w )
@@ -2080,12 +2088,10 @@ inline float4 intersectionsWithPrimitives(
       }
    }
 #else
-   float alpha=(*sceneInfo).backgroundColor.w;
-   for( int i=1; i<MAXDEPTH; ++i)
+   float4 color= {0.f,0.f,0.f,0.f}; //colors[0]*(*sceneInfo).backgroundColor.w;
+   for( int i=0; i<MAXDEPTH; ++i)
    {
-        color.x+=colors[i].x*alpha;
-        color.y+=colors[i].y*alpha;
-        color.z+=colors[i].z*alpha;
+        color += colors[i]*(*sceneInfo).backgroundColor.w;
    }
 #endif // 0
    color.w=colors[0].w;
@@ -2208,6 +2214,8 @@ inline float4 launchRayTracing(
    int currentMaxIteration = ( (*sceneInfo).graphicsLevel<3 ) ? 1 : (*sceneInfo).nbRayIterations+(*sceneInfo).pathTracingIteration;
    currentMaxIteration = (currentMaxIteration>NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 
+   (*depthOfField) = (*sceneInfo).viewDistance;
+
    while( iteration<currentMaxIteration && rayLength<(*sceneInfo).viewDistance && carryon ) 
    {
       Vertex areas = {0.f,0.f,0.f,0.f};
@@ -2239,6 +2247,7 @@ inline float4 launchRayTracing(
 
             firstIntersection=closestIntersection;
             latestIntersection=closestIntersection;
+  	        (*depthOfField) = length(firstIntersection - (*ray).origin);
 
             if((*sceneInfo).parameters.z==aiGlobalIllumination || (*sceneInfo).parameters.z==aiAdvancedGlobalIllumination)
             {
@@ -2463,6 +2472,7 @@ inline float4 launchRayTracing(
                   &closestIntersection, areas, &closestColor,
                   iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
                pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
+               (*depthOfField) = length(firstIntersection - (*ray).origin);
             }
          }
          else
@@ -2501,25 +2511,14 @@ inline float4 launchRayTracing(
       intersectionColor = colors[0];
    }
 
-   float len = length(firstIntersection - (*ray).origin);
-   (*depthOfField) = len;
-   if( closestPrimitive != -1 )
-   {
-      CONST Primitive* primitive=&primitives[closestPrimitive];
-      if( materials[(*primitive).materialId].attributes.z == 1 ) // Wireframe
-      {
-         len = (*sceneInfo).viewDistance;
-      }
-   }
-
    // --------------------------------------------------
    // Background color
    // --------------------------------------------------
    float D1 = (*sceneInfo).viewDistance*0.95f;
-   if( (*sceneInfo).misc.z==1 && len>D1)
+   if( (*sceneInfo).misc.z==1 && (*depthOfField)>D1)
    {
       float D2 = (*sceneInfo).viewDistance*0.05f;
-      float a = len - D1;
+      float a = (*depthOfField) - D1;
       float b = 1.f-(a/D2);
       intersectionColor = intersectionColor*b + (*sceneInfo).backgroundColor*(1.f-b);
    }
@@ -3475,3 +3474,33 @@ __kernel void k_filter(
 
    makeColor( &sceneInfo, &color, bitmap, index ); 
 }
+
+/*
+________________________________________________________________________________
+
+Post Processing Effect: Filters
+________________________________________________________________________________
+*/
+__kernel void k_cartoon(
+   const int2                     occupancyParameters,
+   SceneInfo                      sceneInfo,
+   PostProcessingInfo             postProcessingInfo,
+   CONST PostProcessingBuffer*    postProcessingBuffer,
+   __global BitmapBuffer*         bitmap) 
+{
+   int x = get_global_id(0);
+   int y = get_global_id(1);
+   int index = y*sceneInfo.size.x+x;
+   // Beware out of bounds error!
+   if( index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ) return;
+
+   float  depth=1.f-fabs(postProcessingBuffer[index].colorInfo.w-postProcessingInfo.param1)/sceneInfo.viewDistance;
+   float4 color = { depth, depth, depth, 0.f };
+
+   saturateVector( &color );
+
+   color.w = 1.f;
+
+   makeColor( &sceneInfo, &color, bitmap, index ); 
+}
+

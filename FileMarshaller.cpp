@@ -82,8 +82,9 @@ Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
             center.x+primitive.p1.x, center.y+primitive.p1.y, center.z+primitive.p1.z,
             center.x+primitive.p2.x, center.y+primitive.p2.y, center.z+primitive.p2.z,
             primitive.size.x, primitive.size.y, primitive.size.z,
-            primitive.materialId );
+            41+primitive.materialId );
          kernel.setPrimitiveBellongsToModel(n,true);
+         kernel.setPrimitiveIsMovable(n,false);
          kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
          kernel.setPrimitiveTextureCoordinates( n, primitive.vt0, primitive.vt1, primitive.vt2 );
 

@@ -104,6 +104,7 @@ private:
 	cl_kernel        m_kAmbientOcclusion;
 	cl_kernel        m_kRadiosity;
 	cl_kernel        m_kFilter;
+   cl_kernel        m_kCartoon;
 
 private:
 
