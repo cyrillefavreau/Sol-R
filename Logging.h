@@ -49,7 +49,7 @@ inline std::string getTimestamp()
 	   { \
          if( __level==1) {\
 			   std::stringstream __s; \
-			   __s << "[INFO]  " << __msg; \
+            __s << getTimestamp() << " [" << GetCurrentThreadId() << "] [INFO]  " << __msg; \
    			OutputDebugString(__s.str().c_str()); \
          }\
 	   }
@@ -57,7 +57,7 @@ inline std::string getTimestamp()
 	#define LOG_ERROR( __msg ) \
 	   { \
 		  std::stringstream __s; \
-		  __s << "[ERROR] " << __msg; \
+		  __s << getTimestamp() << " [" << GetCurrentThreadId() << "] [ERROR] " << __msg; \
 		  OutputDebugString(__s.str().c_str()); \
 	   }
 #endif // 0

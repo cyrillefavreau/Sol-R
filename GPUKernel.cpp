@@ -2944,7 +2944,6 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int width,c
 #endif
       sceneInfo.pathTracingIteration.x=i;
       m_sceneInfo=sceneInfo;
-      LOG_INFO(1,"Rendering frame " << i << "...");
       render_begin(0);
       render_end();
       LOG_INFO(1,"Frame " << i << " rendered!");

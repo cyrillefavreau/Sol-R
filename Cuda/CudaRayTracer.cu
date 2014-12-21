@@ -229,17 +229,9 @@ __device__ __INLINE__ float4 launchRayTracing(
             closestPrimitive, closestIntersection, areas, closestColor,
             iteration, refractionFromColor, shadowIntensity, rBlinn, attributes );
 
-#if 0
-         // TO REMOVE
-         float D=(length(closestIntersection-rayOrigin.origin)-postProcessingInfo.param2.x)/length(rayOrigin.direction);
-         attributes.y *= 1.f-D;
-         if(attributes.y<0.f) attributes.y=0.f;
-         if(attributes.y>1.f) attributes.y=1.f;
-#endif // 0
-
          // Primitive illumination
-         float colorLight=colors[iteration].x+colors[iteration].y+colors[iteration].z;
-         primitiveXYId.z += (colorLight>sceneInfo.transparentColor.x) ? 16 : 0;
+         Material& material=materials[primitives[closestPrimitive].materialId.x];
+         primitiveXYId.z += material.innerIllumination.x*256;
 
          float segmentLength=length(closestIntersection-latestIntersection);
          latestIntersection=closestIntersection;
@@ -1454,23 +1446,23 @@ __global__ void k_radiosity(
 
    int div = (sceneInfo.pathTracingIteration.x>NB_MAX_ITERATIONS) ? (sceneInfo.pathTracingIteration.x-NB_MAX_ITERATIONS+1) : 1;
 
-   float4 localColor = {0.f,0.f,0.f};
+   float4 localColor = {0.f,0.f,0.f,0.f};
    for( int i=0; i<postProcessingInfo.param3.x; ++i )
    {
       int ix = (i+sceneInfo.misc.y+sceneInfo.pathTracingIteration.x)%wh;
-      int iy = (i+sceneInfo.misc.y+sceneInfo.size.x)%wh;
+      int iy = (i+sceneInfo.misc.y+100+sceneInfo.pathTracingIteration.x)%wh;
       int xx = x+randoms[ix]*postProcessingInfo.param2.x;
       int yy = y+randoms[iy]*postProcessingInfo.param2.x;
       localColor += postProcessingBuffer[index].colorInfo;
       if( xx>=0 && xx<sceneInfo.size.x && yy>=0 && yy<sceneInfo.size.y )
       {
          int localIndex = yy*sceneInfo.size.x+xx;
-         localColor += ( localIndex>=0 && localIndex<wh ) ? div*primitiveXYIds[localIndex].z/255 : 0.f;
+         float4 lightColor = postProcessingBuffer[localIndex].colorInfo;
+         localColor += 2.f*lightColor*float(primitiveXYIds[localIndex].z)/256.f;
       }
    }
    localColor /= postProcessingInfo.param3.x;
    localColor /= div;
-
    saturateVector( localColor );
    localColor.w = 1.f;
 

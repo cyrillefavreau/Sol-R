@@ -555,7 +555,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
    double& out_innerIllumination, double& out_illuminationDiffusion, double& out_illuminationPropagation,
    int&    out_fastTransparency)
 {
-   LOG_INFO(3,"RayTracer_GetMaterial");
+   LOG_INFO(1,"RayTracer_GetMaterial(" << in_index << ")" );
    float color_r,color_g,color_b, noise, reflection, refraction, transparency, opacity;
    float specValue, specPower, specCoef, innerIllumination, illuminationDiffusion, illuminationPropagation;
    bool  procedural;

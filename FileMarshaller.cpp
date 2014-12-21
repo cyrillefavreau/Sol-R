@@ -82,7 +82,7 @@ Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
             center.x+primitive.p1.x, center.y+primitive.p1.y, center.z+primitive.p1.z,
             center.x+primitive.p2.x, center.y+primitive.p2.y, center.z+primitive.p2.z,
             primitive.size.x, primitive.size.y, primitive.size.z,
-            41+primitive.materialId );
+            primitive.materialId );
          kernel.setPrimitiveBellongsToModel(n,true);
          kernel.setPrimitiveIsMovable(n,false);
          kernel.setPrimitiveNormals( n, primitive.n0, primitive.n1, primitive.n2 );
@@ -167,7 +167,7 @@ Vertex FileMarshaller::loadFromFile( GPUKernel& kernel, const std::string& filen
    returnValue.z = fabs( max.z - min.z );
 
    // Resize to fit required size
-   float ratio = scale / std::max(returnValue.x,std::max(returnValue.y,returnValue.z));
+   float ratio = scale / returnValue.y; // std::max(returnValue.x,std::max(returnValue.y,returnValue.z));
    kernel.scalePrimitives( ratio, 0, NB_MAX_BOXES );
 
    LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z );
