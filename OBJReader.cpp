@@ -1,9 +1,9 @@
 /* 
- * Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
- */
+* Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+* Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
+*/
 
 #include <fstream>
 #include <map>
@@ -43,9 +43,9 @@ Vertex readVertex( const std::string& value )
       {
          switch( item )
          {
-            case 0: returnValue.x = static_cast<float>(atof(tmp.c_str())); break;
-            case 1: returnValue.y = static_cast<float>(atof(tmp.c_str())); break;
-            case 2: returnValue.z = static_cast<float>(atof(tmp.c_str())); break;
+         case 0: returnValue.x = static_cast<float>(atof(tmp.c_str())); break;
+         case 1: returnValue.y = static_cast<float>(atof(tmp.c_str())); break;
+         case 2: returnValue.z = static_cast<float>(atof(tmp.c_str())); break;
          }
          ++item;
          tmp = "";
@@ -67,9 +67,9 @@ int4 readFloat3( const std::string& face )
       {
          switch( item )
          {
-            case 0: returnValue.x = atoi(value.c_str()); break;
-            case 1: returnValue.y = atoi(value.c_str()); break;
-            case 2: returnValue.z = atoi(value.c_str()); break;
+         case 0: returnValue.x = atoi(value.c_str()); break;
+         case 1: returnValue.y = atoi(value.c_str()); break;
+         case 2: returnValue.z = atoi(value.c_str()); break;
          }
          ++item;
          value = "";
@@ -91,9 +91,9 @@ int4 readFace( const std::string& face )
       {
          switch( item )
          {
-            case 0: returnValue.x = (atoi(value.c_str())); break;
-            case 1: returnValue.y = (atoi(value.c_str())); break;
-            case 2: returnValue.z = (atoi(value.c_str())); break;
+         case 0: returnValue.x = (atoi(value.c_str())); break;
+         case 1: returnValue.y = (atoi(value.c_str())); break;
+         case 2: returnValue.z = (atoi(value.c_str())); break;
          }
          ++item;
          value = "";
@@ -104,9 +104,9 @@ int4 readFace( const std::string& face )
    {
       switch( item )
       {
-         case 0: returnValue.x = (atoi(value.c_str())); break;
-         case 1: returnValue.y = (atoi(value.c_str())); break;
-         case 2: returnValue.z = (atoi(value.c_str())); break;
+      case 0: returnValue.x = (atoi(value.c_str())); break;
+      case 1: returnValue.y = (atoi(value.c_str())); break;
+      case 2: returnValue.z = (atoi(value.c_str())); break;
       }
    }
 
@@ -145,9 +145,9 @@ unsigned int OBJReader::loadMaterialsFromFile(
             if( id.length() != 0 )
             {
                MaterialMTL& m = materials[id];
-               
+
                // Grey material is reflective!!! :-)
-               if(m.Kd.x>0.4f && m.Kd.x>0.6f && fabs(m.Kd.x-m.Kd.y)<0.01f && fabs(m.Kd.y-m.Kd.z)<0.01f) m.reflection=0.5f;
+               //if(m.Kd.x>0.4f && m.Kd.x>0.6f && fabs(m.Kd.x-m.Kd.y)<0.01f && fabs(m.Kd.y-m.Kd.z)<0.01f) m.reflection=0.5f;
 
                // Add material to kernel
                kernel.setMaterial(
@@ -253,7 +253,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
             }
          }
 
-         if( line.find("d")==0 || line.find("Tr")==0 )
+         if( /*line.find("d")==0 ||*/ line.find("Tr")==0 )
          {
             // Specular values
             line = line.substr(2);
@@ -300,7 +300,7 @@ unsigned int OBJReader::loadMaterialsFromFile(
          MaterialMTL& m = materials[id];
 
          // Grey material is reflective!!! :-)
-         if(m.Kd.x>0.4f && m.Kd.x>0.6f && fabs(m.Kd.x-m.Kd.y)<0.01f && fabs(m.Kd.y-m.Kd.z)<0.01f) m.reflection=0.5f;
+         //if(m.Kd.x>0.4f && m.Kd.x>0.6f && fabs(m.Kd.x-m.Kd.y)<0.01f && fabs(m.Kd.y-m.Kd.z)<0.01f) m.reflection=0.5f;
 
          // Add material to kernel
          kernel.setMaterial(
@@ -357,7 +357,7 @@ void OBJReader::addLightComponent(
       lightCenter.z = (aabb.parameters[1].z+aabb.parameters[0].z)/2.f;
       Vertex L={aabb.parameters[1].x-aabb.parameters[0].x,aabb.parameters[1].y-aabb.parameters[0].y,aabb.parameters[1].z-aabb.parameters[0].z};
       float radius = sqrt(L.x*L.x+L.y*L.y+L.z*L.z)/2.f;
-                  
+
       int nbPrimitives = kernel.addPrimitive( ptSphere );
       LOG_INFO(1,"Adding SoL-R light [" << material << "] to primitive " << nbPrimitives << " (" << lightCenter.x << "," << lightCenter.y << "," << lightCenter.z << ") r=" << radius );
       kernel.setPrimitive( 
@@ -387,17 +387,15 @@ Vertex OBJReader::loadModelFromFile(
    const CPUBoundingBox& inAABB)
 {
    LOG_INFO(1,"Loading OBJ file " << filename );
+
    std::map<int,Vertex> vertices;
    std::map<int,Vertex> normals;
    std::map<int,Vertex> textureCoordinates;
    std::map<std::string,MaterialMTL> materials;
 
-   aabb.parameters[0].x = 100000.f;
-   aabb.parameters[0].y = 100000.f;
-   aabb.parameters[0].z = 100000.f;
-   aabb.parameters[1].x = -100000.f;
-   aabb.parameters[1].y = -100000.f;
-   aabb.parameters[1].z = -100000.f;
+   int index_vertices(1);
+   int index_normals(1);
+   int index_textureCoordinates(1);
 
    std::string noExtFilename(filename);
    size_t pos(noExtFilename.find(".obj"));
@@ -411,9 +409,59 @@ Vertex OBJReader::loadModelFromFile(
    std::string modelFilename(noExtFilename);
    modelFilename += ".obj";
 
-   int index_vertices(1);
-   int index_normals(1);
-   int index_textureCoordinates(1);
+   Vertex objectSize = {0.f,0.f,0.f};
+#if 0
+   std::ifstream file(filename.c_str());
+   if( file.is_open() )
+   {
+      while( file.good() )
+      {
+         std::string id;
+         file >> id;
+         if(id[0]=='v' && id[1]==0)
+         {
+            Vertex v;
+            file >> v.x >> v.y >> v.z;
+            vertices[index_vertices] = v;
+            ++index_vertices;
+            LOG_INFO(1, "v = " << v.x << "," << v.y << "," << v.z); 
+         }
+         if(id[0]=='v' && id[1]=='t')
+         {
+            Vertex v;
+            file >> v.x >> v.y >> v.z;
+            textureCoordinates[index_textureCoordinates] = v;
+            ++index_textureCoordinates;
+            //LOG_INFO(1, "t = " << v.x << "," << v.y << "," << v.z); 
+         }
+         if(id[0]=='v' && id[1]=='n')
+         {
+            Vertex v;
+            file >> v.x >> v.y >> v.z;
+            normals[index_normals] = v;
+            ++index_normals;
+            //LOG_INFO(1, "n = " << v.x << "," << v.y << "," << v.z); 
+         }
+         file.clear();
+      }
+      file.close();
+   }
+   LOG_INFO(1,"Loaded");
+
+   LOG_INFO(1,"Vertices : " << index_vertices );
+   LOG_INFO(1,"Normals  : " << index_normals );
+   LOG_INFO(1,"TexCoords: " << index_textureCoordinates );
+
+   return objectSize;
+#else
+   aabb.parameters[0].x = 100000.f;
+   aabb.parameters[0].y = 100000.f;
+   aabb.parameters[0].z = 100000.f;
+   aabb.parameters[1].x = -100000.f;
+   aabb.parameters[1].y = -100000.f;
+   aabb.parameters[1].z = -100000.f;
+
+   // Read vertices
    std::ifstream file(modelFilename.c_str());
    if( file.is_open() )
    {
@@ -483,6 +531,9 @@ Vertex OBJReader::loadModelFromFile(
                }
                else if( line[1] == 't' )
                {  
+                  vertex.x -= static_cast<int>(vertex.x);
+                  vertex.y -= static_cast<int>(vertex.y);
+
                   // Texture coordinates
                   if( vertex.x<0.f )
                   {
@@ -504,7 +555,7 @@ Vertex OBJReader::loadModelFromFile(
                      float Zb = fabs(vertex.z)-Za;
                      vertex.z = Zb;
                   }
-                  //LOG_INFO(1,"[2] vt=" << vertex.x << "," << vertex.y );
+                  //LOG_INFO(1,"vt=" << vertex.x << "," << vertex.y << "," << vertex.z );
                   textureCoordinates[index_textureCoordinates] = vertex;
                   ++index_textureCoordinates;
                }
@@ -521,7 +572,7 @@ Vertex OBJReader::loadModelFromFile(
                      aabb.parameters[0].x = (vertex.x < aabb.parameters[0].x) ? vertex.x : aabb.parameters[0].x;
                      aabb.parameters[0].y = (vertex.y < aabb.parameters[0].y) ? vertex.y : aabb.parameters[0].y;
                      aabb.parameters[0].z = (vertex.z < aabb.parameters[0].z) ? vertex.z : aabb.parameters[0].z;
-             
+
                      // max
                      aabb.parameters[1].x = (vertex.x > aabb.parameters[1].x) ? vertex.x : aabb.parameters[1].x;
                      aabb.parameters[1].y = (vertex.y > aabb.parameters[1].y) ? vertex.y : aabb.parameters[1].y;
@@ -535,7 +586,6 @@ Vertex OBJReader::loadModelFromFile(
       file.close();
    }
 
-   Vertex objectSize = {0.f,0.f,0.f};
    if( checkInAABB )
    {
       if( aabb.parameters[0].x<inAABB.parameters[0].x ) return objectSize;
@@ -568,14 +618,14 @@ Vertex OBJReader::loadModelFromFile(
       }
    }
 
-   // Load model faces
+   // Read faces
    file.open(modelFilename.c_str());
    if( file.is_open() )
    {
       int material(materialId);
       int sketchupMaterial(MATERIAL_NONE);
       bool isSketchupLightMaterial(false);
-      
+
       std::vector<Vertex> solrVertices;
       std::string component;
       std::string line;
@@ -609,8 +659,13 @@ Vertex OBJReader::loadModelFromFile(
                   material = m.index;
                   if( isSketchupLightMaterial )
                   {
+                     LOG_INFO(1,"Sketchup Material " << material);
                      sketchupMaterial=material;
                   }
+               }
+               else
+               {
+                  LOG_ERROR("Unknown Material " << value);
                }
             }
 
@@ -679,16 +734,16 @@ Vertex OBJReader::loadModelFromFile(
                }
 
                // Texture coordinates
-               kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f].y], textureCoordinates[face[f+1].y], textureCoordinates[face[f+2].y] );
-               
+               kernel.setPrimitiveTextureCoordinates( 
+                  nbPrimitives, textureCoordinates[face[f].y], textureCoordinates[face[f+1].y], textureCoordinates[face[f+2].y] );
+
                // Normals
-               if( face[f].z!=0 && face[f+1].z!=0 && face[f+2].z!=0 )
-               {
-                  kernel.setPrimitiveNormals( nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
-               }
+               kernel.setPrimitiveNormals( 
+                  nbPrimitives, normals[face[f].z], normals[face[f+1].z], normals[face[f+2].z] );
 
                if( face.size() == 4 )
                {
+                  //LOG_ERROR("Only triangles are currently supported");
                   if( allSpheres )
                   {
                      Vertex sphereCenter;
@@ -700,7 +755,7 @@ Vertex OBJReader::loadModelFromFile(
                      sphereRadius.x = sphereCenter.x - vertices[face[f].x].x;
                      sphereRadius.y = sphereCenter.y - vertices[face[f].x].y;
                      sphereRadius.z = sphereCenter.z - vertices[face[f].x].z;
-                  
+
                      float radius = 100.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
 
                      nbPrimitives = kernel.addPrimitive( ptSphere );
@@ -726,11 +781,10 @@ Vertex OBJReader::loadModelFromFile(
                      kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                   }
                   // Texture coordinates
-                  kernel.setPrimitiveTextureCoordinates( nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );
-                  if( face[f].z!=0 && face[f+2].z!=0 && face[f+3].z!=0 )
-                  {
-                     kernel.setPrimitiveNormals( nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
-                  }
+                  kernel.setPrimitiveTextureCoordinates( 
+                     nbPrimitives, textureCoordinates[face[f+3].y], textureCoordinates[face[f+2].y], textureCoordinates[face[f].y] );
+                  kernel.setPrimitiveNormals( 
+                     nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
                }
             }
          }
@@ -748,7 +802,7 @@ Vertex OBJReader::loadModelFromFile(
    objectSize.x = objectScale.x*(aabb.parameters[1].x - aabb.parameters[0].x);
    objectSize.y = objectScale.y*(aabb.parameters[1].y - aabb.parameters[0].y);
    objectSize.z = objectScale.z*(aabb.parameters[1].z - aabb.parameters[0].z);
-   
+
    LOG_INFO(1,"--------------------------------------------------------------------------------");
    LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " [" << kernel.getNbActivePrimitives() << " primitives]" );
    LOG_INFO(1, "Nb Vertices: " << kernel.getNbActivePrimitives() );
@@ -762,4 +816,5 @@ Vertex OBJReader::loadModelFromFile(
 
    LOG_INFO(1,"--------------------------------------------------------------------------------");
    return objectSize;
+#endif 
 }

@@ -49,6 +49,9 @@
       <UniqueIdentifier>{2dc87ba4-2d30-4df9-9a8f-8682d1ad3456}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Source Files\SWC">
+      <UniqueIdentifier>{d8fc3e37-f47e-4fb2-b54e-64ddcf98fb14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DLL_API.h">
@@ -114,6 +117,9 @@
     <ClInclude Include="OpenCL\RayTracer.cl.h">
       <Filter>Source Files\OpenCL\Generated</Filter>
     </ClInclude>
+    <ClInclude Include="SWCReader.h">
+      <Filter>Source Files\SWC</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cuda\CudaKernel.cpp">
@@ -157,6 +163,9 @@
     </ClCompile>
     <ClCompile Include="CPUKernel.cpp">
       <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SWCReader.cpp">
+      <Filter>Source Files\SWC</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

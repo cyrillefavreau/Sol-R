@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#define VOLUME_RENDERING_NORMALS
+//#define VOLUME_RENDERING_NORMALS
 
 // Project
 #include "VectorUtils.cuh"
@@ -754,7 +754,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
 			// Intersection with Box
          if( sceneInfo.renderBoxes.x!=0 )  // Box 0 is for light emitting objects
          {
-            colorBox += materials[box.startIndex.x%NB_MAX_MATERIALS].color/50.f;
+            colorBox += materials[box.startIndex.x%NB_MAX_MATERIALS].color/200.f;
          }
          else
          {

@@ -1,9 +1,9 @@
 /* 
- * Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
- */
+* Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+* Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
+*/
 
 #include <fstream>
 #include <vector>
@@ -38,11 +38,10 @@ struct Element
    std::string Name;
 };
 
-#if 0
 // https://github.com/openbabel/openbabel/blob/master/data/element.txt
 const int NB_ELEMENTS = 119;
 Element elements[NB_ELEMENTS] = 
-{
+{  // Symb	ARENeg	RCov	RBO	RVdW	MaxBnd	Mass	ElNeg.	Ionization	ElAffinity	Red	Green	Blue	Name
    { "Xx",0,0,0,0,0,0,0,0,0,0.07,0.5,0.7,"Dummy" },
    { "H",2.2,0.31,0.31,1.1,1,1.00794,2.2,13.5984,0.75420375,0.75,0.75,0.75,"Hydrogen" },
    { "He",0,0.28,0.28,1.4,0,4.002602,0,24.5874,0,0.85,1,1,"Helium" },
@@ -163,13 +162,11 @@ Element elements[NB_ELEMENTS] =
    { "Uuh",0,1.6,1.6,2,6,294,0,0,0,0.99,0,0.07,"Ununseptium" },
    { "Uuh",0,1.6,1.6,2,6,294,0,0,0,0.99,0,0.06,"Ununoctium" }
 };
-#endif //0
 
 struct ColorMap {
    std::string symbol;
    short R,G,B;
 };
-const int NB_ELEMENTS = 119;
 ColorMap colormap[NB_ELEMENTS] = {
    { "H", 0xFF,0xFF,0xFF} ,
    { "He",0xD9,0xFF,0xFF} ,
@@ -285,154 +282,159 @@ ColorMap colormap[NB_ELEMENTS] = {
 /*
 struct Element
 {
-	std::string name;
-	float radius;
-	int materialId;
+std::string name;
+float radius;
+int materialId;
 };
 */
 
 struct Atom
 {
-	int    processed;
-	int    id;
-	int    index;
-	float4 position;
-	int    materialId;
-	int    chainId;
-	int    residue;
-	bool   isBackbone;
-	bool   isWater;
+   int    processed;
+   int    id;
+   int    index;
+   float4 position;
+   int    materialId;
+   int    chainId;
+   int    residue;
+   bool   isBackbone;
+   bool   isWater;
 };
 
 struct Connection
 {
-	int atom1;
-	int atom2;
+   int atom1;
+   int atom2;
 };
 
 const float DEFAULT_ATOM_DISTANCE = 30.f;
 const float DEFAULT_STICK_DISTANCE = 1.7f;
 
-#if 0
-const Element elements[NB_ELEMENTS] =
+struct AtomicRadius
 {
-	{ "C"  , 67.f,  1 },
-	{ "N"  , 56.f,  2 },
-	{ "O"  , 48.f,  3 },
-	{ "H"  , 53.f,  4 },
-	{ "B"  , 87.f,  5 },
-	{ "F"  , 42.f,  6 },
-	{ "P"  , 98.f,  7 },
-	{ "S"  , 88.f,  8 },
-	{ "V"  ,171.f,  9 },
-	{ "K"  ,243.f, 10 },
-	{ "HE" , 31.f, 11 },
-	{ "LI" ,167.f, 12 },
-	{ "BE" ,112.f, 13 },
-	{ "NE" , 38.f, 14 },
-	{ "NA" ,190.f, 15 },
-	{ "MG" ,145.f, 16 },
-	{ "AL" ,118.f, 17 },
-	{ "SI" ,111.f, 18 },
-	{ "CL" , 79.f, 19 },
-	{ "AR" , 71.f, 20 },
-	{ "CA" ,194.f, 21 },
-	{ "SC" ,184.f, 22 },
-	{ "TI" ,176.f, 23 },
-	{ "CR" ,166.f, 24 },
-	{ "MN" ,161.f, 25 },
-	{ "FE" ,156.f, 26 },
-	{ "CO" ,152.f, 27 },
-	{ "NI" ,149.f, 28 },
-	{ "CU" ,145.f, 29 },
-	{ "ZN" ,142.f, 30 },
-	{ "GA" ,136.f, 31 },
-	{ "GE" ,125.f, 32 },
-	{ "AS" ,114.f, 33 },
-	{ "SE" ,103.f, 34 },
-	{ "BR" , 94.f, 35 },
-	{ "KR" , 88.f, 36 }, 
-
-	// TODO
-	{ "OD1" , 25.f, 37 },
-	{ "OD2" , 25.f, 38 },
-	{ "CG1" , 25.f, 39 }, 
-	{ "CG2" , 25.f, 40 },
-	{ "CD1" , 25.f, 41 },
-	{ "CB"  , 25.f, 42 },
-	{ "CG"  , 25.f, 43 },
-	{ "CD"  , 25.f, 44 },
-	{ "OE1" , 25.f, 45 },
-	{ "NE2" , 25.f, 46 },
-	{ "CZ"  , 25.f, 47 },
-	{ "NH1" , 25.f, 48 },
-	{ "NH2" , 25.f, 49 },
-	{ "CD2" , 25.f, 50 },
-	{ "CE1" , 25.f, 51 },
-	{ "CE2" , 25.f, 52 },
-	{ "CE"  , 25.f, 53 },
-	{ "NZ"  , 25.f, 54 },
-	{ "OH"  , 25.f, 55 },
-	{ "CE"  , 25.f, 56 },
-	{ "ND1" , 25.f, 57 },
-	{ "ND2" , 25.f, 58 },
-	{ "OXT" , 25.f, 59 },
-	{ "OG1" , 25.f, 60 },
-	{ "NE1" , 25.f, 61 },
-	{ "CE3" , 25.f, 62 },
-	{ "CZ2" , 25.f, 63 },
-	{ "CZ3" , 25.f, 64 },
-	{ "CH2" , 25.f, 65 },
-	{ "OE2" , 25.f, 66 },
-	{ "OG"  , 25.f, 67 },
-	{ "OE2" , 25.f, 68 },
-	{ "SD"  , 25.f, 69 },
-	{ "SG"  , 25.f, 70 },
-	{ "C1*" , 25.f, 71 },
-	{ "C2" ,  25.f, 72 },
-	{ "C2*" , 25.f, 73 },
-	{ "C3*" , 25.f, 74 },
-	{ "C4" ,  25.f, 75 },
-	{ "C4*" , 25.f, 76 },
-	{ "C5" ,  25.f, 77 },
-	{ "C5*" , 25.f, 78 },
-	{ "C5M" , 25.f, 79 },
-	{ "C6" ,  25.f, 80 },
-	{ "C8" ,  25.f, 81 },
-	{ "H1" ,  25.f, 82 },
-	{ "H1*" , 25.f, 83 },
-	{ "H2" ,  25.f, 84 },
-	{ "H2*" , 25.f, 85 },
-	{ "H3" ,  25.f, 86 },
-	{ "H3*" , 25.f, 87 },
-	{ "H3P" , 25.f, 88 },
-	{ "H4" ,  25.f, 89 },
-	{ "H4*" , 25.f, 90 },
-	{ "H5" ,  25.f, 91 },
-	{ "H5*" , 25.f, 92 },
-	{ "H5M" , 25.f, 93 },
-	{ "H6" ,  25.f, 94 },
-	{ "H8" ,  25.f, 95 },
-	{ "N1" ,  25.f, 96 },
-	{ "N2" ,  25.f, 97 },
-	{ "N3" ,  25.f, 98 },
-	{ "N4" ,  25.f, 99 },
-	{ "N6" ,  25.f, 100 },
-	{ "N7" ,  25.f, 101 },
-	{ "N9" ,  25.f, 102 },
-	{ "O1P" , 25.f, 103 },
-	{ "O2" ,  25.f, 104 },
-	{ "O2P" , 25.f, 105 },
-	{ "O3*" , 25.f, 106 },
-	{ "O3P" , 25.f, 107 },
-	{ "O4" ,  25.f, 108 },
-	{ "O4*" , 25.f, 109 },
-	{ "O5*" , 25.f, 110 },
-	{ "O6" ,  25.f, 111 },
-	{ "OXT" , 25.f, 112 },
-	{ "P" ,   25.f, 113 }
+   std::string Symbol;
+   float radius;
+   int index;
 };
-#endif // 0
+
+const AtomicRadius atomic_radius[NB_ELEMENTS] =
+{
+   { "C"  , 67.f,  1 },
+   { "N"  , 56.f,  2 },
+   { "O"  , 48.f,  3 },
+   { "H"  , 53.f,  4 },
+   { "B"  , 87.f,  5 },
+   { "F"  , 42.f,  6 },
+   { "P"  , 98.f,  7 },
+   { "S"  , 88.f,  8 },
+   { "V"  ,171.f,  9 },
+   { "K"  ,243.f, 10 },
+   { "HE" , 31.f, 11 },
+   { "LI" ,167.f, 12 },
+   { "BE" ,112.f, 13 },
+   { "NE" , 38.f, 14 },
+   { "NA" ,190.f, 15 },
+   { "MG" ,145.f, 16 },
+   { "AL" ,118.f, 17 },
+   { "SI" ,111.f, 18 },
+   { "CL" , 79.f, 19 },
+   { "AR" , 71.f, 20 },
+   { "CA" ,194.f, 21 },
+   { "SC" ,184.f, 22 },
+   { "TI" ,176.f, 23 },
+   { "CR" ,166.f, 24 },
+   { "MN" ,161.f, 25 },
+   { "FE" ,156.f, 26 },
+   { "CO" ,152.f, 27 },
+   { "NI" ,149.f, 28 },
+   { "CU" ,145.f, 29 },
+   { "ZN" ,142.f, 30 },
+   { "GA" ,136.f, 31 },
+   { "GE" ,125.f, 32 },
+   { "AS" ,114.f, 33 },
+   { "SE" ,103.f, 34 },
+   { "BR" , 94.f, 35 },
+   { "KR" , 88.f, 36 }, 
+
+   // TODO
+   { "OD1" , 25.f, 37 },
+   { "OD2" , 25.f, 38 },
+   { "CG1" , 25.f, 39 }, 
+   { "CG2" , 25.f, 40 },
+   { "CD1" , 25.f, 41 },
+   { "CB"  , 25.f, 42 },
+   { "CG"  , 25.f, 43 },
+   { "CD"  , 25.f, 44 },
+   { "OE1" , 25.f, 45 },
+   { "NE2" , 25.f, 46 },
+   { "CZ"  , 25.f, 47 },
+   { "NH1" , 25.f, 48 },
+   { "NH2" , 25.f, 49 },
+   { "CD2" , 25.f, 50 },
+   { "CE1" , 25.f, 51 },
+   { "CE2" , 25.f, 52 },
+   { "CE"  , 25.f, 53 },
+   { "NZ"  , 25.f, 54 },
+   { "OH"  , 25.f, 55 },
+   { "CE"  , 25.f, 56 },
+   { "ND1" , 25.f, 57 },
+   { "ND2" , 25.f, 58 },
+   { "OXT" , 25.f, 59 },
+   { "OG1" , 25.f, 60 },
+   { "NE1" , 25.f, 61 },
+   { "CE3" , 25.f, 62 },
+   { "CZ2" , 25.f, 63 },
+   { "CZ3" , 25.f, 64 },
+   { "CH2" , 25.f, 65 },
+   { "OE2" , 25.f, 66 },
+   { "OG"  , 25.f, 67 },
+   { "OE2" , 25.f, 68 },
+   { "SD"  , 25.f, 69 },
+   { "SG"  , 25.f, 70 },
+   { "C1*" , 25.f, 71 },
+   { "C2" ,  25.f, 72 },
+   { "C2*" , 25.f, 73 },
+   { "C3*" , 25.f, 74 },
+   { "C4" ,  25.f, 75 },
+   { "C4*" , 25.f, 76 },
+   { "C5" ,  25.f, 77 },
+   { "C5*" , 25.f, 78 },
+   { "C5M" , 25.f, 79 },
+   { "C6" ,  25.f, 80 },
+   { "C8" ,  25.f, 81 },
+   { "H1" ,  25.f, 82 },
+   { "H1*" , 25.f, 83 },
+   { "H2" ,  25.f, 84 },
+   { "H2*" , 25.f, 85 },
+   { "H3" ,  25.f, 86 },
+   { "H3*" , 25.f, 87 },
+   { "H3P" , 25.f, 88 },
+   { "H4" ,  25.f, 89 },
+   { "H4*" , 25.f, 90 },
+   { "H5" ,  25.f, 91 },
+   { "H5*" , 25.f, 92 },
+   { "H5M" , 25.f, 93 },
+   { "H6" ,  25.f, 94 },
+   { "H8" ,  25.f, 95 },
+   { "N1" ,  25.f, 96 },
+   { "N2" ,  25.f, 97 },
+   { "N3" ,  25.f, 98 },
+   { "N4" ,  25.f, 99 },
+   { "N6" ,  25.f, 100 },
+   { "N7" ,  25.f, 101 },
+   { "N9" ,  25.f, 102 },
+   { "O1P" , 25.f, 103 },
+   { "O2" ,  25.f, 104 },
+   { "O2P" , 25.f, 105 },
+   { "O3*" , 25.f, 106 },
+   { "O3P" , 25.f, 107 },
+   { "O4" ,  25.f, 108 },
+   { "O4*" , 25.f, 109 },
+   { "O5*" , 25.f, 110 },
+   { "O6" ,  25.f, 111 },
+   { "OXT" , 25.f, 112 },
+   { "P" ,   25.f, 113 }
+};
 
 PDBReader::PDBReader(void) : m_nbBoxes(0), m_nbPrimitives(0)
 {
@@ -443,14 +445,14 @@ PDBReader::~PDBReader(void)
 }
 
 Vertex PDBReader::loadAtomsFromFile(
-	const std::string& filename,
-	GPUKernel&   cudaKernel,
-	GeometryType geometryType,
-	const float  defaultAtomSize,
-	const float  defaultStickSize,
-	const int    materialType,
-	const Vertex scale,
-	const bool   useModels)
+   const std::string& filename,
+   GPUKernel&   cudaKernel,
+   GeometryType geometryType,
+   const float  defaultAtomSize,
+   const float  defaultStickSize,
+   const int    materialType,
+   const Vertex scale,
+   const bool   useModels)
 {
    for (int i=0; i<NB_ELEMENTS;++i)
    {
@@ -467,282 +469,317 @@ Vertex PDBReader::loadAtomsFromFile(
          cudaKernel.getSceneInfo().viewDistance.x,0.f,false);
    }
 
-	int frame(0);
-	int chainSelection(rand()%2);
-	cudaKernel.resetBoxes(true);
+   int frame(0);
+   int chainSelection(rand()%2);
+   cudaKernel.resetBoxes(true);
 
-	float distanceRatio = 2.f; //(geometryType==gtSticks || geometryType==gtAtomsAndSticks) ? 2.f : 1.f;
+   float distanceRatio = 2.f; //(geometryType==gtSticks || geometryType==gtAtomsAndSticks) ? 2.f : 1.f;
 
-	std::map<int,Atom> atoms;
-	std::vector<Connection> connections;
-	float4 minPos = {  100000.f,  100000.f,  100000.f, 0.f };
-	float4 maxPos = { -100000.f, -100000.f, -100000.f, 0.f };
+   std::map<int,Atom> atoms;
+   std::vector<Connection> connections;
+   float4 minPos = {  100000.f,  100000.f,  100000.f, 0.f };
+   float4 maxPos = { -100000.f, -100000.f, -100000.f, 0.f };
 
    LOG_INFO(1,"--------------------------------------------------------------------------------" );
    LOG_INFO(1,"Loading PDB File: " << filename );
-	int index(0);
-	std::ifstream file(filename.c_str());
-	if( file.is_open() )
-	{
-		while( file.good() )
-		{
-			std::string line;
-			std::string value;
-			std::getline( file, line );
-			if( line.find("ATOM") == 0 /* || line.find("HETATM") == 0 */ )
-			{
-				// Atom
-				Atom atom;
-				atom.index = index;
-				index++;
-				std::string atomName;
-				std::string chainId;
-				std::string atomCode;
-				size_t i(0);
-				while( i<line.length() )
-				{
-					switch(i)
-					{
-					case 6: //ID
-					case 12:
-					case 76: // Atom name
-					case 22: // ChainID
-					case 30: // x
-					case 38: // y
-					case 46: // z
-						value = "";
-						break;
-					case 21: atom.chainId = (int)line.at(i)-64; break;
-					case 11: atom.id = static_cast<int>(atoi(value.c_str())); break;
-					case 17: 
+   int index(0);
+   std::ifstream file(filename.c_str());
+   if( file.is_open() )
+   {
+      while( file.good() )
+      {
+         std::string line;
+         std::string value;
+         std::getline( file, line );
+         if( line.find("ATOM") == 0 /* || line.find("HETATM") == 0 */ )
+         {
+            // Atom
+            Atom atom;
+            atom.index = index;
+            index++;
+            std::string atomName;
+            std::string chainId;
+            std::string atomCode;
+            size_t i(0);
+            std::string A,B,C,D,E,F,G,H,I,J,K,L;
+#if 0
+            file >> A >> B >> C >> D >> E >> F >> G >> H >> I >> J >> K >> L;
+            file.clear();
+            chainId = E;
+            atomName = L;
+            atomCode = C;
+            //atom.residue = F;
+#else
+            while( i<line.length() )
+            {
+               LOG_INFO(1, "Value = '" << value << "'");
+               switch(i)
+               {
+               case 6: //ID
+               case 12:
+               case 76: // Atom name
+               case 22: // ChainID
+               case 30: // x
+               case 38: // y
+               case 46: // z
+                  value = "";
+                  break;
+               case 21: atom.chainId = (int)line.at(i)-64; break;
+               case 11: atom.id = static_cast<int>(atoi(value.c_str())); break;
+               case 17: 
                   atomCode = value; 
                   break;
-					case 79: 
+               case 79: 
                   atomName = value; 
                   break;
-					case 26: 
-						atom.residue = static_cast<int>(atoi(value.c_str())); 
-						break;
-					case 37: atom.position.x = static_cast<float>(atof(value.c_str())); break;
-					case 45: atom.position.y = static_cast<float>(atof(value.c_str())); break;
-					case 53: atom.position.z = -static_cast<float>(atof(value.c_str())); break;
-					default:
-						if( line.at(i) != ' ' ) value += line.at(i);
-						break;
-					}
-					i++;
-				}
+               case 26: 
+                  atom.residue = static_cast<int>(atoi(value.c_str())); 
+                  break;
+               case 37: atom.position.x = static_cast<float>(atof(value.c_str())); break;
+               case 45: atom.position.y = static_cast<float>(atof(value.c_str())); break;
+               case 53: atom.position.z = -static_cast<float>(atof(value.c_str())); break;
+               default:
+                  if( line.at(i) != ' ' ) value += line.at(i);
+                  break;
+               }
+               i++;
+            }
+#endif
 
-				// Backbone
+            LOG_INFO(1, "Atom: " << atomName )
+            // Backbone
             atom.isBackbone = (geometryType==gtBackbone || geometryType==gtIsoSurface || atomCode.length()==1);
 
-				// Material
-				atom.materialId = 0;
-				i=0;
-				bool found(false);
-				while( !found && i<NB_ELEMENTS )
-				{
+            // Material
+            atom.materialId = 0;
+            i=0;
+            bool found(false);
+            while( !found && i<NB_ELEMENTS )
+            {
                if( atomName == colormap[i].symbol )
-					{
-						found = true;
-						switch( materialType )
-						{
-						case 1: 
-							atom.materialId = (atom.chainId%2==0) ? static_cast<int>(i) : 1000; 
-							break;
-						case 2: 
-							atom.materialId = atom.residue%10; 
-							break;
-						default: 
-							atom.materialId = static_cast<int>(i); 
-							break;
-						}
-                  //atom.position.w = (geometryType==gtFixedSizeAtoms) ? defaultAtomSize : static_cast<float>(colormap[i].RBO)*defaultAtomSize;
-                  atom.position.w = defaultAtomSize;
-                  LOG_INFO(1,"Atom " << atomCode << " [" << atom.materialId << "] radius=" << atom.position.w);
-					}
-					++i;
-				}
+               {
+                  found = true;
+                  switch( materialType )
+                  {
+                  case 1: 
+                     atom.materialId = (atom.chainId%2==0) ? static_cast<int>(i) : 1000; 
+                     break;
+                  case 2: 
+                     atom.materialId = atom.residue%10; 
+                     break;
+                  default: 
+                     atom.materialId = static_cast<int>(i); 
+                     break;
+                  }
+                  atom.position.w = (geometryType==gtFixedSizeAtoms) ? defaultAtomSize : 0.5f*defaultAtomSize;
+               }
+               ++i;
+            }
             if( !found )
             {
-               LOG_ERROR("Could not find atom " << atomCode );
+               LOG_ERROR("Could not find atomic color for '" << atomCode << "'");
             }
 
-				if( geometryType!=gtBackbone || atom.isBackbone ) 
-				{
-					// Compute molecule size
-					// min
-					minPos.x = (atom.position.x < minPos.x) ? atom.position.x : minPos.x;
-					minPos.y = (atom.position.y < minPos.y) ? atom.position.y : minPos.y;
-					minPos.z = (atom.position.z < minPos.z) ? atom.position.z : minPos.z;
+            // Radius
+            if(geometryType==gtFixedSizeAtoms)
+            {
+               atom.position.w = defaultAtomSize;
+            }
+            else
+            {
+               i=0;
+               found = false;
+               while( !found && i<NB_ELEMENTS )
+               {
+                  if( atomName == atomic_radius[i].Symbol )
+                  {
+                     atom.position.w = atomic_radius[i].radius;
+                     found = true;
+                  }
+                  ++i;
+               }
+               if( !found )
+               {
+                  LOG_ERROR("Could not find atomic radius for '" << atomCode << "'");
+               }
+            }
+            //LOG_INFO(1,"Atom " << atomCode << " [" << atom.materialId << "] radius=" << atom.position.w);
 
-					// max
-					maxPos.x = (atom.position.x > maxPos.x) ? atom.position.x : maxPos.x;
-					maxPos.y = (atom.position.y > maxPos.y) ? atom.position.y : maxPos.y;
-					maxPos.z = (atom.position.z > maxPos.z) ? atom.position.z : maxPos.z;
+            if( geometryType!=gtBackbone || atom.isBackbone ) 
+            {
+               // Compute molecule size
+               // min
+               minPos.x = (atom.position.x < minPos.x) ? atom.position.x : minPos.x;
+               minPos.y = (atom.position.y < minPos.y) ? atom.position.y : minPos.y;
+               minPos.z = (atom.position.z < minPos.z) ? atom.position.z : minPos.z;
 
-					// add Atom to the list
-					atom.processed = 0;
-					if( geometryType==gtSticks || (geometryType==gtAtomsAndSticks && atom.residue%2 == 0) ) 
-					{
-						atoms[atom.id] = atom;
-					}
-					else
-					{
-						atoms[index] = atom;
-					}
-				}
-			}
-		}
-		file.close();
-	}
+               // max
+               maxPos.x = (atom.position.x > maxPos.x) ? atom.position.x : maxPos.x;
+               maxPos.y = (atom.position.y > maxPos.y) ? atom.position.y : maxPos.y;
+               maxPos.z = (atom.position.z > maxPos.z) ? atom.position.z : maxPos.z;
+
+               // add Atom to the list
+               atom.processed = 0;
+               if( geometryType==gtSticks || (geometryType==gtAtomsAndSticks && atom.residue%2 == 0) ) 
+               {
+                  atoms[atom.id] = atom;
+               }
+               else
+               {
+                  atoms[index] = atom;
+               }
+            }
+         }
+      }
+      file.close();
+   }
 
    LOG_INFO(1,"Number of elements: " << atoms.size());
    LOG_INFO(1,"Building internal structures");
-	Vertex objectSize;
-	objectSize.x = (maxPos.x-minPos.x);
-	objectSize.y = (maxPos.y-minPos.y);
-	objectSize.z = (maxPos.z-minPos.z);
+   Vertex objectSize;
+   objectSize.x = (maxPos.x-minPos.x);
+   objectSize.y = (maxPos.y-minPos.y);
+   objectSize.z = (maxPos.z-minPos.z);
 
-	float4 center;
-	center.x = (minPos.x+maxPos.x)/2.f;
-	center.y = (minPos.y+maxPos.y)/2.f;
-	center.z = (minPos.z+maxPos.z)/2.f;
+   float4 center;
+   center.x = (minPos.x+maxPos.x)/2.f;
+   center.y = (minPos.y+maxPos.y)/2.f;
+   center.z = (minPos.z+maxPos.z)/2.f;
 
    Vertex objectScale;
-	objectScale.x = scale.x/( maxPos.x - minPos.x);
-	objectScale.y = scale.y/( maxPos.y - minPos.y);
-	objectScale.z = scale.z/( maxPos.z - minPos.z);
+   objectScale.x = scale.x/( maxPos.x - minPos.x);
+   objectScale.y = scale.y/( maxPos.y - minPos.y);
+   objectScale.z = scale.z/( maxPos.z - minPos.z);
 
    float atomDistance(DEFAULT_ATOM_DISTANCE);
 
-	std::map<int,Atom>::iterator it = atoms.begin();
-	while( it != atoms.end() )
-	{
-		Atom& atom((*it).second);
-		if( atom.processed<2 )
-		{
-			int nb;
+   std::map<int,Atom>::iterator it = atoms.begin();
+   while( it != atoms.end() )
+   {
+      Atom& atom((*it).second);
+      if( atom.processed<2 )
+      {
+         int nb;
 
          float radius(atom.position.w);
-			float stickRadius(atom.position.w);
+         float stickRadius(atom.position.w);
          switch( geometryType )
          {
-            case gtFixedSizeAtoms:
-               radius = defaultAtomSize;
-               break;
-            case gtSticks:
-               radius      = defaultStickSize;
-               stickRadius = defaultStickSize;
-               break;
-            case gtAtomsAndSticks:
-               radius      = atom.position.w/2.f;
-               stickRadius = defaultStickSize/2.f;
-               break;
-            case gtBackbone:
-               radius      = defaultStickSize;
-               stickRadius = defaultStickSize;
-               break;
-            case gtIsoSurface:
-               radius      = atom.position.w;
-               break;
+         case gtFixedSizeAtoms:
+            radius = defaultAtomSize;
+            break;
+         case gtSticks:
+            radius      = defaultStickSize;
+            stickRadius = defaultStickSize;
+            break;
+         case gtAtomsAndSticks:
+            radius      = atom.position.w/2.f;
+            stickRadius = defaultStickSize/2.f;
+            break;
+         case gtBackbone:
+            radius      = defaultStickSize;
+            stickRadius = defaultStickSize;
+            break;
+         case gtIsoSurface:
+            radius      = atom.position.w;
+            break;
          }
 
          if( geometryType==gtSticks || geometryType==gtAtomsAndSticks || geometryType==gtBackbone ) 
-			{
-				std::map<int,Atom>::iterator it2 = atoms.begin();
-				while( it2 != atoms.end() )
-				{
+         {
+            std::map<int,Atom>::iterator it2 = atoms.begin();
+            while( it2 != atoms.end() )
+            {
 
-					if( it2 != it && (*it2).second.processed<2 && ((*it).second.isBackbone==(*it2).second.isBackbone))
-					{
-						Atom& atom2((*it2).second);
-						float4 a;
-						a.x = atom.position.x - atom2.position.x;
-						a.y = atom.position.y - atom2.position.y;
-						a.z = atom.position.z - atom2.position.z;
-						float distance = sqrtf( a.x*a.x + a.y*a.y + a.z*a.z );
-						float stickDistance = (geometryType==gtBackbone && atom2.isBackbone) ? DEFAULT_STICK_DISTANCE*2.f : DEFAULT_STICK_DISTANCE;
-						
+               if( it2 != it && (*it2).second.processed<2 && ((*it).second.isBackbone==(*it2).second.isBackbone))
+               {
+                  Atom& atom2((*it2).second);
+                  float4 a;
+                  a.x = atom.position.x - atom2.position.x;
+                  a.y = atom.position.y - atom2.position.y;
+                  a.z = atom.position.z - atom2.position.z;
+                  float distance = sqrtf( a.x*a.x + a.y*a.y + a.z*a.z );
+                  float stickDistance = (geometryType==gtBackbone && atom2.isBackbone) ? DEFAULT_STICK_DISTANCE*2.f : DEFAULT_STICK_DISTANCE;
+
                   if( distance < stickDistance )
-						{
-							float4 halfCenter;
-							halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
-							halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
-							halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
+                  {
+                     float4 halfCenter;
+                     halfCenter.x = (atom.position.x + atom2.position.x)/2.f;
+                     halfCenter.y = (atom.position.y + atom2.position.y)/2.f;
+                     halfCenter.z = (atom.position.z + atom2.position.z)/2.f;
 
                      // Sticks
                      nb = cudaKernel.addPrimitive(ptCylinder,true);
-							cudaKernel.setPrimitive( 
-								nb,
-								objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
-								objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
-								objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
-								objectScale.x*distanceRatio*atomDistance*(halfCenter.x - center.x), 
-								objectScale.y*distanceRatio*atomDistance*(halfCenter.y - center.y), 
-								objectScale.z*distanceRatio*atomDistance*(halfCenter.z - center.z),
-								objectScale.x*stickRadius, 0.f,0.f,
+                     cudaKernel.setPrimitive( 
+                        nb,
+                        objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
+                        objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
+                        objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
+                        objectScale.x*distanceRatio*atomDistance*(halfCenter.x - center.x), 
+                        objectScale.y*distanceRatio*atomDistance*(halfCenter.y - center.y), 
+                        objectScale.z*distanceRatio*atomDistance*(halfCenter.z - center.z),
+                        objectScale.x*stickRadius, 0.f,0.f,
                         (geometryType==gtSticks) ? atom.materialId : 1010 );
                      Vertex vt0={0.f,0.f,0.f};
                      Vertex vt1={1.f,1.f,0.f};
                      Vertex vt2={0.f,0.f,0.f};
-							cudaKernel.setPrimitiveTextureCoordinates( 
-								nb, vt0, vt1, vt2 );
-						}
-					}
-					it2++;
-				}
-			}
+                     cudaKernel.setPrimitiveTextureCoordinates( 
+                        nb, vt0, vt1, vt2 );
+                  }
+               }
+               it2++;
+            }
+         }
 
          bool addAtom( true );
 
          int m = atom.materialId;
-			if( !useModels /*&& (atom.chainId%2==chainSelection)*/ )
-			{
+         if( !useModels /*&& (atom.chainId%2==chainSelection)*/ )
+         {
             //addAtom = false;
             radius = stickRadius;
             if( geometryType==gtAtomsAndSticks)  m = 11;
-			}
+         }
 
-			if( addAtom )
-			{
+         if( addAtom )
+         {
             // Enveloppe
             Vertex vt0={0.f,0.f,0.f};
             Vertex vt1={1.f,1.f,0.f};
             Vertex vt2={0.f,0.f,0.f};
             if( geometryType==gtIsoSurface && atom.isBackbone && atom.chainId%2==0 )
             {
-					nb = cudaKernel.addPrimitive(ptSphere,true);
-					cudaKernel.setPrimitive( 
-						nb,
-					   objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
-					   objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
-					   objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
-					   objectScale.x*radius*2.f, 0.f, 0.f,
-						10 );
-					cudaKernel.setPrimitiveTextureCoordinates( 
-						nb, vt0, vt1, vt2 );
+               nb = cudaKernel.addPrimitive(ptSphere,true);
+               cudaKernel.setPrimitive( 
+                  nb,
+                  objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
+                  objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
+                  objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
+                  objectScale.x*radius*2.f, 0.f, 0.f,
+                  10 );
+               cudaKernel.setPrimitiveTextureCoordinates( 
+                  nb, vt0, vt1, vt2 );
             }
 
-				nb = cudaKernel.addPrimitive(ptSphere,true);
-				cudaKernel.setPrimitive( 
-					nb, 
-					objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
-					objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
-					objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
-					objectScale.x*radius, 0.f, 0.f,
+            nb = cudaKernel.addPrimitive(ptSphere,true);
+            cudaKernel.setPrimitive( 
+               nb, 
+               objectScale.x*distanceRatio*atomDistance*(atom.position.x - center.x), 
+               objectScale.y*distanceRatio*atomDistance*(atom.position.y - center.y), 
+               objectScale.z*distanceRatio*atomDistance*(atom.position.z - center.z), 
+               objectScale.x*radius, 0.f, 0.f,
                m );
-				cudaKernel.setPrimitiveTextureCoordinates( 
-					nb, vt0, vt1, vt2 );
-			}
-		}
-		++it;
-	}
-	objectSize.x *= objectScale.x*distanceRatio*atomDistance;
-	objectSize.y *= objectScale.y*distanceRatio*atomDistance;
-	objectSize.z *= objectScale.z*distanceRatio*atomDistance;
+            cudaKernel.setPrimitiveTextureCoordinates( 
+               nb, vt0, vt1, vt2 );
+         }
+      }
+      ++it;
+   }
+   objectSize.x *= objectScale.x*distanceRatio*atomDistance;
+   objectSize.y *= objectScale.y*distanceRatio*atomDistance;
+   objectSize.z *= objectScale.z*distanceRatio*atomDistance;
    LOG_INFO(1, "Loaded " << filename << " into frame " << cudaKernel.getFrame() << " [" << cudaKernel.getNbActivePrimitives() << " primitives]" );
    LOG_INFO(1, "Object size after scaling: " << objectSize.x << "," << objectSize.y << "," << objectSize.z );
    LOG_INFO(1,"--------------------------------------------------------------------------------" );
-	return objectSize;
+   return objectSize;
 }

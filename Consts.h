@@ -13,7 +13,7 @@
 #endif
 
 // Oculus Rift
-#undef USE_OCULUS
+#define USE_OCULUS
 
 // inline   
 #define __INLINE__ // inline
@@ -28,8 +28,8 @@
 #define NB_MAX_ITERATIONS 10
 
 const int BOUNDING_BOXES_TREE_DEPTH = 64;
-const int NB_MAX_BOXES      = 10000000;
-const int NB_MAX_PRIMITIVES = 10000000;
+const int NB_MAX_BOXES      = 12000000;
+const int NB_MAX_PRIMITIVES = 12000000;
 const int NB_MAX_LAMPS      = 512;
 const int NB_MAX_MATERIALS  = 65506+30; // Last 30 materials are reserved
 const int NB_MAX_TEXTURES   = 512;
@@ -48,7 +48,7 @@ const int MAX_BITMAP_SIZE   = MAX_BITMAP_WIDTH*MAX_BITMAP_HEIGHT;
 
 // Globals
 #define PI 3.14159265358979323846f
-#define EPSILON 1.f
+#define EPSILON 0.1f
 #define REBOUND_EPSILON 0.00002f
 #define STANDARD_LUNINANCE_STRENGTH 0.1f
 #define SKYBOX_LUNINANCE_STRENGTH   0.2f

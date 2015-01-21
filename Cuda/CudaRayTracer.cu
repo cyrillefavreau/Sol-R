@@ -318,10 +318,12 @@ __device__ __INLINE__ float4 launchRayTracing(
          if( sceneInfo.skybox.y!=MATERIAL_NONE)
          {
             colors[iteration] = skyboxMapping(sceneInfo,materials,textures,rayOrigin);
+            float rad = colors[iteration].x+colors[iteration].y+colors[iteration].z;
+            primitiveXYId.z += (rad>2.5f) ? rad*256.f : 0.f;
          }
          else
          {
-            if( sceneInfo.parameters.y==1 )
+            if( sceneInfo.parameters.y==2 )
             {
                // Background
                Vertex normal = {0.f, 1.f, 0.f };
@@ -1449,8 +1451,8 @@ __global__ void k_radiosity(
    float4 localColor = {0.f,0.f,0.f,0.f};
    for( int i=0; i<postProcessingInfo.param3.x; ++i )
    {
-      int ix = (i+sceneInfo.misc.y+sceneInfo.pathTracingIteration.x)%wh;
-      int iy = (i+sceneInfo.misc.y+100+sceneInfo.pathTracingIteration.x)%wh;
+      int ix = (i+sceneInfo.pathTracingIteration.x)%wh;
+      int iy = (i+100+sceneInfo.pathTracingIteration.x)%wh;
       int xx = x+randoms[ix]*postProcessingInfo.param2.x;
       int yy = y+randoms[iy]*postProcessingInfo.param2.x;
       localColor += postProcessingBuffer[index].colorInfo;
@@ -1458,7 +1460,7 @@ __global__ void k_radiosity(
       {
          int localIndex = yy*sceneInfo.size.x+xx;
          float4 lightColor = postProcessingBuffer[localIndex].colorInfo;
-         localColor += 2.f*lightColor*float(primitiveXYIds[localIndex].z)/256.f;
+         localColor += lightColor*float(primitiveXYIds[localIndex].z)/256.f;
       }
    }
    localColor /= postProcessingInfo.param3.x;

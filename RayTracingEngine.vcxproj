@@ -876,6 +876,7 @@
     <ClInclude Include="PDBReader.h" />
     <ClInclude Include="RayTracingEngineStub.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SWCReader.h" />
     <ClInclude Include="tgad.h" />
   </ItemGroup>
   <ItemGroup>
@@ -930,6 +931,7 @@
     <ClCompile Include="OpenGL\rtgl.cpp" />
     <ClCompile Include="PDBReader.cpp" />
     <ClCompile Include="RayTracingEngineStub.cpp" />
+    <ClCompile Include="SWCReader.cpp" />
     <ClCompile Include="tgad.cpp" />
   </ItemGroup>
   <ItemGroup>

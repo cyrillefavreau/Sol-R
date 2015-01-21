@@ -54,11 +54,11 @@ ________________________________________________________________________________
 */
 CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device ) 
  : GPUKernel( activeLogging, optimalNbOfPrimmitivesPerBox ),
-   m_sharedMemSize(256)
+   m_sharedMemSize(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
-   m_blockSize.x = 16;
-   m_blockSize.y = 16;
+   m_blockSize.x = 12;
+   m_blockSize.y = 12;
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
