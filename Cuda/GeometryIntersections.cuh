@@ -1221,6 +1221,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                {
                   ++nbIntersections;
                   float4 color=material.color;
+#if 0
                   if(sceneInfo.graphicsLevel.x!=0)
                   {
                      color*=(1.f-material.transparency.x);
@@ -1244,11 +1245,13 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                         box.startIndex.x+cptPrimitives, intersection, areas, closestColor,
                         0, refractionFromColor, shadowIntensity, rBlinn, attributes );
                   }
+#endif // 0
                   for( int i(0); i<MAXDEPTH; ++i)
                   {
                      if( dist<colors[i].w )
                      {
-                        float a=dot(normalize(ray.direction-ray.origin),normal);
+                        float a=fabs(dot(normalize(ray.direction-ray.origin),normal));
+                        a *= dist/sceneInfo.viewDistance.x;
                         for( int j(MAXDEPTH-1); j>=i; --j)
                         {
                            colors[j+1]=colors[j];
@@ -1256,9 +1259,7 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
                            normals[j+1]=normals[j];
 #endif // VOLUME_RENDERING_NORMALS
                         }
-                        colors[i].x = color.x*fabs(a);
-                        colors[i].y = color.y*fabs(a);
-                        colors[i].z = color.z*fabs(a);
+                        colors[i] = color*a;
                         colors[i].w = dist;
 #ifdef VOLUME_RENDERING_NORMALS
                         normals[i] = (a<0.f) ? -1 : 1;
@@ -1276,7 +1277,8 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
          cptBoxes += box.indexForNextBox.x;
       }
 	}
-   
+
+#if 0
    float4 color=colors[0]*sceneInfo.backgroundColor.w;
    if( nbIntersections>0 )
    {
@@ -1314,6 +1316,13 @@ __device__ __INLINE__ float4 intersectionsWithPrimitives(
       }
       */
    }
+#else
+   float4 color= {0.f,0.f,0.f,0.f}; //colors[0]*(*sceneInfo).backgroundColor.w;
+   for( int i=0; i<MAXDEPTH; ++i)
+   {
+        color += colors[i]*sceneInfo.backgroundColor.w;
+   }
+#endif // 0
    color.w = colors[0].w;
    return color;
 }

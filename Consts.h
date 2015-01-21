@@ -13,7 +13,7 @@
 #endif
 
 // Oculus Rift
-#define USE_OCULUS
+//#define USE_OCULUS
 
 // inline   
 #define __INLINE__ // inline

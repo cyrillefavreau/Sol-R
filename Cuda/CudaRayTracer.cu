@@ -1877,7 +1877,7 @@ extern "C" void h2d_textures(
       if( totalSize>0 )
       {
          totalSize *= sizeof(BitmapBuffer);
-         LOG_INFO(3, "Total GPU texture memory allocated: " << totalSize << " bytes" );
+         LOG_INFO(1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
          checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
 
          for( int i(0); i<activeTextures; ++i )

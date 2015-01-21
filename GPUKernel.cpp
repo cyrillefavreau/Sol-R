@@ -1008,7 +1008,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       resetBox(m_boundingBoxes[m_frame][m_treeDepth][0],true);
       int gridGranularity(2);
-      int gridDivider(4);
+      int gridDivider(2);
       m_treeDepth=0;
       int nbBoxes = static_cast<int>(m_primitives[m_frame].size());
       while( nbBoxes>gridGranularity )
