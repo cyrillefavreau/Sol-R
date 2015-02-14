@@ -72,10 +72,10 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
             Morphology morphology;
             int id = atoi(A.c_str());
             morphology.branch = atoi(B.c_str());
-            morphology.x = scale.x*(center.x+atof(C.c_str()));
-            morphology.y = scale.y*(center.y+atof(D.c_str()));
-            morphology.z = scale.z*(center.z+atof(E.c_str()));
-            morphology.radius = scale.w*atof(F.c_str());
+            morphology.x = static_cast<float>(scale.x*(center.x+atof(C.c_str())));
+            morphology.y = static_cast<float>(scale.y*(center.y+atof(D.c_str())));
+            morphology.z = static_cast<float>(scale.z*(center.z+atof(E.c_str())));
+            morphology.radius = static_cast<float>(scale.w*atof(F.c_str()));
             morphology.parent = atoi(G.c_str());
             morphologies[id] = morphology;
          }

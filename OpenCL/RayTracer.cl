@@ -131,7 +131,8 @@ enum PrimitiveType
    ptMagicCarpet = 8,
    ptEnvironment = 9,
    ptEllipsoid   = 10,
-   ptQuad        = 11
+   ptQuad        = 11,
+   ptCone        = 12
 };
 
 typedef struct
@@ -1086,7 +1087,7 @@ Vertex project( const Vertex A, const Vertex B)
 /*
 ________________________________________________________________________________
 
-Cylinder (*intersection)
+Cylinder intersection
 ________________________________________________________________________________
 */
 bool cylinderIntersection( 
@@ -1155,7 +1156,76 @@ bool cylinderIntersection(
 /*
 ________________________________________________________________________________
 
-Checkboard (*intersection)
+Cone intersection
+________________________________________________________________________________
+*/
+bool coneIntersection( 
+   const SceneInfo* sceneInfo,
+   CONST Primitive* cone,
+   CONST Material*  materials, 
+   const Ray* ray,
+   Vertex*    intersection,
+   Vertex*    normal,
+   float*     shadowIntensity) 
+{            
+   bool back = false;
+   Vertex O_C = (*ray).origin-(*cone).p0;
+   Vertex dir = (*ray).direction;
+   Vertex n   = cross(dir, (*cone).n1);
+
+   float ln = length(n);
+
+   // Parallel? (?)
+   if((ln<EPSILON)&&(ln>-EPSILON)) return false;
+
+   n = normalize(n);
+
+   float d = fabs(dot(O_C,n));
+   if (d>(*cone).size.y) return false;
+
+   Vertex O = cross(O_C,(*cone).n1);
+   float t = -dot(O, n)/ln;
+   if( t<0.f ) return false;
+
+   O = normalize(cross(n,(*cone).n1));
+   float s=fabs( sqrt((*cone).size.x*(*cone).size.x-d*d) / dot( dir,O ) );
+
+   float t1=t-s;
+   float t2=t+s;
+
+   // Calculate intersection point
+   (*intersection) = (*ray).origin+t1*dir;
+   Vertex HB1 = (*intersection)-(*cone).p0;
+   Vertex HB2 = (*intersection)-(*cone).p1;
+   float scale1 = dot(HB1,(*cone).n1);
+   float scale2 = dot(HB2,(*cone).n1);
+   // Cylinder length
+   if( scale1 < EPSILON || scale2 > EPSILON ) 
+   {
+      (*intersection) = (*ray).origin+t2*dir;
+      back = true;
+      HB1 = (*intersection)-(*cone).p0;
+      HB2 = (*intersection)-(*cone).p1;
+      scale1 = dot(HB1,(*cone).n1);
+      scale2 = dot(HB2,(*cone).n1);
+      // Cylinder length
+      if( scale1 < EPSILON || scale2 > EPSILON ) return false;
+   }
+
+   Vertex V = (*intersection)-(*cone).p2;
+   (*normal) = V-project(V,(*cone).n1);
+   (*normal) = normalize(*normal);
+   if(back) (*normal) *= -1.f; 
+
+   // Shadow management
+   (*shadowIntensity) = 1.f;
+   return true;
+}
+
+/*
+________________________________________________________________________________
+
+Checkboard intersection
 ________________________________________________________________________________
 */
 bool planeIntersection( 
@@ -1446,6 +1516,7 @@ float4 intersectionShader(
    {
       switch( (*primitive).type ) 
       {
+      case ptCone:
       case ptCylinder:
          {
             if(materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
@@ -1549,9 +1620,10 @@ float processShadows(
    const int     nbPrimitives, 
    const Vertex  lampCenter, 
    const Vertex  origin, 
-   const int     objectId,
+   const int     lightId,
    const int     iteration,
-   float4*       color)
+   float4*       color,
+   const int     objectId)
 {
    float result = 0.f;
    int cptBoxes = 0;
@@ -1567,7 +1639,7 @@ float processShadows(
    while( result<(*sceneInfo).shadowIntensity && cptBoxes<nbActiveBoxes )
    {
       CONST BoundingBox* box = &boudingBoxes[cptBoxes];
-      if(boxIntersection(box, &r, 0.05f, minDistance))
+      if(boxIntersection(box, &r, 0.f, minDistance))
       {
          int cptPrimitives = 0;
          while( result<(*sceneInfo).shadowIntensity && cptPrimitives<(*box).nbPrimitives)
@@ -1578,7 +1650,7 @@ float processShadows(
             float  shadowIntensity = 0.f;
 
             CONST Primitive* primitive = &primitives[(*box).startIndex+cptPrimitives];
-            if( (*primitive).index!=objectId && materials[(*primitive).materialId].attributes.x==0)
+            if( (*primitive).index!=lightId && (*primitive).index!=objectId && materials[(*primitive).materialId].attributes.x==0)
             {
                bool hit = false;
                if((*sceneInfo).parameters.y==1)
@@ -1587,9 +1659,10 @@ float processShadows(
                   {
                   case ptSphere   : hit=sphereIntersection   ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                   case ptCylinder : hit=cylinderIntersection ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
-                  case ptCamera   : hit=false; break;
+                  case ptCone     : hit=coneIntersection     ( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                   case ptEllipsoid: hit=ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                   case ptTriangle : hit=triangleIntersection ( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, true ); break;
+                  case ptCamera   : hit=false; break;
                   default         : hit=planeIntersection    ( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false ); break;
                   }
                }
@@ -1604,6 +1677,9 @@ float processShadows(
                   float l = length(O_I);
                   if( l>EPSILON && l<length(O_L) )
                   {
+#if 0
+                     result = 1.f;
+                     /*
                      float ratio = shadowIntensity*(*sceneInfo).shadowIntensity;
                      if( materials[(*primitive).materialId].transparency!=0.f )
                      {
@@ -1617,6 +1693,12 @@ float processShadows(
                         (*color).z  += ratio*(0.3f-0.3f*materials[(*primitive).materialId].color.z);
                      }
                      result += ratio;
+                     */
+#else
+                     result += (materials[(*primitive).materialId].transparency==0.f ? 1.f : 0.2f);
+                     if( materials[(*primitive).materialId].transparency != 0.f )
+                        (*color) += 0.2f*(1.f-materials[(*primitive).materialId].transparency)*materials[(*primitive).materialId].color;
+#endif // 0
                   }
                }
             }
@@ -1735,7 +1817,7 @@ float4 primitiveShader(
                      sceneInfo, boundingBoxes, nbActiveBoxes,
                      primitives, materials, textures, 
                      nbActivePrimitives, center, 
-                     (*intersection), lightInformation[cptLamp].attribute.x, iteration, &shadowColor );
+                     (*intersection), lightInformation[cptLamp].attribute.x, iteration, &shadowColor, objectId );
                }
 
 
@@ -1882,6 +1964,7 @@ inline bool intersectionWithPrimitives(
                      case ptEnvironment :
                      case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
                      case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
+                     case ptCone        : i = coneIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
                      case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                      case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
                      default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;
@@ -1982,6 +2065,7 @@ inline float4 intersectionsWithPrimitives(
                case ptEnvironment :
                case ptSphere      : i = sphereIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity );  break;
                case ptCylinder    : i = cylinderIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
+               case ptCone        : i = coneIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity); break;
                case ptEllipsoid   : i = ellipsoidIntersection( sceneInfo, primitive, materials, &r, &intersection, &normal, &shadowIntensity ); break;
                case ptTriangle    : i = triangleIntersection( sceneInfo, primitive, &r, &intersection, &normal, &areas, &shadowIntensity, false ); break;
                default            : i = planeIntersection( sceneInfo, primitive, materials, textures, &r, &intersection, &normal, &shadowIntensity, false); break;

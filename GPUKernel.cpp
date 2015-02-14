@@ -516,6 +516,7 @@ void GPUKernel::setPrimitive(
             break;
          }
 		case ptCylinder:
+		case ptCone:
 			{
 				// Axis
 				Vertex axis;
@@ -539,9 +540,9 @@ void GPUKernel::setPrimitive(
 				(m_primitives[m_frame])[index].p2.z = (z0*scale+z1*scale)/2.f;
 
             // Length
-            (m_primitives[m_frame])[index].size.x = w*scale; //(x1 - x0)/2.f;
-            (m_primitives[m_frame])[index].size.y = w*scale; //(y1 - y0)/2.f;
-            (m_primitives[m_frame])[index].size.z = w*scale; // (z1 - z0)/2.f;
+            (m_primitives[m_frame])[index].size.x = w*scale;
+            (m_primitives[m_frame])[index].size.y = h*scale;
+            (m_primitives[m_frame])[index].size.z = d*scale;
 				break;
 			}
 #ifdef USE_KINECT 
@@ -737,8 +738,9 @@ bool GPUKernel::updateBoundingBox( CPUBoundingBox& box )
 
 	   switch( primitive.type )
 	   {
-	   case ptCylinder: 
-	   case ptSphere: 
+	   case ptCylinder:
+	   case ptSphere:
+	   case ptCone:
 		   {
 			   p0.x -= primitive.size.x;
 			   p0.y -= primitive.size.x;
@@ -1008,7 +1010,7 @@ int GPUKernel::compactBoxes( bool reconstructBoxes )
    {
       resetBox(m_boundingBoxes[m_frame][m_treeDepth][0],true);
       int gridGranularity(2);
-      int gridDivider(2);
+      int gridDivider(4);
       m_treeDepth=0;
       int nbBoxes = static_cast<int>(m_primitives[m_frame].size());
       while( nbBoxes>gridGranularity )
@@ -2952,39 +2954,39 @@ void GPUKernel::generateScreenshot(const std::string& filename,const int width,c
       int left=static_cast<int>(static_cast<float>(quality-i)*static_cast<float>(avg)/1000.f);
       LOG_INFO(1,"Frame " << i << " generated in " << avg << "ms (" << left << " seconds left...)");
 #endif
-   }
-   LOG_INFO(1,"Saving bitmap to disk");
-   size_t size=sceneInfo.size.x*sceneInfo.size.y*gColorDepth;
-   switch(sceneInfo.misc.x)
-   {
-   case otOpenGL:
-   case otJPEG:
+      LOG_INFO(1,"Saving bitmap to disk");
+      size_t size=sceneInfo.size.x*sceneInfo.size.y*gColorDepth;
+      switch(sceneInfo.misc.x)
       {
-         BitmapBuffer* dst=new BitmapBuffer[size];
-         for(int i(0);i<size;i+=gColorDepth)
+      case otOpenGL:
+      case otJPEG:
          {
-            dst[i  ]=m_bitmap[size-i];
-            dst[i+1]=m_bitmap[size-i+1];
-            dst[i+2]=m_bitmap[size-i+2];
+            BitmapBuffer* dst=new BitmapBuffer[size];
+            for(int i(0);i<size;i+=gColorDepth)
+            {
+               dst[i  ]=m_bitmap[size-i];
+               dst[i+1]=m_bitmap[size-i+1];
+               dst[i+2]=m_bitmap[size-i+2];
+            }
+            jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.size.x,sceneInfo.size.y,gColorDepth,dst);
+            delete [] dst;
+            break;
          }
-         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.size.x,sceneInfo.size.y,gColorDepth,dst);
-         delete [] dst;
+      default:
+         {
+            BitmapBuffer* dst=new BitmapBuffer[size];
+            for(int i(0);i<size;i+=gColorDepth)
+            {
+               dst[i  ]=m_bitmap[size-i+2];
+               dst[i+1]=m_bitmap[size-i+1];
+               dst[i+2]=m_bitmap[size-i  ];
+            }
+            jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.size.x,sceneInfo.size.y,gColorDepth,dst);
+            delete [] dst;
+            break;
+         }
          break;
       }
-   default:
-      {
-         BitmapBuffer* dst=new BitmapBuffer[size];
-         for(int i(0);i<size;i+=gColorDepth)
-         {
-            dst[i  ]=m_bitmap[size-i+2];
-            dst[i+1]=m_bitmap[size-i+1];
-            dst[i+2]=m_bitmap[size-i  ];
-         }
-         jpge::compress_image_to_jpeg_file(filename.c_str(),sceneInfo.size.x,sceneInfo.size.y,gColorDepth,dst);
-         delete [] dst;
-         break;
-      }
-      break;
    }
    m_sceneInfo=bakSceneInfo;
    LOG_INFO(1,"Screenshot successfully generated!");
