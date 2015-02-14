@@ -134,7 +134,8 @@ enum PrimitiveType
    ptMagicCarpet = 8,
    ptEnvironment = 9,
    ptEllipsoid   = 10,
-   ptQuad        = 11
+   ptQuad        = 11,
+   ptCone        = 12
 };
 
 // Material structure

@@ -1,9 +1,9 @@
 ﻿/* 
- * Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
- */
+* Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+* Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
+*/
 
 // System
 #include <iostream>
@@ -124,15 +124,15 @@ __device__ __INLINE__ float4 launchRayTracing(
    primitiveXYId.z = 0;
    primitiveXYId.w = 0;
    int currentMaterialId=-2;
-   
+
    // TODO
    float  colorContributions[NB_MAX_ITERATIONS+1];
    float4 colors[NB_MAX_ITERATIONS+1];
    memset(&colorContributions[0],0,sizeof(float)*(NB_MAX_ITERATIONS+1));
    memset(&colors[0],0,sizeof(float4)*(NB_MAX_ITERATIONS+1));
-   
+
    float4 recursiveBlinn = { 0.f, 0.f, 0.f, 0.f };
-   
+
    // Variable declarations
    float  shadowIntensity = 0.f;
    float4 refractionFromColor;
@@ -142,7 +142,7 @@ __device__ __INLINE__ float4 launchRayTracing(
    Vertex latestIntersection=ray.origin;
    float rayLength=0.f;
    depthOfField = sceneInfo.viewDistance.x;
-  
+
    // Reflected rays
    int reflectedRays=-1;
    Ray reflectedRay;
@@ -183,7 +183,7 @@ __device__ __INLINE__ float4 launchRayTracing(
          attributes.y=materials[primitives[closestPrimitive].materialId.x].transparency.x;
          attributes.z=materials[primitives[closestPrimitive].materialId.x].refraction.x;
          attributes.w=materials[primitives[closestPrimitive].materialId.x].opacity.x;
-         
+
          if( iteration==0 )
          {
             colors[iteration].x = 0.f;
@@ -199,7 +199,7 @@ __device__ __INLINE__ float4 launchRayTracing(
             if( sceneInfo.parameters.z==aiGlobalIllumination || sceneInfo.parameters.z==aiAdvancedGlobalIllumination )
             {
                // Global illumination
-               int t=(index+sceneInfo.pathTracingIteration.x+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
+               int t=(index+sceneInfo.pathTracingIteration.x*100+sceneInfo.misc.y)%(MAX_BITMAP_SIZE-3);
                pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
                pathTracingRay.direction.x = normal.x+100.f*randoms[t  ];
                pathTracingRay.direction.y = normal.y+100.f*randoms[t+1];
@@ -262,12 +262,12 @@ __device__ __INLINE__ float4 launchRayTracing(
             // Actual refraction
             Vertex O_E = normalize(closestIntersection-rayOrigin.origin);
             vectorRefraction( reflectedTarget, O_E, refraction, normal, initialRefraction );
-            
+
             colorContributions[iteration]=transparency-a;
-            
+
             // Prepare next ray
             initialRefraction = refraction;
-            
+
             if( reflectedRays==-1 && attributes.x!=0.f )
             {
                vectorReflection( reflectedRay.direction, O_E, normal );
@@ -291,7 +291,7 @@ __device__ __INLINE__ float4 launchRayTracing(
                colorContributions[iteration] = 1.f;                  
             }         
          }
-         
+
          // Contribute to final color
          rBlinn /= (iteration+1);
          recursiveBlinn.x=(rBlinn.x>recursiveBlinn.x) ? rBlinn.x:recursiveBlinn.x;
@@ -452,7 +452,7 @@ __device__ __INLINE__ float4 launchRayTracing(
    {
       intersectionColor = colors[0];
    }
-   
+
 #ifdef DEPTH_TRANSPARENCY
    // Transparency depending on distance and does not apply to light emitting materials
    if( depthOfField<postProcessingInfo.param1.x && materials[primitives[closestPrimitive].materialId.x].innerIllumination.x==0.f)
@@ -604,39 +604,39 @@ __global__ void k_standardRenderer(
          r.origin.x += AArotatedGrid[I].x;
          r.origin.y += AArotatedGrid[I].y;
          float4 c;
-		c=launchRayTracing(
-		   index,
-		   BoundingBoxes, nbActiveBoxes,
-		   primitives, nbActivePrimitives,
-		   lightInformation, lightInformationSize, nbActiveLamps,
-		   materials, textures,
-		   randoms,
-		   r,
-		   sceneInfo, postProcessingInfo,
-		   dof,
-		   primitiveXYIds[index]);
+         c=launchRayTracing(
+            index,
+            BoundingBoxes, nbActiveBoxes,
+            primitives, nbActivePrimitives,
+            lightInformation, lightInformationSize, nbActiveLamps,
+            materials, textures,
+            randoms,
+            r,
+            sceneInfo, postProcessingInfo,
+            dof,
+            primitiveXYIds[index]);
          color += c;
       }
    }
    else if(sceneInfo.pathTracingIteration.x>=NB_MAX_ITERATIONS)
    {
       // Antialiazing
-      r.direction.x += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
-      r.direction.y += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
+      r.direction.x += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x*0.5f;
+      r.direction.y += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y*0.5f;
       //r.origin.x += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
       //r.origin.y += AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
    }
-  color += launchRayTracing(
-	 index,
-	 BoundingBoxes, nbActiveBoxes,
-	 primitives, nbActivePrimitives,
-	 lightInformation, lightInformationSize, nbActiveLamps,
-	 materials, textures,
-	 randoms,
-	 r,
-	 sceneInfo, postProcessingInfo,
-	 dof,
-	 primitiveXYIds[index]);
+   color += launchRayTracing(
+      index,
+      BoundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      lightInformation, lightInformationSize, nbActiveLamps,
+      materials, textures,
+      randoms,
+      r,
+      sceneInfo, postProcessingInfo,
+      dof,
+      primitiveXYIds[index]);
 
    if(sceneInfo.parameters.z==aiRandomIllumination)
    {
@@ -794,17 +794,17 @@ __global__ void k_volumeRenderer(
          r.direction.x = ray.direction.x + AArotatedGrid[I].x;
          r.direction.y = ray.direction.y + AArotatedGrid[I].y;
          float4 c;
-		c=launchVolumeRendering(
-		   index,
-		   BoundingBoxes, nbActiveBoxes,
-		   primitives, nbActivePrimitives,
-		   lightInformation, lightInformationSize, nbActiveLamps,
-		   materials, textures,
-		   randoms,
-		   r,
-		   sceneInfo, postProcessingInfo,
-		   dof,
-		   primitiveXYIds[index]);
+         c=launchVolumeRendering(
+            index,
+            BoundingBoxes, nbActiveBoxes,
+            primitives, nbActivePrimitives,
+            lightInformation, lightInformationSize, nbActiveLamps,
+            materials, textures,
+            randoms,
+            r,
+            sceneInfo, postProcessingInfo,
+            dof,
+            primitiveXYIds[index]);
          color += c;
       }
    }
@@ -813,17 +813,17 @@ __global__ void k_volumeRenderer(
       r.direction.x = ray.direction.x + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].x;
       r.direction.y = ray.direction.y + AArotatedGrid[sceneInfo.pathTracingIteration.x%4].y;
    }
-  color += launchVolumeRendering(
-	 index,
-	 BoundingBoxes, nbActiveBoxes,
-	 primitives, nbActivePrimitives,
-	 lightInformation, lightInformationSize, nbActiveLamps,
-	 materials, textures,
-	 randoms,
-	 r,
-	 sceneInfo, postProcessingInfo,
-	 dof,
-	 primitiveXYIds[index]);
+   color += launchVolumeRendering(
+      index,
+      BoundingBoxes, nbActiveBoxes,
+      primitives, nbActivePrimitives,
+      lightInformation, lightInformationSize, nbActiveLamps,
+      materials, textures,
+      randoms,
+      r,
+      sceneInfo, postProcessingInfo,
+      dof,
+      primitiveXYIds[index]);
 
    if(sceneInfo.parameters.z==aiRandomIllumination)
    {
@@ -1495,22 +1495,22 @@ __global__ void k_filter(
 #define NB_FILTERS 6
    const int2 filterSize[NB_FILTERS] = 
    {
-       { 3, 3 }, 
-       { 5, 5 }, 
-       { 3, 3 }, 
-       { 3, 3 }, 
-       { 5, 5 }, 
-       { 5, 5 }
+      { 3, 3 }, 
+      { 5, 5 }, 
+      { 3, 3 }, 
+      { 3, 3 }, 
+      { 5, 5 }, 
+      { 5, 5 }
    };
 
    const float2 filterFactors[NB_FILTERS] = 
    {
-       { 1.f, 128.f }, 
-       { 1.f, 0.f }, 
-       { 1.f, 0.f }, 
-       { 1.f, 0.f }, 
-       { 0.2f, 0.f }, 
-       { 0.125f, 0.f }
+      { 1.f, 128.f }, 
+      { 1.f, 0.f }, 
+      { 1.f, 0.f }, 
+      { 1.f, 0.f }, 
+      { 0.2f, 0.f }, 
+      { 0.125f, 0.f }
    }; // Factor and Bias
 
    const float filterInfo[NB_FILTERS][5][5] =
@@ -1877,7 +1877,7 @@ extern "C" void h2d_textures(
       if( totalSize>0 )
       {
          totalSize *= sizeof(BitmapBuffer);
-         LOG_INFO(1, "Total GPU texture memory allocated: " << totalSize << " bytes" );
+         LOG_INFO(3, "Total GPU texture memory allocated: " << totalSize << " bytes" );
          checkCudaErrors(cudaMalloc( (void**)&d_textures[device], totalSize));
 
          for( int i(0); i<activeTextures; ++i )
@@ -2211,9 +2211,9 @@ extern "C" void cudaRender(
             d_bitmap[device] );
          break;
       }
-      
+
       cudaError_t status = cudaGetLastError();
-      if(status != cudaSuccess) 
+      if(status != cudaSuccess)
       {
          LOG_ERROR("********************************************************************************");
          LOG_ERROR("Error code : [" << status << "] " << cudaGetErrorString(status));

@@ -57,8 +57,8 @@ CudaKernel::CudaKernel( bool activeLogging, int optimalNbOfPrimmitivesPerBox, in
    m_sharedMemSize(0)
 {
    LOG_INFO(3,"CudaKernel::CudaKernel(" << platform << "," << device << ")");
-   m_blockSize.x = 16;
-   m_blockSize.y = 16;
+   m_blockSize.x = 12;
+   m_blockSize.y = 12;
    m_blockSize.z = 1;
    m_blockSize.w = 0;
 
@@ -400,24 +400,24 @@ void CudaKernel::render_end()
 
 void CudaKernel::deviceQuery()
 {
-   LOG_INFO(1,"CUDA Device Query (Runtime API) version (CUDART static linking)");
+   LOG_INFO(3,"CUDA Device Query (Runtime API) version (CUDART static linking)");
 
    int deviceCount = 0;
    cudaError_t error_id = cudaGetDeviceCount(&deviceCount);
 
    if (error_id != cudaSuccess)
    {
-      LOG_INFO(1,"cudaGetDeviceCount returned " << (int)error_id << " -> " << cudaGetErrorString(error_id));
+      LOG_INFO(3,"cudaGetDeviceCount returned " << (int)error_id << " -> " << cudaGetErrorString(error_id));
    }
 
    // This function call returns 0 if there are no CUDA capable devices.
    if (deviceCount == 0)
    {
-      LOG_INFO(1,"There is no device supporting CUDA");
+      LOG_INFO(3,"There is no device supporting CUDA");
    }
    else
    {
-      LOG_INFO(1,"Found " << deviceCount << " CUDA Capable device(s)");
+      LOG_INFO(3,"Found " << deviceCount << " CUDA Capable device(s)");
    }
 
    int dev, driverVersion = 0, runtimeVersion = 0;
