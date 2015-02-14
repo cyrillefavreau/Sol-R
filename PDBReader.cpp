@@ -512,7 +512,6 @@ Vertex PDBReader::loadAtomsFromFile(
 #else
             while( i<line.length() )
             {
-               LOG_INFO(1, "Value = '" << value << "'");
                switch(i)
                {
                case 6: //ID
