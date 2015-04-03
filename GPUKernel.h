@@ -359,6 +359,8 @@ public:
 
    void setTreeDepth( const int treeDepth );
 
+   void setPrimitivesTransfered( const bool value ) { m_primitivesTransfered = value; }
+
 protected:
 
    // Bounding boxes management

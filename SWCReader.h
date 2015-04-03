@@ -11,6 +11,18 @@
 
 #include "GPUKernel.h"
 
+struct Morphology
+{
+   int branch;
+   float x;
+   float y;
+   float z;
+   float radius;
+   int parent;
+   int primitiveId;
+};
+typedef std::map<int, Morphology> Morphologies;
+
 class RAYTRACINGENGINE_API SWCReader
 {
 public:
@@ -25,4 +37,10 @@ public:
       const Vertex& scale, 
       bool autoCenter,
       const int materialId );
+
+   Morphologies getMorphologies() { return m_morphologies; }
+
+private:
+   Morphologies m_morphologies;
+
 };

@@ -15,22 +15,11 @@
 #include <string.h>
 #include <math.h>
 
+
 #include "Logging.h"
 
 #include "Consts.h"
 #include "SWCReader.h"
-
-struct Morphology
-{
-   int branch;
-   float x;
-   float y;
-   float z;
-   float radius;
-   int parent;
-};
-
-typedef std::map<int, Morphology> Morphologies;
 
 SWCReader::SWCReader(void)
 {
@@ -49,7 +38,6 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
    bool autoCenter,
    const int materialId )
 {
-   Morphologies morphologies;
 
    CPUBoundingBox AABB;
    LOG_INFO(1,"Loading SWC file " << filename );
@@ -77,14 +65,14 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
             morphology.z = static_cast<float>(scale.z*(center.z+atof(E.c_str())));
             morphology.radius = static_cast<float>(scale.w*atof(F.c_str()));
             morphology.parent = atoi(G.c_str());
-            morphologies[id] = morphology;
+            m_morphologies[id] = morphology;
          }
       }
       file.close();
    }
 
-   Morphologies::iterator it = morphologies.begin();
-   while( it!=morphologies.end() )
+   Morphologies::iterator it = m_morphologies.begin();
+   while( it!=m_morphologies.end() )
    {
       Morphology& a = (*it).second;
       if( a.parent == -1 )
@@ -93,25 +81,26 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
          Vertex vt1 = {2.f,2.f,0.f};
          Vertex vt2 = {0.f,0.f,0.f};
 
-         int p = kernel.addPrimitive(ptSphere,true);
-         kernel.setPrimitive(p, a.x, a.y, a.z, a.radius*1.2f, 0.f, 0.f, materialId );
-         kernel.setPrimitiveTextureCoordinates(p, vt0, vt1, vt2);
+         a.primitiveId = kernel.addPrimitive(ptSphere,true);
+         kernel.setPrimitive(a.primitiveId, a.x, a.y, a.z, a.radius*1.5f, 0.f, 0.f, materialId );
+         kernel.setPrimitiveTextureCoordinates(a.primitiveId, vt0, vt1, vt2);
+         
       }
       else
       {
-         Morphology& b = morphologies[a.parent];
+         Morphology& b = m_morphologies[a.parent];
          if( b.parent != -1 )
          {
             Vertex vt0 = {0.f,0.f,0.f};
             Vertex vt1 = {1.f,1.f,0.f};
             Vertex vt2 = {0.f,0.f,0.f};
 
-            float ra = a.radius*2.f;
-            float rb = b.radius*2.f;
-            int p = kernel.addPrimitive(ptCylinder,true);
-            kernel.setPrimitive(p, a.x, a.y, a.z, b.x, b.y, b.z, ra, 0.f, 0.f, materialId );
-            kernel.setPrimitiveTextureCoordinates(p, vt0, vt1, vt2);
-            p = kernel.addPrimitive(ptSphere,true);
+            float ra = a.radius;
+            float rb = b.radius;
+            b.primitiveId = kernel.addPrimitive(ptCylinder,true);
+            kernel.setPrimitive(b.primitiveId, a.x, a.y, a.z, b.x, b.y, b.z, ra, 0.f, 0.f, materialId );
+            kernel.setPrimitiveTextureCoordinates(b.primitiveId, vt0, vt1, vt2);
+            int p = kernel.addPrimitive(ptSphere,true);
             kernel.setPrimitive(p, b.x, b.y, b.z, rb, 0.f, 0.f, materialId );
             kernel.setPrimitiveTextureCoordinates(p, vt0, vt1, vt2);
          }

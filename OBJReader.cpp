@@ -701,7 +701,19 @@ Vertex OBJReader::loadModelFromFile(
                   sphereCenter.y = (vertices[face[f].x].y + vertices[face[f+1].x].y + vertices[face[f+2].x].y)/3.f;
                   sphereCenter.z = (vertices[face[f].x].z + vertices[face[f+1].x].z + vertices[face[f+2].x].z)/3.f;
 
-                  float radius = 10.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
+                  Vertex sphereRadius[3];
+                  for( int i=0; i<3; ++i)
+                  {
+                    sphereRadius[i].x = (sphereCenter.x - vertices[face[f+i].x].x);
+                    sphereRadius[i].y = (sphereCenter.y - vertices[face[f+i].x].y);
+                    sphereRadius[i].z = (sphereCenter.z - vertices[face[f+i].x].z);
+                  }
+                  Vertex s;
+                  s.x = std::max(sphereRadius[0].x, std::max(sphereRadius[1].x, sphereRadius[2].x ));
+                  s.y = std::max(sphereRadius[0].y, std::max(sphereRadius[1].y, sphereRadius[2].y ));
+                  s.z = std::max(sphereRadius[0].z, std::max(sphereRadius[1].z, sphereRadius[2].z ));
+
+                  //float radius = objectScale.x*sqrt(s.x*s.x+s.y*s.y+s.z*s.z);
 
                   if( isSketchupLightMaterial )
                   {
@@ -709,13 +721,13 @@ Vertex OBJReader::loadModelFromFile(
                   }
                   else
                   {
-                     nbPrimitives = kernel.addPrimitive( ptSphere );
+                     nbPrimitives = kernel.addPrimitive( ptEllipsoid );
                      kernel.setPrimitive( 
                         nbPrimitives,
                         objectPosition.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
                         objectPosition.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
                         objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
-                        radius, radius, radius,
+                        objectScale.x*s.x, objectScale.y*s.y, objectScale.z*s.z,
                         material);
                      kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                   }

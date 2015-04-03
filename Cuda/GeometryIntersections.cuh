@@ -818,7 +818,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
    while(cptBoxes<nbActiveBoxes)
    {
       BoundingBox& box = boundingBoxes[cptBoxes];
-      if( boxIntersection(box, r, EPSILON, minDistance) )
+      if( boxIntersection(box, r, 0.f, minDistance) )
       {
          // Intersection with Box
          if( sceneInfo.renderBoxes.x!=0 )  // Box 0 is for light emitting objects

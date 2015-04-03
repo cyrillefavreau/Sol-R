@@ -541,8 +541,8 @@ void GPUKernel::setPrimitive(
 
             // Length
             (m_primitives[m_frame])[index].size.x = w*scale;
-            (m_primitives[m_frame])[index].size.y = h*scale;
-            (m_primitives[m_frame])[index].size.z = d*scale;
+            (m_primitives[m_frame])[index].size.y = w*scale;
+            (m_primitives[m_frame])[index].size.z = w*scale;
 				break;
 			}
 #ifdef USE_KINECT 
