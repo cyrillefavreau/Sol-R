@@ -68,8 +68,8 @@ enum OutputType
 enum AdvancedIllumination
 {
    aiNone = 0,
-   aiGlobalIllumination,
-   aiAdvancedGlobalIllumination,
+   aiAmbientOcclusion,
+   aiFullGlobalIllumination,
    aiRandomIllumination
 };
 

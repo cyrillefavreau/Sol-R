@@ -629,6 +629,7 @@ Vertex OBJReader::loadModelFromFile(
       std::vector<Vertex> solrVertices;
       std::string component;
       std::string line;
+      int count(0);
       while( file.good() && kernel.getNbActivePrimitives()<NB_MAX_FACES )
       {
          int nbPrimitives(0);
@@ -721,6 +722,8 @@ Vertex OBJReader::loadModelFromFile(
                   }
                   else
                   {
+                    //if(count%2==0)
+                    {
                      nbPrimitives = kernel.addPrimitive( ptEllipsoid );
                      kernel.setPrimitive( 
                         nbPrimitives,
@@ -728,8 +731,9 @@ Vertex OBJReader::loadModelFromFile(
                         objectPosition.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
                         objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         objectScale.x*s.x, objectScale.y*s.y, objectScale.z*s.z,
-                        material);
+                        materialId);
                      kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
+                    }
                   }
                }
                else
@@ -770,14 +774,14 @@ Vertex OBJReader::loadModelFromFile(
 
                      float radius = 100.f; //objectScale*sqrt(sphereRadius.x*sphereRadius.x+sphereRadius.y*sphereRadius.y+sphereRadius.z*sphereRadius.z);
 
-                     nbPrimitives = kernel.addPrimitive( ptSphere );
+                     nbPrimitives = kernel.addPrimitive( ptEllipsoid );
                      kernel.setPrimitive( 
                         nbPrimitives,
                         objectPosition.x+objectScale.x*(-objectCenter.x+sphereCenter.x),
                         objectPosition.y+objectScale.y*(-objectCenter.y+sphereCenter.y),
                         objectPosition.z+objectScale.z*(-objectCenter.z+sphereCenter.z),
                         radius, 0.f, 0.f,
-                        material);
+                        material + count%100);
                      kernel.setPrimitiveBellongsToModel(nbPrimitives,true);
                   }
                   else
@@ -798,6 +802,7 @@ Vertex OBJReader::loadModelFromFile(
                   kernel.setPrimitiveNormals( 
                      nbPrimitives, normals[face[f+3].z], normals[face[f+2].z], normals[face[f].z] );
                }
+              ++count;
             }
          }
       }

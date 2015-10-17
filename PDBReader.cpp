@@ -545,7 +545,6 @@ Vertex PDBReader::loadAtomsFromFile(
             }
 #endif
 
-            LOG_INFO(1, "Atom: " << atomName )
             // Backbone
             atom.isBackbone = (geometryType==gtBackbone || geometryType==gtIsoSurface || atomCode.length()==1);
 

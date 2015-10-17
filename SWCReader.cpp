@@ -45,7 +45,10 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
    Vertex ObjectSize = {0.f,0.f,0.f};
 
    // Read vertices
+   std::string outfilename = filename + ".xyz";
+   std::ofstream outfile(outfilename.c_str());
    std::ifstream file(filename.c_str());
+   int i(0);
    if( file.is_open() )
    {
       while( file.good() )
@@ -61,21 +64,24 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
             int id = atoi(A.c_str());
             morphology.branch = atoi(B.c_str());
             morphology.x = static_cast<float>(scale.x*(center.x+atof(C.c_str())));
-            morphology.y = static_cast<float>(scale.y*(center.y+atof(D.c_str())));
-            morphology.z = static_cast<float>(scale.z*(center.z+atof(E.c_str())));
+            morphology.z = static_cast<float>(scale.y*(center.y+atof(D.c_str())));
+            morphology.y = static_cast<float>(scale.z*(center.z+atof(E.c_str())));
             morphology.radius = static_cast<float>(scale.w*atof(F.c_str()));
             morphology.parent = atoi(G.c_str());
             m_morphologies[id] = morphology;
+            if(i%20==0) outfile << morphology.x*10 << " " << morphology.y*10 << " " << morphology.z*10 << std::endl;
+            ++i;
          }
       }
       file.close();
    }
+   outfile.close();
 
    Morphologies::iterator it = m_morphologies.begin();
    while( it!=m_morphologies.end() )
    {
       Morphology& a = (*it).second;
-      if( a.parent == -1 )
+      if( a.parent == -2 )
       {
          Vertex vt0 = {0.f,0.f,0.f};
          Vertex vt1 = {2.f,2.f,0.f};
@@ -97,12 +103,15 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(
 
             float ra = a.radius;
             float rb = b.radius;
+            /*
             b.primitiveId = kernel.addPrimitive(ptCylinder,true);
             kernel.setPrimitive(b.primitiveId, a.x, a.y, a.z, b.x, b.y, b.z, ra, 0.f, 0.f, materialId );
             kernel.setPrimitiveTextureCoordinates(b.primitiveId, vt0, vt1, vt2);
+            */
             int p = kernel.addPrimitive(ptSphere,true);
             kernel.setPrimitive(p, b.x, b.y, b.z, rb, 0.f, 0.f, materialId );
             kernel.setPrimitiveTextureCoordinates(p, vt0, vt1, vt2);
+            
          }
       }
       ++it;

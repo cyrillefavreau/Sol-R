@@ -352,7 +352,7 @@
     </CudaCompile>
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-ftz=true -prec-div=false -prec-sqrt=false %(AdditionalOptions)</AdditionalOptions>
@@ -388,7 +388,7 @@
     </CudaCompile>
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
-      <GPUDebugInfo>true</GPUDebugInfo>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
       <GenerateLineInfo>true</GenerateLineInfo>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
     </CudaCompile>
@@ -481,6 +481,7 @@
     <CudaCompile>
       <HostDebugInfo>true</HostDebugInfo>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'">
@@ -538,6 +539,7 @@
       <HostDebugInfo>false</HostDebugInfo>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">
@@ -592,7 +594,9 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-ftz=true -prec-div=false -prec-sqrt=false %(AdditionalOptions)</AdditionalOptions>
       <MaxRegCount>32</MaxRegCount>
-      <CodeGeneration>compute_35,sm_35</CodeGeneration>
+      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>
+      </GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
@@ -652,6 +656,7 @@
       <FastMath>true</FastMath>
       <Defines>WIN32</Defines>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -707,6 +712,7 @@
     <CudaCompile>
       <FastMath>true</FastMath>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">
@@ -770,6 +776,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <MaxRegCount>32</MaxRegCount>
       <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</CodeGeneration>
+      <GPUDebugInfo>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35</GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">

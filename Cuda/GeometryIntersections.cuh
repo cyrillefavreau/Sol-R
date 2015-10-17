@@ -1061,6 +1061,7 @@ __device__ __INLINE__ float4 primitiveShader(
    specular.z=material.specular.z;
 
    // Intersection color
+   Vertex initialNormal = normal;
    float4 intersectionColor = intersectionShader( sceneInfo, primitive, materials, textures, intersection, areas, bumpNormal, specular, attributes, advancedAttributes );
    normal += bumpNormal;
    normal = normalize(normal);
@@ -1071,7 +1072,13 @@ __device__ __INLINE__ float4 primitiveShader(
       return intersectionColor; 
    }
 
-   if( sceneInfo.graphicsLevel.x>0 )
+   if( sceneInfo.graphicsLevel.x==0 )
+   {
+     closestColor = intersectionColor * 
+       (0.5f+0.5*dot(normal,initialNormal)) * // Bump and normal mapping
+       (1.f+material.innerIllumination.x);    // Inner illumination
+   }
+   else
    {
       closestColor *= material.innerIllumination.x;
       for( int cpt=0; cpt<lightInformationSize; ++cpt ) 
@@ -1102,7 +1109,8 @@ __device__ __INLINE__ float4 primitiveShader(
                // Lambert
                // --------------------------------------------------------------------------------
                lightRay = normalize(lightRay);
-               float lambert = material.innerIllumination.x+dot(normal,lightRay);
+               float lambert = material.innerIllumination.x + dot(normal,lightRay);
+               //float lambert = material.innerIllumination.x + (sceneInfo.graphicsLevel.x>=4 ? dot(normal,lightRay): 0.5f+0.5*dot(normal,initialNormal));
 
                if( lambert>0.f && 
                   sceneInfo.graphicsLevel.x>3 && 
@@ -1202,10 +1210,6 @@ __device__ __INLINE__ float4 primitiveShader(
          refractionFromColor = intersectionColor; // Refraction depending on color;
          saturateVector( totalBlinn );
       }
-   }
-   else
-   {
-      closestColor = intersectionColor;
    }
    return closestColor;
 }
