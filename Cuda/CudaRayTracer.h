@@ -11,11 +11,12 @@
 #include "CudaDataTypes.h"
 
 extern "C" void initialize_scene( 
-   int2            occupancyParameters,
+   int2 occupancyParameters,
    SceneInfo sceneInfo,
-   int       nbPrimitives,
-   int       nbLamps,
-   int       nbMaterials
+   const int nbPrimitives,
+   const int nbLamps,
+   const int nbMaterials,
+   const int nbBoxes
 #ifdef USE_MANAGED_MEMORY
    ,BoundingBox*&   boundingBoxes
    ,Primitive*&     primitives

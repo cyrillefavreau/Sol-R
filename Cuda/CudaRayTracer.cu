@@ -235,7 +235,8 @@ __device__ __INLINE__ float4 launchRayTracing(
 
       // Primitive illumination
       Material& material=materials[primitives[closestPrimitive].materialId.x];
-      primitiveXYId.z += material.innerIllumination.x*256;
+      float blinn = (rBlinn.x+rBlinn.y+rBlinn.z)/3.f;
+      primitiveXYId.z += (blinn+material.innerIllumination.x)*256;
 
       float segmentLength=length(closestIntersection-latestIntersection);
       latestIntersection=closestIntersection;
@@ -292,8 +293,8 @@ __device__ __INLINE__ float4 launchRayTracing(
         else 
         {
           carryon = false;
-          colorContributions[iteration] = 1.f;                  
-        }         
+          colorContributions[iteration] = 1.f;
+        }
       }
 
       // Contribute to final color
@@ -323,7 +324,7 @@ __device__ __INLINE__ float4 launchRayTracing(
       {
         colors[iteration] = skyboxMapping(sceneInfo,materials,textures,rayOrigin);
         float rad = colors[iteration].x+colors[iteration].y+colors[iteration].z;
-        primitiveXYId.z += (rad>2.5f) ? rad*256.f : 0.f;
+        primitiveXYId.z += (rad>2.7f) ? rad*256.f : 0.f;
       }
       else
       {
@@ -1448,7 +1449,7 @@ __global__ void k_radiosity(
   for( int i=0; i<postProcessingInfo.param3.x; ++i )
   {
     int ix = (i+sceneInfo.pathTracingIteration.x)%wh;
-    int iy = (i+100+sceneInfo.pathTracingIteration.x)%wh;
+    int iy = (i+1000+sceneInfo.pathTracingIteration.x)%wh;
     int xx = x+randoms[ix]*postProcessingInfo.param2.x;
     int yy = y+randoms[iy]*postProcessingInfo.param2.x;
     localColor += postProcessingBuffer[index].colorInfo;
@@ -1456,7 +1457,7 @@ __global__ void k_radiosity(
     {
       int localIndex = yy*sceneInfo.size.x+xx;
       float4 lightColor = postProcessingBuffer[localIndex].colorInfo;
-      localColor += lightColor*float(primitiveXYIds[localIndex].z)/256.f;
+      localColor += lightColor*float(primitiveXYIds[localIndex].z)/512.f;
     }
   }
   localColor /= postProcessingInfo.param3.x;
@@ -1667,11 +1668,12 @@ GPU initialization
 ________________________________________________________________________________
 */
 extern "C" void initialize_scene( 
-  int2             occupancyParameters,
-  SceneInfo sceneInfo,
-  int        nbPrimitives,
-  int        nbLamps,
-  int        nbMaterials
+  int2  occupancyParameters,
+  const SceneInfo sceneInfo,
+  const int       nbPrimitives,
+  const int       nbLamps,
+  const int       nbMaterials,
+  const int       nbBoxes
 #ifdef USE_MANAGED_MEMORY
   ,BoundingBox*&    boundingBoxes
   ,Primitive*&      primitives
@@ -1706,7 +1708,7 @@ extern "C" void initialize_scene(
     LOG_INFO(1, "Created " << occupancyParameters.y << " streams on device " << device );
 
     // Scene resources
-    int size(NB_MAX_BOXES*sizeof(BoundingBox));
+    int size(nbBoxes*sizeof(BoundingBox));
 
     // Bounding boxes
 #ifdef USE_MANAGED_MEMORY
@@ -1718,7 +1720,7 @@ extern "C" void initialize_scene(
     totalMemoryAllocation += size;
 
     // Primitives
-    size=NB_MAX_PRIMITIVES*sizeof(Primitive);
+    size=nbPrimitives*sizeof(Primitive);
 #ifdef USE_MANAGED_MEMORY
     checkCudaErrors(cudaMallocManaged( &primitives, size, cudaMemAttachHost));
 #else
@@ -1728,13 +1730,13 @@ extern "C" void initialize_scene(
     totalMemoryAllocation += size;
 
     // Lamps
-    size=NB_MAX_LAMPS*sizeof(Lamp);
+    size=nbLamps*sizeof(Lamp);
     checkCudaErrors(cudaMalloc( (void**)&d_lamps[device], size));
     LOG_INFO(3, "d_lamps: " << size << " bytes" );
     totalMemoryAllocation += size;
 
     // Materials
-    size=NB_MAX_MATERIALS*sizeof(Material);
+    size=nbMaterials*sizeof(Material);
     checkCudaErrors(cudaMalloc( (void**)&d_materials[device], size));
     LOG_INFO(3, "d_materials: " << size << " bytes" );
     totalMemoryAllocation += size;
