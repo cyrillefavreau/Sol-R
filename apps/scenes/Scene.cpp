@@ -220,7 +220,7 @@ void Scene::initialize(const int width, const int height) {
   float d = 10000.f;
 
   // HDRI
-  std::string folderName("./hdri");
+  std::string folderName("../medias/hdri");
   folderName += "/";
   loadTextures(folderName, "*.bmp");
   loadTextures(folderName, "*.jpg");
@@ -228,7 +228,7 @@ void Scene::initialize(const int width, const int height) {
   LOG_INFO(1, m_nbHDRI << " HDRI textures loaded");
 
   // Textures
-  folderName = "./textures";
+  folderName = "../medias/textures";
   folderName += "/";
   loadTextures(folderName, "*.bmp");
   loadTextures(folderName, "*.jpg");
