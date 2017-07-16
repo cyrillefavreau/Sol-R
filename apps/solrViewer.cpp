@@ -12,8 +12,6 @@
 #include "../solr/opengl/rtgl.h"
 using namespace RayTracer;
 
-#define _USE_MATH_DEFINES
-
 // Includes
 #include <cassert>
 #include <iostream>

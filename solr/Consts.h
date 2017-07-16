@@ -22,11 +22,6 @@
 
 #include "../generated/defines.h"
 
-// Defines
-#ifdef WIN32
-#define NOMINMAX
-#endif
-
 // Oculus Rift
 //#define USE_OCULUS
 

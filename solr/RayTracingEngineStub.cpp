@@ -47,7 +47,7 @@ PostProcessingInfo gPostProcessingInfoStub;
 // --------------------------------------------------------------------------------
 // Implementation
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
+int RayTracer_SetSceneInfo(
     int width, int height, int graphicsLevel, int nbRayIterations,
     double transparentColor, double viewDistance, double shadowIntensity,
     int renderingType, double width3DVision, double bgColorR, double bgColorG,
@@ -95,8 +95,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetSceneInfo(
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_SetPostProcessingInfo(int type, double param1, double param2,
+int RayTracer_SetPostProcessingInfo(int type, double param1, double param2,
                                 int param3) {
   LOG_INFO(3, "RayTracer_SetPostProcessingInfo");
   gPostProcessingInfoStub.type = type;
@@ -106,13 +105,12 @@ RayTracer_SetPostProcessingInfo(int type, double param1, double param2,
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetDraftMode(int draft) {
+int RayTracer_SetDraftMode(int draft) {
   gSceneInfoStub.parameters.w = draft;
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_InitializeKernel(bool activeLogging, int platform, int device) {
+int RayTracer_InitializeKernel(bool activeLogging, int platform, int device) {
   LOG_INFO(3, "RayTracer_InitializeKernel");
   if (gKernel == 0) {
     gKernel =
@@ -128,7 +126,7 @@ RayTracer_InitializeKernel(bool activeLogging, int platform, int device) {
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel() {
+int RayTracer_FinalizeKernel() {
   LOG_INFO(3, "RayTracer_FinalizeKernel");
   if (gKernel) {
     delete gKernel;
@@ -138,7 +136,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_FinalizeKernel() {
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_ResetKernel() {
+int RayTracer_ResetKernel() {
   LOG_INFO(3, "RayTracer_ResetKernel");
   if (gKernel) {
     gKernel->resetAll();
@@ -148,8 +146,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_ResetKernel() {
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API void
-RayTracer_SetCamera(double eye_x, double eye_y, double eye_z, double dir_x,
+void RayTracer_SetCamera(double eye_x, double eye_y, double eye_z, double dir_x,
                     double dir_y, double dir_z, double angle_x, double angle_y,
                     double angle_z) {
   LOG_INFO(3, "RayTracer_SetCamera");
@@ -163,7 +160,7 @@ RayTracer_SetCamera(double eye_x, double eye_y, double eye_z, double dir_x,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel(double timer,
+int RayTracer_RunKernel(double timer,
                                                         BitmapBuffer *image) {
   LOG_INFO(3, "RayTracer_RunKernel");
   gKernel->setSceneInfo(gSceneInfoStub);
@@ -196,7 +193,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_RunKernel(double timer,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive(int type,
+int RayTracer_AddPrimitive(int type,
                                                            int movable) {
   LOG_INFO(3, "RayTracer_AddPrimitive");
   int id = gKernel->addPrimitive(static_cast<PrimitiveType>(type));
@@ -205,8 +202,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_AddPrimitive(int type,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_SetPrimitive(int index, double p0_x, double p0_y, double p0_z,
+int RayTracer_SetPrimitive(int index, double p0_x, double p0_y, double p0_z,
                        double p1_x, double p1_y, double p1_z, double p2_x,
                        double p2_y, double p2_z, double size_x, double size_y,
                        double size_z, int materialId) {
@@ -221,8 +217,7 @@ RayTracer_SetPrimitive(int index, double p0_x, double p0_y, double p0_z,
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_GetPrimitive(int index, double &p0_x, double &p0_y, double &p0_z,
+int RayTracer_GetPrimitive(int index, double &p0_x, double &p0_y, double &p0_z,
                        double &p1_x, double &p1_y, double &p1_z, double &p2_x,
                        double &p2_y, double &p2_z, double &size_x,
                        double &size_y, double &size_z, int &materialId) {
@@ -247,13 +242,12 @@ RayTracer_GetPrimitive(int index, double &p0_x, double &p0_y, double &p0_z,
   return -1;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveAt(int x, int y) {
+int RayTracer_GetPrimitiveAt(int x, int y) {
   LOG_INFO(3, "RayTracer_GetPrimitiveAt");
   return gKernel->getPrimitiveAt(x, y);
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_GetPrimitiveCenter(int index, double &x, double &y, double &z) {
+int RayTracer_GetPrimitiveCenter(int index, double &x, double &y, double &z) {
   LOG_INFO(3, "RayTracer_GetPrimitiveCenter");
   Vertex center = gKernel->getPrimitiveCenter(index);
   x = static_cast<double>(center.x);
@@ -262,8 +256,7 @@ RayTracer_GetPrimitiveCenter(int index, double &x, double &y, double &z) {
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_RotatePrimitive(int index, double rx, double ry, double rz, double ax,
+int RayTracer_RotatePrimitive(int index, double rx, double ry, double rz, double ax,
                           double ay, double az) {
   LOG_INFO(3, "RayTracer_RotatePrimitive");
   FLOAT4 rotationCenter = {static_cast<float>(rx), static_cast<float>(ry),
@@ -275,8 +268,7 @@ RayTracer_RotatePrimitive(int index, double rx, double ry, double rz, double ax,
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_RotatePrimitives(int fromBoxId, int toBoxId, double rx, double ry,
+int RayTracer_RotatePrimitives(int fromBoxId, int toBoxId, double rx, double ry,
                            double rz, double ax, double ay, double az) {
   LOG_INFO(3, "RayTracer_RotatePrimitives");
   try {
@@ -292,20 +284,18 @@ RayTracer_RotatePrimitives(int fromBoxId, int toBoxId, double rx, double ry,
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_SetPrimitiveMaterial(int index, int materialId) {
+int RayTracer_SetPrimitiveMaterial(int index, int materialId) {
   LOG_INFO(3, "RayTracer_SetPrimitiveMaterial");
   gKernel->setPrimitiveMaterial(index, materialId);
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetPrimitiveMaterial(int index) {
+int RayTracer_GetPrimitiveMaterial(int index) {
   LOG_INFO(3, "RayTracer_GetPrimitiveMaterial");
   return gKernel->getPrimitiveMaterial(index);
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z,
+int RayTracer_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z,
                               double n1_x, double n1_y, double n1_z,
                               double n2_x, double n2_y, double n2_z) {
   LOG_INFO(3, "RayTracer_SetPrimitiveNormals");
@@ -319,7 +309,7 @@ RayTracer_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z,
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveTextureCoordinates(
+int RayTracer_SetPrimitiveTextureCoordinates(
     int index, double t0_x, double t0_y, double t0_z, double t1_x, double t1_y,
     double t1_z, double t2_x, double t2_y, double t2_z) {
   LOG_INFO(3, "RayTracer_SetPrimitiveTextureCoordinates");
@@ -334,8 +324,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetPrimitiveTextureCoordinates(
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_UpdateSkeletons(int index, double p0_x, double p0_y, double p0_z,
+int RayTracer_UpdateSkeletons(int index, double p0_x, double p0_y, double p0_z,
                           double size, double radius, int materialId,
                           double head_radius, int head_materialId,
                           double hands_radius, int hands_materialId,
@@ -355,14 +344,13 @@ RayTracer_UpdateSkeletons(int index, double p0_x, double p0_y, double p0_z,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_LoadTextureFromFile(int index, char *filename) {
+int RayTracer_LoadTextureFromFile(int index, char *filename) {
   LOG_INFO(3, "RayTracer_LoadTextureFromFile");
   return gKernel->loadTextureFromFile(index, filename);
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture(int index,
+int RayTracer_SetTexture(int index,
                                                          HANDLE texture) {
   LOG_INFO(3, "RayTracer_SetTexture");
   /* TODO
@@ -374,8 +362,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetTexture(int index,
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_GetTextureSize(int index, int &width, int &height, int &depth) {
+int RayTracer_GetTextureSize(int index, int &width, int &height, int &depth) {
   LOG_INFO(3, "RayTracer_GetTextureSize");
   if (index < static_cast<int>(gKernel->getNbActiveTextures())) {
     TextureInformation texInfo;
@@ -391,7 +378,7 @@ RayTracer_GetTextureSize(int index, int &width, int &height, int &depth) {
   return 1;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetTexture(int index,
+int RayTracer_GetTexture(int index,
                                                          BitmapBuffer *image) {
   LOG_INFO(3, "RayTracer_GetTexture");
   if (index < static_cast<int>(gKernel->getNbActiveTextures())) {
@@ -412,19 +399,19 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetTexture(int index,
   return 1;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetNbTextures(int &nbTextures) {
+int RayTracer_GetNbTextures(int &nbTextures) {
   LOG_INFO(3, "RayTracer_GetNbTextures");
   return gKernel->getNbActiveTextures();
 }
 
 // ---------- Materials ----------
-extern "C" RAYTRACINGENGINE_API int RayTracer_AddMaterial() {
+int RayTracer_AddMaterial() {
   LOG_INFO(3, "RayTracer_AddMaterial");
   return gKernel->addMaterial();
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
+int RayTracer_SetMaterial(
     int index, double color_r, double color_g, double color_b, double noise,
     double reflection, double refraction, int procedural, int wireframe,
     int wireframeDepth, double transparency, double opacity,
@@ -477,7 +464,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SetMaterial(
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
+int RayTracer_GetMaterial(
     int in_index, double &out_color_r, double &out_color_g, double &out_color_b,
     double &out_noise, double &out_reflection, double &out_refraction,
     int &out_procedural, int &out_wireframe, int &out_wireframeDepth,
@@ -537,8 +524,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GetMaterial(
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_LoadMolecule(char *filename, int geometryType, double defaultAtomSize,
+int RayTracer_LoadMolecule(char *filename, int geometryType, double defaultAtomSize,
                        double defaultStickSize, int atomMaterialType,
                        double scale) {
   LOG_INFO(3, "RayTracer_LoadMolecule");
@@ -554,8 +540,7 @@ RayTracer_LoadMolecule(char *filename, int geometryType, double defaultAtomSize,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_LoadOBJModel(char *filename, int materialId, int autoScale,
+int RayTracer_LoadOBJModel(char *filename, int materialId, int autoScale,
                        double scale, int autoCenter, double &height) {
   LOG_INFO(3, "RayTracer_LoadOBJModel");
   Vertex center = {0.f, 0.f, 0.f};
@@ -574,7 +559,7 @@ RayTracer_LoadOBJModel(char *filename, int materialId, int autoScale,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile(char *filename) {
+int RayTracer_SaveToFile(char *filename) {
   LOG_INFO(3, "RayTracer_SaveToFile");
   FileMarshaller fm;
   fm.saveToFile(*gKernel, filename);
@@ -582,8 +567,7 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_SaveToFile(char *filename) {
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile(char *filename,
-                                                           double scale) {
+int RayTracer_LoadFromFile(char *filename, double scale) {
   LOG_INFO(3, "RayTracer_LoadFromFile");
   Vertex center = {0.f, 0.f, 0.f};
   FileMarshaller fm;
@@ -592,18 +576,18 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_LoadFromFile(char *filename,
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_CompactBoxes(bool update) {
+int RayTracer_CompactBoxes(bool update) {
   LOG_INFO(3, "RayTracer_CompactBoxes");
   return gKernel->compactBoxes(update);
 }
 
 // --------------------------------------------------------------------------------
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetLight(int index) {
+int RayTracer_GetLight(int index) {
   LOG_INFO(3, "RayTracer_GetLight");
   return gKernel->getLight(index);
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char *filename,
+int RayTracer_GenerateScreenshot(char *filename,
                                                                  int width,
                                                                  int height,
                                                                  int quality) {
@@ -612,37 +596,34 @@ extern "C" RAYTRACINGENGINE_API int RayTracer_GenerateScreenshot(char *filename,
 }
 
 #ifdef USE_OPENCL
-extern "C" RAYTRACINGENGINE_API int RayTracer_GetOpenCLPlaformCount() {
+int RayTracer_GetOpenCLPlaformCount() {
   return gKernel->getNumPlatforms();
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_GetOpenCLPlatformDescription(int platform, char *value,
+int RayTracer_GetOpenCLPlatformDescription(int platform, char *value,
                                        int valueLength) {
   std::string description = gKernel->getPlatformDescription(platform);
   strncpy(value, description.c_str(), valueLength);
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_GetOpenCLDeviceCount(int platform) {
+int RayTracer_GetOpenCLDeviceCount(int platform) {
   return gKernel->getNumDevices(platform);
 }
 
-extern "C" RAYTRACINGENGINE_API int
-RayTracer_GetOpenCLDeviceDescription(int platform, int device, char *value,
+int RayTracer_GetOpenCLDeviceDescription(int platform, int device, char *value,
                                      int valueLength) {
   std::string description = gKernel->getDeviceDescription(platform, device);
   strncpy(value, description.c_str(), valueLength);
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_PopulateOpenCLInformation() {
+int RayTracer_PopulateOpenCLInformation() {
   gKernel->populateOpenCLInformation();
   return 0;
 }
 
-extern "C" RAYTRACINGENGINE_API int RayTracer_RecompileKernels(char *filename) {
+int RayTracer_RecompileKernels(char *filename) {
   gKernel->recompileKernels(filename);
   return 0;
 }

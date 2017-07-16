@@ -5,7 +5,6 @@
  * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
  */
 
-#define _USE_MATH_DEFINES
 #ifdef WIN32
 #include <windows.h>
 #else

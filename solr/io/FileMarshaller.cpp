@@ -18,10 +18,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../Consts.h"
@@ -34,10 +41,6 @@ const std::string PRIMITIVE = "PRIMITIVE";
 const std::string MATERIAL = "MATERIAL";
 const std::string TEXTURE = "TEXTURE";
 const size_t FORMAT_VERSION = 2;
-
-FileMarshaller::FileMarshaller() {}
-
-FileMarshaller::~FileMarshaller(void) {}
 
 Vertex FileMarshaller::loadFromFile(GPUKernel &kernel,
                                     const std::string &filename,

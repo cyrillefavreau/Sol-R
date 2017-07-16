@@ -5,8 +5,6 @@
  * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
  */
 
-#define _USE_MATH_DEFINES
-
 #include <fstream>
 #include <math.h>
 #include <stdlib.h>

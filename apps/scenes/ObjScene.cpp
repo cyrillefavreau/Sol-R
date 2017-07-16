@@ -5,7 +5,6 @@
 * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
 */
 
-#define _USE_MATH_DEFINES
 //#define USE_NEURONS
 
 #ifdef WIN32

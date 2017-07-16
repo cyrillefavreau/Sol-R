@@ -19,6 +19,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 OPTION(SOLR_OPENCL_ENABLED "OpenCL enabled" OFF)
 OPTION(SOLR_CUDA_ENABLED "CUDA enabled" ON)
 
+# Windows' math include does not define constants by default.
+# Set this definition so it does.
+# Also set NOMINMAX so the min and max functions are not overwritten with macros.
+IF(MSVC)
+    add_definitions(-D_USE_MATH_DEFINES)
+    add_definitions(-DNOMINMAX)
+ENDIF()
+
 # ================================================================================
 # OpenCL
 # ================================================================================

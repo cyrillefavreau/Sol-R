@@ -21,11 +21,11 @@
 #ifdef WIN32
 #include <windows.h>
 #else
-#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #endif
+#include <algorithm>
 #include <math.h>
 
 #include <iostream>
@@ -870,7 +870,7 @@ int GPUKernel::processBoxes(const int boxSize, bool simulate) {
         box.parameters[1].z = -m_sceneInfo.viewDistance;
         box.indexForNextBox = 1;
         m_boundingBoxes[m_frame]
-                       [0].insert(std::make_pair<long, CPUBoundingBox>(B, box));
+                       [0].insert(std::make_pair(B, box));
       }
 
       // Lights

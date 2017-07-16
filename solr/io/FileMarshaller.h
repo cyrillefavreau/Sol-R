@@ -24,8 +24,8 @@
 
 class RAYTRACINGENGINE_API FileMarshaller {
 public:
-  FileMarshaller();
-  ~FileMarshaller();
+	FileMarshaller() {}
+	~FileMarshaller() {}
 
 public:
   Vertex loadFromFile(GPUKernel &kernel, const std::string &filename,

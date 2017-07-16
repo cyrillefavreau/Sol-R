@@ -5,7 +5,6 @@
  * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
  */
 
-#define _USE_MATH_DEFINES
 #define _CRT_SECURE_NO_WARNINGS
 #ifdef WIN32
 #include <windows.h>
