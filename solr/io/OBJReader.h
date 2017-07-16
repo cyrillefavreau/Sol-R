@@ -46,7 +46,7 @@ struct MaterialMTL {
   bool isSketchupLightMaterial;
 };
 
-class RAYTRACINGENGINE_API OBJReader {
+class SOLR_API OBJReader {
 public:
   OBJReader();
   ~OBJReader();

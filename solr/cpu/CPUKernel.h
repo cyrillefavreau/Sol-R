@@ -22,7 +22,7 @@
 
 #include "../GPUKernel.h"
 
-class RAYTRACINGENGINE_API CPUKernel : public GPUKernel {
+class SOLR_API CPUKernel : public GPUKernel {
 public:
   CPUKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform,
             int device);

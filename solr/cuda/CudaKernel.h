@@ -23,7 +23,7 @@
 #include "../DLL_API.h"
 #include "../GPUKernel.h"
 
-class RAYTRACINGENGINE_API CudaKernel : public GPUKernel {
+class SOLR_API CudaKernel : public GPUKernel {
 public:
   CudaKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform,
              int device);

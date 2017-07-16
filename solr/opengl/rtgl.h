@@ -42,7 +42,7 @@ typedef void GLvoid;
 #ifdef __cplusplus
 class GPUKernel;
 namespace RayTracer {
-extern RAYTRACINGENGINE_API GPUKernel *gKernel;
+extern SOLR_API GPUKernel *gKernel;
 #else
 typedef int bool;
 #endif // #__cplusplus
@@ -570,104 +570,104 @@ typedef int bool;
 
 #define GLUquadricObj void
 
-void RAYTRACINGENGINE_API glLoadIdentity();
+void SOLR_API glLoadIdentity();
 
-void RAYTRACINGENGINE_API glBegin(GLint);
-int RAYTRACINGENGINE_API glEnd();
-void RAYTRACINGENGINE_API glEnable(GLenum cap);
-void RAYTRACINGENGINE_API glDisable(GLenum cap);
-void RAYTRACINGENGINE_API glClear(GLbitfield mask);
-void RAYTRACINGENGINE_API glFlush();
+void SOLR_API glBegin(GLint);
+int SOLR_API glEnd();
+void SOLR_API glEnable(GLenum cap);
+void SOLR_API glDisable(GLenum cap);
+void SOLR_API glClear(GLbitfield mask);
+void SOLR_API glFlush();
 
-void RAYTRACINGENGINE_API glVertex2i(GLint x, GLint y);
-void RAYTRACINGENGINE_API glVertex3f(GLfloat x, GLfloat y, GLfloat z);
-void RAYTRACINGENGINE_API glVertex3fv(const GLfloat *v);
-void RAYTRACINGENGINE_API glNormal3f(GLfloat x, GLfloat y, GLfloat z);
-void RAYTRACINGENGINE_API glNormal3fv(const GLfloat *v);
-void RAYTRACINGENGINE_API glColor3f(GLfloat red, GLfloat green, GLfloat blue);
-void RAYTRACINGENGINE_API glColor4f(GLfloat red, GLfloat green, GLfloat blue,
+void SOLR_API glVertex2i(GLint x, GLint y);
+void SOLR_API glVertex3f(GLfloat x, GLfloat y, GLfloat z);
+void SOLR_API glVertex3fv(const GLfloat *v);
+void SOLR_API glNormal3f(GLfloat x, GLfloat y, GLfloat z);
+void SOLR_API glNormal3fv(const GLfloat *v);
+void SOLR_API glColor3f(GLfloat red, GLfloat green, GLfloat blue);
+void SOLR_API glColor4f(GLfloat red, GLfloat green, GLfloat blue,
                                     GLfloat alpha);
-void RAYTRACINGENGINE_API glRasterPos2f(GLfloat x, GLfloat y);
-void RAYTRACINGENGINE_API glRasterPos3f(GLfloat x, GLfloat y, GLfloat z);
-void RAYTRACINGENGINE_API glTexParameterf(GLenum target, GLenum pname,
+void SOLR_API glRasterPos2f(GLfloat x, GLfloat y);
+void SOLR_API glRasterPos3f(GLfloat x, GLfloat y, GLfloat z);
+void SOLR_API glTexParameterf(GLenum target, GLenum pname,
                                           GLfloat param);
-void RAYTRACINGENGINE_API glTexCoord2f(GLfloat s, GLfloat t);
-void RAYTRACINGENGINE_API glTexCoord3f(GLfloat x, GLfloat y, GLfloat z);
-void RAYTRACINGENGINE_API glTexEnvf(GLenum target, GLenum pname, GLfloat param);
-void RAYTRACINGENGINE_API glTexImage2D(GLenum target, GLint level,
+void SOLR_API glTexCoord2f(GLfloat s, GLfloat t);
+void SOLR_API glTexCoord3f(GLfloat x, GLfloat y, GLfloat z);
+void SOLR_API glTexEnvf(GLenum target, GLenum pname, GLfloat param);
+void SOLR_API glTexImage2D(GLenum target, GLint level,
                                        GLint internalformat, GLsizei width,
                                        GLsizei height, GLint border,
                                        GLenum format, GLenum type,
                                        const GLvoid *pixels);
-void RAYTRACINGENGINE_API gluSphere(void *, GLfloat, GLint, GLint);
-void RAYTRACINGENGINE_API glutWireSphere(GLdouble radius, GLint slices,
+void SOLR_API gluSphere(void *, GLfloat, GLint, GLint);
+void SOLR_API glutWireSphere(GLdouble radius, GLint slices,
                                          GLint stacks);
-RAYTRACINGENGINE_API GLUquadricObj *gluNewQuadric();
-void RAYTRACINGENGINE_API glClearColor(GLfloat red, GLfloat green, GLfloat blue,
+SOLR_API GLUquadricObj *gluNewQuadric();
+void SOLR_API glClearColor(GLfloat red, GLfloat green, GLfloat blue,
                                        GLfloat alpha);
 
-void RAYTRACINGENGINE_API glViewport(GLint a, GLint b, GLint width,
+void SOLR_API glViewport(GLint a, GLint b, GLint width,
                                      GLint height);
 
 // Materials
-void RAYTRACINGENGINE_API glMaterialfv(GLenum face, GLenum pname,
+void SOLR_API glMaterialfv(GLenum face, GLenum pname,
                                        const GLfloat *params);
 
 // Textures
-void RAYTRACINGENGINE_API glGenTextures(GLsizei n, GLuint *textures);
-void RAYTRACINGENGINE_API glBindTexture(GLenum target, GLuint texture);
-int RAYTRACINGENGINE_API gluBuild2DMipmaps(GLenum target, GLint components,
+void SOLR_API glGenTextures(GLsizei n, GLuint *textures);
+void SOLR_API glBindTexture(GLenum target, GLuint texture);
+int SOLR_API gluBuild2DMipmaps(GLenum target, GLint components,
                                            GLint width, GLint height,
                                            GLenum format, GLenum type,
                                            const void *data);
-void RAYTRACINGENGINE_API glTexSubImage2D(GLenum target, GLint level,
+void SOLR_API glTexSubImage2D(GLenum target, GLint level,
                                           GLint xoffset, GLint yoffset,
                                           GLsizei width, GLsizei height,
                                           GLenum format, GLenum type,
                                           const GLvoid *data);
-void RAYTRACINGENGINE_API glPushAttrib(GLbitfield mask);
-void RAYTRACINGENGINE_API glPopAttrib();
-void RAYTRACINGENGINE_API glTexParameteri(GLenum target, GLenum pname,
+void SOLR_API glPushAttrib(GLbitfield mask);
+void SOLR_API glPopAttrib();
+void SOLR_API glTexParameteri(GLenum target, GLenum pname,
                                           GLint param);
-void RAYTRACINGENGINE_API glBlendFunc(GLenum sfactor, GLenum dfactor);
-void RAYTRACINGENGINE_API glMatrixMode(GLenum mode);
-void RAYTRACINGENGINE_API glPushMatrix();
-void RAYTRACINGENGINE_API glPopMatrix();
-RAYTRACINGENGINE_API GLenum glGetError();
-void RAYTRACINGENGINE_API glOrtho(GLdouble left, GLdouble right,
+void SOLR_API glBlendFunc(GLenum sfactor, GLenum dfactor);
+void SOLR_API glMatrixMode(GLenum mode);
+void SOLR_API glPushMatrix();
+void SOLR_API glPopMatrix();
+SOLR_API GLenum glGetError();
+void SOLR_API glOrtho(GLdouble left, GLdouble right,
                                   GLdouble bottom, GLdouble top,
                                   GLdouble nearVal, GLdouble farVal);
 
-void RAYTRACINGENGINE_API glTranslatef(GLfloat x, GLfloat y, GLfloat z);
-void RAYTRACINGENGINE_API glRotatef(GLfloat angle, GLfloat x, GLfloat y,
+void SOLR_API glTranslatef(GLfloat x, GLfloat y, GLfloat z);
+void SOLR_API glRotatef(GLfloat angle, GLfloat x, GLfloat y,
                                     GLfloat z);
-void RAYTRACINGENGINE_API glPointSize(GLfloat size);
-void RAYTRACINGENGINE_API glReadPixels(GLint x, GLint y, GLsizei width,
+void SOLR_API glPointSize(GLfloat size);
+void SOLR_API glReadPixels(GLint x, GLint y, GLsizei width,
                                        GLsizei height, GLenum format,
                                        GLenum type, GLvoid *data);
 
 // Raytracer specific
 #ifdef USE_OPENCL
-void RAYTRACINGENGINE_API setOpenCLPlatform(const int platform);
-void RAYTRACINGENGINE_API setOpenCLDevice(const int device);
+void SOLR_API setOpenCLPlatform(const int platform);
+void SOLR_API setOpenCLDevice(const int device);
 #endif // USE_OPENCL
-void RAYTRACINGENGINE_API glCompactBoxes();
-void RAYTRACINGENGINE_API createRandomMaterials(bool update, bool lightsOnly);
-void RAYTRACINGENGINE_API setAngles(GLfloat, GLfloat, GLfloat);
-void RAYTRACINGENGINE_API render();
-void RAYTRACINGENGINE_API gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ,
+void SOLR_API glCompactBoxes();
+void SOLR_API createRandomMaterials(bool update, bool lightsOnly);
+void SOLR_API setAngles(GLfloat, GLfloat, GLfloat);
+void SOLR_API render();
+void SOLR_API gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ,
                                     GLdouble centerX, GLdouble centerY,
                                     GLdouble centerZ, GLdouble upX,
                                     GLdouble upY, GLdouble upZ);
-void RAYTRACINGENGINE_API gluPerspective(GLdouble fovy, GLdouble aspect,
+void SOLR_API gluPerspective(GLdouble fovy, GLdouble aspect,
                                          GLdouble zNear, GLdouble zFar);
 
 // Glut
-void RAYTRACINGENGINE_API glutSpecialFunc(void (*func)(int key, int x, int y));
-void RAYTRACINGENGINE_API glutReshapeFunc(void (*func)(int width, int height));
-void RAYTRACINGENGINE_API glutIdleFunc(void (*func)(void));
-void RAYTRACINGENGINE_API glutSetCursor(int cursor);
-void RAYTRACINGENGINE_API wglSwapIntervalEXT();
+void SOLR_API glutSpecialFunc(void (*func)(int key, int x, int y));
+void SOLR_API glutReshapeFunc(void (*func)(int width, int height));
+void SOLR_API glutIdleFunc(void (*func)(void));
+void SOLR_API glutSetCursor(int cursor);
+void SOLR_API wglSwapIntervalEXT();
 
 // TO BE DONE
 #define glColor4fv(...)
@@ -915,66 +915,66 @@ void InitializeRaytracer(const int width, const int height);
 /*
 * Initialization functions, see fglut_init.c
 */
-void RAYTRACINGENGINE_API glutInit(int *pargc, char **argv);
-void RAYTRACINGENGINE_API glutInitWindowPosition(int x, int y);
-void RAYTRACINGENGINE_API glutInitWindowSize(int width, int height);
-void RAYTRACINGENGINE_API glutInitDisplayMode(unsigned int displayMode);
-void RAYTRACINGENGINE_API glutReshapeWindow(int width, int height);
+void SOLR_API glutInit(int *pargc, char **argv);
+void SOLR_API glutInitWindowPosition(int x, int y);
+void SOLR_API glutInitWindowSize(int width, int height);
+void SOLR_API glutInitDisplayMode(unsigned int displayMode);
+void SOLR_API glutReshapeWindow(int width, int height);
 
 /*
 * Process loop function, see freeglut_main.c
 */
-void RAYTRACINGENGINE_API glutMainLoop(void);
+void SOLR_API glutMainLoop(void);
 
 /*
 * Window management functions, see freeglut_window.c
 */
-int RAYTRACINGENGINE_API glutCreateWindow(const char *title);
-void RAYTRACINGENGINE_API glutDestroyWindow(int window);
-void RAYTRACINGENGINE_API glutFullScreen(void);
+int SOLR_API glutCreateWindow(const char *title);
+void SOLR_API glutDestroyWindow(int window);
+void SOLR_API glutFullScreen(void);
 
 /*
 * State setting and retrieval functions, see freeglut_state.c
 */
-int RAYTRACINGENGINE_API glutGet(GLenum query);
-int RAYTRACINGENGINE_API glutDeviceGet(GLenum query);
-int RAYTRACINGENGINE_API glutGetModifiers(void);
-int RAYTRACINGENGINE_API glutLayerGet(GLenum query);
+int SOLR_API glutGet(GLenum query);
+int SOLR_API glutDeviceGet(GLenum query);
+int SOLR_API glutGetModifiers(void);
+int SOLR_API glutLayerGet(GLenum query);
 
 /*
 * Window-specific callback functions, see freeglut_callbacks.c
 */
-void RAYTRACINGENGINE_API glutKeyboardFunc(void (*callback)(unsigned char, int,
+void SOLR_API glutKeyboardFunc(void (*callback)(unsigned char, int,
                                                             int));
-void RAYTRACINGENGINE_API glutDisplayFunc(void (*callback)(void));
-void RAYTRACINGENGINE_API glutMouseFunc(void (*callback)(int, int, int, int));
-void RAYTRACINGENGINE_API glutMotionFunc(void (*callback)(int, int));
+void SOLR_API glutDisplayFunc(void (*callback)(void));
+void SOLR_API glutMouseFunc(void (*callback)(int, int, int, int));
+void SOLR_API glutMotionFunc(void (*callback)(int, int));
 
 /*
 * Global callback functions, see freeglut_callbacks.c
 */
-void RAYTRACINGENGINE_API glutTimerFunc(unsigned int time,
+void SOLR_API glutTimerFunc(unsigned int time,
                                         void (*callback)(int), int value);
 
 /*
 * Menu stuff, see freeglut_menu.c
 */
-int RAYTRACINGENGINE_API glutCreateMenu(void (*callback)(int menu));
-void RAYTRACINGENGINE_API glutDestroyMenu(int menu);
-void RAYTRACINGENGINE_API glutAddMenuEntry(const char *label, int value);
-void RAYTRACINGENGINE_API glutAttachMenu(int button);
+int SOLR_API glutCreateMenu(void (*callback)(int menu));
+void SOLR_API glutDestroyMenu(int menu);
+void SOLR_API glutAddMenuEntry(const char *label, int value);
+void SOLR_API glutAttachMenu(int button);
 
 /*
 * Font stuff, see freeglut_font.c
 */
-void RAYTRACINGENGINE_API glutBitmapString(void *font,
+void SOLR_API glutBitmapString(void *font,
                                            const unsigned char *string);
 
 /*
 * Display-connected functions, see freeglut_display.c
 */
-void RAYTRACINGENGINE_API glutPostRedisplay(void);
-void RAYTRACINGENGINE_API glutSwapBuffers(void);
+void SOLR_API glutPostRedisplay(void);
+void SOLR_API glutSwapBuffers(void);
 
 /*
 * Nurbs

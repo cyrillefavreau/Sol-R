@@ -28,10 +28,21 @@ IF(MSVC)
 ENDIF()
 
 # ================================================================================
+# GLUT
+# ================================================================================
+find_package(GLUT REQUIRED SYSTEM)
+include_directories(${GLUT_INCLUDE_DIRS})
+link_directories(${GLUT_LIBRARY_DIRS})
+add_definitions(${GLUT_DEFINITIONS})
+if(NOT GLUT_FOUND)
+    message(ERROR " GLUT not found!")
+endif(NOT GLUT_FOUND)
+	
+# ================================================================================
 # OpenCL
 # ================================================================================
 if (SOLR_OPENCL_ENABLED)
-  find_package(OpenCL)
+  find_package(OpenCL REQUIRED)
   if (OPENCL_FOUND)
     list(APPEND FIND_PACKAGES_DEFINES USE_OPENCL)
     message(STATUS "OpenCL found and selected for build")
@@ -45,7 +56,7 @@ endif()
 # CUDA
 # ================================================================================
 if (SOLR_CUDA_ENABLED)
-  find_package(CUDA)
+  find_package(CUDA REQUIRED)
   if (CUDA_FOUND)
     list(APPEND FIND_PACKAGES_DEFINES USE_CUDA)
     message(STATUS "CUDA found and selected for build")

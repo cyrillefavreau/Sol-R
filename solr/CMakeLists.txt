@@ -16,7 +16,7 @@ SET(SOLR_SOURCES
   cpu/CPUKernel.cpp
 )
 
-SET(SOLR_HEADERS
+SET(SOLR_HEADERS_PUBLIC
   RayTracingEngineStub.h
   GPUKernel.h
   Logging.h
@@ -57,8 +57,8 @@ if (CUDA_FOUND)
     TARGET_LINK_LIBRARIES(
       solr
       ${CUDARAYTRACER}
-      ${GLUT_LIBRARIES}
-      )
+      ${GLUT_LIBRARY}
+    )
 endif()
 
 if(OPENCL_FOUND)
@@ -66,12 +66,12 @@ if(OPENCL_FOUND)
       solr
       opencl/OpenCLKernel.cpp
       ${SOLR_SOURCES}
+      ${GLUT_LIBRARY}
     )
 
     TARGET_LINK_LIBRARIES(
         solr
         ${OpenCL_LIBRARIES}
-        ${GLUT_LIBRARIES}
     )
 endif()
 

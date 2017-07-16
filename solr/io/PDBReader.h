@@ -31,7 +31,7 @@ enum GeometryType {
   gtBackbone = 5
 };
 
-class RAYTRACINGENGINE_API PDBReader {
+class SOLR_API PDBReader {
 public:
   PDBReader(void);
   virtual ~PDBReader(void);

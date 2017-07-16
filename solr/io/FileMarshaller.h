@@ -22,7 +22,7 @@
 
 #include "../GPUKernel.h"
 
-class RAYTRACINGENGINE_API FileMarshaller {
+class SOLR_API FileMarshaller {
 public:
 	FileMarshaller() {}
 	~FileMarshaller() {}

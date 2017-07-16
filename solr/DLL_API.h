@@ -23,11 +23,11 @@
 #pragma warning(disable : 4251)
 
 #ifdef WIN32
-#ifdef RAYTRACINGENGINE_EXPORTS
-#define RAYTRACINGENGINE_API __declspec(dllexport)
+#ifdef SOLR_EXPORTS
+#define SOLR_API __declspec(dllexport)
 #else
-#define RAYTRACINGENGINE_API __declspec(dllimport)
+#define SOLR_API 
 #endif
 #else
-#define RAYTRACINGENGINE_API
+#define SOLR_API
 #endif

@@ -35,7 +35,7 @@ struct Morphology {
 };
 typedef std::map<int, Morphology> Morphologies;
 
-class RAYTRACINGENGINE_API SWCReader {
+class SOLR_API SWCReader {
 public:
   SWCReader();
   ~SWCReader();

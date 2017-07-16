@@ -80,7 +80,7 @@ typedef std::map<long, CPUPrimitive> PrimitiveContainer;
 typedef std::map<long, Lamp> LampContainer;
 typedef std::vector<Vertex> Vertices;
 
-class RAYTRACINGENGINE_API GPUKernel {
+class SOLR_API GPUKernel {
 
 public:
   GPUKernel(bool activeLogging, int optimalNbOfBoxes);

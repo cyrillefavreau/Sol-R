@@ -62,7 +62,7 @@ struct MapJewel {
   Vertex location;
 };
 
-class RAYTRACINGENGINE_API MapReader {
+class SOLR_API MapReader {
 public:
   MapReader(void);
   ~MapReader(void);
