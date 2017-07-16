@@ -23,9 +23,9 @@
 #include "../generated/defines.h"
 
 // Defines
-//#ifndef WIN32
-//#  define nullptr 0
-//#endif
+#ifdef WIN32
+#define NOMINMAX
+#endif
 
 // Oculus Rift
 //#define USE_OCULUS

@@ -47,7 +47,7 @@ if (SOLR_CUDA_ENABLED)
   endif()
 
   if (WIN32)
-    set(EXTRA_CXX_FLAGS "/DVERBOSE /D_CRT_SECURE_NO_WARNINGS ")
+    set(EXTRA_CXX_FLAGS "/DVERBOSE /D_CRT_SECURE_NO_WARNINGS")
     list(APPEND CUDA_NVCC_FLAGS "-arch=sm_30;--compiler-options;-O2;-DVERBOSE")
   endif()
   if (UNIX)
