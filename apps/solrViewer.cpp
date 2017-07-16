@@ -690,6 +690,8 @@ void keyboard(unsigned char key, int x, int y) {
         case tex_reflective:
           reflectionTextureId = idx;
           break;
+        default:
+            break;
         }
       }
       if (transparencyTextureId == TEXTURE_NONE) {
@@ -1101,6 +1103,8 @@ void motion(int x, int y) {
       gScene->getSceneInfo().width3DVision += (mouse_old_y - y);
       break;
     }
+    default:
+        break;
     }
     break;
   }
@@ -1153,7 +1157,11 @@ void motion(int x, int y) {
       gScene->setGroundHeight(h);
       break;
     }
+    default:
+          break;
     }
+    break;
+  default:
     break;
   } break;
   }
