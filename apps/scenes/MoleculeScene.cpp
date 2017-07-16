@@ -49,7 +49,7 @@ void MoleculeScene::doInitialize()
     HANDLE hFind(nullptr);
     WIN32_FIND_DATA FindData;
 
-    std::string fullFilter("./pdb/*.pdb");
+    std::string fullFilter("../medias/pdb/*.pdb");
     hFind = FindFirstFile(fullFilter.c_str(), &FindData);
     if( hFind != INVALID_HANDLE_VALUE )
     {
@@ -65,7 +65,7 @@ void MoleculeScene::doInitialize()
         while (FindNextFile(hFind, &FindData));
     }
 #else
-    std::string path="./pdb";
+    std::string path="../medias/pdb";
     DIR *dp;
     struct dirent *dirp;
     if((dp  = opendir(path.c_str())) == NULL)
@@ -103,7 +103,7 @@ void MoleculeScene::doInitialize()
         // PDB
         PDBReader pdbReader;
 #ifdef WIN32
-        fileName = "./pdb/";
+        fileName = "../medias/pdb/";
 #endif // WIN32
         fileName += proteinNames[m_currentModel];
         fileName += ".pdb";
@@ -121,7 +121,7 @@ void MoleculeScene::doInitialize()
         {
             fileName = "";
 #ifdef WIN32
-            fileName += "./pdb/";
+            fileName += "../medias/pdb/";
 #endif // WIN32
             fileName += proteinNames[m_currentModel];
             fileName += ".obj";
@@ -149,6 +149,5 @@ void MoleculeScene::doAddLights()
     // Lights
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
     m_gpuKernel->setPrimitive( m_nbPrimitives,  -5000.f, 5000.f, -15000.f, 1.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL );
-    //m_gpuKernel->setPrimitive( m_nbPrimitives,  0.f, 0.f, 0.f, 1.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL );
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives,false);
 }

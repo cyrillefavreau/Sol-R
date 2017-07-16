@@ -428,15 +428,6 @@ void display() {
 
                 // Save to disc
                 std::string filename("./raytracer");
-                /*
-         time_t rawtime;
-         struct tm * timeinfo;
-         char dateAndTime[80];
-         std::time(&rawtime);
-         timeinfo = localtime(&rawtime);
-         strftime(dateAndTime,80,"_%Y-%m-%d_%H-%M-%S",timeinfo);
-         filename+=dateAndTime;
-         */
                 filename += ".jpg";
                 jpge::compress_image_to_jpeg_file(filename.c_str(), si.size.x - margin,
                                                   si.size.y - margin, gColorDepth, dst);
@@ -488,28 +479,9 @@ void timerEvent(int value) {
                     char b = depthBitmap[index + 1];
                     int s = b * 256 + a;
 
-                    // USHORT realDepth = (s & 0xfff8) >> 3;
-
                     USHORT player = s & 7;
-                    /*
-         if( player == 0 )
-         {
-         kernel.setPrimitive( p, 5+p/gKinectNbSpherePerBox,
-         0.f, 0.f, 0.f, 0.f, 0.f, 0.f,
-         0, 1, 1 );
-         }
-         else
-         {
-         kernel.setPrimitive( p, 5+p/gKinectNbSpherePerBox,
-         (x-160)*gKinectSpace, (y-120)*gKinectSpace, s/5.f, gKinectSize, 0.f,
-         0.f,
-         20+x%20, 1, 1 );
-         }
-         */
-
                     if (s < 1 || s > 15000)
                         s = 50000;
-                    // if( player == 0 ) s = 50000;
 
                     kernel.setPrimitive(p, 5 + p / gKinectNbSpherePerBox,
                                         -(x - 160) * gKinectSpace, (y - 120) * gKinectSpace,
@@ -1381,7 +1353,7 @@ int main(int argc, char *argv[]) {
     LOG_INFO(1, "Initializing OpenGL...");
     initgl(argc, argv);
 
-    // initMenus();
+    initMenus();
 
     atexit(cleanup);
 
