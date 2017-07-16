@@ -157,7 +157,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::render_begin(const float timer) {
 #ifdef WIN32
-  if (m_sceneInfo.pathTracingIteration.x == 0)
+  if (m_sceneInfo.pathTracingIteration == 0)
     m_counter = GetTickCount();
 #endif // WIN32
   GPUKernel::render_begin(timer);
@@ -290,8 +290,8 @@ void CudaKernel::render_end() {
   d2h_bitmap(m_occupancyParameters, m_sceneInfo, m_bitmap, m_hPrimitivesXYIds);
 
 #ifdef WIN32
-  if (m_sceneInfo.pathTracingIteration.x ==
-      m_sceneInfo.maxPathTracingIterations.x - 1) {
+  if (m_sceneInfo.pathTracingIteration ==
+      m_sceneInfo.maxPathTracingIterations - 1) {
     LOG_INFO(1, "Rendering completed in " << GetTickCount() - m_counter
                                           << " ms");
   }

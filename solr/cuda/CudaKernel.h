@@ -29,8 +29,8 @@ public:
              int device);
   ~CudaKernel();
 
-  virtual void initBuffers();
-  virtual void cleanup();
+  void initBuffers() final;
+  void cleanup() final;
 
 public:
   void recompileKernels(const std::string &kernelCode = "");
