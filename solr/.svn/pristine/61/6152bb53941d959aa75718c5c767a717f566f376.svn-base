@@ -1,0 +1,121 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RayTracingEngine", "RayTracingEngine.vcxproj", "{5118E4A5-6728-415B-BA62-589A394745AB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Raytracer", "..\..\CudaRayTracer\trunk\CudaRaytracer.vcxproj", "{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Project", "..\..\cloth\Cloth Simulation\Project.vcxproj", "{D1F8118A-9F88-427E-AE28-193F85F64BE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Cuda Kinect|Win32 = Debug Cuda Kinect|Win32
+		Debug Cuda Kinect|x64 = Debug Cuda Kinect|x64
+		Debug Cuda|Win32 = Debug Cuda|Win32
+		Debug Cuda|x64 = Debug Cuda|x64
+		Debug OpenCL|Win32 = Debug OpenCL|Win32
+		Debug OpenCL|x64 = Debug OpenCL|x64
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release Cuda Kinect|Win32 = Release Cuda Kinect|Win32
+		Release Cuda Kinect|x64 = Release Cuda Kinect|x64
+		Release Cuda|Win32 = Release Cuda|Win32
+		Release Cuda|x64 = Release Cuda|x64
+		Release OpenCL|Win32 = Release OpenCL|Win32
+		Release OpenCL|x64 = Release OpenCL|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|Win32.ActiveCfg = Debug Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|Win32.Build.0 = Debug Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|x64.ActiveCfg = Debug Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda Kinect|x64.Build.0 = Debug Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|Win32.ActiveCfg = Debug Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|Win32.Build.0 = Debug Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|x64.ActiveCfg = Debug Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug Cuda|x64.Build.0 = Debug Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug OpenCL|Win32.ActiveCfg = Debug OpenCL|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug OpenCL|Win32.Build.0 = Debug OpenCL|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug OpenCL|x64.ActiveCfg = Debug OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug OpenCL|x64.Build.0 = Debug OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug|Win32.ActiveCfg = Debug OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug|x64.ActiveCfg = Debug OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Debug|x64.Build.0 = Debug OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|Win32.ActiveCfg = Release Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|Win32.Build.0 = Release Cuda Kinect|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|x64.ActiveCfg = Release Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda Kinect|x64.Build.0 = Release Cuda Kinect|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|Win32.ActiveCfg = Release Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|Win32.Build.0 = Release Cuda|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|x64.ActiveCfg = Release Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release Cuda|x64.Build.0 = Release Cuda|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|Win32.ActiveCfg = Release OpenCL|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|Win32.Build.0 = Release OpenCL|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|x64.ActiveCfg = Release OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release OpenCL|x64.Build.0 = Release OpenCL|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release|Win32.ActiveCfg = Release|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release|Win32.Build.0 = Release|Win32
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release|x64.ActiveCfg = Release|x64
+		{5118E4A5-6728-415B-BA62-589A394745AB}.Release|x64.Build.0 = Release|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda Kinect|Win32.ActiveCfg = Debug Cuda Kinect|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda Kinect|Win32.Build.0 = Debug Cuda Kinect|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda Kinect|x64.ActiveCfg = Debug Cuda Kinect|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda Kinect|x64.Build.0 = Debug Cuda Kinect|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda|Win32.ActiveCfg = Debug Cuda|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda|Win32.Build.0 = Debug Cuda|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda|x64.ActiveCfg = Debug Cuda|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug Cuda|x64.Build.0 = Debug Cuda|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug OpenCL|Win32.ActiveCfg = Debug OpenCL|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug OpenCL|Win32.Build.0 = Debug OpenCL|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug OpenCL|x64.ActiveCfg = Debug OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug OpenCL|x64.Build.0 = Debug OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug|Win32.ActiveCfg = Debug OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug|x64.ActiveCfg = Debug OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Debug|x64.Build.0 = Debug OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda Kinect|Win32.ActiveCfg = Release Cuda Kinect|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda Kinect|Win32.Build.0 = Release Cuda Kinect|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda Kinect|x64.ActiveCfg = Release Cuda Kinect|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda Kinect|x64.Build.0 = Release Cuda Kinect|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda|Win32.ActiveCfg = Release Cuda|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda|Win32.Build.0 = Release Cuda|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda|x64.ActiveCfg = Release Cuda|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release Cuda|x64.Build.0 = Release Cuda|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release OpenCL|Win32.ActiveCfg = Release OpenCL|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release OpenCL|Win32.Build.0 = Release OpenCL|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release OpenCL|x64.ActiveCfg = Release OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release OpenCL|x64.Build.0 = Release OpenCL|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release|Win32.ActiveCfg = Release|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release|Win32.Build.0 = Release|Win32
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release|x64.ActiveCfg = Release|x64
+		{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}.Release|x64.Build.0 = Release|x64
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug Cuda Kinect|Win32.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug Cuda Kinect|Win32.Build.0 = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug Cuda Kinect|x64.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug Cuda|Win32.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug Cuda|Win32.Build.0 = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug Cuda|x64.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug OpenCL|Win32.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug OpenCL|Win32.Build.0 = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug OpenCL|x64.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug|Win32.Build.0 = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Debug|x64.ActiveCfg = Debug|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda Kinect|Win32.ActiveCfg = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda Kinect|Win32.Build.0 = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda Kinect|x64.ActiveCfg = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda|Win32.ActiveCfg = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda|Win32.Build.0 = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda|x64.ActiveCfg = Release|x64
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release Cuda|x64.Build.0 = Release|x64
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release OpenCL|Win32.ActiveCfg = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release OpenCL|Win32.Build.0 = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release OpenCL|x64.ActiveCfg = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release|Win32.ActiveCfg = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release|Win32.Build.0 = Release|Win32
+		{D1F8118A-9F88-427E-AE28-193F85F64BE8}.Release|x64.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
