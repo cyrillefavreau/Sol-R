@@ -63,7 +63,6 @@ TARGET_LINK_LIBRARIES(
     solrViewer
     solr
     ${OPENCL_LIBRARIES}
-    ${GLUT_LIBRARY}
     )
 
 # ------------------------------------------------------------

@@ -72,6 +72,7 @@ if(OPENCL_FOUND)
     TARGET_LINK_LIBRARIES(
         solr
         ${OpenCL_LIBRARIES}
+        ${GLUT_LIBRARIES}
     )
 endif()
 

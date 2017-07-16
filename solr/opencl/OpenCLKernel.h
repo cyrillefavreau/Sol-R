@@ -44,7 +44,7 @@ typedef cl_int Lamp;
 
 const long MAX_DEVICES = 10;
 
-class RAYTRACINGENGINE_API OpenCLKernel : public GPUKernel {
+class SOLR_API OpenCLKernel : public GPUKernel {
 
 public:
   enum KernelSourceType { kst_file, kst_string };
