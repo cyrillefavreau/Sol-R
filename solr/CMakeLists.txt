@@ -46,7 +46,7 @@ SET(SOLR_HEADERS
 )
 
 if (CUDA_FOUND)
-    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --maxrregcount=32)
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -D_FORCE_INLINES --maxrregcount=32)
     CUDA_COMPILE(CUDARAYTRACER_O cuda/CudaRayTracer.cu)
     CUDA_ADD_LIBRARY(
       solr
