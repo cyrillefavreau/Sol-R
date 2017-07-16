@@ -13,12 +13,12 @@ class CausticScene : public Scene
 {
 
 public:
-   CausticScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~CausticScene(void);
+    CausticScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~CausticScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };
 

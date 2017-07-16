@@ -25,45 +25,45 @@
 
 class SOLR_API CudaKernel : public GPUKernel {
 public:
-  CudaKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform,
-             int device);
-  ~CudaKernel();
+    CudaKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform,
+               int device);
+    ~CudaKernel();
 
-  void initBuffers() final;
-  void cleanup() final;
-
-public:
-  void recompileKernels(const std::string &kernelCode = "");
+    void initBuffers() final;
+    void cleanup() final;
 
 public:
-  // ---------- Devices ----------
-  void initializeDevice();
-  void releaseDevice();
-
-  virtual void reshape();
-
-  void deviceQuery();
-
-  void resetBoxesAndPrimitives();
+    void recompileKernels(const std::string &kernelCode = "");
 
 public:
-  // ---------- Rendering ----------
-  void render_begin(const float timer);
-  void render_end();
+    // ---------- Devices ----------
+    void initializeDevice();
+    void releaseDevice();
+
+    virtual void reshape();
+
+    void deviceQuery();
+
+    void resetBoxesAndPrimitives();
 
 public:
-  virtual std::string getGPUDescription();
+    // ---------- Rendering ----------
+    void render_begin(const float timer);
+    void render_end();
 
 public:
-  void setBlockSize(int x, int y, int z) {
-    m_blockSize.x = x;
-    m_blockSize.y = y;
-    m_blockSize.z = z;
-  };
-  void setSharedMemSize(int sharedMemSize) { m_sharedMemSize = sharedMemSize; };
+    virtual std::string getGPUDescription();
+
+public:
+    void setBlockSize(int x, int y, int z) {
+        m_blockSize.x = x;
+        m_blockSize.y = y;
+        m_blockSize.z = z;
+    };
+    void setSharedMemSize(int sharedMemSize) { m_sharedMemSize = sharedMemSize; };
 
 private:
-  // Runtime kernel execution parameters
-  int4 m_blockSize;
-  int m_sharedMemSize;
+    // Runtime kernel execution parameters
+    int4 m_blockSize;
+    int m_sharedMemSize;
 };

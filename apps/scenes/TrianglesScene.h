@@ -16,21 +16,21 @@ class TrianglesScene : public Scene
 {
 
 public:
-   TrianglesScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~TrianglesScene(void);
+    TrianglesScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~TrianglesScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 protected:
 
-      // Animation
-   int m_frameIndex;
+    // Animation
+    int m_frameIndex;
 
 private:
-   std::vector<std::string> m_objFiles;
+    std::vector<std::string> m_objFiles;
 
 };
 

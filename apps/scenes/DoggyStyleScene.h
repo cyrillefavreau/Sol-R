@@ -13,12 +13,12 @@ class DoggyStyleScene : public Scene
 {
 
 public:
-   DoggyStyleScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~DoggyStyleScene(void);
+    DoggyStyleScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~DoggyStyleScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 };

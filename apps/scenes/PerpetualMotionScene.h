@@ -13,11 +13,11 @@ class PerpetualMotionScene : public Scene
 {
 
 public:
-   PerpetualMotionScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~PerpetualMotionScene(void);
+    PerpetualMotionScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~PerpetualMotionScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };

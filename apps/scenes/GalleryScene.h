@@ -13,12 +13,12 @@ class GalleryScene : public Scene
 {
 
 public:
-   GalleryScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~GalleryScene(void);
+    GalleryScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~GalleryScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };
 

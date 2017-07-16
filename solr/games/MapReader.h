@@ -31,41 +31,41 @@
 //  <COLOUR 0.549020 0.000000 0.500000>
 
 struct MapMaterialScheme {
-  unsigned int index;
-  Vertex material[4];
+    unsigned int index;
+    Vertex material[4];
 };
 
 // <BLOCK LOCATION 8 0 0 DIMENSION 53 36 0 NORTH 0 SOUTH 0 EAST 0 WEST 0 SPLIT 0
 // HOLLOW 0>
 struct MapBlock {
-  int zone;
-  int type;
-  Vertex location;
-  Vertex dimension;
-  int north;
-  int south;
-  int east;
-  int west;
-  int split;
-  int hollow;
+    int zone;
+    int type;
+    Vertex location;
+    Vertex dimension;
+    int north;
+    int south;
+    int east;
+    int west;
+    int split;
+    int hollow;
 };
 
 // <ZONE LOCATION 0 0 0 DIMENSIONS 54 37 23 COLOURSCHEME 0>
 struct MapZone {
-  Vertex location;
-  Vertex dimension;
-  int colorScene;
+    Vertex location;
+    Vertex dimension;
+    int colorScene;
 };
 
 // <JEWEL LOCATION 1 6 0>
 struct MapJewel {
-  Vertex location;
+    Vertex location;
 };
 
 class SOLR_API MapReader {
 public:
-  MapReader(void);
-  ~MapReader(void);
+    MapReader(void);
+    ~MapReader(void);
 
-  Vertex loadFromFile(const std::string &filename, GPUKernel &cudaKernel);
+    Vertex loadFromFile(const std::string &filename, GPUKernel &cudaKernel);
 };

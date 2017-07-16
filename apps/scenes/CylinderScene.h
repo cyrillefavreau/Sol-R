@@ -10,16 +10,16 @@
 #include "Scene.h"
 
 class CylinderScene :
-   public Scene
+        public Scene
 {
 
 public:
-   CylinderScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~CylinderScene(void);
+    CylinderScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~CylinderScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };
 

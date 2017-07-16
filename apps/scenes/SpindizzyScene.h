@@ -16,12 +16,12 @@ class SpindizzyScene : public Scene
 {
 
 public:
-   SpindizzyScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~SpindizzyScene(void);
+    SpindizzyScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~SpindizzyScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 };

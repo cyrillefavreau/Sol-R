@@ -13,15 +13,15 @@ class XmasScene : public Scene
 {
 
 public:
-   XmasScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~XmasScene(void);
+    XmasScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~XmasScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 private:
-   void createTree( int iteration, int boxId, int maxIterations, Vertex center, int material, float interval, float radius );
+    void createTree( int iteration, int boxId, int maxIterations, Vertex center, int material, float interval, float radius );
 
 };

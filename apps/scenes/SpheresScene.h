@@ -13,12 +13,12 @@ class SpheresScene : public Scene
 {
 
 public:
-   SpheresScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~SpheresScene(void);
+    SpheresScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~SpheresScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };
 

@@ -14,19 +14,19 @@ class AnimationScene : public Scene
 {
 
 public:
-   AnimationScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~AnimationScene(void);
+    AnimationScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~AnimationScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 private:
-   std::vector<std::string> m_animations;
-   std::string m_fileName;
-   int m_currentFrame;
-   int m_wait;
-   bool m_forward;
+    std::vector<std::string> m_animations;
+    std::string m_fileName;
+    int m_currentFrame;
+    int m_wait;
+    bool m_forward;
 };
 

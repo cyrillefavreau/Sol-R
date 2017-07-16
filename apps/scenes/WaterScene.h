@@ -8,28 +8,28 @@
 #pragma once
 
 #include "Scene.h"
-   
+
 class WaterScene : public Scene
 {
 public:
-   WaterScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~WaterScene();
+    WaterScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~WaterScene();
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 private:
-   Vertex F( float x, float z, float stepX, float stepZ );
-   Vertex P( float t, float stepX, float stepZ );
-   void  processCurve( bool update );
-   void  processParametricCurve( bool update );
+    Vertex F( float x, float z, float stepX, float stepZ );
+    Vertex P( float t, float stepX, float stepZ );
+    void  processCurve( bool update );
+    void  processParametricCurve( bool update );
 
 private:
-   int     m_material;
-   Vertex  m_scale;
-   int     m_initialIndex;
-   Vertex  m_objectSize;
+    int     m_material;
+    Vertex  m_scale;
+    int     m_initialIndex;
+    Vertex  m_objectSize;
 };
 

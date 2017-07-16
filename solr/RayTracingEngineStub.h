@@ -50,14 +50,14 @@ extern "C" SOLR_API int RayTracer_RecompileKernels(char *filename);
 
 // ---------- Scene ----------
 extern "C" SOLR_API int RayTracer_SetSceneInfo(
-    int width, int height, int graphicsLevel, int nbRayIterations,
-    double transparentColor, double viewDistance, double shadowIntensity,
-    int supportFor3DVision, double width3DVision, double bgColorR,
-    double bgColorG, double bgColorB, double bgColorA, int renderBoxes,
-    int pathTracingIteration, int maxPathTracingIterations, int outputType,
-    int timer, int fogEffect, int isometric3D, int doubleSidedTriangles,
-    int gradientBackGround, int advancedFeatures, int skyboxSize,
-    int skyboxMaterialId);
+        int width, int height, int graphicsLevel, int nbRayIterations,
+        double transparentColor, double viewDistance, double shadowIntensity,
+        int supportFor3DVision, double width3DVision, double bgColorR,
+        double bgColorG, double bgColorB, double bgColorA, int renderBoxes,
+        int pathTracingIteration, int maxPathTracingIterations, int outputType,
+        int timer, int fogEffect, int isometric3D, int doubleSidedTriangles,
+        int gradientBackGround, int advancedFeatures, int skyboxSize,
+        int skyboxMaterialId);
 
 extern "C" SOLR_API int
 RayTracer_SetPostProcessingInfo(int type, double param1, double param2,
@@ -71,9 +71,9 @@ extern "C" SOLR_API int RayTracer_FinalizeKernel();
 extern "C" SOLR_API int RayTracer_ResetKernel();
 
 extern "C" SOLR_API int RayTracer_GenerateScreenshot(char *filename,
-                                                                 int width,
-                                                                 int height,
-                                                                 int quality);
+                                                     int width,
+                                                     int height,
+                                                     int quality);
 
 // ---------- Camera ----------
 extern "C" SOLR_API void
@@ -83,11 +83,11 @@ RayTracer_SetCamera(double eye_x, double eye_y, double eye_z, double dir_x,
 
 // ---------- Rendering ----------
 extern "C" SOLR_API int RayTracer_RunKernel(double timer,
-                                                        BitmapBuffer *image);
+                                            BitmapBuffer *image);
 
 // ---------- Primitives ----------
 extern "C" SOLR_API int RayTracer_AddPrimitive(int type,
-                                                           int movable);
+                                               int movable);
 
 extern "C" SOLR_API int
 RayTracer_SetPrimitive(int index, double p0_x, double p0_y, double p0_z,
@@ -125,31 +125,31 @@ RayTracer_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z,
                               double n2_x, double n2_y, double n2_z);
 
 extern "C" SOLR_API int RayTracer_SetPrimitiveTextureCoordinates(
-    int index, double t0_x, double t0_y, double t0_z, double t1_x, double t1_y,
-    double t1_z, double t2_x, double t2_y, double t2_z);
+        int index, double t0_x, double t0_y, double t0_z, double t1_x, double t1_y,
+        double t1_z, double t2_x, double t2_y, double t2_z);
 
 // ---------- Materials ----------
 extern "C" SOLR_API int RayTracer_AddMaterial();
 extern "C" SOLR_API int RayTracer_SetMaterial(
-    int index, double color_r, double color_g, double color_b, double noise,
-    double reflection, double refraction, int procedural, int wireframe,
-    int wireframeDepth, double transparency, double opacity,
-    int diffuseTextureId, int normalTextureId, int bumpTextureId,
-    int specularTextureId, int reflectionTextureId, int transparencyTextureId,
-    int ambientOcclusionTextureId, double specValue, double specPower,
-    double specCoef, double innerIllumination, double illuminationDiffusion,
-    double illuminationPropagation, int fastTransparency);
+        int index, double color_r, double color_g, double color_b, double noise,
+        double reflection, double refraction, int procedural, int wireframe,
+        int wireframeDepth, double transparency, double opacity,
+        int diffuseTextureId, int normalTextureId, int bumpTextureId,
+        int specularTextureId, int reflectionTextureId, int transparencyTextureId,
+        int ambientOcclusionTextureId, double specValue, double specPower,
+        double specCoef, double innerIllumination, double illuminationDiffusion,
+        double illuminationPropagation, int fastTransparency);
 
 extern "C" SOLR_API int RayTracer_GetMaterial(
-    int index, double &color_r, double &color_g, double &color_b, double &noise,
-    double &reflection, double &refraction, int &procedural, int &wireframe,
-    int &wireframeDepth, double &transparency, double &opacity,
-    int &diffuseTextureId, int &bumpTextureId, int &normalTextureId,
-    int &specularTextureId, int &reflectionTextureId,
-    int &transparencyTextureId, int &ambientOcclusionTextureId,
-    double &specValue, double &specPower, double &specCoef,
-    double &innerIllumination, double &illuminationDiffusion,
-    double &illuminationPropagation, int &fastTransparency);
+        int index, double &color_r, double &color_g, double &color_b, double &noise,
+        double &reflection, double &refraction, int &procedural, int &wireframe,
+        int &wireframeDepth, double &transparency, double &opacity,
+        int &diffuseTextureId, int &bumpTextureId, int &normalTextureId,
+        int &specularTextureId, int &reflectionTextureId,
+        int &transparencyTextureId, int &ambientOcclusionTextureId,
+        double &specValue, double &specPower, double &specCoef,
+        double &innerIllumination, double &illuminationDiffusion,
+        double &illuminationPropagation, int &fastTransparency);
 
 // Boxes
 extern "C" SOLR_API int RayTracer_CompactBoxes(bool update);
@@ -161,11 +161,11 @@ extern "C" SOLR_API int RayTracer_GetLight(int index);
 extern "C" SOLR_API int
 RayTracer_LoadTextureFromFile(int index, char *filename);
 extern "C" SOLR_API int RayTracer_SetTexture(int index,
-                                                         HANDLE texture);
+                                             HANDLE texture);
 extern "C" SOLR_API int
 RayTracer_GetTextureSize(int index, int &width, int &height, int &depth);
 extern "C" SOLR_API int RayTracer_GetTexture(int index,
-                                                         BitmapBuffer *image);
+                                             BitmapBuffer *image);
 extern "C" SOLR_API int RayTracer_GetNbTextures(int &nbTextures);
 
 // ---------- Molecules ----------
@@ -182,13 +182,13 @@ RayTracer_LoadOBJModel(char *filename, int materialId, int autoScale,
 // ---------- File marshaller ----------
 extern "C" SOLR_API int RayTracer_SaveToFile(char *filename);
 extern "C" SOLR_API int RayTracer_LoadFromFile(char *filename,
-                                                           double scale);
+                                               double scale);
 
 #ifdef USE_KINECT
 // ---------- Kinect ----------
 extern "C" SOLR_API int RayTracer_UpdateSkeletons(
-    int index, double center_x, double center_y, double center_z, double size,
-    double radius, int materialId, double head_radius, int head_materialId,
-    double hands_radius, int hands_materialId, double feet_radius,
-    int feet_materialId);
+        int index, double center_x, double center_y, double center_z, double size,
+        double radius, int materialId, double head_radius, int head_materialId,
+        double hands_radius, int hands_materialId, double feet_radius,
+        int feet_materialId);
 #endif // USE_KINECT

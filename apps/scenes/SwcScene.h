@@ -15,20 +15,20 @@ class SwcScene: public Scene
 {
 
 public:
-   SwcScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~SwcScene(void);
+    SwcScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~SwcScene(void);
 
 protected:
 
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 private:
 
-   Morphologies m_morphologies;
-   int m_counter;
-   int m_previousMaterial;
-   int m_previousPrimitiveId;
+    Morphologies m_morphologies;
+    int m_counter;
+    int m_previousMaterial;
+    int m_previousPrimitiveId;
 };
 

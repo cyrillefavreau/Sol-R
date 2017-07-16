@@ -22,108 +22,108 @@
 class Scene
 {
 public:
-   Scene( const std::string& name, const int nbMaxPrimitivePerBox );
-   virtual ~Scene(void);
+    Scene( const std::string& name, const int nbMaxPrimitivePerBox );
+    virtual ~Scene(void);
 
 public:
-   void initialize(const int width, const int height);
-   void animate();
-   void render( const bool& animate );
+    void initialize(const int width, const int height);
+    void animate();
+    void render( const bool& animate );
 
-   virtual void renderText();
-   
-   void createRandomMaterials( bool update, bool lightsOnly );
-   void createMoleculeMaterials( bool update=false );
-   void loadTextures( const std::string& path, const std::string& filter );
+    virtual void renderText();
 
-   void addCornellBox( int boxType );
+    void createRandomMaterials( bool update, bool lightsOnly );
+    void createMoleculeMaterials( bool update=false );
+    void loadTextures( const std::string& path, const std::string& filter );
 
-   void saveToFile();
-   void loadFromFile(const float scale);
+    void addCornellBox( int boxType );
 
-   void createSkeleton();
-   void animateSkeleton();
+    void saveToFile();
+    void loadFromFile(const float scale);
 
-   void rotatePrimitives( Vertex rotationCenter, Vertex angles );
+    void createSkeleton();
+    void animateSkeleton();
 
-public:
-   SceneInfo& getSceneInfo();
-   std::string& getName();
-   
-   int getCornellBox() { return m_cornellBoxType; } 
-   void setCornellBox( int b ) { m_cornellBoxType = b; }
-
-   float getGroundHeight() { return m_groundHeight; }
-   void setGroundHeight( const float h ) { m_groundHeight = h; }
+    void rotatePrimitives( Vertex rotationCenter, Vertex angles );
 
 public:
-   //void setMaterialTexture( const int& index, const int& texture );
+    SceneInfo& getSceneInfo();
+    std::string& getName();
+
+    int getCornellBox() { return m_cornellBoxType; }
+    void setCornellBox( int b ) { m_cornellBoxType = b; }
+
+    float getGroundHeight() { return m_groundHeight; }
+    void setGroundHeight( const float h ) { m_groundHeight = h; }
 
 public:
-   int getNbPrimitives() { return m_gpuKernel->getNbActivePrimitives(); }
-   GPUKernel* getKernel() { return m_gpuKernel; }
-   int getNbHDRI() {return m_nbHDRI;}
+    //void setMaterialTexture( const int& index, const int& texture );
 
 public:
-   void setCurrentModel( const int& currentModel ) { m_currentModel=currentModel; }
+    int getNbPrimitives() { return m_gpuKernel->getNbActivePrimitives(); }
+    GPUKernel* getKernel() { return m_gpuKernel; }
+    int getNbHDRI() {return m_nbHDRI;}
+
+public:
+    void setCurrentModel( const int& currentModel ) { m_currentModel=currentModel; }
 
 protected:
-   virtual void doInitialize() = 0;
-   virtual void doPostInitialize() {};
-   virtual void doAnimate() = 0;
-   virtual void doAddLights() = 0;
+    virtual void doInitialize() = 0;
+    virtual void doPostInitialize() {};
+    virtual void doAnimate() = 0;
+    virtual void doAddLights() = 0;
 
 protected:
-   void createWorm( Vertex center, int boxId, int material );
-   void createDog( Vertex center, int material, float size, int boxid );
+    void createWorm( Vertex center, int boxId, int material );
+    void createDog( Vertex center, int material, float size, int boxid );
 
 protected:
-   std::string m_name;
-   GPUKernel* m_gpuKernel;
+    std::string m_name;
+    GPUKernel* m_gpuKernel;
 
-   // Textures
-   int m_nbHDRI;
+    // Textures
+    int m_nbHDRI;
 
-   // Scene information
-   int       m_nbBoxes;
-   int       m_cornellBoxType;
-   float     m_groundHeight;
-   int       m_maxPathTracingIterations;
-   int       m_nbMaxPrimitivePerBox;
+    // Scene information
+    int       m_nbBoxes;
+    int       m_cornellBoxType;
+    float     m_groundHeight;
+    int       m_maxPathTracingIterations;
+    int       m_nbMaxPrimitivePerBox;
 
-   // Primitives
-   int m_nbPrimitives;
-   // Materials
-   int m_nbMaterials;
+    // Primitives
+    int m_nbPrimitives;
+    // Materials
+    int m_nbMaterials;
 
-   // Scene models
-   int m_currentModel;
+    // Scene models
+    int m_currentModel;
 
 protected:
-   // Animation
-   Vertex m_rotationCenter;
-   Vertex m_rotationAngles;
+    // Animation
+    Vertex m_rotationCenter;
+    Vertex m_rotationAngles;
 
 #ifdef USE_KINECT
 protected:
-   int    m_skeletonPrimitiveIndex;
-   float  m_skeletonSize;
-   float  m_skeletonThickness;
-   Vertex m_skeletonPosition;
-   Vertex m_skeletonOldPosition;
+    int    m_skeletonPrimitiveIndex;
+    float  m_skeletonSize;
+    float  m_skeletonThickness;
+    Vertex m_skeletonPosition;
+    Vertex m_skeletonOldPosition;
 
-   float m_skeletonKinectSpace;
-   float m_skeletonKinectSize;
-   int   m_skeletonKinectStep;
-   int   m_skeletonKinectNbSpherePerBox;
-   Vertex m_acceleration;
+    float m_skeletonKinectSpace;
+    float m_skeletonKinectSize;
+    int   m_skeletonKinectStep;
+    int   m_skeletonKinectNbSpherePerBox;
+    Vertex m_acceleration;
 
-   Vertex m_previewViewPos;
+    Vertex m_previewViewPos;
 #endif // USE_KINECT
 
 private:
-   Vertex m_modelRotationAngle;
-   Vertex m_modelPosition;
-   Vertex m_modelTranslation;
+    Vertex m_modelRotationAngle;
+    Vertex m_modelPosition;
+    Vertex m_modelTranslation;
 
 };

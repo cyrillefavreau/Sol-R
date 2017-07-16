@@ -13,13 +13,13 @@ class MoleculeScene : public Scene
 {
 
 public:
-   MoleculeScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~MoleculeScene(void);
+    MoleculeScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~MoleculeScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 };
 

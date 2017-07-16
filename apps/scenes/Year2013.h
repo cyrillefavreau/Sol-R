@@ -13,12 +13,12 @@ class Year2013 : public Scene
 {
 
 public:
-   Year2013( const std::string& name, const int nbMaxPrimitivePerBox );
-   ~Year2013(void);
+    Year2013( const std::string& name, const int nbMaxPrimitivePerBox );
+    ~Year2013(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 };

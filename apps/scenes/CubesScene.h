@@ -13,12 +13,12 @@ class CubesScene : public Scene
 {
 
 public:
-   CubesScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~CubesScene(void);
+    CubesScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~CubesScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };
 

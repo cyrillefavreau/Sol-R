@@ -32,28 +32,28 @@
 #endif
 
 typedef struct {
-  unsigned char imageTypeCode;
-  short int imageWidth;
-  short int imageHeight;
-  unsigned char bitCount;
+    unsigned char imageTypeCode;
+    short int imageWidth;
+    short int imageHeight;
+    unsigned char bitCount;
 } TGAFILE;
 
 class ImageLoader {
 public:
-  ImageLoader(void);
-  ~ImageLoader(void);
+    ImageLoader(void);
+    ~ImageLoader(void);
 
 public:
-  // BITMAP
-  bool loadBMP24(const int index, const std::string &filename,
+    // BITMAP
+    bool loadBMP24(const int index, const std::string &filename,
+                   TextureInformation *textureInformations);
+
+    // JPEG
+    // https://code.google.com/p/jpeg-compressor
+    bool loadJPEG(const int index, const std::string &filename,
+                  TextureInformation *textureInformations);
+
+    // TGA
+    bool loadTGA(const int index, const std::string &filename,
                  TextureInformation *textureInformations);
-
-  // JPEG
-  // https://code.google.com/p/jpeg-compressor
-  bool loadJPEG(const int index, const std::string &filename,
-                TextureInformation *textureInformations);
-
-  // TGA
-  bool loadTGA(const int index, const std::string &filename,
-               TextureInformation *textureInformations);
 };

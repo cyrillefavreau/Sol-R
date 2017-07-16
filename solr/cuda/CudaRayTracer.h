@@ -25,18 +25,18 @@
 
 extern "C" void initialize_scene(int2 occupancyParameters, SceneInfo sceneInfo,
                                  int nbPrimitives, int nbLamps, int nbMaterials
-#ifdef USE_MANAGED_MEMORY
+                                 #ifdef USE_MANAGED_MEMORY
                                  ,
                                  BoundingBox *&boundingBoxes,
                                  Primitive *&primitives
-#endif
+                                 #endif
                                  );
 
 extern "C" void finalize_scene(int2 occupancyParameters
-#ifdef USE_MANAGED_MEMORY
+                               #ifdef USE_MANAGED_MEMORY
                                ,
                                BoundingBox *boundingBoxes, Primitive *primitives
-#endif
+                               #endif
                                );
 
 extern "C" void reshape_scene(int2 occupancyParameters, SceneInfo sceneInfo);
@@ -65,10 +65,10 @@ extern "C" void cudaRender(int2 occupancyParameters, int4 blockSize,
                            SceneInfo sceneInfo, int4 objects,
                            PostProcessingInfo PostProcessingInfo, Vertex origin,
                            Vertex direction, Vertex angles
-#ifdef USE_MANAGED_MEMORY
+                           #ifdef USE_MANAGED_MEMORY
                            ,
                            BoundingBox *boundingBoxes, Primitive *primitives
-#endif
+                           #endif
                            );
 
 #ifdef USE_KINECT

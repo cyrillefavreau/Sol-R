@@ -12,18 +12,18 @@
 struct IFTFaceTracker;
 
 class KinectFaceTrackingScene :
-   public Scene
+        public Scene
 {
 
 public:
-   KinectFaceTrackingScene(const std::string& name, const int nbMaxPrimitivePerBox);
-   ~KinectFaceTrackingScene(void);
+    KinectFaceTrackingScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    ~KinectFaceTrackingScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 protected:
-   IFTFaceTracker* m_faceTracker;
+    IFTFaceTracker* m_faceTracker;
 };

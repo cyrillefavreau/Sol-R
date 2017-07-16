@@ -10,16 +10,16 @@
 #include "Scene.h"
 
 class CornellBoxScene :
-   public Scene
+        public Scene
 {
 
 public:
-   CornellBoxScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~CornellBoxScene(void);
+    CornellBoxScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~CornellBoxScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 };
 

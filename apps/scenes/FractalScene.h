@@ -13,16 +13,16 @@ class FractalScene : public Scene
 {
 
 public:
-   FractalScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~FractalScene(void);
+    FractalScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~FractalScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 private:
-   void createFractals( int iteration, int modelId, int mode, int maxIterations, FLOAT4 center, int material, float interval, float radius );
+    void createFractals( int iteration, int modelId, int mode, int maxIterations, FLOAT4 center, int material, float interval, float radius );
 
 };
 

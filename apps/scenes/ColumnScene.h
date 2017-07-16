@@ -10,21 +10,21 @@
 #include "Scene.h"
 
 class ColumnScene :
-   public Scene
+        public Scene
 {
 
 public:
-   ColumnScene( const std::string& name, const int nbMaxPrimitivePerBox  );
-   ~ColumnScene(void);
+    ColumnScene( const std::string& name, const int nbMaxPrimitivePerBox  );
+    ~ColumnScene(void);
 
 protected:
-   virtual void doInitialize();
-   virtual void doAnimate();
-   virtual void doAddLights();
+    virtual void doInitialize();
+    virtual void doAnimate();
+    virtual void doAddLights();
 
 private:
-   Vertex m_actorPosition;
-   Vertex m_objectScale;
+    Vertex m_actorPosition;
+    Vertex m_objectScale;
 
 };
 
