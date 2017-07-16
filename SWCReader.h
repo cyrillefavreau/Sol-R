@@ -1,8 +1,21 @@
-/* 
- * Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
+/* Copyright (c) 2011-2014, Cyrille Favreau
+ * All rights reserved. Do not distribute without permission.
+ * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+ *
+ * This file is part of Sol-R <https://github.com/cyrillefavreau/Sol-R>
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3.0 as published
+ * by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #pragma once
@@ -11,36 +24,31 @@
 
 #include "GPUKernel.h"
 
-struct Morphology
-{
-   int branch;
-   float x;
-   float y;
-   float z;
-   float radius;
-   int parent;
-   int primitiveId;
+struct Morphology {
+  int branch;
+  float x;
+  float y;
+  float z;
+  float radius;
+  int parent;
+  int primitiveId;
 };
 typedef std::map<int, Morphology> Morphologies;
 
-class RAYTRACINGENGINE_API SWCReader
-{
+class RAYTRACINGENGINE_API SWCReader {
 public:
-   SWCReader();
-   ~SWCReader();
+  SWCReader();
+  ~SWCReader();
 
-   CPUBoundingBox loadMorphologyFromFile( 
-      const std::string& filename,
-      GPUKernel& cudaKernel,
-      const Vertex& center,
-      const bool autoScale,
-      const Vertex& scale, 
-      bool autoCenter,
-      const int materialId );
+  CPUBoundingBox loadMorphologyFromFile(const std::string &filename,
+                                        GPUKernel &cudaKernel,
+                                        const Vertex &center,
+                                        const bool autoScale,
+                                        const Vertex &scale, bool autoCenter,
+                                        const int materialId);
 
-   Morphologies getMorphologies() { return m_morphologies; }
+  Morphologies getMorphologies() { return m_morphologies; }
 
 private:
-   Morphologies m_morphologies;
-
+  Morphologies m_morphologies;
 };
