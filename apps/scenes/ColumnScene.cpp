@@ -71,7 +71,7 @@ void ColumnScene::doInitialize()
       while (FindNextFile(hFind, &FindData));
    }
 #else
-   std::string path="./obj";
+   std::string path="../medias/obj";
    DIR *dp;
    struct dirent *dirp;
    if((dp  = opendir(path.c_str())) == NULL)

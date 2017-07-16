@@ -128,7 +128,7 @@ MenuItem menuItems[NB_MENU_ITEMS] = {
     {"h: Help", 'h'},
     {"i: Bounding boxes", 'i'},
     {"m: Animate scene", 'm'},
-    {"n: Next 3D model (in folder ./obj)", 'n'},
+    {"n: Next 3D model (in folder ../medias/obj)", 'n'},
     {"o: Perpective/Isometric 3D/Antialiasing", 'o'},
     {"p: Post processing (Depth of field, ambient occlusion, enlightment", 'p'},
     {"r: Reset current scene", 'r'},
@@ -1301,9 +1301,7 @@ void createScene() {
         break;
 #else
     case 0:
-        // gScene = new CylinderScene("Cylinders", gOptimalNbOfBoxes);
-        gScene = new SwcScene("Neuron Morphology", gOptimalNbOfBoxes);
-        // gScene = new ColumnScene("Neuron Column", gOptimalNbOfBoxes);
+        gScene = new CylinderScene("Cylinders", gOptimalNbOfBoxes);
         break;
 #endif
     case 1:

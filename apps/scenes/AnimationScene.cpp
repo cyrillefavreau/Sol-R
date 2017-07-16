@@ -117,7 +117,7 @@ void AnimationScene::doInitialize()
         {
         case 0:
         {
-            std::string filename("./obj/animations/");
+            std::string filename("../medias/obj/animations/");
             filename += gModels[rand()%nbModels];
             filename += ".obj";
             LOG_INFO(1,"Loading " << filename);
@@ -133,7 +133,7 @@ void AnimationScene::doInitialize()
         }
         case (nbFrames-1):
         {
-            std::string filename("./obj/animations/");
+            std::string filename("../medias/obj/animations/");
             filename += gModels[rand()%nbModels];
             filename += ".obj";
             LOG_INFO(1,"Loading " << filename);
