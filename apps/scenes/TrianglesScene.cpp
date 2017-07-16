@@ -49,7 +49,7 @@ void TrianglesScene::doInitialize()
     HANDLE hFind(nullptr);
     WIN32_FIND_DATA FindData;
 
-    std::string fullFilter("./irt/*.irt");
+    std::string fullFilter("../medias/irt/*.irt");
     hFind = FindFirstFile(fullFilter.c_str(), &FindData);
     if( hFind != INVALID_HANDLE_VALUE )
     {
@@ -61,7 +61,7 @@ void TrianglesScene::doInitialize()
         while (FindNextFile(hFind, &FindData));
     }
 #else
-    std::string path="./irt";
+    std::string path="../medias/irt";
     DIR *dp;
     struct dirent *dirp;
     if((dp  = opendir(path.c_str())) == NULL)
@@ -86,140 +86,25 @@ void TrianglesScene::doInitialize()
 #endif // WINew
     if( fileNames.size() != 0 )
     {
-        float objectScale=1.f; // EPFL 3.0
+        float objectScale=1.f;
         m_currentModel=m_currentModel%fileNames.size();
 #ifdef WIN32
-        m_name = "./irt/";
+        m_name = "../medias/irt/";
         m_name += fileNames[m_currentModel];
 #else
         m_name = fileNames[m_currentModel];
 #endif // WIN32
         Vertex size = {0.f,0.f,0.f};
-        // Vertex center = { 0.f, -600.f, 900.f }; EPFL
         Vertex center = { 0.f, 0.f, 0.f };
         FileMarshaller fm;
         size = fm.loadFromFile( *m_gpuKernel, m_name, center, objectScale*5000.f );
-        //m_groundHeight = -size.y*objectScale-EPSILON;
         m_groundHeight = -2500.f;
-
-        //m_nbPrimitives = m_gpuKernel->addPrimitive( ptSphere ); m_gpuKernel->setPrimitive( m_nbPrimitives, 0.f, 0.f, 0.f, 2200.f, 0.f, 0.f, BASIC_REFLECTION_MATERIAL_001); m_gpuKernel->setPrimitiveIsMovable( m_nbPrimitives, false );
     }
-    
-#if 0
-    // initialization
-   int   geometryType(gtAtomsAndSticks);
-    LOG_INFO(1,"Geometry type: " << geometryType );
-    int   atomMaterialType(0);
-    float defaultAtomSize(100.f);
-    float defaultStickSize(10.f);
-    bool loadModels(true);
-
-    std::vector<std::string> proteinNames;
-#ifdef WIN32
-    // Proteins vector
-    fullFilter = "./pdb/*.pdb";
-    hFind = FindFirstFile(fullFilter.c_str(), &FindData);
-    if( hFind != INVALID_HANDLE_VALUE )
-    {
-        do
-        {
-            if( strlen(FindData.cFileName) != 0 )
-            {
-                std::string shortName(FindData.cFileName);
-                shortName = shortName.substr(0,shortName.rfind(".pdb"));
-                proteinNames.push_back(shortName);
-            }
-        }
-        while (FindNextFile(hFind, &FindData));
-    }
-#else
-    std::string path="./pdb";
-    DIR *dp;
-    struct dirent *dirp;
-    if((dp  = opendir(path.c_str())) == NULL)
-    {
-        LOG_ERROR(errno << " opening " << path);
-    }
-    else
-    {
-        while ((dirp = readdir(dp)) != NULL)
-        {
-            std::string filename(dirp->d_name);
-            if( filename != "." && filename != ".." &&
-                filename.find(".pdb") != std::string::npos && filename.find(".mtl") == std::string::npos )
-            {
-                filename = filename.substr(0,filename.find(".pdb"));
-                std::string fullPath(path);
-                fullPath += "/";
-                fullPath += filename;
-                proteinNames.push_back(fullPath);
-            }
-        }
-        closedir(dp);
-    }
-#endif // WIN32
-
-    if( proteinNames.size() != 0 )
-    {
-        m_currentModel=m_currentModel%proteinNames.size();
-        Vertex scale = {50.f,50.f,50.f};
-        std::string fileName;
-
-        // Scene
-        m_name = proteinNames[m_currentModel];
-
-        // PDB
-        PDBReader pdbReader;
-#ifdef WIN32
-        fileName = "./pdb/";
-#endif // WIN32
-        fileName += proteinNames[m_currentModel];
-        fileName += ".pdb";
-      //Vertex objectSize = { 5000,5000,5000 };
-        Vertex objectSize = pdbReader.loadAtomsFromFile( fileName, *m_gpuKernel, static_cast<GeometryType>(geometryType), defaultAtomSize, defaultStickSize, atomMaterialType, scale, loadModels );
-
-        float size(1.f);
-        objectSize.x *= size;
-        objectSize.y *= size;
-        objectSize.z *= size;
-        if( loadModels )
-        {
-            fileName = "";
-#ifdef WIN32
-            fileName += "./pdb/";
-#endif // WIN32
-            fileName += proteinNames[m_currentModel];
-            fileName += ".obj";
-            Vertex center={0.f,0.f,0.f};
-            OBJReader objReader;
-            CPUBoundingBox aabb;
-            CPUBoundingBox inAABB;
-            objReader.loadModelFromFile(fileName, *m_gpuKernel, center, true, objectSize, true, 42, false, true, aabb, false, inAABB);
-        }
-    }
-#endif
 }
 
 void TrianglesScene::doAnimate()
 {
     const int nbFrames=120;
-#if 0
-    if(m_frameIndex<nbFrames)
-    {
-        time_t rawtime;
-        struct tm * timeinfo;
-        char buffer[255];
-        time(&rawtime);
-        timeinfo=localtime(&rawtime);
-        strftime(buffer,255,"%Y-%m-%d_%H-%M-%S_",timeinfo);
-        std::string filename("E:/Cloud/SkyDrive/Samsung Link/Videos/CudaRayTracer_");
-        filename+=buffer;
-        sprintf(buffer,"%d.jpg",m_frameIndex);
-        filename+=buffer;
-        m_gpuKernel->generateScreenshot(filename,512,512,m_gpuKernel->getSceneInfo().maxPathTracingIterations.x);
-        ++m_frameIndex;
-    }
-#endif // 0
     m_rotationAngles.y = static_cast<float>(-2.f*M_PI/nbFrames);
     m_gpuKernel->rotatePrimitives( m_rotationCenter, m_rotationAngles );
     m_gpuKernel->compactBoxes(false);

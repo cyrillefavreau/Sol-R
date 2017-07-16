@@ -31,7 +31,7 @@ void CausticScene::doInitialize()
     WIN32_FIND_DATA FindData;
 
     std::vector<std::string> fileNames;
-    std::string fullFilter("./irt/*.irt");
+    std::string fullFilter("../medias/irt/*.irt");
     hFind = FindFirstFile(fullFilter.c_str(), &FindData);
     if( hFind != INVALID_HANDLE_VALUE )
     {
@@ -46,7 +46,7 @@ void CausticScene::doInitialize()
     if( fileNames.size() != 0 )
     {
         m_currentModel=m_currentModel%fileNames.size();
-        m_name = "./irt/";
+        m_name = "../medias/irt/";
         m_name += fileNames[m_currentModel];
         Vertex size = {0.f,0.f,0.f};
         FileMarshaller fm;
