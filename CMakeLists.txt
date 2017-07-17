@@ -16,8 +16,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 # ================================================================================
 # Project
 # ================================================================================
-OPTION(SOLR_OPENCL_ENABLED "OpenCL enabled" OFF)
-OPTION(SOLR_CUDA_ENABLED "CUDA enabled" ON)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
+endif(NOT CMAKE_BUILD_TYPE)
+
+set(SOLR_ENGINE "CUDA" CACHE STRING "engine use (CUDA or OPENCL)")
+set_property(CACHE SOLR_ENGINE PROPERTY STRINGS CUDA OPENCL)
 
 # Windows' math include does not define constants by default.
 # Set this definition so it does.
@@ -41,7 +48,7 @@ endif(NOT GLUT_FOUND)
 # ================================================================================
 # OpenCL
 # ================================================================================
-if (SOLR_OPENCL_ENABLED)
+if (${SOLR_ENGINE} STREQUAL "OPENCL")
   find_package(OpenCL REQUIRED)
   if (OPENCL_FOUND)
     list(APPEND FIND_PACKAGES_DEFINES USE_OPENCL)
@@ -55,7 +62,7 @@ endif()
 # ================================================================================
 # CUDA
 # ================================================================================
-if (SOLR_CUDA_ENABLED)
+if (${SOLR_ENGINE} STREQUAL "CUDA")
   find_package(CUDA REQUIRED)
   if (CUDA_FOUND)
     list(APPEND FIND_PACKAGES_DEFINES USE_CUDA)
