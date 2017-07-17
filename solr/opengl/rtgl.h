@@ -589,62 +589,49 @@ void SOLR_API glColor4f(GLfloat red, GLfloat green, GLfloat blue,
                         GLfloat alpha);
 void SOLR_API glRasterPos2f(GLfloat x, GLfloat y);
 void SOLR_API glRasterPos3f(GLfloat x, GLfloat y, GLfloat z);
-void SOLR_API glTexParameterf(GLenum target, GLenum pname,
-                              GLfloat param);
+void SOLR_API glTexParameterf(GLenum target, GLenum pname, GLfloat param);
 void SOLR_API glTexCoord2f(GLfloat s, GLfloat t);
 void SOLR_API glTexCoord3f(GLfloat x, GLfloat y, GLfloat z);
 void SOLR_API glTexEnvf(GLenum target, GLenum pname, GLfloat param);
-void SOLR_API glTexImage2D(GLenum target, GLint level,
-                           GLint internalformat, GLsizei width,
-                           GLsizei height, GLint border,
-                           GLenum format, GLenum type,
-                           const GLvoid *pixels);
+void SOLR_API glTexImage2D(GLenum target, GLint level, GLint internalformat,
+                           GLsizei width, GLsizei height, GLint border,
+                           GLenum format, GLenum type, const GLvoid *pixels);
 void SOLR_API gluSphere(void *, GLfloat, GLint, GLint);
-void SOLR_API glutWireSphere(GLdouble radius, GLint slices,
-                             GLint stacks);
+void SOLR_API glutWireSphere(GLdouble radius, GLint slices, GLint stacks);
 SOLR_API GLUquadricObj *gluNewQuadric();
 void SOLR_API glClearColor(GLfloat red, GLfloat green, GLfloat blue,
                            GLfloat alpha);
 
-void SOLR_API glViewport(GLint a, GLint b, GLint width,
-                         GLint height);
+void SOLR_API glViewport(GLint a, GLint b, GLint width, GLint height);
 
 // Materials
-void SOLR_API glMaterialfv(GLenum face, GLenum pname,
-                           const GLfloat *params);
+void SOLR_API glMaterialfv(GLenum face, GLenum pname, const GLfloat *params);
 
 // Textures
 void SOLR_API glGenTextures(GLsizei n, GLuint *textures);
 void SOLR_API glBindTexture(GLenum target, GLuint texture);
-int SOLR_API gluBuild2DMipmaps(GLenum target, GLint components,
-                               GLint width, GLint height,
-                               GLenum format, GLenum type,
+int SOLR_API gluBuild2DMipmaps(GLenum target, GLint components, GLint width,
+                               GLint height, GLenum format, GLenum type,
                                const void *data);
-void SOLR_API glTexSubImage2D(GLenum target, GLint level,
-                              GLint xoffset, GLint yoffset,
-                              GLsizei width, GLsizei height,
-                              GLenum format, GLenum type,
-                              const GLvoid *data);
+void SOLR_API glTexSubImage2D(GLenum target, GLint level, GLint xoffset,
+                              GLint yoffset, GLsizei width, GLsizei height,
+                              GLenum format, GLenum type, const GLvoid *data);
 void SOLR_API glPushAttrib(GLbitfield mask);
 void SOLR_API glPopAttrib();
-void SOLR_API glTexParameteri(GLenum target, GLenum pname,
-                              GLint param);
+void SOLR_API glTexParameteri(GLenum target, GLenum pname, GLint param);
 void SOLR_API glBlendFunc(GLenum sfactor, GLenum dfactor);
 void SOLR_API glMatrixMode(GLenum mode);
 void SOLR_API glPushMatrix();
 void SOLR_API glPopMatrix();
 SOLR_API GLenum glGetError();
-void SOLR_API glOrtho(GLdouble left, GLdouble right,
-                      GLdouble bottom, GLdouble top,
-                      GLdouble nearVal, GLdouble farVal);
+void SOLR_API glOrtho(GLdouble left, GLdouble right, GLdouble bottom,
+                      GLdouble top, GLdouble nearVal, GLdouble farVal);
 
 void SOLR_API glTranslatef(GLfloat x, GLfloat y, GLfloat z);
-void SOLR_API glRotatef(GLfloat angle, GLfloat x, GLfloat y,
-                        GLfloat z);
+void SOLR_API glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
 void SOLR_API glPointSize(GLfloat size);
-void SOLR_API glReadPixels(GLint x, GLint y, GLsizei width,
-                           GLsizei height, GLenum format,
-                           GLenum type, GLvoid *data);
+void SOLR_API glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
+                           GLenum format, GLenum type, GLvoid *data);
 
 // Raytracer specific
 #ifdef USE_OPENCL
@@ -656,11 +643,10 @@ void SOLR_API createRandomMaterials(bool update, bool lightsOnly);
 void SOLR_API setAngles(GLfloat, GLfloat, GLfloat);
 void SOLR_API render();
 void SOLR_API gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ,
-                        GLdouble centerX, GLdouble centerY,
-                        GLdouble centerZ, GLdouble upX,
-                        GLdouble upY, GLdouble upZ);
-void SOLR_API gluPerspective(GLdouble fovy, GLdouble aspect,
-                             GLdouble zNear, GLdouble zFar);
+                        GLdouble centerX, GLdouble centerY, GLdouble centerZ,
+                        GLdouble upX, GLdouble upY, GLdouble upZ);
+void SOLR_API gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear,
+                             GLdouble zFar);
 
 // Glut
 void SOLR_API glutSpecialFunc(void (*func)(int key, int x, int y));
@@ -878,19 +864,6 @@ extern void *glutBitmapTimesRoman24;
 extern void *glutBitmapHelvetica10;
 extern void *glutBitmapHelvetica12;
 extern void *glutBitmapHelvetica18;
-
-/*
-* Those pointers will be used by following definitions:
-*/
-#define GLUT_STROKE_ROMAN ((void *)&glutStrokeRoman)
-#define GLUT_STROKE_MONO_ROMAN ((void *)&glutStrokeMonoRoman)
-#define GLUT_BITMAP_9_BY_15 ((void *)&glutBitmap9By15)
-#define GLUT_BITMAP_8_BY_13 ((void *)&glutBitmap8By13)
-#define GLUT_BITMAP_TIMES_ROMAN_10 ((void *)&glutBitmapTimesRoman10)
-#define GLUT_BITMAP_TIMES_ROMAN_24 ((void *)&glutBitmapTimesRoman24)
-#define GLUT_BITMAP_HELVETICA_10 ((void *)&glutBitmapHelvetica10)
-#define GLUT_BITMAP_HELVETICA_12 ((void *)&glutBitmapHelvetica12)
-#define GLUT_BITMAP_HELVETICA_18 ((void *)&glutBitmapHelvetica18)
 #endif
 
 /*
@@ -944,8 +917,7 @@ int SOLR_API glutLayerGet(GLenum query);
 /*
 * Window-specific callback functions, see freeglut_callbacks.c
 */
-void SOLR_API glutKeyboardFunc(void (*callback)(unsigned char, int,
-                                                int));
+void SOLR_API glutKeyboardFunc(void (*callback)(unsigned char, int, int));
 void SOLR_API glutDisplayFunc(void (*callback)(void));
 void SOLR_API glutMouseFunc(void (*callback)(int, int, int, int));
 void SOLR_API glutMotionFunc(void (*callback)(int, int));
@@ -953,8 +925,8 @@ void SOLR_API glutMotionFunc(void (*callback)(int, int));
 /*
 * Global callback functions, see freeglut_callbacks.c
 */
-void SOLR_API glutTimerFunc(unsigned int time,
-                            void (*callback)(int), int value);
+void SOLR_API glutTimerFunc(unsigned int time, void (*callback)(int),
+                            int value);
 
 /*
 * Menu stuff, see freeglut_menu.c
@@ -967,8 +939,7 @@ void SOLR_API glutAttachMenu(int button);
 /*
 * Font stuff, see freeglut_font.c
 */
-void SOLR_API glutBitmapString(void *font,
-                               const unsigned char *string);
+void SOLR_API glutBitmapString(void *font, const unsigned char *string);
 
 /*
 * Display-connected functions, see freeglut_display.c
