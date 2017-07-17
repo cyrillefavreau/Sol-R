@@ -42,18 +42,18 @@ if (OpenGL_FOUND)
     message(STATUS "OpenGL found")
 	include_directories(${OPENGL_INCLUDE_DIR})
 else()
-	message(ERROR "OpenGL not found!")
+	message(ERROR " OpenGL not found!")
 endif()
 
 # ================================================================================
 # GLUT
 # ================================================================================
-find_package(GLUT REQUIRED SYSTEM)
-if (GLUT_FOUND)
-    message(STATUS "Glut found " ${GLUT_LIBRARIES})
-	include_directories(${GLUT_INCLUDE_DIR})
+find_package(FREEGLUT REQUIRED SYSTEM)
+if (FREEGLUT_FOUND)
+    message(STATUS "FreeGlut found " ${FREEGLUT_LIBRARIES})
+	include_directories(${FREEGLUT_INCLUDE_DIR})
 else()
-	message(ERROR "Glut not found!")
+	message(ERROR " FreeGlut not found!")
 endif()
 	
 # ================================================================================
@@ -67,7 +67,7 @@ if (${SOLR_ENGINE} STREQUAL "OPENCL")
     message(STATUS "OpenCL found and selected for build")
     include_directories(${OPENCL_INCLUDE_DIRS})
   else()
-    message(STATUS "OpenCL not found. Project will not be built with that technology")
+    message(ERROR " OpenCL not found. Project will not be built with that technology")
   endif()
 endif()
 
@@ -81,7 +81,7 @@ if (${SOLR_ENGINE} STREQUAL "CUDA")
     message(STATUS "CUDA found and selected for build")
     include_directories(${CUDA_TOOLKIT_INCLUDE})
   else()
-    message(STATUS "CUDA not found. Project will not be built with that technology")
+    message(ERROR " CUDA not found. Project will not be built with that technology")
   endif()
 
   if (WIN32)

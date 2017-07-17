@@ -25,8 +25,8 @@ IF (WIN32)
     PATHS  ${FREEGLUT_ROOT_PATH}/include )
   FIND_LIBRARY( FREEGLUT_glut_LIBRARY NAMES glut glut32 freeglut freeglut_static
     PATHS
-    ${OPENGL_LIBRARY_DIR}
     ${FREEGLUT_ROOT_PATH}/Release
+    ${OPENGL_LIBRARY_DIR}
     )
 ELSE (WIN32)
   
