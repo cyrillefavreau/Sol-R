@@ -394,7 +394,7 @@ OpenCLKernel::OpenCLKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox,
   CHECKSTATUS(status);
   if (m_hContext)
     LOG_INFO(1, "Context successfully created");
-  m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, NULL, &status);
+  m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, 0, &status);
   CHECKSTATUS(status);
   if (m_hQueue)
     LOG_INFO(1, "Queue successfully created");
