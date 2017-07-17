@@ -62,10 +62,10 @@ SET(
 TARGET_LINK_LIBRARIES(
     solrViewer
     solr
-    ${OPENCL_LIBRARIES}
-    )
+	${OPENCL_LIBRARIES}
+	${GLUT_LIBRARIES}
+)
 
 # ------------------------------------------------------------
 INSTALL(TARGETS solrViewer DESTINATION bin)
 # ------------------------------------------------------------
-

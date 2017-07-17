@@ -25,7 +25,7 @@
 #ifdef __APPLE__
 #include </System/Library/Frameworks/OpenCL.framework/Headers/opencl.h>
 #else
-#include <CL/opencl.h>
+#include <CL/cl.h>
 #endif
 #include "../Consts.h"
 

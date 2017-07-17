@@ -21,7 +21,7 @@
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
-#include <GL/freeglut.h>
+#include <GL/glut.h>
 #endif
 
 #include <iostream>
@@ -46,7 +46,7 @@ typedef CPUKernel GenericGPUKernel;
 #endif // USE_OPENCL
 #endif // USE_CUDA
 
-GPUKernel *RayTracer::gKernel = 0;
+GPUKernel *SolR::gKernel = 0;
 
 SceneInfo gSceneInfo;
 PostProcessingInfo glPostProcessingInfo;
@@ -64,18 +64,18 @@ Vertex gAngles = {0.f, 0.f, 0.f};
 
 #ifdef USE_OPENCL
 // OpenCL
-void RayTracer::setOpenCLPlatform(const int platform)
+void SolR::setOpenCLPlatform(const int platform)
 {
-    RayTracer::gOpenCLPlatform = platform;
+    SolR::gOpenCLPlatform = platform;
 }
 
-void RayTracer::setOpenCLDevice(const int device)
+void SolR::setOpenCLDevice(const int device)
 {
-    RayTracer::gOpenCLDevice = device;
+    SolR::gOpenCLDevice = device;
 }
 #endif // USE_OPENCL
 
-void RayTracer::InitializeRaytracer(const int width, const int height)
+void SolR::Initialize(const int width, const int height)
 {
 #ifdef USE_OPENCL
     LOG_INFO(1, "Intializing Raytracing engine: " << gOpenCLPlatform << "," << gOpenCLDevice);
@@ -117,11 +117,11 @@ void RayTracer::InitializeRaytracer(const int width, const int height)
     }
 }
 
-void RayTracer::glCompactBoxes()
+void SolR::glCompactBoxes()
 {
-    if (RayTracer::gKernel)
+    if (SolR::gKernel)
     {
-        RayTracer::gKernel->compactBoxes(true);
+        SolR::gKernel->compactBoxes(true);
     }
 }
 
@@ -131,7 +131,7 @@ ________________________________________________________________________________
 Create Random Materials
 ________________________________________________________________________________
 */
-void RayTracer::createRandomMaterials(bool update, bool lightsOnly)
+void SolR::createRandomMaterials(bool update, bool lightsOnly)
 {
     srand(static_cast<int>(time(0)));
     int start(0);
@@ -188,8 +188,8 @@ void RayTracer::createRandomMaterials(bool update, bool lightsOnly)
             break;
         }
 
-        int material = update ? i : RayTracer::gKernel->addMaterial();
-        RayTracer::gKernel->setMaterial(material, r, g, b, noise, reflection, refraction, procedural, wireframe,
+        int material = update ? i : SolR::gKernel->addMaterial();
+        SolR::gKernel->setMaterial(material, r, g, b, noise, reflection, refraction, procedural, wireframe,
                                         wireframeDepth, transparency, opacity, textureId, TEXTURE_NONE, TEXTURE_NONE,
                                         TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, specular.x, specular.y,
                                         specular.w, innerIllumination.x, innerIllumination.y, innerIllumination.z,
@@ -197,17 +197,17 @@ void RayTracer::createRandomMaterials(bool update, bool lightsOnly)
     }
 }
 
-void RayTracer::glBegin(GLint mode)
+void SolR::glBegin(GLint mode)
 {
-    RayTracer::gKernel->setGLMode(mode);
+    SolR::gKernel->setGLMode(mode);
 }
 
-int RayTracer::glEnd()
+int SolR::glEnd()
 {
-    return RayTracer::gKernel->setGLMode(-1);
+    return SolR::gKernel->setGLMode(-1);
 }
 
-void RayTracer::glEnable(GLenum cap)
+void SolR::glEnable(GLenum cap)
 {
     switch (cap)
     {
@@ -215,8 +215,8 @@ void RayTracer::glEnable(GLenum cap)
     {
         if (!gLighting)
         {
-            int p = RayTracer::gKernel->addPrimitive(ptSphere);
-            RayTracer::gKernel->setPrimitive(p, 20.f * gScale, 20.f * gScale, -20.f * gScale, 0.1f * gScale,
+            int p = SolR::gKernel->addPrimitive(ptSphere);
+            SolR::gKernel->setPrimitive(p, 20.f * gScale, 20.f * gScale, -20.f * gScale, 0.1f * gScale,
                                              0.1f * gScale, 0.1f * gScale, DEFAULT_LIGHT_MATERIAL);
             gLighting = true;
             LOG_INFO(3, "[OpenGL] Light Added");
@@ -227,52 +227,52 @@ void RayTracer::glEnable(GLenum cap)
     //::glEnable(cap);
 }
 
-void RayTracer::glDisable(GLenum cap)
+void SolR::glDisable(GLenum cap)
 {
     ::glDisable(cap);
 }
 
-void RayTracer::glClear(GLbitfield mask)
+void SolR::glClear(GLbitfield mask)
 {
     ::glClear(mask);
 }
 
-void RayTracer::glVertex3f(GLfloat x, GLfloat y, GLfloat z)
+void SolR::glVertex3f(GLfloat x, GLfloat y, GLfloat z)
 {
     //::glVertex3f(x,y,z);
-    RayTracer::gKernel->addVertex(x * gScale, y * gScale, z * gScale);
+    SolR::gKernel->addVertex(x * gScale, y * gScale, z * gScale);
 }
 
-void RayTracer::glVertex3fv(const GLfloat *v)
+void SolR::glVertex3fv(const GLfloat *v)
 {
     //::glVertex3f(x,y,z);
-    RayTracer::gKernel->addVertex(v[0] * gScale, v[1] * gScale, v[2] * gScale);
+    SolR::gKernel->addVertex(v[0] * gScale, v[1] * gScale, v[2] * gScale);
 }
 
-void RayTracer::glNormal3f(GLfloat x, GLfloat y, GLfloat z)
+void SolR::glNormal3f(GLfloat x, GLfloat y, GLfloat z)
 {
     //::glNormal3f(x,y,z);
-    RayTracer::gKernel->addNormal(x, y, z);
+    SolR::gKernel->addNormal(x, y, z);
 }
 
-void RayTracer::glNormal3fv(const GLfloat *n)
+void SolR::glNormal3fv(const GLfloat *n)
 {
-    RayTracer::gKernel->addNormal(n[0], n[1], n[2]);
+    SolR::gKernel->addNormal(n[0], n[1], n[2]);
 }
 
-void RayTracer::glColor3f(GLfloat red, GLfloat green, GLfloat blue)
+void SolR::glColor3f(GLfloat red, GLfloat green, GLfloat blue)
 {
     glColor4f(red, green, blue, 0.f);
 }
 
-void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+void SolR::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
     /*
   bool found(false);
   unsigned int i(0);
-  while( i<RayTracer::gKernel->getNbActiveMaterials() && !found )
+  while( i<SolR::gKernel->getNbActiveMaterials() && !found )
   {
-     Material* mat=RayTracer::gKernel->getMaterial(i);
+     Material* mat=SolR::gKernel->getMaterial(i);
      if (mat->color.x==red && mat->color.x==green && mat->color.x==blue &&
   mat->transparency.x==alpha)
      {
@@ -285,54 +285,54 @@ void RayTracer::glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alph
   }
   if( found )
   {
-     RayTracer::gKernel->setMaterialColor(i,red,green,blue);
+     SolR::gKernel->setMaterialColor(i,red,green,blue);
   }
   else
   */
     {
-        int m = RayTracer::gKernel->getCurrentMaterial();
+        int m = SolR::gKernel->getCurrentMaterial();
         ++m;
-        RayTracer::gKernel->setMaterial(m, red, green, blue, 0.f, 0.f, 1.2f, false, 0.f, 0, alpha,
+        SolR::gKernel->setMaterial(m, red, green, blue, 0.f, 0.f, 1.2f, false, 0.f, 0, alpha,
                                         gSceneInfo.viewDistance, MATERIAL_NONE, MATERIAL_NONE, MATERIAL_NONE,
                                         MATERIAL_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, 1.f, 200.f, 1000.f,
                                         0.f, 0.f, 0.f, false);
-        RayTracer::gKernel->setCurrentMaterial(m);
+        SolR::gKernel->setCurrentMaterial(m);
     }
 }
 
-void RayTracer::glRasterPos2f(GLfloat x, GLfloat y)
+void SolR::glRasterPos2f(GLfloat x, GLfloat y)
 {
     ::glRasterPos2f(x, y);
 }
 
-void RayTracer::glRasterPos3f(GLfloat x, GLfloat y, GLfloat z)
+void SolR::glRasterPos3f(GLfloat x, GLfloat y, GLfloat z)
 {
     ::glRasterPos3f(x, y, z);
 }
 
-void RayTracer::glTexParameterf(GLenum target, GLenum pname, GLfloat param)
+void SolR::glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 {
     ::glTexParameterf(target, pname, param);
 }
 
-void RayTracer::glTexCoord2f(GLfloat s, GLfloat t)
+void SolR::glTexCoord2f(GLfloat s, GLfloat t)
 {
     //::glTexCoord2f(s,t);
-    RayTracer::gKernel->addTextCoord(s, t, 0.f);
+    SolR::gKernel->addTextCoord(s, t, 0.f);
 }
 
-void RayTracer::glTexCoord3f(GLfloat x, GLfloat y, GLfloat z)
+void SolR::glTexCoord3f(GLfloat x, GLfloat y, GLfloat z)
 {
     //::glTexCoord3f(x,y,z);
-    RayTracer::gKernel->addTextCoord(x, y, z);
+    SolR::gKernel->addTextCoord(x, y, z);
 }
 
-void RayTracer::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
+void SolR::glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 {
     ::glTexEnvf(target, pname, param);
 }
 
-void RayTracer::glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height,
+void SolR::glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height,
                              GLint border, GLenum format, GLenum type, const GLvoid *pixels)
 {
     ::glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
@@ -342,175 +342,175 @@ void RayTracer::glTexImage2D(GLenum target, GLint level, GLint internalformat, G
 * GLUT
 */
 
-void RayTracer::glutInit(int *pargc, char **argv)
+void SolR::glutInit(int *pargc, char **argv)
 {
     ::glutInit(pargc, argv);
 }
 
-void RayTracer::glutInitWindowPosition(int x, int y)
+void SolR::glutInitWindowPosition(int x, int y)
 {
     ::glutInitWindowPosition(x, y);
 }
 
-void RayTracer::glutReshapeWindow(int width, int height)
+void SolR::glutReshapeWindow(int width, int height)
 {
     ::glutReshapeWindow(width, height);
 }
 
-void RayTracer::glViewport(int a, int b, int width, int height)
+void SolR::glViewport(int a, int b, int width, int height)
 {
-    // Initialize Raytracer
-    InitializeRaytracer(width, height);
+    // Initialize SolR
+    Initialize(width, height);
     ::glViewport(a, b, width, height);
 }
 
-void RayTracer::glutInitWindowSize(int width, int height)
+void SolR::glutInitWindowSize(int width, int height)
 {
-    // Initialize Raytracer
-    InitializeRaytracer(width, height);
+    // Initialize SolR
+    Initialize(width, height);
 
     ::glutInitWindowSize(width, height);
 }
 
-void RayTracer::glutInitDisplayMode(unsigned int displayMode)
+void SolR::glutInitDisplayMode(unsigned int displayMode)
 {
     ::glutInitDisplayMode(displayMode);
 }
 
-void RayTracer::glutMainLoop(void)
+void SolR::glutMainLoop(void)
 {
     ::glutMainLoop();
 }
 
-int RayTracer::glutCreateWindow(const char *title)
+int SolR::glutCreateWindow(const char *title)
 {
     return ::glutCreateWindow(title);
 }
 
-void RayTracer::glutDestroyWindow(int window)
+void SolR::glutDestroyWindow(int window)
 {
     ::glutDestroyWindow(window);
     delete gKernel;
     gKernel = 0;
 }
 
-void RayTracer::glutFullScreen(void)
+void SolR::glutFullScreen(void)
 {
     ::glutFullScreen();
 }
 
-void RayTracer::glLoadIdentity()
+void SolR::glLoadIdentity()
 {
-    RayTracer::render();
+    SolR::render();
     ::glLoadIdentity();
 }
 
-int RayTracer::glutGet(GLenum query)
+int SolR::glutGet(GLenum query)
 {
     return ::glutGet(query);
 }
 
-int RayTracer::glutDeviceGet(GLenum query)
+int SolR::glutDeviceGet(GLenum query)
 {
     return ::glutDeviceGet(query);
 }
 
-int RayTracer::glutGetModifiers(void)
+int SolR::glutGetModifiers(void)
 {
     return ::glutGetModifiers();
 }
 
-int RayTracer::glutLayerGet(GLenum query)
+int SolR::glutLayerGet(GLenum query)
 {
     return ::glutLayerGet(query);
 }
 
-void RayTracer::glutKeyboardFunc(void (*callback)(unsigned char, int, int))
+void SolR::glutKeyboardFunc(void (*callback)(unsigned char, int, int))
 {
     ::glutKeyboardFunc(callback);
 }
 
-void RayTracer::glutDisplayFunc(void (*callback)(void))
+void SolR::glutDisplayFunc(void (*callback)(void))
 {
     ::glutDisplayFunc(callback);
 }
 
-void RayTracer::glutMouseFunc(void (*callback)(int, int, int, int))
+void SolR::glutMouseFunc(void (*callback)(int, int, int, int))
 {
     ::glutMouseFunc(callback);
 }
 
-void RayTracer::glutMotionFunc(void (*callback)(int, int))
+void SolR::glutMotionFunc(void (*callback)(int, int))
 {
     ::glutMotionFunc(callback);
 }
 
-void RayTracer::glutTimerFunc(unsigned int time, void (*callback)(int), int value)
+void SolR::glutTimerFunc(unsigned int time, void (*callback)(int), int value)
 {
     ::glutTimerFunc(time, callback, value);
 }
 
-int RayTracer::glutCreateMenu(void (*callback)(int menu))
+int SolR::glutCreateMenu(void (*callback)(int menu))
 {
     return ::glutCreateMenu(callback);
 }
 
-void RayTracer::glutDestroyMenu(int menu)
+void SolR::glutDestroyMenu(int menu)
 {
     ::glutDestroyMenu(menu);
 }
 
-void RayTracer::glutAddMenuEntry(const char *label, int value)
+void SolR::glutAddMenuEntry(const char *label, int value)
 {
     ::glutAddMenuEntry(label, value);
 }
 
-void RayTracer::glutAttachMenu(int button)
+void SolR::glutAttachMenu(int button)
 {
     ::glutAttachMenu(button);
 }
 
-void RayTracer::glutBitmapString(void *font, const unsigned char *string)
+void SolR::glutBitmapString(void *font, const unsigned char *string)
 {
 #ifndef __APPLE__
-    ::glutBitmapString(font, string);
+    //::glutBitmapString(font, string);
 #endif
 }
 
-void RayTracer::glutPostRedisplay(void)
+void SolR::glutPostRedisplay(void)
 {
     ::glutPostRedisplay();
 }
 
-void RayTracer::glutSwapBuffers(void)
+void SolR::glutSwapBuffers(void)
 {
     ::glutSwapBuffers();
 }
 
-void RayTracer::gluSphere(void *, GLfloat radius, GLint, GLint)
+void SolR::gluSphere(void *, GLfloat radius, GLint, GLint)
 {
-    int p = RayTracer::gKernel->addPrimitive(ptSphere);
-    Vertex translation = RayTracer::gKernel->getTranslation();
-    int m = RayTracer::gKernel->getCurrentMaterial();
-    RayTracer::gKernel->setPrimitive(p, translation.x * gScale, translation.y * gScale, translation.z * gScale,
+    int p = SolR::gKernel->addPrimitive(ptSphere);
+    Vertex translation = SolR::gKernel->getTranslation();
+    int m = SolR::gKernel->getCurrentMaterial();
+    SolR::gKernel->setPrimitive(p, translation.x * gScale, translation.y * gScale, translation.z * gScale,
                                      radius * gScale, 0.f, 0.f, m);
 }
 
-void RayTracer::glutWireSphere(GLdouble radius, GLint, GLint)
+void SolR::glutWireSphere(GLdouble radius, GLint, GLint)
 {
-    int p = RayTracer::gKernel->addPrimitive(ptSphere);
-    Vertex translation = RayTracer::gKernel->getTranslation();
-    int m = RayTracer::gKernel->getCurrentMaterial();
-    RayTracer::gKernel->setPrimitive(p, translation.x * gScale, translation.y * gScale, translation.z * gScale,
+    int p = SolR::gKernel->addPrimitive(ptSphere);
+    Vertex translation = SolR::gKernel->getTranslation();
+    int m = SolR::gKernel->getCurrentMaterial();
+    SolR::gKernel->setPrimitive(p, translation.x * gScale, translation.y * gScale, translation.z * gScale,
                                      static_cast<float>(radius) * gScale, 0.f, 0.f, m);
 }
 
-GLUquadricObj *RayTracer::gluNewQuadric(void)
+GLUquadricObj *SolR::gluNewQuadric(void)
 {
     return 0;
 }
 
-void RayTracer::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+void SolR::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
     gSceneInfo.backgroundColor.x = red;
     gSceneInfo.backgroundColor.y = green;
@@ -518,34 +518,34 @@ void RayTracer::glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat a
     gSceneInfo.backgroundColor.w = alpha;
 }
 
-void RayTracer::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
+void SolR::glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 {
     switch (pname)
     {
     case GL_AMBIENT:
-        RayTracer::glColor3f(params[0], params[1], params[2]);
+        SolR::glColor3f(params[0], params[1], params[2]);
         break;
     }
 }
 
-void RayTracer::glGenTextures(GLsizei n, GLuint *textures)
+void SolR::glGenTextures(GLsizei n, GLuint *textures)
 {
     ++gCurrentTexture;
-    RayTracer::gKernel->setTexturesTransfered(false);
+    SolR::gKernel->setTexturesTransfered(false);
     *textures = gCurrentTexture;
 }
 
-void RayTracer::glBindTexture(GLenum target, GLuint texture)
+void SolR::glBindTexture(GLenum target, GLuint texture)
 {
     switch (target)
     {
     case GL_TEXTURE_2D:
-        RayTracer::gKernel->setMaterialTextureId(gCurrentTexture);
+        SolR::gKernel->setMaterialTextureId(gCurrentTexture);
         break;
     }
 }
 
-int RayTracer::gluBuild2DMipmaps(GLenum target, GLint components, GLint width, GLint height, GLenum format, GLenum type,
+int SolR::gluBuild2DMipmaps(GLenum target, GLint components, GLint width, GLint height, GLenum format, GLenum type,
                                  const void *data)
 {
     TextureInformation textureInfo;
@@ -564,112 +564,112 @@ int RayTracer::gluBuild2DMipmaps(GLenum target, GLint components, GLint width, G
     textureInfo.offset = 0;
     textureInfo.buffer = (unsigned char *)data;
 
-    RayTracer::gKernel->setTexture(gCurrentTexture, textureInfo);
+    SolR::gKernel->setTexture(gCurrentTexture, textureInfo);
     return 0;
 }
 
-void RayTracer::setAngles(GLfloat x, GLfloat y, GLfloat z)
+void SolR::setAngles(GLfloat x, GLfloat y, GLfloat z)
 {
     gAngles.x = x;
     gAngles.y = y;
     gAngles.z = z;
 }
 
-void RayTracer::glFlush()
+void SolR::glFlush()
 {
     ::glFlush();
 }
 
-void RayTracer::glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
+void SolR::glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
                                 GLenum format, GLenum type, const GLvoid *data);
 
-void RayTracer::glPushAttrib(GLbitfield mask)
+void SolR::glPushAttrib(GLbitfield mask)
 {
 }
 
-void RayTracer::glPopAttrib()
+void SolR::glPopAttrib()
 {
 }
 
-void RayTracer::glTexParameteri(GLenum target, GLenum pname, GLint param)
+void SolR::glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
 }
 
-void RayTracer::glBlendFunc(GLenum sfactor, GLenum dfactor)
+void SolR::glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 }
 
-void RayTracer::glMatrixMode(GLenum mode)
+void SolR::glMatrixMode(GLenum mode)
 {
 }
 
-void RayTracer::glPushMatrix()
+void SolR::glPushMatrix()
 {
 }
 
-void RayTracer::glPopMatrix()
+void SolR::glPopMatrix()
 {
 }
 
-GLenum RayTracer::glGetError()
+GLenum SolR::glGetError()
 {
     return ::glGetError();
 }
 
-void RayTracer::glVertex2i(GLint x, GLint y)
+void SolR::glVertex2i(GLint x, GLint y)
 {
     glVertex3f(static_cast<GLfloat>(x), static_cast<GLfloat>(y), 0.f);
 }
 
-void RayTracer::glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble nearVal, GLdouble farVal)
+void SolR::glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble nearVal, GLdouble farVal)
 {
     // gMisc.w = 1;
 }
 
-void RayTracer::render()
+void SolR::render()
 {
-    if (RayTracer::gKernel)
+    if (SolR::gKernel)
     {
-        Vertex rotation = RayTracer::gKernel->getRotation();
-        RayTracer::gKernel->setCamera(gEye, gDir, rotation);
-        RayTracer::gKernel->setSceneInfo(gSceneInfo);
-        RayTracer::gKernel->setPostProcessingInfo(glPostProcessingInfo);
+        Vertex rotation = SolR::gKernel->getRotation();
+        SolR::gKernel->setCamera(gEye, gDir, rotation);
+        SolR::gKernel->setSceneInfo(gSceneInfo);
+        SolR::gKernel->setPostProcessingInfo(glPostProcessingInfo);
         if (!gLighting)
         {
             // if no light is defined, I add one
-            int p = RayTracer::gKernel->addPrimitive(ptSphere);
-            RayTracer::gKernel->setPrimitive(p, 20.f * gScale, 20.f * gScale, 20.f * gScale, 0.1f * gScale,
+            int p = SolR::gKernel->addPrimitive(ptSphere);
+            SolR::gKernel->setPrimitive(p, 20.f * gScale, 20.f * gScale, 20.f * gScale, 0.1f * gScale,
                                              0.1f * gScale, 0.1f * gScale, DEFAULT_LIGHT_MATERIAL);
 
-            // p = RayTracer::gKernel->addPrimitive(ptSphere);
-            // RayTracer::gKernel->setPrimitive(p,0.f,0.f,0.f,0.1f*gScale,0.1f*gScale,0.1f*gScale,0);
+            // p = SolR::gKernel->addPrimitive(ptSphere);
+            // SolR::gKernel->setPrimitive(p,0.f,0.f,0.f,0.1f*gScale,0.1f*gScale,0.1f*gScale,0);
             gLighting = true;
         }
 
-        RayTracer::gKernel->compactBoxes(false);
+        SolR::gKernel->compactBoxes(false);
         for (int i(0); i < gTotalPathTracingIterations; ++i)
         {
-            RayTracer::gKernel->render_begin(0);
-            RayTracer::gKernel->render_end();
+            SolR::gKernel->render_begin(0);
+            SolR::gKernel->render_end();
         }
-        RayTracer::gKernel->resetFrame();
+        SolR::gKernel->resetFrame();
         gLighting = false;
     }
 }
 
-void RayTracer::glTranslatef(GLfloat x, GLfloat y, GLfloat z)
+void SolR::glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
-    // RayTracer::gKernel->translate(x*gScale,y*gScale,-z*gScale); // Z is
+    // SolR::gKernel->translate(x*gScale,y*gScale,-z*gScale); // Z is
     // inverted!!
 }
 
-void RayTracer::glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
+void SolR::glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
     Vertex angles = {angle * x * PI / 180.f, angle * y * PI / 180.f, angle * z * PI / 180.f};
-    RayTracer::gKernel->rotate(angles.x, angles.y, angles.z);
+    SolR::gKernel->rotate(angles.x, angles.y, angles.z);
 }
 
-void RayTracer::gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble centerX, GLdouble centerY,
+void SolR::gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble centerX, GLdouble centerY,
                           GLdouble centerZ, GLdouble upX, GLdouble upY, GLdouble upZ)
 {
     gEye.x = static_cast<float>(eyeX * gScale);
@@ -680,50 +680,50 @@ void RayTracer::gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble 
     gDir.z = static_cast<float>(centerZ * gScale);
 }
 
-void RayTracer::glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
+void SolR::glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
                                 GLenum format, GLenum type, const GLvoid *data)
 {
     ::glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, data);
 }
 
-void *RayTracer::gluNewNurbsRenderer()
+void *SolR::gluNewNurbsRenderer()
 {
     return 0;
 }
 
-void RayTracer::glutSpecialFunc(void (*func)(int key, int x, int y))
+void SolR::glutSpecialFunc(void (*func)(int key, int x, int y))
 {
     ::glutSpecialFunc(func);
 }
 
-void RayTracer::glutReshapeFunc(void (*func)(int width, int height))
+void SolR::glutReshapeFunc(void (*func)(int width, int height))
 {
     ::glutReshapeFunc(func);
 }
 
-void RayTracer::glutIdleFunc(void (*func)(void))
+void SolR::glutIdleFunc(void (*func)(void))
 {
     ::glutIdleFunc(func);
 }
 
-void RayTracer::gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
+void SolR::gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar)
 {
     gEye.z = -20.f * static_cast<float>(aspect) / tanf(static_cast<float>(fovy)) * gScale;
     gDir.z = static_cast<float>(gEye.z + zNear * gScale + 5000.f);
     gSceneInfo.viewDistance = static_cast<float>(gDir.z + zFar * gScale + 5000.f);
 }
 
-void RayTracer::glutSetCursor(int cursor)
+void SolR::glutSetCursor(int cursor)
 {
     ::glutSetCursor(cursor);
 }
 
-void RayTracer::glPointSize(GLfloat size)
+void SolR::glPointSize(GLfloat size)
 {
-    RayTracer::gKernel->setPointSize(size);
+    SolR::gKernel->setPointSize(size);
 }
 
-void RayTracer::glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *data)
+void SolR::glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *data)
 {
     ::glReadPixels(x, y, width, height, format, type, data);
 }

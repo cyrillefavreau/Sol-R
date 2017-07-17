@@ -1,5 +1,3 @@
-INCLUDE(${PROJECT_SOURCE_DIR}/cmake/glut.cmake)
-
 SET(SOLR_SOURCES
   GPUKernel.cpp
   io/PDBReader.cpp
@@ -62,16 +60,14 @@ endif()
 
 if(OPENCL_FOUND)
     ADD_LIBRARY(
-      solr
-      opencl/OpenCLKernel.cpp
-      ${SOLR_SOURCES}
-    )
+		solr 
+		opencl/OpenCLKernel.cpp 
+		${SOLR_SOURCES})
 
     TARGET_LINK_LIBRARIES(
-        solr
-        ${OpenCL_LIBRARIES}
-        ${GLUT_LIBRARIES}
-    )
+		solr
+		${OPENCL_LIBRARIES}
+		${GLUT_LIBRARIES})
 endif()
 
 INSTALL(TARGETS solr DESTINATION lib)

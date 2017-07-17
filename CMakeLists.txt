@@ -23,7 +23,7 @@ if(NOT CMAKE_BUILD_TYPE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif(NOT CMAKE_BUILD_TYPE)
 
-set(SOLR_ENGINE "CUDA" CACHE STRING "engine use (CUDA or OPENCL)")
+set(SOLR_ENGINE "OPENCL" CACHE STRING "engine use (CUDA or OPENCL)")
 set_property(CACHE SOLR_ENGINE PROPERTY STRINGS CUDA OPENCL)
 
 # Windows' math include does not define constants by default.
@@ -35,21 +35,33 @@ IF(MSVC)
 ENDIF()
 
 # ================================================================================
+# GL
+# ================================================================================
+find_package(OpenGL REQUIRED SYSTEM)
+if (OpenGL_FOUND)
+    message(STATUS "OpenGL found")
+	include_directories(${OPENGL_INCLUDE_DIR})
+else()
+	message(ERROR "OpenGL not found!")
+endif()
+
+# ================================================================================
 # GLUT
 # ================================================================================
 find_package(GLUT REQUIRED SYSTEM)
-include_directories(${GLUT_INCLUDE_DIRS})
-link_directories(${GLUT_LIBRARY_DIRS})
-add_definitions(${GLUT_DEFINITIONS})
-if(NOT GLUT_FOUND)
-    message(ERROR " GLUT not found!")
-endif(NOT GLUT_FOUND)
+if (GLUT_FOUND)
+    message(STATUS "Glut found " ${GLUT_LIBRARIES})
+	include_directories(${GLUT_INCLUDE_DIR})
+else()
+	message(ERROR "Glut not found!")
+endif()
 	
 # ================================================================================
 # OpenCL
 # ================================================================================
 if (${SOLR_ENGINE} STREQUAL "OPENCL")
-  find_package(OpenCL REQUIRED)
+  set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)
+  find_package(OpenCL REQUIRED SYSTEM)
   if (OPENCL_FOUND)
     list(APPEND FIND_PACKAGES_DEFINES USE_OPENCL)
     message(STATUS "OpenCL found and selected for build")
@@ -63,7 +75,7 @@ endif()
 # CUDA
 # ================================================================================
 if (${SOLR_ENGINE} STREQUAL "CUDA")
-  find_package(CUDA REQUIRED)
+  find_package(CUDA REQUIRED SYSTEM)
   if (CUDA_FOUND)
     list(APPEND FIND_PACKAGES_DEFINES USE_CUDA)
     message(STATUS "CUDA found and selected for build")

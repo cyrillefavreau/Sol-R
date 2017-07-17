@@ -27,7 +27,7 @@
 
 #include "GraphScene.h"
 
-using namespace RayTracer;
+using namespace SolR;
 
 GraphScene::GraphScene(const std::string& name, const int nbMaxPrimitivePerBox)
     : Scene(name, nbMaxPrimitivePerBox)

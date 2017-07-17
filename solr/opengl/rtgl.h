@@ -20,6 +20,10 @@
 
 #pragma once
 
+#ifdef WIN32
+#pragma warning (disable: 4005)
+#endif
+
 #include "../Consts.h"
 #include "../DLL_API.h"
 
@@ -41,7 +45,7 @@ typedef void GLvoid;
 
 #ifdef __cplusplus
 class GPUKernel;
-namespace RayTracer
+namespace SolR
 {
 extern SOLR_API GPUKernel *gKernel;
 #else
@@ -874,7 +878,7 @@ static int gOpenCLDevice = 0;
 
 typedef void GLUnurbsObj;
 
-void InitializeRaytracer(const int width, const int height);
+void Initialize(const int width, const int height);
 
 /*
 * Initialization functions, see fglut_init.c

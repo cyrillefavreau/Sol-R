@@ -64,7 +64,7 @@
 
 // OpenGL
 #include <opengl/rtgl.h>
-using namespace RayTracer;
+using namespace SolR;
 
 const int gTotalPathTracingIterations = 2000;
 
@@ -204,7 +204,7 @@ ________________________________________________________________________________
 void Scene::initialize(const int width, const int height)
 {
     LOG_INFO(1, "Initializing Kernel...");
-    m_gpuKernel = RayTracer::gKernel;
+    m_gpuKernel = SolR::gKernel;
     LOG_INFO(1, "Resetting frames...");
     m_gpuKernel->resetAll();
     LOG_INFO(1, "Positionning to frame 0...");

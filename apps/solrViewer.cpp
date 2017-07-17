@@ -23,9 +23,12 @@
 // OpenGL Graphics Includes
 #include "../solr/Logging.h"
 #include "../solr/opengl/rtgl.h"
-using namespace RayTracer;
+using namespace SolR;
 
 // Includes
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <cassert>
 #include <iostream>
 #include <locale>
@@ -38,8 +41,9 @@ using namespace RayTracer;
 #include <string>
 #include <time.h>
 #include <vector>
+#endif
 
-// Raytracer
+// SolR
 #include "../solr/Consts.h"
 #include "../solr/images/jpge.h"
 
@@ -252,9 +256,9 @@ void readParameters(const std::vector<std::string> &parameters)
             LOG_INFO(1, "Argument: " << key << " = " << value);
 #ifdef USE_OPENCL
             if (key.find("-platform") != std::string::npos)
-                RayTracer::setOpenCLPlatform(atoi(value.c_str()));
+                SolR::setOpenCLPlatform(atoi(value.c_str()));
             if (key.find("-device") != std::string::npos)
-                RayTracer::setOpenCLDevice(atoi(value.c_str()));
+                SolR::setOpenCLDevice(atoi(value.c_str()));
 #endif // USE_OPENCL
             if (key.find("-objFile") != std::string::npos)
                 gFilename = value.c_str();
@@ -413,10 +417,10 @@ void display()
                         "%sSelected primitive: %d\nFPS: %d on %s (%dx%d)\nScene "
                         "%d: %s\nMouse control: %s\nPrimitives/Boxes: "
                         "%d/%d\nhttp://cudaopencl.blogspot.com [%d]",
-                        tmpMenuItems.c_str(), gSelectedPrimitive, gFPS, RayTracer::gKernel->getGPUDescription().c_str(),
+                        tmpMenuItems.c_str(), gSelectedPrimitive, gFPS, SolR::gKernel->getGPUDescription().c_str(),
                         gScene->getSceneInfo().size.x, gScene->getSceneInfo().size.y, gTest, gScene->getName().c_str(),
-                        gHint.c_str(), RayTracer::gKernel->getNbActivePrimitives(),
-                        RayTracer::gKernel->getNbActiveBoxes(), si.pathTracingIteration);
+                        gHint.c_str(), SolR::gKernel->getNbActivePrimitives(),
+                        SolR::gKernel->getNbActiveBoxes(), si.pathTracingIteration);
                 RenderString(-0.9f, 0.9f, 0.f, GLUT_BITMAP_HELVETICA_10, tmp, textColor);
             }
 #endif // WIN32
@@ -462,7 +466,7 @@ void display()
                 }
 
                 // Save to disc
-                std::string filename("./raytracer");
+                std::string filename("./SolR");
                 filename += ".jpg";
                 jpge::compress_image_to_jpeg_file(filename.c_str(), si.size.x - margin, si.size.y - margin, gColorDepth,
                                                   dst);
@@ -601,9 +605,9 @@ void keyboard(unsigned char key, int x, int y)
         if (key == 'q')
         {
 #ifdef WIN32
-            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/1K/CudaRayTracer_");
+            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/1K/CudaSolR_");
 #else
-            std::string filename("~/Pictures/1K/CudaRayTracer_");
+            std::string filename("~/Pictures/1K/CudaSolR_");
 #endif
             filename += buffer;
 
@@ -615,9 +619,9 @@ void keyboard(unsigned char key, int x, int y)
         else
         {
 #ifdef WIN32
-            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/4K/CudaRayTracer_");
+            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/4K/CudaSolR_");
 #else
-            std::string filename("~/Pictures/4K/CudaRayTracer_");
+            std::string filename("~/Pictures/4K/CudaSolR_");
 #endif
             filename += buffer;
             if (kernel)
@@ -663,7 +667,7 @@ void keyboard(unsigned char key, int x, int y)
     case 'R':
     {
         // Reset scene
-        gScene->getKernel()->recompileKernels("~/git/Sol-R/solr/opencl/RayTracer.cl");
+        gScene->getKernel()->recompileKernels("~/git/Sol-R/solr/opencl/SolR.cl");
         break;
     }
     case 'F':
@@ -958,7 +962,7 @@ void keyboard(unsigned char key, int x, int y)
     case '2':
     {
         gControlType = ctLightSource;
-        unsigned int activeLamps = RayTracer::gKernel->getNbActiveLamps();
+        unsigned int activeLamps = SolR::gKernel->getNbActiveLamps();
 
         std::stringstream s;
         s << "Light source (" << gLampId + 1 << "/" << activeLamps << ")";
@@ -1027,7 +1031,7 @@ void keyboard(unsigned char key, int x, int y)
         else
         {
             gDistortion += 0.01f;
-            RayTracer::gKernel->setDistortion(gDistortion);
+            SolR::gKernel->setDistortion(gDistortion);
             LOG_INFO(1, "Distortion = " << gDistortion);
         }
         break;
@@ -1058,7 +1062,7 @@ void keyboard(unsigned char key, int x, int y)
         else
         {
             gDistortion -= 0.01f;
-            RayTracer::gKernel->setDistortion(gDistortion);
+            SolR::gKernel->setDistortion(gDistortion);
             LOG_INFO(1, "Distortion = " << gDistortion);
         }
         break;
@@ -1113,7 +1117,7 @@ void mouse(int button, int state, int x, int y)
  */
 void motion(int x, int y)
 {
-    gSelectedPrimitive = RayTracer::gKernel->getPrimitiveAt(x, y);
+    gSelectedPrimitive = SolR::gKernel->getPrimitiveAt(x, y);
 
     SceneInfo &si = gScene->getSceneInfo();
     switch (mouse_buttons)
@@ -1171,7 +1175,7 @@ void motion(int x, int y)
                 gRotationAngles.x = -asin(a);
             gRotationAngles.z += 0.f;
             gScene->rotatePrimitives(rotationCenter, gRotationAngles);
-            RayTracer::gKernel->compactBoxes(false);
+            SolR::gKernel->compactBoxes(false);
             break;
         }
         case ct3DVision: // Eye width
@@ -1435,11 +1439,11 @@ void createScene()
         break;
     }
     LOG_INFO(1, "Scene created");
-    RayTracer::gKernel->setOptimalNbOfBoxes(gOptimalNbOfBoxes);
-    RayTracer::gKernel->setTreeDepth(gTreeDepth);
+    SolR::gKernel->setOptimalNbOfBoxes(gOptimalNbOfBoxes);
+    SolR::gKernel->setTreeDepth(gTreeDepth);
     gScene->setCornellBox(gCornellBoxType);
     gScene->setCurrentModel(m_counter);
-    LOG_INFO(1, "Initializing Raytracer...");
+    LOG_INFO(1, "Initializing SolR...");
     gScene->initialize(gWindowWidth, gWindowHeight);
     gScene->getKernel()->setCamera(gViewPos, gViewDir, gViewAngles);
 }
@@ -1450,7 +1454,6 @@ void createScene()
  Main
  ________________________________________________________________________________
  */
-#ifndef WIN32
 int main(int argc, char *argv[])
 {
     LOG_INFO(1, "Starting program...");
@@ -1485,46 +1488,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-#else
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTRNULL lpCmdLine, int nCmdShow)
-{
-    LOG_INFO(1, "Command line: " << lpCmdLine);
-    LPWSTR *szArglist;
-    int nArgs;
-    szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-
-    srand(static_cast<int>(time(0)));
-    std::vector<std::string> arguments;
-    for (int i(0); i < nArgs; ++i)
-    {
-        std::wstring a(szArglist[i]);
-        std::string argument(a.begin(), a.end());
-        arguments.push_back(argument);
-    }
-
-    readParameters(arguments);
-
-    // First initialize OpenGL context, so we can properly set the GL for CUDA.
-    // This is necessary in order to achieve optimal performance with OpenGL/CUDA
-    // interop.
-    initgl(nArgs, (char **)szArglist);
-
-    // initMenus();
-
-    atexit(cleanup);
-
-    // Create Scene
-    createScene();
-
-    // Benchmark
-    gTickCount = GetTickCount();
-
-    // glutFullScreen();
-    glutMainLoop();
-
-    // Normally unused return path
-    Cleanup(EXIT_SUCCESS);
-
-    return 0;
-}
-#endif // WIN32

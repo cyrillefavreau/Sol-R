@@ -1,166 +1,166 @@
-# Find OpenCL
+# ########################################################################
+# Copyright 2015 Advanced Micro Devices, Inc.
 #
-# To set manually the paths, define these environment variables:
-# OpenCL_INCPATH    - Include path (e.g. OpenCL_INCPATH=/opt/cuda/4.0/cuda/include)
-# OpenCL_LIBPATH    - Library path (e.h. OpenCL_LIBPATH=/usr/lib64/nvidia)
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# Once done this will define
-#  OPENCL_FOUND            - system has OpenCL
-#  OPENCL_INCLUDE_DIRS     - the OpenCL include directory
-#  OPENCL_LIBRARIES        - link these to use OpenCL
-#  OPENCL_HAS_CPP_BINDINGS - system has also cl.hpp
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ########################################################################
 
-FIND_PACKAGE(PackageHandleStandardArgs)
+# Locate an OpenCL implementation.
+# Currently supports AMD APP SDK (http://developer.amd.com/sdks/AMDAPPSDK/Pages/default.aspx/)
+#
+# Defines the following variables:
+#
+#   OPENCL_FOUND - Found the OPENCL framework
+#   OPENCL_INCLUDE_DIRS - Include directories
+#
+# Also defines the library variables below as normal
+# variables.  These contain debug/optimized keywords when
+# a debugging library is found.
+#
+#   OPENCL_LIBRARIES - libopencl
+#
+# Accepts the following variables as input:
+#
+#   OPENCL_ROOT - (as a CMake or environment variable)
+#                The root directory of the OpenCL implementation found
+#
+#   FIND_LIBRARY_USE_LIB64_PATHS - Global property that controls whether findOpenCL should search for
+#                              64bit or 32bit libs
+#-----------------------
+# Example Usage:
+#
+#    find_package(OPENCL REQUIRED)
+#    include_directories(${OPENCL_INCLUDE_DIRS})
+#
+#    add_executable(foo foo.cc)
+#    target_link_libraries(foo ${OPENCL_LIBRARIES})
+#
+#-----------------------
+include( CheckSymbolExists )
+include( CMakePushCheckState )
 
-SET (OPENCL_VERSION_STRING "0.1.0")
-SET (OPENCL_VERSION_MAJOR 0)
-SET (OPENCL_VERSION_MINOR 1)
-SET (OPENCL_VERSION_PATCH 0)
+if( DEFINED OPENCL_ROOT OR DEFINED ENV{OPENCL_ROOT})
+  message( STATUS "Defined OPENCL_ROOT: ${OPENCL_ROOT}, ENV{OPENCL_ROOT}: $ENV{OPENCL_ROOT}" )
+endif( )
 
-IF (APPLE)
+find_path(OPENCL_INCLUDE_DIRS
+  NAMES OpenCL/cl.h CL/cl.h
+  HINTS
+    ${OPENCL_ROOT}/include
+    $ENV{OPENCL_ROOT}/include
+    $ENV{AMDAPPSDKROOT}/include
+    $ENV{CUDA_PATH}/include
+  PATHS
+    /usr/include
+    /usr/local/include
+    /usr/local/cuda/include
+  DOC "OpenCL header file path"
+)
+mark_as_advanced( OPENCL_INCLUDE_DIRS )
+message( STATUS "OPENCL_INCLUDE_DIRS: ${OPENCL_INCLUDE_DIRS}" )
 
-  # IF OpenCL_LIBPATH is given use it and don't use default path
-  IF (DEFINED ENV{OpenCL_LIBPATH})
-    FIND_LIBRARY(OPENCL_LIBRARIES OpenCL PATHS ENV OpenCL_LIBPATH NO_DEFAULT_PATH)
-  ELSE ()
-    FIND_LIBRARY(OPENCL_LIBRARIES OpenCL DOC "OpenCL lib for OSX")
-  ENDIF ()
+set( OpenCL_VERSION "0.0" )
 
-  # IF OpenCL_INCPATH is given use it and find for CL/cl.h and OpenCL/cl.h do not try to find default paths
-  IF (DEFINED ENV{OpenCL_INCPATH})
-    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h OpenCL/cl.h PATHS ENV OpenCL_INCPATH NO_DEFAULT_PATH)
-    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp OpenCL/cl.hpp PATHS ${OPENCL_INCLUDE_DIRS} NO_DEFAULT_PATH)
-  ELSE ()
-    FIND_PATH(OPENCL_INCLUDE_DIRS OpenCL/cl.h DOC "Include for OpenCL on OSX")
-    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS OpenCL/cl.hpp DOC "Include for OpenCL CPP bindings on OSX")
-  ENDIF ()
+cmake_push_check_state( RESET )
+set( CMAKE_REQUIRED_INCLUDES "${OPENCL_INCLUDE_DIRS}" )
 
-ELSE (APPLE)
+# Bug in check_symbol_exists prevents us from specifying a list of files, so we loop
+# Only 1 of these files will exist on a system, so the other file will not clobber the output variable
+if( APPLE )
+   set( CL_HEADER_FILE "OpenCL/cl.h" )
+else( )
+   set( CL_HEADER_FILE "CL/cl.h" )
+endif( )
 
-  IF (WIN32)
+check_symbol_exists( CL_VERSION_2_0 ${CL_HEADER_FILE} HAVE_CL_2_0 )
+check_symbol_exists( CL_VERSION_1_2 ${CL_HEADER_FILE} HAVE_CL_1_2 )
+check_symbol_exists( CL_VERSION_1_1 ${CL_HEADER_FILE} HAVE_CL_1_1 )
+# message( STATUS "HAVE_CL_2_0: ${HAVE_CL_2_0}" )
+# message( STATUS "HAVE_CL_1_2: ${HAVE_CL_1_2}" )
+# message( STATUS "HAVE_CL_1_1: ${HAVE_CL_1_1}" )
 
-    # Find OpenCL includes and libraries from environment variables provided by vendor
-    SET(OPENCL_INCLUDE_SEARCH_PATHS)
-    SET(OPENCL_LIBRARY_SEARCH_PATHS)
-    SET(OPENCL_LIBRARY_64_SEARCH_PATHS)
+# set OpenCL_VERSION to the highest detected version
+if( HAVE_CL_2_0 )
+  set( OpenCL_VERSION "2.0" )
+elseif( HAVE_CL_1_2 )
+  set( OpenCL_VERSION "1.2" )
+elseif( HAVE_CL_1_1 )
+  set( OpenCL_VERSION "1.1" )
+endif( )
 
-    # Nvidia
-    IF (DEFINED ENV{CUDA_INC_PATH})
-      SET(OPENCL_INCLUDE_SEARCH_PATHS ${OPENCL_INCLUDE_SEARCH_PATHS} $ENV{CUDA_INC_PATH})
-      SET(OPENCL_LIBRARY_64_SEARCH_PATHS ${OPENCL_LIBRARY_64_SEARCH_PATHS} $ENV{CUDA_LIB_PATH}/../lib64)
-      SET(OPENCL_LIBRARY_SEARCH_PATHS ${OPENCL_LIBRARY_SEARCH_PATHS} $ENV{CUDA_LIB_PATH}/../lib)
-    ENDIF()
+cmake_pop_check_state( )
 
-    # Intel SDK
-    IF (DEFINED ENV{INTELOCSDKROOT})
-      SET(OPENCL_INCLUDE_SEARCH_PATHS ${OPENCL_INCLUDE_SEARCH_PATHS} $ENV{INTELOCSDKROOT}/include)
-      SET(OPENCL_LIBRARY_64_SEARCH_PATHS ${OPENCL_LIBRARY_64_SEARCH_PATHS} $ENV{INTELOCSDKROOT}/lib/x64)
-      SET(OPENCL_LIBRARY_SEARCH_PATHS ${OPENCL_LIBRARY_SEARCH_PATHS} $ENV{INTELOCSDKROOT}/lib/x86)
-    ENDIF()
+# Search for 64bit libs if FIND_LIBRARY_USE_LIB64_PATHS is set to true in the global environment, 32bit libs else
+get_property( LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS )
+if( LIB64 )
+  message( STATUS "FindOpenCL searching for 64-bit libraries" )
+else( )
+  message( STATUS "FindOpenCL searching for 32-bit libraries" )
+endif( )
 
-    # AMD SDK
-    IF (DEFINED ENV{AMDAPPSDKROOT})
-      SET(OPENCL_INCLUDE_SEARCH_PATHS ${OPENCL_INCLUDE_SEARCH_PATHS} $ENV{AMDAPPSDKROOT}/include)
-      SET(OPENCL_LIBRARY_64_SEARCH_PATHS ${OPENCL_LIBRARY_64_SEARCH_PATHS} $ENV{AMDAPPSDKROOT}/lib/x86_64)
-      SET(OPENCL_LIBRARY_SEARCH_PATHS ${OPENCL_LIBRARY_SEARCH_PATHS} $ENV{AMDAPPSDKROOT}/lib/x86)
-    ENDIF()
+if( LIB64 )
+  find_library( OPENCL_LIBRARIES
+    NAMES OpenCL
+    HINTS
+      ${OPENCL_ROOT}/lib
+      $ENV{OPENCL_ROOT}/lib
+      $ENV{AMDAPPSDKROOT}/lib
+      $ENV{CUDA_PATH}/lib
+    DOC "OpenCL dynamic library path"
+    PATH_SUFFIXES x86_64 x64 x86_64/sdk
+    PATHS
+    /usr/lib
+    /usr/local/cuda/lib
+  )
+else( )
+  find_library( OPENCL_LIBRARIES
+    NAMES OpenCL
+    HINTS
+      ${OPENCL_ROOT}/lib
+      $ENV{OPENCL_ROOT}/lib
+      $ENV{AMDAPPSDKROOT}/lib
+      $ENV{CUDA_PATH}/lib
+    DOC "OpenCL dynamic library path"
+    PATH_SUFFIXES x86 Win32
+    PATHS
+    /usr/lib
+    /usr/local/cuda/lib
+  )
+endif( )
+mark_as_advanced( OPENCL_LIBRARIES )
 
-    # Override search paths with OpenCL_INCPATH env variable
-    IF (DEFINED ENV{OpenCL_INCPATH})
-      SET(OPENCL_INCLUDE_SEARCH_PATHS $ENV{OpenCL_INCPATH})
-    ENDIF ()
+# message( STATUS "OpenCL_FIND_VERSION: ${OpenCL_FIND_VERSION}" )
+if( OpenCL_VERSION VERSION_LESS OpenCL_FIND_VERSION )
+    message( FATAL_ERROR "Requested OpenCL version: ${OpenCL_FIND_VERSION}, Found OpenCL version: ${OpenCL_VERSION}" )
+endif( )
 
-    # Override search paths with OpenCL_LIBPATH env variable
-    IF (DEFINED ENV{OpenCL_INCPATH})
-      SET(OPENCL_LIBRARY_SEARCH_PATHS $ENV{OpenCL_LIBPATH})
-      SET(OPENCL_LIBRARY_64_SEARCH_PATHS $ENV{OpenCL_LIBPATH})
-    ENDIF ()
+# If we asked for OpenCL 1.2, and we found a version installed greater than that, pass the 'use deprecated' flag
+if( (OpenCL_FIND_VERSION VERSION_LESS "2.0") AND (OpenCL_VERSION VERSION_GREATER OpenCL_FIND_VERSION) )
+    add_definitions( -DCL_USE_DEPRECATED_OPENCL_2_0_APIS )
 
-    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${OPENCL_INCLUDE_SEARCH_PATHS})
-    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${OPENCL_INCLUDE_SEARCH_PATHS})
+    # If we asked for OpenCL 1.1, and we found a version installed greater than that, pass the 'use deprecated' flag
+    if( (OpenCL_FIND_VERSION VERSION_LESS "1.2") AND (OpenCL_VERSION VERSION_GREATER OpenCL_FIND_VERSION) )
+        add_definitions( -DCL_USE_DEPRECATED_OPENCL_1_1_APIS )
+    endif( )
+endif( )
 
-    FIND_LIBRARY(_OPENCL_32_LIBRARIES OpenCL.lib HINTS ${OPENCL_LIBRARY_SEARCH_PATHS} PATHS ${OPENCL_LIB_DIR} ENV PATH)
-    FIND_LIBRARY(_OPENCL_64_LIBRARIES OpenCL.lib HINTS ${OPENCL_LIBRARY_64_SEARCH_PATHS} PATHS ${OPENCL_LIB_DIR} ENV PATH)
-
-    # Check if 64bit or 32bit versions links fine
-      SET (_OPENCL_VERSION_SOURCE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/openclversion.c")
-      #SET (_OPENCL_VERSION_SOURCE "${CMAKE_BINARY_DIR}/test.c")
-    FILE (WRITE "${_OPENCL_VERSION_SOURCE}"
-      "
-      #if __APPLE__
-      #include <OpenCL/cl.h>
-      #else /* !__APPLE__ */
-      #include <CL/cl.h>
-      #endif /* __APPLE__ */
-      int main()
-      {
-          cl_int result;
-          cl_platform_id id;
-          result = clGetPlatformIDs(1, &id, NULL);
-          return result != CL_SUCCESS;
-      }
-      ")
-
-      TRY_COMPILE(_OPENCL_64_COMPILE_SUCCESS ${CMAKE_BINARY_DIR} "${_OPENCL_VERSION_SOURCE}"
-      CMAKE_FLAGS
-      "-DINCLUDE_DIRECTORIES:STRING=${OPENCL_INCLUDE_DIRS}"
-      CMAKE_FLAGS
-      "-DLINK_LIBRARIES:STRING=${_OPENCL_64_LIBRARIES}"
-      )
-
-    IF(_OPENCL_64_COMPILE_SUCCESS)
-      message(STATUS "OpenCL 64bit lib found.")
-      SET(OPENCL_LIBRARIES ${_OPENCL_64_LIBRARIES})
-      ELSE()
-        TRY_COMPILE(_OPENCL_32_COMPILE_SUCCESS ${CMAKE_BINARY_DIR} "${_OPENCL_VERSION_SOURCE}"
-        CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${OPENCL_INCLUDE_DIRS}"
-        CMAKE_FLAGS
-        "-DLINK_LIBRARIES:STRING=${_OPENCL_32_LIBRARIES}"
-        )
-      IF(_OPENCL_32_COMPILE_SUCCESS)
-        message(STATUS "OpenCL 32bit lib found.")
-        SET(OPENCL_LIBRARIES ${_OPENCL_32_LIBRARIES})
-      ELSE()
-        message(STATUS "Couldn't link opencl..")
-      ENDIF()
-    ENDIF()
-
-
-  ELSE (WIN32)
-
-      IF (CYGWIN)
-        SET (CMAKE_FIND_LIBRARY_SUFFIXES .lib)
-        SET (OCL_LIB_SUFFIX .lib)
-      ENDIF (CYGWIN)
-
-    # Unix style platforms
-    FIND_LIBRARY(OPENCL_LIBRARIES OpenCL${OCL_LIB_SUFFIX}
-      PATHS ENV LD_LIBRARY_PATH ENV OpenCL_LIBPATH
+include( FindPackageHandleStandardArgs )
+FIND_PACKAGE_HANDLE_STANDARD_ARGS( OPENCL
+    REQUIRED_VARS OPENCL_LIBRARIES OPENCL_INCLUDE_DIRS
+    VERSION_VAR OpenCL_VERSION
     )
 
-    GET_FILENAME_COMPONENT(OPENCL_LIB_DIR ${OPENCL_LIBRARIES} PATH)
-    GET_FILENAME_COMPONENT(_OPENCL_INC_CAND ${OPENCL_LIB_DIR}/../../include ABSOLUTE)
-
-    # The AMD SDK currently does not place its headers
-    # in /usr/include, therefore also search relative
-    # to the library
-    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND} "/usr/local/cuda/include" "/opt/AMDAPP/include" ENV OpenCL_INCPATH)
-    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND} "/usr/local/cuda/include" "/opt/AMDAPP/include" ENV OpenCL_INCPATH)
-
-  ENDIF (WIN32)
-
-ENDIF (APPLE)
-
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(OpenCL DEFAULT_MSG OPENCL_LIBRARIES OPENCL_INCLUDE_DIRS)
-
-IF(_OPENCL_CPP_INCLUDE_DIRS)
-  SET( OPENCL_HAS_CPP_BINDINGS TRUE )
-  LIST( APPEND OPENCL_INCLUDE_DIRS ${_OPENCL_CPP_INCLUDE_DIRS} )
-  # This is often the same, so clean up
-  LIST( REMOVE_DUPLICATES OPENCL_INCLUDE_DIRS )
-ENDIF(_OPENCL_CPP_INCLUDE_DIRS)
-
-MARK_AS_ADVANCED(
-  OPENCL_INCLUDE_DIRS
-)
+if( NOT OPENCL_FOUND )
+    message( STATUS "FindOpenCL looked for libraries named: OpenCL" )
+else( )
+    message(STATUS "FindOpenCL ${OPENCL_LIBRARIES}, ${OPENCL_INCLUDE_DIRS}")
+endif()

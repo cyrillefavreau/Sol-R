@@ -18,6 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#pragma warning(disable : 4996)
+
 #include "RayTracingEngineStub.h"
 #include "Consts.h"
 #include "Logging.h"

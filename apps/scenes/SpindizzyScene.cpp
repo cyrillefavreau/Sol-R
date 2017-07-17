@@ -28,7 +28,7 @@
 
 #include <Consts.h>
 #include <opengl/rtgl.h>
-using namespace RayTracer;
+using namespace SolR;
 
 #include "SpindizzyScene.h"
 

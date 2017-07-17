@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include <opengl/rtgl.h>
-using namespace RayTracer;
+using namespace SolR;
 
 #include "MetaballsScene.h"
 
