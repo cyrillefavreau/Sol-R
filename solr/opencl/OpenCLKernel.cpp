@@ -1228,8 +1228,7 @@ void OpenCLKernel::render_end() {
 void OpenCLKernel::initBuffers() {
   LOG_INFO(3, "OpenCLKernel::initBuffers");
   GPUKernel::initBuffers();
-  recompileKernels("/Users/favreau/git/gpuRayTracer/gpuRayTracingEngine/opencl/"
-                   "RayTracer.cl");
+  recompileKernels("../solr/opencl/RayTracer.cl");
   initializeDevice();
 }
 
