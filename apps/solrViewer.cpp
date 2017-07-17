@@ -1018,10 +1018,6 @@ void mouse(int button, int state, int x, int y) {
  ________________________________________________________________________________
  */
 void motion(int x, int y) {
-  // gViewPos = gScene->getViewPos();
-  // gViewDir = gScene->getViewDir();
-  // gViewAngles = gScene->getViewAngles();
-
   gSelectedPrimitive = RayTracer::gKernel->getPrimitiveAt(x, y);
 
   SceneInfo &si = gScene->getSceneInfo();
@@ -1036,7 +1032,7 @@ void motion(int x, int y) {
       float a = (mouse_old_x - x) / 100.f;
       if (fabs(a) <= 1.f)
         gViewAngles.y = gViewAngles.y - asin(a);
-      a = (mouse_old_y - y) / 100.f;
+      a = -(mouse_old_y - y) / 100.f;
       if (fabs(a) <= 1.f)
         gViewAngles.x = gViewAngles.x + asin(a);
       break;
@@ -1376,7 +1372,7 @@ int main(int argc, char *argv[]) {
 }
 #else
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                     LPSTR lpCmdLine, int nCmdShow) {
+                     LPSTRNULL lpCmdLine, int nCmdShow) {
   LOG_INFO(1, "Command line: " << lpCmdLine);
   LPWSTR *szArglist;
   int nArgs;
