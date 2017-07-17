@@ -56,8 +56,7 @@ if (CUDA_FOUND)
       )
     TARGET_LINK_LIBRARIES(
       solr
-      ${CUDARAYTRACER}
-      ${GLUT_LIBRARY}
+      ${GLUT_LIBRARIES}
     )
 endif()
 
@@ -66,7 +65,6 @@ if(OPENCL_FOUND)
       solr
       opencl/OpenCLKernel.cpp
       ${SOLR_SOURCES}
-      ${GLUT_LIBRARY}
     )
 
     TARGET_LINK_LIBRARIES(
