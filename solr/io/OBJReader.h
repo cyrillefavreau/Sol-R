@@ -24,7 +24,8 @@
 
 #include "../GPUKernel.h"
 
-struct MaterialMTL {
+struct MaterialMTL
+{
     unsigned int index;
     Vertex Ka;
     Vertex Kd;
@@ -46,26 +47,22 @@ struct MaterialMTL {
     bool isSketchupLightMaterial;
 };
 
-class SOLR_API OBJReader {
+class SOLR_API OBJReader
+{
 public:
     OBJReader();
     ~OBJReader();
 
-    unsigned int
-    loadMaterialsFromFile(const std::string &filename,
-                          std::map<std::string, MaterialMTL> &m_materials,
-                          GPUKernel &GPUKernel, int materialId);
+    unsigned int loadMaterialsFromFile(const std::string &filename, std::map<std::string, MaterialMTL> &m_materials,
+                                       GPUKernel &GPUKernel, int materialId);
 
-    Vertex loadModelFromFile(const std::string &filename, GPUKernel &cudaKernel,
-                             const Vertex &center, const bool autoScale,
-                             const Vertex &scale, bool loadMaterials,
-                             int materialId, bool allSpheres, bool autoCenter,
-                             CPUBoundingBox &aabb, const bool &checkInAABB,
+    Vertex loadModelFromFile(const std::string &filename, GPUKernel &cudaKernel, const Vertex &center,
+                             const bool autoScale, const Vertex &scale, bool loadMaterials, int materialId,
+                             bool allSpheres, bool autoCenter, CPUBoundingBox &aabb, const bool &checkInAABB,
                              const CPUBoundingBox &inAABB);
 
 private:
-    void addLightComponent(GPUKernel &kernel, std::vector<Vertex> &solrVertices,
-                           const Vertex &center, const Vertex &objectCenter,
-                           const Vertex &objectScale, const int material,
+    void addLightComponent(GPUKernel &kernel, std::vector<Vertex> &solrVertices, const Vertex &center,
+                           const Vertex &objectCenter, const Vertex &objectScale, const int material,
                            CPUBoundingBox &aabb);
 };

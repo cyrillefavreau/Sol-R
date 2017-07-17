@@ -35,13 +35,15 @@ typedef unsigned char BitmapBuffer;
 typedef float RandomBuffer;
 typedef int Lamp;
 
-struct PostProcessingBuffer {
+struct PostProcessingBuffer
+{
     FLOAT4 colorInfo;
     FLOAT4 sceneInfo;
 };
 
 // 3D vision tqype
-enum VisionType {
+enum VisionType
+{
     vtStandard = 0,
     vtAnaglyph = 1,
     vt3DVision = 2,
@@ -49,16 +51,26 @@ enum VisionType {
     vtVolumeRendering = 4
 };
 
-enum GeometryComplexity { gcTrianglesOnly = 0, gcExtendedGeometry = 1 };
+enum GeometryComplexity
+{
+    gcTrianglesOnly = 0,
+    gcExtendedGeometry = 1
+};
 
-enum DoubleSidedTriangles {
+enum DoubleSidedTriangles
+{
     dtDoubleSidedTrianglesOff = 0,
     dtDoubleSidedTrianglesOn = 1
 };
 
-enum DraftMode { dmDraftModeOff = 0, dmDraftModeOn = 1 };
+enum DraftMode
+{
+    dmDraftModeOff = 0,
+    dmDraftModeOn = 1
+};
 
-enum CameraModes {
+enum CameraModes
+{
     cmStandard = 0,
     cmIsometric3D = 1,
     cmAntialiazing = 2,
@@ -66,13 +78,15 @@ enum CameraModes {
 };
 
 // Bitmap format
-enum OutputType {
+enum OutputType
+{
     otOpenGL = 0, // RGB 24bit
     otDelphi = 1, // BGR 24bit
     otJPEG = 2    // RGB 24bit inverted bitmap
 };
 
-enum AdvancedIllumination {
+enum AdvancedIllumination
+{
     aiNone = 0,
     aiGlobalIllumination,
     aiAdvancedGlobalIllumination,
@@ -80,11 +94,12 @@ enum AdvancedIllumination {
 };
 
 // Scene information
-struct SceneInfo {
-    INT2 size;           // Image size
-    int graphicsLevel;   // Graphics level( No Shading=0, Lambert=1, Specular=2,
+struct SceneInfo
+{
+    INT2 size;         // Image size
+    int graphicsLevel; // Graphics level( No Shading=0, Lambert=1, Specular=2,
     // textured=3, Reflections and Refractions=4, Shadows=5 )
-    int nbRayIterations; // Maximum number of ray iterations for current frame
+    int nbRayIterations;    // Maximum number of ray iterations for current frame
     float transparentColor; // Value above which r+g+b color is considered as
     // transparent
     float viewDistance;     // Maximum viewing distance
@@ -93,7 +108,7 @@ struct SceneInfo {
     FLOAT4 backgroundColor; // Background color
     int renderingType;      // Rendering type( Standard=0, Anaglyph=1, OculusVR=2,
     // FishEye=3)
-    int renderBoxes;        // Activate bounding box rendering( off=0, on=1 );
+    int renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
     int pathTracingIteration;     // Current iteration for current frame
     int maxPathTracingIterations; // Maximum number of iterations for current
     // frame
@@ -111,27 +126,30 @@ struct SceneInfo {
 };
 
 // Ray structure
-struct Ray {
+struct Ray
+{
     Vertex origin;        // Origin of the ray
     Vertex direction;     // Direction of the ray
     Vertex inv_direction; // Inverted direction( Used for optimal Ray-Box
     // intersection )
-    INT4 signs;           // Signs ( Used for optimal Ray-Box intersection )
+    INT4 signs; // Signs ( Used for optimal Ray-Box intersection )
 };
 
 // Light Information Structure used for global illumination
 // When iterating on frames, lights sources are randomly picked from an array of
 // that
 // very structure, in order to simulate global illumination
-struct __ALIGN16__ LightInformation {
-    INT2 attribute;  // x: ID of the emitting primitive
+struct __ALIGN16__ LightInformation
+{
+    INT2 attribute; // x: ID of the emitting primitive
     // y: Material ID
     Vertex location; // Position in space
     FLOAT4 color;    // Light
 };
 
 // Primitive types
-enum PrimitiveType {
+enum PrimitiveType
+{
     ptSphere = 0,
     ptCylinder = 1,
     ptTriangle = 2,
@@ -148,13 +166,14 @@ enum PrimitiveType {
 };
 
 // Material structure
-struct __ALIGN16__ Material {
+struct __ALIGN16__ Material
+{
     FLOAT4 innerIllumination; // x: Inner illumination
     // y: Diffusion strength
     // z: <not used>
     // w: Illuminance
-    FLOAT4 color;             // Color( R,G,B )
-    FLOAT4 specular;          // x: Value
+    FLOAT4 color;    // Color( R,G,B )
+    FLOAT4 specular; // x: Value
     // y: Power
     // z: <not used>
     // w: <not used>
@@ -169,15 +188,15 @@ struct __ALIGN16__ Material {
     // y: Procedural textures( off=0, on=1 )
     // z: Wireframe( off=0, on=1 ). Wire frame produces no shading
     // w: Wireframe Width
-    INT4 textureMapping;        // x: U padding
+    INT4 textureMapping; // x: U padding
     // y: V padding
     // z: Texture ID (Deprecated)
     // w: Texture color depth
-    INT4 textureOffset;         // x: Offset in the diffuse map
+    INT4 textureOffset; // x: Offset in the diffuse map
     // y: Offset in the normal map
     // z: Offset in the bump map
     // w: Offset in the specular map
-    INT4 textureIds;            // x: Diffuse map
+    INT4 textureIds; // x: Diffuse map
     // y: Normal map
     // z: Bump map
     // w: Specular map
@@ -185,7 +204,7 @@ struct __ALIGN16__ Material {
     // y: Transparency map
     // z: Ambiant Occulusion
     // w: not used
-    INT4 advancedTextureIds;    // x: Reflection map
+    INT4 advancedTextureIds; // x: Reflection map
     // y: Transparency map
     // z: Ambiant Occulusion
     // w: not used
@@ -193,7 +212,8 @@ struct __ALIGN16__ Material {
 };
 
 // Bounding Box Structure
-struct __ALIGN16__ BoundingBox {
+struct __ALIGN16__ BoundingBox
+{
     Vertex parameters[2]; // Bottom-Left and Top-Right corners
     int nbPrimitives;     // Number of primitives in the box
     int startIndex;       // Index of the first primitive in the box
@@ -202,7 +222,8 @@ struct __ALIGN16__ BoundingBox {
 };
 
 // Primitive Structure
-struct __ALIGN16__ Primitive {
+struct __ALIGN16__ Primitive
+{
     // Vertices
     Vertex p0;
     Vertex p1;
@@ -225,7 +246,8 @@ struct __ALIGN16__ Primitive {
     Vertex vt2;
 };
 
-enum TextureType {
+enum TextureType
+{
     tex_diffuse,
     tex_bump,
     tex_normal,
@@ -236,17 +258,19 @@ enum TextureType {
 };
 
 // Texture information structure
-struct __ALIGN16__ TextureInformation {
+struct __ALIGN16__ TextureInformation
+{
     unsigned char *buffer; // Pointer to the texture
-    int offset; // Offset of the texture in the global texture buffer (the one
+    int offset;            // Offset of the texture in the global texture buffer (the one
     // that will be transfered to the GPU)
-    INT3 size;  // Size of the texture
+    INT3 size;        // Size of the texture
     TextureType type; // Texture type (diffuse, normal, bump, etc.)
 };
 
 // Post processing types
 // Effects are based on the PostProcessingBuffer
-enum PostProcessingType {
+enum PostProcessingType
+{
     ppe_none,             // No effect
     ppe_depthOfField,     // Depth of field
     ppe_ambientOcclusion, // Ambient occlusion
@@ -256,7 +280,8 @@ enum PostProcessingType {
 };
 
 // Post processing information
-struct PostProcessingInfo {
+struct PostProcessingInfo
+{
     int type;     // Type( See PostProcessingType enum )
     float param1; // Parameter role depends on post processing type
     float param2; // Parameter role depends on post processing type
@@ -265,11 +290,12 @@ struct PostProcessingInfo {
 
 // Deprecated structures
 // Scene information
-struct SceneInfo1 {
-    INT2 size;           // Image size
-    int graphicsLevel;   // Graphics level( No Shading=0, Lambert=1, Specular=2,
+struct SceneInfo1
+{
+    INT2 size;         // Image size
+    int graphicsLevel; // Graphics level( No Shading=0, Lambert=1, Specular=2,
     // textured=3, Reflections and Refractions=4, Shadows=5 )
-    int nbRayIterations; // Maximum number of ray iterations for current frame
+    int nbRayIterations;    // Maximum number of ray iterations for current frame
     float transparentColor; // Value above which r+g+b color is considered as
     // transparent
     float viewDistance;     // Maximum viewing distance
@@ -278,7 +304,7 @@ struct SceneInfo1 {
     FLOAT4 backgroundColor; // Background color
     int renderingType;      // Rendering type( Standard=0, Anaglyph=1, OculusVR=2,
     // FishEye=3)
-    int renderBoxes;        // Activate bounding box rendering( off=0, on=1 );
+    int renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
     int pathTracingIteration;     // Current iteration for current frame
     int maxPathTracingIterations; // Maximum number of iterations for current
     // frame

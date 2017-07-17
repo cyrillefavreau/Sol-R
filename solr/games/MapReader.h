@@ -30,14 +30,16 @@
 //  <COLOUR 0.000000 0.529412 0.725490>
 //  <COLOUR 0.549020 0.000000 0.500000>
 
-struct MapMaterialScheme {
+struct MapMaterialScheme
+{
     unsigned int index;
     Vertex material[4];
 };
 
 // <BLOCK LOCATION 8 0 0 DIMENSION 53 36 0 NORTH 0 SOUTH 0 EAST 0 WEST 0 SPLIT 0
 // HOLLOW 0>
-struct MapBlock {
+struct MapBlock
+{
     int zone;
     int type;
     Vertex location;
@@ -51,18 +53,21 @@ struct MapBlock {
 };
 
 // <ZONE LOCATION 0 0 0 DIMENSIONS 54 37 23 COLOURSCHEME 0>
-struct MapZone {
+struct MapZone
+{
     Vertex location;
     Vertex dimension;
     int colorScene;
 };
 
 // <JEWEL LOCATION 1 6 0>
-struct MapJewel {
+struct MapJewel
+{
     Vertex location;
 };
 
-class SOLR_API MapReader {
+class SOLR_API MapReader
+{
 public:
     MapReader(void);
     ~MapReader(void);

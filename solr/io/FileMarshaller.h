@@ -22,13 +22,12 @@
 
 #include "../GPUKernel.h"
 
-class SOLR_API FileMarshaller {
+class SOLR_API FileMarshaller
+{
 public:
     FileMarshaller() {}
     ~FileMarshaller() {}
-
 public:
-    Vertex loadFromFile(GPUKernel &kernel, const std::string &filename,
-                        const Vertex &center, const float scale);
+    Vertex loadFromFile(GPUKernel &kernel, const std::string &filename, const Vertex &center, const float scale);
     void saveToFile(GPUKernel &kernel, const std::string &filename);
 };

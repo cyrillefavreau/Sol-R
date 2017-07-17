@@ -1,8 +1,21 @@
-/*
- * Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
+/* Copyright (c) 2011-2014, Cyrille Favreau
+ * All rights reserved. Do not distribute without permission.
+ * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+ *
+ * This file is part of Sol-R <https://github.com/cyrillefavreau/Sol-R>
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3.0 as published
+ * by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 // System
@@ -89,24 +102,23 @@ std::string controller_manager_text_string;
 //  3) Enables hemisphere tracking by calling the Sixense API call
 //  sixenseAutoEnableHemisphereTracking. After this is completed full 360 degree
 //     tracking is possible.
-void controller_manager_setup_callback(
-        sixenseUtils::ControllerManager::setup_step step) {
-    if (sixenseUtils::getTheControllerManager()->isMenuVisible()) {
-
+void controller_manager_setup_callback(sixenseUtils::ControllerManager::setup_step step)
+{
+    if (sixenseUtils::getTheControllerManager()->isMenuVisible())
+    {
         // Turn on the flag that tells the graphics system to draw the instruction
         // screen instead of the controller information. The game
         // should be paused at this time.
         controller_manager_screen_visible = true;
 
         // Ask the controller manager what the next instruction string should be.
-        controller_manager_text_string =
-                sixenseUtils::getTheControllerManager()->getStepString();
+        controller_manager_text_string = sixenseUtils::getTheControllerManager()->getStepString();
 
         // We could also load the supplied controllermanager textures using the
         // filename: sixenseUtils::getTheControllerManager()->getTextureFileName();
-
-    } else {
-
+    }
+    else
+    {
         // We're done with the setup, so hide the instruction screen.
         controller_manager_screen_visible = false;
     }
@@ -119,8 +131,11 @@ ________________________________________________________________________________
 ________________________________________________________________________________
  */
 Scene::Scene(const std::string &name, const int nbMaxPrimitivePerBox)
-    : m_name(name), m_nbMaxPrimitivePerBox(nbMaxPrimitivePerBox),
-      m_currentModel(0), m_nbHDRI(0) {
+    : m_name(name)
+    , m_nbMaxPrimitivePerBox(nbMaxPrimitivePerBox)
+    , m_currentModel(0)
+    , m_nbHDRI(0)
+{
     m_nbPrimitives = 0;
     m_nbBoxes = 0;
 
@@ -173,7 +188,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-Scene::~Scene(void) {
+Scene::~Scene(void)
+{
 #ifdef USE_SIXENSE
     // Sixense
     sixenseExit();
@@ -185,7 +201,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-void Scene::initialize(const int width, const int height) {
+void Scene::initialize(const int width, const int height)
+{
     LOG_INFO(1, "Initializing Kernel...");
     m_gpuKernel = RayTracer::gKernel;
     LOG_INFO(1, "Resetting frames...");
@@ -232,8 +249,7 @@ void Scene::initialize(const int width, const int height) {
     folderName += "/";
     loadTextures(folderName, "*.bmp");
     loadTextures(folderName, "*.jpg");
-    LOG_INFO(1, m_gpuKernel->getNbActiveTextures() - m_nbHDRI
-             << " Material textures loaded");
+    LOG_INFO(1, m_gpuKernel->getNbActiveTextures() - m_nbHDRI << " Material textures loaded");
 
     // Materials
     LOG_INFO(1, "Creating random materials...");
@@ -267,10 +283,8 @@ void Scene::initialize(const int width, const int height) {
     // Init the controller manager. This makes sure the controllers are present,
     // assigned to left and right hands, and that
     // the hemisphere calibration is complete.
-    sixenseUtils::getTheControllerManager()->setGameType(
-                sixenseUtils::ControllerManager::ONE_PLAYER_TWO_CONTROLLER);
-    sixenseUtils::getTheControllerManager()->registerSetupCallback(
-                controller_manager_setup_callback);
+    sixenseUtils::getTheControllerManager()->setGameType(sixenseUtils::ControllerManager::ONE_PLAYER_TWO_CONTROLLER);
+    sixenseUtils::getTheControllerManager()->registerSetupCallback(controller_manager_setup_callback);
 
     m_modelPosition.x = 0.f;
     m_modelPosition.y = 0.f;
@@ -291,7 +305,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-void Scene::animate() {
+void Scene::animate()
+{
     doAnimate();
     m_rotationAngles.x = 0.f;
     m_rotationAngles.y = 0.f;
@@ -303,7 +318,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-void Scene::rotatePrimitives(Vertex rotationCenter, Vertex angles) {
+void Scene::rotatePrimitives(Vertex rotationCenter, Vertex angles)
+{
     m_gpuKernel->rotatePrimitives(rotationCenter, angles);
 }
 
@@ -312,13 +328,15 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-void Scene::render(const bool &animate) {
+void Scene::render(const bool &animate)
+{
     animateSkeleton();
 
     // Render scene
     m_gpuKernel->render_begin(0);
 
-    if (animate) {
+    if (animate)
+    {
         doAnimate();
     }
 
@@ -331,7 +349,8 @@ ________________________________________________________________________________
 Create Textures
 ________________________________________________________________________________
  */
-void Scene::loadTextures(const std::string &path, const std::string &filter) {
+void Scene::loadTextures(const std::string &path, const std::string &filter)
+{
 #ifdef WIN32
     // Textures
     HANDLE hFind(0);
@@ -340,15 +359,16 @@ void Scene::loadTextures(const std::string &path, const std::string &filter) {
     std::string fullFilter(path);
     fullFilter += filter;
     hFind = FindFirstFile(fullFilter.c_str(), &FindData);
-    if (hFind != INVALID_HANDLE_VALUE) {
-        do {
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
             std::string fullPath(path);
             fullPath += FindData.cFileName;
-            if (m_gpuKernel->loadTextureFromFile(m_gpuKernel->getNbActiveTextures(),
-                                                 fullPath)) {
-                LOG_INFO(3, "[Slot " << m_gpuKernel->getNbActiveTextures() - 1
-                         << "] Texture " << fullPath
-                         << " successfully loaded");
+            if (m_gpuKernel->loadTextureFromFile(m_gpuKernel->getNbActiveTextures(), fullPath))
+            {
+                LOG_INFO(3, "[Slot " << m_gpuKernel->getNbActiveTextures() - 1 << "] Texture " << fullPath
+                                     << " successfully loaded");
             }
         } while (FindNextFile(hFind, &FindData));
     }
@@ -356,11 +376,16 @@ void Scene::loadTextures(const std::string &path, const std::string &filter) {
     std::vector<std::string> textureFiles;
     DIR *dp;
     struct dirent *dirp;
-    if ((dp = opendir(path.c_str())) == NULL) {
+    if ((dp = opendir(path.c_str())) == NULL)
+    {
         LOG_ERROR(errno << " opening " << path);
-    } else {
-        while ((dirp = readdir(dp)) != NULL) {
-            if (strcmp(dirp->d_name, ".") != 0 && strcmp(dirp->d_name, "..") != 0) {
+    }
+    else
+    {
+        while ((dirp = readdir(dp)) != NULL)
+        {
+            if (strcmp(dirp->d_name, ".") != 0 && strcmp(dirp->d_name, "..") != 0)
+            {
                 std::string f(path);
                 f += dirp->d_name;
                 textureFiles.push_back(f);
@@ -371,12 +396,11 @@ void Scene::loadTextures(const std::string &path, const std::string &filter) {
 
     std::sort(textureFiles.begin(), textureFiles.end());
 
-    for (std::vector<std::string>::const_iterator it = textureFiles.begin();
-         it != textureFiles.end(); ++it) {
-        if (m_gpuKernel->loadTextureFromFile(m_gpuKernel->getNbActiveTextures(),
-                                             *it))
-            LOG_INFO(3, "[Slot " << m_gpuKernel->getNbActiveTextures() - 1
-                     << "] Texture " << *it << " successfully loaded");
+    for (std::vector<std::string>::const_iterator it = textureFiles.begin(); it != textureFiles.end(); ++it)
+    {
+        if (m_gpuKernel->loadTextureFromFile(m_gpuKernel->getNbActiveTextures(), *it))
+            LOG_INFO(3, "[Slot " << m_gpuKernel->getNbActiveTextures() - 1 << "] Texture " << *it
+                                 << " successfully loaded");
     }
 #endif // WIN32
 }
@@ -387,20 +411,22 @@ ________________________________________________________________________________
 Create Random Materials
 ________________________________________________________________________________
  */
-void Scene::createRandomMaterials(bool update, bool lightsOnly) {
+void Scene::createRandomMaterials(bool update, bool lightsOnly)
+{
     LOG_INFO(1, "Creating materials");
-    int nbMaterialTexturePacks =
-            (m_gpuKernel->getNbActiveTextures() - m_nbHDRI) / 5;
+    int nbMaterialTexturePacks = (m_gpuKernel->getNbActiveTextures() - m_nbHDRI) / 5;
     int start(0);
     int end(NB_MAX_MATERIALS);
-    if (update) {
+    if (update)
+    {
         start = 1000;
     }
     // Materials
     long R = 0;
     long G = 0;
     long B = 0;
-    for (int i(start); i < end; ++i) {
+    for (int i(start); i < end; ++i)
+    {
         FLOAT4 specular = {0.f, 0.f, 0.f, 0.f};
         specular.x = 0.1f;
         specular.y = 200.f;
@@ -419,8 +445,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
         int reflectionTextureId = TEXTURE_NONE;
         int transparencyTextureId = TEXTURE_NONE;
         int ambientOcclusionTextureId = TEXTURE_NONE;
-        Vertex innerIllumination = {0.f,
-                                    m_gpuKernel->getSceneInfo().viewDistance * 10,
+        Vertex innerIllumination = {0.f, m_gpuKernel->getSceneInfo().viewDistance * 10,
                                     m_gpuKernel->getSceneInfo().viewDistance};
         bool procedural = false;
         bool wireframe = false;
@@ -434,7 +459,8 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
         float fastTransparencyRefraction = 0.95f;
         float opacity = 0.f;
 
-        switch (i) {
+        switch (i)
+        {
 #if 1
         case 1011:
             r = 1.f;
@@ -467,7 +493,8 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
 
         case 1050:
             reflection = 1.f;
-            if (rand() % 2 == 0) {
+            if (rand() % 2 == 0)
+            {
                 refraction = 1.01f + 0.1f * (rand() % refractionPower);
                 transparency = 0.5f + rand() % 500 / 1000.f;
             }
@@ -502,7 +529,8 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             reflection = 0.f;
             diffuseTextureId = 0; /*wireframe=true;*/
             break;
-        case SKYBOX_GROUND_MATERIAL: {
+        case SKYBOX_GROUND_MATERIAL:
+        {
             wireframe = 1;
             wireframeDepth = 1;
             reflection = 0.f;
@@ -537,9 +565,10 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
                              }
                      }
       */
-        } break;
+        }
+        break;
 
-            // Sky Box
+        // Sky Box
         case SKYBOX_FRONT_MATERIAL:
             r = 0.f;
             g = 0.f;
@@ -583,7 +612,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             diffuseTextureId = 5;
             break;
 
-            // Cornell Box
+        // Cornell Box
         case CORNELLBOX_FRONT_MATERIAL:
             r = 127.f / 255.f;
             g = 127.f / 255.f;
@@ -605,7 +634,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             b = 93.f / 255.f;
             break;
 
-            // Fractals
+        // Fractals
         case MANDELBROT_MATERIAL:
             r = 127.f / 255.f;
             g = 127.f / 255.f;
@@ -620,7 +649,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             break;
 
 #ifdef USE_KINECT
-            // KINECT
+        // KINECT
         case KINECT_COLOR_MATERIAL:
             r = 0.f;
             g = 0.f;
@@ -629,7 +658,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             break;
 #endif // USE_KINECT
 
-            // Basic reflection
+        // Basic reflection
         case BASIC_REFLECTION_MATERIAL_001:
             r = 1.f;
             g = 1.f;
@@ -667,14 +696,14 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             reflection = 0.5f;
             break;
 
-            // White
+        // White
         case WHITE_MATERIAL:
             r = 1.f;
             g = 1.f;
             b = 1.f;
             break;
 
-            // Wireframe
+        // Wireframe
         case LIGHT_MATERIAL_001:
             r = 1.f;
             g = 0.f;
@@ -723,19 +752,24 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             break;
 
         default:
-            if (i >= 1000) {
-                switch (rand() % 10) {
-                case 0: {
+            if (i >= 1000)
+            {
+                switch (rand() % 10)
+                {
+                case 0:
+                {
                     innerIllumination.x = 1.f;
                     break;
                 }
-                case 1: {
+                case 1:
+                {
                     specular.x = 1.f;
                     specular.y = 234.f;
                     reflection = 0.5f + rand() % 100 / 200.f;
                     break;
                 }
-                case 2: {
+                case 2:
+                {
                     transparency = 0.7f;
                     refraction = 1.1f;
                     reflection = 1.f;
@@ -744,14 +778,18 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
                     // fastTransparency = true;
                     break;
                 }
-                case 3: {
+                case 3:
+                {
                     // reflection=rand()%100/100.f;
-                    if (nbMaterialTexturePacks > 0) {
+                    if (nbMaterialTexturePacks > 0)
+                    {
                         int index = m_nbHDRI + 5 * (rand() % nbMaterialTexturePacks);
-                        for (int t(0); t < 5; ++t) {
+                        for (int t(0); t < 5; ++t)
+                        {
                             int idx = index + t;
                             TextureInformation ti = m_gpuKernel->getTextureInformation(idx);
-                            switch (ti.type) {
+                            switch (ti.type)
+                            {
                             case tex_bump:
                                 bumpTextureId = idx;
                                 break;
@@ -784,19 +822,20 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly) {
             }
         }
 
-        if (update) {
+        if (update)
+        {
             m_nbMaterials = i;
-        } else {
+        }
+        else
+        {
             m_nbMaterials = m_gpuKernel->addMaterial();
         }
 
-        m_gpuKernel->setMaterial(
-                    m_nbMaterials, r, g, b, noise, reflection, refraction, procedural,
-                    wireframe, wireframeDepth, transparency, opacity, diffuseTextureId,
-                    normalTextureId, bumpTextureId, specularTextureId, reflectionTextureId,
-                    transparencyTextureId, ambientOcclusionTextureId, specular.x,
-                    specular.y, specular.w, innerIllumination.x, innerIllumination.y,
-                    innerIllumination.z, false);
+        m_gpuKernel->setMaterial(m_nbMaterials, r, g, b, noise, reflection, refraction, procedural, wireframe,
+                                 wireframeDepth, transparency, opacity, diffuseTextureId, normalTextureId,
+                                 bumpTextureId, specularTextureId, reflectionTextureId, transparencyTextureId,
+                                 ambientOcclusionTextureId, specular.x, specular.y, specular.w, innerIllumination.x,
+                                 innerIllumination.y, innerIllumination.z, false);
     }
 }
 
@@ -806,14 +845,16 @@ ________________________________________________________________________________
 Create Molecule Materials
 ________________________________________________________________________________
  */
-void Scene::createMoleculeMaterials(bool update) {
+void Scene::createMoleculeMaterials(bool update)
+{
     FLOAT4 specular;
     // Materials
     specular.x = 0.0f;
     specular.y = 0.0f;
     specular.z = 0.0f;
     specular.w = 1.0f;
-    for (int i(0); i < NB_MAX_MATERIALS - 30; ++i) {
+    for (int i(0); i < NB_MAX_MATERIALS - 30; ++i)
+    {
         specular.x = (i >= 20 && (i / 20) % 2 == 1) ? 0.2f : 0.2f;
         specular.y = (i >= 20 && (i / 20) % 2 == 1) ? 500.f : 500.0f;
         specular.z = 0.f;
@@ -844,7 +885,8 @@ void Scene::createMoleculeMaterials(bool update) {
         b = 0.5f + rand() % 40 / 100.f;
 
         // Proteins
-        switch (i % 10) {
+        switch (i % 10)
+        {
         case 0:
             r = 0.8f;
             g = 0.7f;
@@ -897,13 +939,11 @@ void Scene::createMoleculeMaterials(bool update) {
             break; // V
         }
         m_nbMaterials = m_gpuKernel->addMaterial();
-        m_gpuKernel->setMaterial(
-                    m_nbMaterials, r, g, b, noise, reflection, refraction, procedural,
-                    false, 0, transparency, opacity, diffuseTextureId, normalTextureId,
-                    bumpTextureId, specularTextureId, reflectionTextureId,
-                    transparencyTextureId, ambientOcclusionTextureId, specular.x,
-                    specular.y, specular.w, innerIllumination.x, innerIllumination.y,
-                    innerIllumination.z, fastTransparency);
+        m_gpuKernel->setMaterial(m_nbMaterials, r, g, b, noise, reflection, refraction, procedural, false, 0,
+                                 transparency, opacity, diffuseTextureId, normalTextureId, bumpTextureId,
+                                 specularTextureId, reflectionTextureId, transparencyTextureId,
+                                 ambientOcclusionTextureId, specular.x, specular.y, specular.w, innerIllumination.x,
+                                 innerIllumination.y, innerIllumination.z, fastTransparency);
     }
 }
 
@@ -912,7 +952,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-void Scene::saveToFile() {
+void Scene::saveToFile()
+{
     FileMarshaller fm;
     std::string filename(m_name);
     filename += ".irt";
@@ -924,7 +965,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-void Scene::loadFromFile(const float scale) {
+void Scene::loadFromFile(const float scale)
+{
     FileMarshaller fm;
     std::string filename(m_name);
     filename += ".irt";
@@ -932,7 +974,8 @@ void Scene::loadFromFile(const float scale) {
     fm.loadFromFile(*m_gpuKernel, filename, center, scale);
 }
 
-void Scene::addCornellBox(int boxType) {
+void Scene::addCornellBox(int boxType)
+{
     LOG_INFO(3, "Adding Cornell Box");
     LOG_INFO(1, "Ground height = " << m_groundHeight);
     Vertex skyBoxSize = {20000.f, 20000.f, 20000.f};
@@ -940,10 +983,12 @@ void Scene::addCornellBox(int boxType) {
     float groundHeight = m_groundHeight;
     float repeats = 40.f;
 
-    switch (boxType) {
+    switch (boxType)
+    {
     case 2:
     case 3:
-    case 4: {
+    case 4:
+    {
         // Tiles
         float tiles(1.f);
         int matFront = SKYBOX_FRONT_MATERIAL;
@@ -952,7 +997,8 @@ void Scene::addCornellBox(int boxType) {
         int matLeft = SKYBOX_LEFT_MATERIAL;
         int matTop = SKYBOX_TOP_MATERIAL;
         int matBottom = SKYBOX_BOTTOM_MATERIAL;
-        switch (boxType) {
+        switch (boxType)
+        {
         case 1:
             // Cornell Box
             skyBoxSize.x = 20000.f;
@@ -1185,70 +1231,64 @@ void Scene::addCornellBox(int boxType) {
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         break;
     }
-    case 5: {
-        for (int i(0); i < 25; ++i) {
+    case 5:
+    {
+        for (int i(0); i < 25; ++i)
+        {
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, rand() % 20000 - 10000.f,
-                                      rand() % 20000 - 10000.f,
-                                      rand() % 20000 - 10000.f, 500.f + rand() % 2000,
-                                      0.f, 0.f, 1000 + rand() % 30);
+            m_gpuKernel->setPrimitive(m_nbPrimitives, rand() % 20000 - 10000.f, rand() % 20000 - 10000.f,
+                                      rand() % 20000 - 10000.f, 500.f + rand() % 2000, 0.f, 0.f, 1000 + rand() % 30);
             // m_gpuKernel->setPrimitiveIsMovable( m_nbPrimitives,false);
         }
         break;
     }
-    case 6: {
+    case 6:
+    {
         // Ground
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCheckboard);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight, 0.f,
-                                  groundSize.x / 4.f, 0.f, groundSize.y / 4, 1000);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight, 0.f, groundSize.x / 4.f, 0.f, groundSize.y / 4,
+                                  1000);
 
         // Columns
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight - 1000.f,
-                                  5000.f, -4000.f, 8000.f, 5000.f, 2000.f, 0.f, 0.f,
-                                  1112);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight - 1000.f, 5000.f, -4000.f, 8000.f, 5000.f,
+                                  2000.f, 0.f, 0.f, 1112);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight - 1000.f,
-                                  5000.f, 4000.f, 8000.f, 5000.f, 2000.f, 0.f, 0.f,
-                                  1112);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight - 1000.f, 5000.f, 4000.f, 8000.f, 5000.f, 2000.f,
+                                  0.f, 0.f, 1112);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         // Spheres
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight + 1000.f,
-                                  -5000.f, 1000.f, 0.f, 0.f, 1112);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight + 1000.f, -5000.f, 1000.f, 0.f, 0.f, 1112);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight + 1000.f,
-                                  -5000.f, 1000.f, 0.f, 0.f, 1113);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight + 1000.f, -5000.f, 1000.f, 0.f, 0.f, 1113);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         // Walls
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptXYPlane);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight + groundSize.y,
-                                  groundSize.x, groundSize.x, groundSize.y, 0.f,
-                                  1110);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight + groundSize.y, groundSize.x, groundSize.x,
+                                  groundSize.y, 0.f, 1110);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, -groundSize.x,
-                                  groundHeight + groundSize.y, 0.f, 0.f,
-                                  groundSize.x, groundSize.y, 1107);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, -groundSize.x, groundHeight + groundSize.y, 0.f, 0.f, groundSize.x,
+                                  groundSize.y, 1107);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, groundSize.x,
-                                  groundHeight + groundSize.y, 0.f, 0.f,
-                                  groundSize.x, groundSize.y, 1108);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, groundSize.x, groundHeight + groundSize.y, 0.f, 0.f, groundSize.x,
+                                  groundSize.y, 1108);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         break;
     }
-    case 7: {
+    case 7:
+    {
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, 0.f, 0.f, skyBoxSize.x, 0.f,
-                                  0.f, SKYBOX_SPHERE_MATERIAL);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, 0.f, 0.f, skyBoxSize.x, 0.f, 0.f, SKYBOX_SPHERE_MATERIAL);
         Vertex vt0 = {0.f, 0.f, 0.f};
         Vertex vt1 = {1.f, 1.f, 0.f};
         Vertex vt2 = {0.f, 0.f, 0.f};
@@ -1266,24 +1306,25 @@ m_gpuKernel->setPrimitiveIsMovable( m_nbPrimitives, false);
      */
         break;
     }
-    case 8: {
+    case 8:
+    {
         repeats = 8.f;
-        for (int i(0); i < 15; ++i) {
+        for (int i(0); i < 15; ++i)
+        {
             float radius = 700.f + float(rand() % 1000);
             // int material=(rand()%2==0) ? 30+rand()%30 :
             // LIGHT_MATERIAL_001-rand()%10;
             int material = BASIC_REFLECTION_MATERIAL_002;
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-            m_gpuKernel->setPrimitive(m_nbPrimitives,
-                                      rand() % int(skyBoxSize.x) - skyBoxSize.x / 2,
-                                      m_groundHeight + radius,
-                                      rand() % int(skyBoxSize.z) - skyBoxSize.z / 2,
-                                      radius, 0.f, 0.f, material);
+            m_gpuKernel->setPrimitive(m_nbPrimitives, rand() % int(skyBoxSize.x) - skyBoxSize.x / 2,
+                                      m_groundHeight + radius, rand() % int(skyBoxSize.z) - skyBoxSize.z / 2, radius,
+                                      0.f, 0.f, material);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }
         break;
     }
-    case 9: {
+    case 9:
+    {
         float ratio = 9.f / 16.f;
         skyBoxSize.x = 50000.f;
         skyBoxSize.y = 50000.f;
@@ -1293,8 +1334,7 @@ m_gpuKernel->setPrimitiveIsMovable( m_nbPrimitives, false);
         glBegin(GL_TRIANGLES);
         glVertex3f(skyBoxSize.x, ratio * groundHeight, skyBoxSize.z);
         glVertex3f(-skyBoxSize.x, ratio * groundHeight, skyBoxSize.z);
-        glVertex3f(-skyBoxSize.x, skyBoxSize.y * ratio * 2.f + groundHeight,
-                   skyBoxSize.z);
+        glVertex3f(-skyBoxSize.x, skyBoxSize.y * ratio * 2.f + groundHeight, skyBoxSize.z);
         glNormal3f(0.f, 0.f, -1.f);
         glNormal3f(0.f, 0.f, -1.f);
         glNormal3f(0.f, 0.f, -1.f);
@@ -1311,10 +1351,8 @@ m_gpuKernel->setPrimitiveIsMovable( m_nbPrimitives, false);
         m_gpuKernel->setPrimitiveMaterial(m_nbPrimitives, material);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         glBegin(GL_TRIANGLES);
-        glVertex3f(-skyBoxSize.x, 2.f * ratio * skyBoxSize.y + groundHeight,
-                   skyBoxSize.z);
-        glVertex3f(skyBoxSize.x, 2.f * ratio * skyBoxSize.y + groundHeight,
-                   skyBoxSize.z);
+        glVertex3f(-skyBoxSize.x, 2.f * ratio * skyBoxSize.y + groundHeight, skyBoxSize.z);
+        glVertex3f(skyBoxSize.x, 2.f * ratio * skyBoxSize.y + groundHeight, skyBoxSize.z);
         glVertex3f(skyBoxSize.x, groundHeight, skyBoxSize.z);
         glNormal3f(0.f, 0.f, -1.f);
         glNormal3f(0.f, 0.f, -1.f);
@@ -1333,44 +1371,42 @@ m_gpuKernel->setPrimitiveIsMovable( m_nbPrimitives, false);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         repeats = 40.f;
     }
-    case 10: {
+    case 10:
+    {
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight - 1000000, 0.f,
-                                  1000000.f, 0.f, 0.f, SKYBOX_GROUND_MATERIAL);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight - 1000000, 0.f, 1000000.f, 0.f, 0.f,
+                                  SKYBOX_GROUND_MATERIAL);
     }
     }
 
-    if (boxType == 1 || boxType == 2 || (boxType >= 3 && boxType <= 9)) {
+    if (boxType == 1 || boxType == 2 || (boxType >= 3 && boxType <= 9))
+    {
         int material = SKYBOX_GROUND_MATERIAL;
         // Ground
         {
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptTriangle);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, -groundSize.x, groundHeight,
-                                      -groundSize.y, groundSize.x, groundHeight,
-                                      -groundSize.y, groundSize.x, groundHeight,
-                                      groundSize.y, 0.f, 0.f, 0.f, material);
+            m_gpuKernel->setPrimitive(m_nbPrimitives, -groundSize.x, groundHeight, -groundSize.y, groundSize.x,
+                                      groundHeight, -groundSize.y, groundSize.x, groundHeight, groundSize.y, 0.f, 0.f,
+                                      0.f, material);
             Vertex n = {0.f, 1.f, 0.f};
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, n, n, n);
             Vertex vt0 = {0.f, 0.f, 0.f};
             Vertex vt1 = {repeats, 0.f, 0.f};
             Vertex vt2 = {repeats, repeats, 0.f};
-            m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1,
-                                                        vt2);
+            m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }
         {
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptTriangle);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, groundSize.x, groundHeight,
-                                      groundSize.y, -groundSize.x, groundHeight,
-                                      groundSize.y, -groundSize.x, groundHeight,
-                                      -groundSize.y, 0.f, 0.f, 0.f, material);
+            m_gpuKernel->setPrimitive(m_nbPrimitives, groundSize.x, groundHeight, groundSize.y, -groundSize.x,
+                                      groundHeight, groundSize.y, -groundSize.x, groundHeight, -groundSize.y, 0.f, 0.f,
+                                      0.f, material);
             Vertex n = {0.f, 1.f, 0.f};
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, n, n, n);
             Vertex vt0 = {repeats, repeats, 0.f};
             Vertex vt1 = {0.f, repeats, 0.f};
             Vertex vt2 = {0.f, 0.f, 0.f};
-            m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1,
-                                                        vt2);
+            m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }
     }
@@ -1383,60 +1419,55 @@ Worms
 ________________________________________________________________________________
  */
 
-void Scene::createWorm(Vertex center, int boxId, int material) {
+void Scene::createWorm(Vertex center, int boxId, int material)
+{
     // Worm on the right hand side
     int m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y, center.z, 800.f,
-                              0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y, center.z, 800.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
 
     // Eyes
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 400.f, center.y + 500.f,
-                              center.z - 400.f, 150.f, 0.f, 0.f, 12);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 400.f, center.y + 500.f, center.z - 400.f, 150.f, 0.f, 0.f,
+                              12);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 400.f, center.y + 500.f,
-                              center.z - 400.f, 150.f, 0.f, 0.f, 12);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 400.f, center.y + 500.f, center.z - 400.f, 150.f, 0.f, 0.f,
+                              12);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 400.f, center.y + 500.f,
-                              center.z - 400.f, 200.f, 0.f, 0.f, 13);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 400.f, center.y + 500.f, center.z - 400.f, 200.f, 0.f, 0.f,
+                              13);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 400.f, center.y + 500.f,
-                              center.z - 400.f, 200.f, 0.f, 0.f, 13);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 400.f, center.y + 500.f, center.z - 400.f, 200.f, 0.f, 0.f,
+                              13);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
 
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 700.f,
-                              center.z, 600.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 700.f, center.z, 600.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1200.f,
-                              center.z + 200.f, 600.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1200.f, center.z + 200.f, 600.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1500.f,
-                              center.z + 500.f, 600.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1500.f, center.z + 500.f, 600.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1500.f,
-                              center.z + 1000.f, 600.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1500.f, center.z + 1000.f, 600.f, 0.f, 0.f,
+                              material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1500.f,
-                              center.z + 1500.f, 600.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1500.f, center.z + 1500.f, 600.f, 0.f, 0.f,
+                              material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1300.f,
-                              center.z + 2000.f, 400.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 1300.f, center.z + 2000.f, 400.f, 0.f, 0.f,
+                              material);
 
     // Arms
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 700.f,
-                              center.z, center.x - 500.f, center.y - 1200.f,
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 700.f, center.z, center.x - 500.f, center.y - 1200.f,
                               center.z - 1000.f, 100.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 500.f, center.y - 1200.f,
-                              center.z - 1000.f, 300.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 500.f, center.y - 1200.f, center.z - 1000.f, 300.f, 0.f, 0.f,
+                              material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 700.f,
-                              center.z, center.x + 500.f, center.y - 1200.f,
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x, center.y - 700.f, center.z, center.x + 500.f, center.y - 1200.f,
                               center.z - 1000.f, 100.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 500.f, center.y - 1200.f,
-                              center.z - 1000.f, 300.f, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 500.f, center.y - 1200.f, center.z - 1000.f, 300.f, 0.f, 0.f,
+                              material);
 }
 
 /*
@@ -1445,97 +1476,91 @@ ________________________________________________________________________________
 Create doggy
 ________________________________________________________________________________
  */
-void Scene::createDog(Vertex center, int material, float size, int boxid) {
+void Scene::createDog(Vertex center, int material, float size, int boxid)
+{
     // Body
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1000, center.y, center.z,
-                              center.x + 1000, center.y, center.z, size, 0, 0.f,
-                              material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1000, center.y, center.z, center.x + 1000, center.y, center.z,
+                              size, 0, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1000, center.y, center.z,
-                              size, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1000, center.y, center.z, size, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1000, center.y, center.z,
-                              size, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1000, center.y, center.z, size, 0.f, 0.f, material);
 
     // Legs
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000,
-                              center.z - 1000, center.x - 1000, center.y,
-                              center.z, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000, center.z - 1000, center.x - 1000,
+                              center.y, center.z, size, 0, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000,
-                              center.z + 1000, center.x - 1000, center.y,
-                              center.z, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000, center.z + 1000, center.x - 1000,
+                              center.y, center.z, size, 0, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000,
-                              center.z - 1000, center.x + 1000, center.y,
-                              center.z, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000, center.z - 1000, center.x + 1000,
+                              center.y, center.z, size, 0, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000,
-                              center.z + 1000, center.x + 1000, center.y,
-                              center.z, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000, center.z + 1000, center.x + 1000,
+                              center.y, center.z, size, 0, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000,
-                              center.z - 1000, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000, center.z - 1000, size, 0, 0.f,
+                              material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000,
-                              center.z + 1000, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y - 2000, center.z + 1000, size, 0, 0.f,
+                              material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000,
-                              center.z - 1000, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000, center.z - 1000, size, 0, 0.f,
+                              material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000,
-                              center.z + 1000, size, 0, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500, center.y - 2000, center.z + 1000, size, 0, 0.f,
+                              material);
 
     // Tail
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y + 1000,
-                              center.z, center.x - 1000, center.y, center.z,
-                              size * 0.8f, 0, 0.f, material);
-    m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y + 1000,
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y + 1000, center.z, center.x - 1000, center.y,
                               center.z, size * 0.8f, 0, 0.f, material);
+    m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x - 1500, center.y + 1000, center.z, size * 0.8f, 0, 0.f,
+                              material);
 
     // Head
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1000.f, center.y,
-                              center.z, center.x + 1500.f, center.y + 1000.f,
-                              center.z, size, 0.f, 0.f, material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1000.f, center.y, center.z, center.x + 1500.f,
+                              center.y + 1000.f, center.z, size, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500.f,
-                              center.y + 1500.f, center.z, size * 2.f, 0.f, 0.f,
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500.f, center.y + 1500.f, center.z, size * 2.f, 0.f, 0.f,
                               material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500.f,
-                              center.y + 1500.f, center.z, center.x + 2500.f,
-                              center.y + 1000.f, center.z, size * 2.f, 0.f, 0.f,
-                              material);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 1500.f, center.y + 1500.f, center.z, center.x + 2500.f,
+                              center.y + 1000.f, center.z, size * 2.f, 0.f, 0.f, material);
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 2500.f,
-                              center.y + 1000.f, center.z, size * 2.f, 0.f, 0.f,
+    m_gpuKernel->setPrimitive(m_nbPrimitives, center.x + 2500.f, center.y + 1000.f, center.z, size * 2.f, 0.f, 0.f,
                               material);
 }
 
-void Scene::renderText() {}
+void Scene::renderText()
+{
+}
 
-SceneInfo &Scene::getSceneInfo() { return m_gpuKernel->getSceneInfo(); }
+SceneInfo &Scene::getSceneInfo()
+{
+    return m_gpuKernel->getSceneInfo();
+}
 
-std::string &Scene::getName() { return m_name; }
+std::string &Scene::getName()
+{
+    return m_name;
+}
 
-void Scene::createSkeleton() {
+void Scene::createSkeleton()
+{
 #ifdef USE_KINECT
     Vertex skyBoxSize = {1600.f, 1200.f, 0.f};
     Vertex skyBoxPosition = {3000.f, m_groundHeight - 450.f, 2500.f};
     glBegin(GL_TRIANGLES);
-    glVertex3f(skyBoxPosition.x + skyBoxSize.x,
-               skyBoxPosition.y - skyBoxSize.y - m_groundHeight,
+    glVertex3f(skyBoxPosition.x + skyBoxSize.x, skyBoxPosition.y - skyBoxSize.y - m_groundHeight,
                skyBoxPosition.z + skyBoxSize.z);
-    glVertex3f(skyBoxPosition.x - skyBoxSize.x,
-               skyBoxPosition.y - skyBoxSize.y - m_groundHeight,
+    glVertex3f(skyBoxPosition.x - skyBoxSize.x, skyBoxPosition.y - skyBoxSize.y - m_groundHeight,
                skyBoxPosition.z + skyBoxSize.z);
-    glVertex3f(skyBoxPosition.x - skyBoxSize.x,
-               skyBoxPosition.y + skyBoxSize.y - m_groundHeight,
+    glVertex3f(skyBoxPosition.x - skyBoxSize.x, skyBoxPosition.y + skyBoxSize.y - m_groundHeight,
                skyBoxPosition.z + skyBoxSize.z);
     glNormal3f(0.f, 0.f, -1.f);
     glNormal3f(0.f, 0.f, -1.f);
@@ -1548,14 +1573,11 @@ void Scene::createSkeleton() {
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
     glBegin(GL_TRIANGLES);
-    glVertex3f(skyBoxPosition.x - skyBoxSize.x,
-               skyBoxPosition.y + skyBoxSize.y - m_groundHeight,
+    glVertex3f(skyBoxPosition.x - skyBoxSize.x, skyBoxPosition.y + skyBoxSize.y - m_groundHeight,
                skyBoxPosition.z + skyBoxSize.z);
-    glVertex3f(skyBoxPosition.x + skyBoxSize.x,
-               skyBoxPosition.y + skyBoxSize.y - m_groundHeight,
+    glVertex3f(skyBoxPosition.x + skyBoxSize.x, skyBoxPosition.y + skyBoxSize.y - m_groundHeight,
                skyBoxPosition.z + skyBoxSize.z);
-    glVertex3f(skyBoxPosition.x + skyBoxSize.x,
-               skyBoxPosition.y - skyBoxSize.y - m_groundHeight,
+    glVertex3f(skyBoxPosition.x + skyBoxSize.x, skyBoxPosition.y - skyBoxSize.y - m_groundHeight,
                skyBoxPosition.z + skyBoxSize.z);
     glNormal3f(0.f, 0.f, -1.f);
     glNormal3f(0.f, 0.f, -1.f);
@@ -1567,10 +1589,10 @@ void Scene::createSkeleton() {
     m_gpuKernel->setPrimitiveMaterial(m_nbPrimitives, KINECT_COLOR_MATERIAL);
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
-    for (int i(0); i < 20; ++i) {
+    for (int i(0); i < 20; ++i)
+    {
         int primitive = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(primitive, 0.f, 0.f, 0.f, m_skeletonSize, 0.f,
-                                  0.f, 0);
+        m_gpuKernel->setPrimitive(primitive, 0.f, 0.f, 0.f, m_skeletonSize, 0.f, 0.f, 0);
         if (i == 0)
             m_skeletonPrimitiveIndex = primitive;
     }
@@ -1582,31 +1604,30 @@ ________________________________________________________________________________
 animateSkeleton
 ________________________________________________________________________________
  */
-void Scene::animateSkeleton() {
+void Scene::animateSkeleton()
+{
 #ifdef USE_KINECT
     m_skeletonPosition.y = m_groundHeight;
-    int hr = m_gpuKernel->updateSkeletons(
-                m_skeletonPrimitiveIndex,
-                m_skeletonPosition,             // Position
-                m_skeletonSize,                 // Skeleton size
-                m_skeletonThickness, 40,        // Default material
-                m_skeletonThickness * 2.0f, 41, // Head size and material
-                m_skeletonThickness * 1.5f, 42, // Hands size and material
-                m_skeletonThickness * 1.8f, 43  // Feet size and material
-                );
+    int hr = m_gpuKernel->updateSkeletons(m_skeletonPrimitiveIndex,
+                                          m_skeletonPosition,             // Position
+                                          m_skeletonSize,                 // Skeleton size
+                                          m_skeletonThickness, 40,        // Default material
+                                          m_skeletonThickness * 2.0f, 41, // Head size and material
+                                          m_skeletonThickness * 1.5f, 42, // Hands size and material
+                                          m_skeletonThickness * 1.8f, 43  // Feet size and material
+                                          );
     m_gpuKernel->getSceneInfo().pathTracingIteration.x = 0;
 
-    if (hr == S_OK) {
+    if (hr == S_OK)
+    {
         Vertex position;
         // Head
-        if (m_gpuKernel->getSkeletonPosition(NUI_SKELETON_POSITION_HEAD,
-                                             position)) {
+        if (m_gpuKernel->getSkeletonPosition(NUI_SKELETON_POSITION_HEAD, position))
+        {
             Vertex amplitude;
             amplitude.x = (position.x * m_skeletonKinectSize - m_viewPos.x) / 2.f;
             amplitude.y = (position.y * m_skeletonKinectSize - m_viewPos.y) / 2.f;
-            amplitude.z =
-                    ((100.f + 200.f - position.z * m_skeletonKinectSize) - m_viewPos.z) /
-                    2.f;
+            amplitude.z = ((100.f + 200.f - position.z * m_skeletonKinectSize) - m_viewPos.z) / 2.f;
 
             m_viewPos.x += amplitude.x;
             m_viewPos.y += amplitude.y;
@@ -1630,14 +1651,15 @@ void Scene::animateSkeleton() {
 
 #ifdef USE_SIXENSE
     // Sixense
-    int left_index = 0;  // TODO:
+    int left_index = 0; // TODO:
     // sixenseUtils::getTheControllerManager()->getIndex(
     // sixenseUtils::ControllerManager::P1L );
     int right_index = 1; // TODO:
     // sixenseUtils::getTheControllerManager()->getIndex(
     // sixenseUtils::ControllerManager::P1R );
     // Go through each of the connected systems
-    for (int base = 0; base < sixenseGetMaxBases(); base++) {
+    for (int base = 0; base < sixenseGetMaxBases(); base++)
+    {
         sixenseSetActiveBase(base);
         sixenseAllControllerData acd;
         static sixenseUtils::ButtonStates left_states, right_states;
@@ -1645,28 +1667,24 @@ void Scene::animateSkeleton() {
         // Get the latest controller data
         sixenseGetAllNewestData(&acd);
         // For each possible controller
-        for (int cont = 0; cont < sixenseGetMaxControllers(); cont++) {
+        for (int cont = 0; cont < sixenseGetMaxControllers(); cont++)
+        {
             // See if it's enabled
-            if (sixenseIsControllerEnabled(cont)) {
-                LOG_INFO(3, "Controller " << cont << ", left=" << left_index
-                         << ", right=" << right_index);
-                if (cont == left_index) {
+            if (sixenseIsControllerEnabled(cont))
+            {
+                LOG_INFO(3, "Controller " << cont << ", left=" << left_index << ", right=" << right_index);
+                if (cont == left_index)
+                {
                     // if this is the left controller
                     Vertex angles;
-                    angles.x =
-                            PI * (m_modelRotationAngle.x - acd.controllers[cont].rot_quat[0]);
-                    angles.y =
-                            PI * (m_modelRotationAngle.y - acd.controllers[cont].rot_quat[1]);
-                    angles.z =
-                            PI * (m_modelRotationAngle.z + acd.controllers[cont].rot_quat[2]);
+                    angles.x = PI * (m_modelRotationAngle.x - acd.controllers[cont].rot_quat[0]);
+                    angles.y = PI * (m_modelRotationAngle.y - acd.controllers[cont].rot_quat[1]);
+                    angles.z = PI * (m_modelRotationAngle.z + acd.controllers[cont].rot_quat[2]);
 
                     Vertex translation;
-                    translation.x =
-                            10.f * (acd.controllers[cont].pos[0] - m_modelTranslation.x);
-                    translation.y =
-                            10.f * (acd.controllers[cont].pos[1] - m_modelTranslation.y);
-                    translation.z =
-                            10.f * (m_modelTranslation.z - acd.controllers[cont].pos[2]);
+                    translation.x = 10.f * (acd.controllers[cont].pos[0] - m_modelTranslation.x);
+                    translation.y = 10.f * (acd.controllers[cont].pos[1] - m_modelTranslation.y);
+                    translation.z = 10.f * (m_modelTranslation.z - acd.controllers[cont].pos[2]);
 
                     m_gpuKernel->getSceneInfo().pathTracingIteration.x = 0;
                     m_gpuKernel->rotatePrimitives(m_modelPosition, angles, 0, m_nbBoxes);
@@ -1687,15 +1705,17 @@ void Scene::animateSkeleton() {
 
                     // Buttons
                     left_states.update(&acd.controllers[cont]);
-                    if (left_states.buttonJustPressed(SIXENSE_BUTTON_2)) {
+                    if (left_states.buttonJustPressed(SIXENSE_BUTTON_2))
+                    {
                         createRandomMaterials(true, false);
                     }
-                    if (left_states.buttonJustPressed(SIXENSE_BUTTON_3)) {
+                    if (left_states.buttonJustPressed(SIXENSE_BUTTON_3))
+                    {
                         m_gpuKernel->getSceneInfo().graphicsLevel.x++;
-                        m_gpuKernel->getSceneInfo().graphicsLevel.x =
-                                m_gpuKernel->getSceneInfo().graphicsLevel.x % 5;
+                        m_gpuKernel->getSceneInfo().graphicsLevel.x = m_gpuKernel->getSceneInfo().graphicsLevel.x % 5;
                     }
-                    if (left_states.buttonJustPressed(SIXENSE_BUTTON_4)) {
+                    if (left_states.buttonJustPressed(SIXENSE_BUTTON_4))
+                    {
                         m_postProcessingInfo.type.x++;
                         m_postProcessingInfo.type.x = m_postProcessingInfo.type.x % 4;
                     }
@@ -1707,17 +1727,15 @@ void Scene::animateSkeleton() {
                     m_viewDir.z += 100.f * acd.controllers[cont].joystick_y;
                 }
 
-                if (cont == right_index) {
-                    m_gpuKernel->getSceneInfo().width3DVision.x +=
-                            50.f * acd.controllers[cont].joystick_x;
+                if (cont == right_index)
+                {
+                    m_gpuKernel->getSceneInfo().width3DVision.x += 50.f * acd.controllers[cont].joystick_x;
                     m_viewDir.z += 50.f * acd.controllers[cont].joystick_y;
                 }
             }
         }
-        LOG_INFO(3, "Pos = " << m_viewPos.x << "," << m_viewPos.y << ","
-                 << m_viewPos.z);
-        LOG_INFO(3, "Dir = " << m_viewDir.x << "," << m_viewDir.y << ","
-                 << m_viewDir.z);
+        LOG_INFO(3, "Pos = " << m_viewPos.x << "," << m_viewPos.y << "," << m_viewPos.z);
+        LOG_INFO(3, "Dir = " << m_viewDir.x << "," << m_viewDir.y << "," << m_viewDir.z);
         LOG_INFO(3, "3D  = " << m_gpuKernel->getSceneInfo().width3DVision.x);
     }
 #endif // USE_SIXENSE

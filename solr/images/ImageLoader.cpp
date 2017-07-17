@@ -32,7 +32,8 @@
 #define uint16 unsigned short
 #define uint32 unsigned long
 #define uint8 unsigned char
-typedef struct {
+typedef struct
+{
     uint16 bfType;      // specifies the file type "BM" 0x424d
     uint32 bfSize;      // specifies the size in bytes of the bitmap file
     uint16 bfReserved1; // reserved; must be 0
@@ -40,7 +41,8 @@ typedef struct {
     uint32 bfOffBits;
 } BITMAPFILEHEADER;
 
-typedef struct tagBITMAPINFOHEADER {
+typedef struct tagBITMAPINFOHEADER
+{
     uint32 biSize;
     uint32 biWidth;
     uint32 biHeight;
@@ -55,35 +57,40 @@ typedef struct tagBITMAPINFOHEADER {
 } BITMAPINFOHEADER, *PBITMAPINFOHEADER;
 #endif // WIN32
 
-ImageLoader::ImageLoader(void) {}
+ImageLoader::ImageLoader(void)
+{
+}
 
-ImageLoader::~ImageLoader(void) {}
+ImageLoader::~ImageLoader(void)
+{
+}
 
-bool ImageLoader::loadBMP24(const int index, const std::string &filename,
-                            TextureInformation *textureInformations) {
+bool ImageLoader::loadBMP24(const int index, const std::string &filename, TextureInformation *textureInformations)
+{
     FILE *filePtr(0);                  // our file pointer
     BITMAPFILEHEADER bitmapFileHeader; // our bitmap file header
     BITMAPINFOHEADER bitmapInfoHeader;
     unsigned int imageIdx = 0; // image index counter
     char tempRGB;              // our swap variable
 
-    // open filename in read binary mode
+// open filename in read binary mode
 #ifdef WIN32
     fopen_s(&filePtr, filename.c_str(), "rb");
 #else
     filePtr = fopen(filename.c_str(), "rb");
 #endif
-    if (filePtr == NULL) {
+    if (filePtr == NULL)
+    {
         LOG_ERROR("Failed to load " << filename);
         return false;
     }
 
     // read the bitmap file header
-    size_t status =
-            fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+    size_t status = fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
 
     // verify that this is a bmp file by check bitmap id
-    if (bitmapFileHeader.bfType != 0x4D42) {
+    if (bitmapFileHeader.bfType != 0x4D42)
+    {
         LOG_ERROR("Failed to load " << filename << ", wrong bitmap id");
         fclose(filePtr);
         return false;
@@ -95,12 +102,11 @@ bool ImageLoader::loadBMP24(const int index, const std::string &filename,
     // move file point to the begging of bitmap data
     fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
 
-    unsigned int bitmapSize = bitmapInfoHeader.biWidth *
-            bitmapInfoHeader.biHeight *
-            bitmapInfoHeader.biBitCount / 8;
+    unsigned int bitmapSize = bitmapInfoHeader.biWidth * bitmapInfoHeader.biHeight * bitmapInfoHeader.biBitCount / 8;
 
     // Add Texture to CPU Memory
-    if (textureInformations[index].buffer != 0) {
+    if (textureInformations[index].buffer != 0)
+    {
         delete[] textureInformations[index].buffer;
         LOG_INFO(1, "Replacing existing texture " << index);
     }
@@ -111,7 +117,8 @@ bool ImageLoader::loadBMP24(const int index, const std::string &filename,
     textureInformations[index].size.z = bitmapInfoHeader.biBitCount / 8;
 
     // verify memory allocation
-    if (!textureInformations[index].buffer) {
+    if (!textureInformations[index].buffer)
+    {
         free(textureInformations[index].buffer);
         fclose(filePtr);
         LOG_ERROR("Failed to load " << filename << ", invalid memory allocation");
@@ -122,59 +129,56 @@ bool ImageLoader::loadBMP24(const int index, const std::string &filename,
     status = fread(textureInformations[index].buffer, bitmapSize, 1, filePtr);
 
     // make sure bitmap image data was read
-    if (textureInformations[index].buffer == NULL) {
+    if (textureInformations[index].buffer == NULL)
+    {
         fclose(filePtr);
-        LOG_ERROR("Failed to load " << filename
-                  << ", bitmap image could not be read");
+        LOG_ERROR("Failed to load " << filename << ", bitmap image could not be read");
         return false;
     }
 
     // swap the r and b values to get RGB (bitmap is BGR)
-    for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3) {
+    for (imageIdx = 0; imageIdx < bitmapSize; imageIdx += 3)
+    {
         tempRGB = textureInformations[index].buffer[imageIdx];
-        textureInformations[index].buffer[imageIdx] =
-                textureInformations[index].buffer[imageIdx + 2];
+        textureInformations[index].buffer[imageIdx] = textureInformations[index].buffer[imageIdx + 2];
         textureInformations[index].buffer[imageIdx + 2] = tempRGB;
     }
 
     // close file and return bitmap image data
     fclose(filePtr);
 
-    LOG_INFO(
-                3, "[" << index << "] Successfully loaded " << filename << std::endl
-                << "biSize         : " << bitmapInfoHeader.biSize << std::endl
-                << "biWidth        : " << bitmapInfoHeader.biWidth << std::endl
-                << "biHeight       : " << bitmapInfoHeader.biHeight << std::endl
-                << "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl
-                << "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl
-                << "biCompression  : " << bitmapInfoHeader.biCompression
-                << std::endl
-                << "biSizeImage    : " << bitmapSize << "/"
-                << bitmapInfoHeader.biSizeImage << std::endl
-                << "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter
-                << std::endl
-                << "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter);
+    LOG_INFO(3, "[" << index << "] Successfully loaded " << filename << std::endl
+                    << "biSize         : " << bitmapInfoHeader.biSize << std::endl
+                    << "biWidth        : " << bitmapInfoHeader.biWidth << std::endl
+                    << "biHeight       : " << bitmapInfoHeader.biHeight << std::endl
+                    << "biPlanes       : " << bitmapInfoHeader.biPlanes << std::endl
+                    << "biBitCount     : " << bitmapInfoHeader.biBitCount << std::endl
+                    << "biCompression  : " << bitmapInfoHeader.biCompression << std::endl
+                    << "biSizeImage    : " << bitmapSize << "/" << bitmapInfoHeader.biSizeImage << std::endl
+                    << "biXPelsPerMeter: " << bitmapInfoHeader.biXPelsPerMeter << std::endl
+                    << "biXPelsPerMeter: " << bitmapInfoHeader.biYPelsPerMeter);
 
-    LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename
-             << " (" << textureInformations[index].size.x << ","
-             << textureInformations[index].size.y << ","
-             << textureInformations[index].size.z << ")");
+    LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " ("
+                        << textureInformations[index].size.x << "," << textureInformations[index].size.y << ","
+                        << textureInformations[index].size.z << ")");
 
     return true;
 }
 
-bool ImageLoader::loadJPEG(const int index, const std::string &filename,
-                           TextureInformation *textureInformations) {
+bool ImageLoader::loadJPEG(const int index, const std::string &filename, TextureInformation *textureInformations)
+{
     int width, height, actual_comps, req_comps(3);
-    BitmapBuffer *buffer = jpgd::decompress_jpeg_image_from_file(
-                filename.c_str(), &width, &height, &actual_comps, req_comps);
+    BitmapBuffer *buffer =
+        jpgd::decompress_jpeg_image_from_file(filename.c_str(), &width, &height, &actual_comps, req_comps);
 
-    if (buffer != 0) {
+    if (buffer != 0)
+    {
 #if 1
         // Vertical Flip
         size_t size = width * height * actual_comps;
         BitmapBuffer *revBuffer = new BitmapBuffer[size];
-        for (size_t i(0); i < size; i += actual_comps) {
+        for (size_t i(0); i < size; i += actual_comps)
+        {
             revBuffer[i + 2] = buffer[size - 1 - i];
             revBuffer[i + 1] = buffer[size - 2 - i];
             revBuffer[i] = buffer[size - 3 - i];
@@ -194,18 +198,17 @@ bool ImageLoader::loadJPEG(const int index, const std::string &filename,
         textureInformations[index].size.z = actual_comps;
         textureInformations[index].offset = 0;
 
-        LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename
-                 << " (" << textureInformations[index].size.x << ","
-                 << textureInformations[index].size.y << ","
-                 << textureInformations[index].size.z << ")");
+        LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " ("
+                            << textureInformations[index].size.x << "," << textureInformations[index].size.y << ","
+                            << textureInformations[index].size.z << ")");
 
         return true;
     }
     return false;
 }
 
-bool ImageLoader::loadTGA(const int index, const std::string &filename,
-                          TextureInformation *textureInformations) {
+bool ImageLoader::loadTGA(const int index, const std::string &filename, TextureInformation *textureInformations)
+{
 #if 0
     TGAFILE tgaFile;
 
@@ -306,10 +309,9 @@ bool ImageLoader::loadTGA(const int index, const std::string &filename,
     textureInformations[index].size.z = texture.bpp / 8;
 #endif
 
-    LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename
-             << " (" << textureInformations[index].size.x << ","
-             << textureInformations[index].size.y << ","
-             << textureInformations[index].size.z << ")");
+    LOG_INFO(3, "Slot " << index << ": Successfully loaded texture " << filename << " ("
+                        << textureInformations[index].size.x << "," << textureInformations[index].size.y << ","
+                        << textureInformations[index].size.z << ")");
 
     return true;
 }

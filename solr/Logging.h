@@ -35,7 +35,8 @@
 
 #include <time.h>
 
-inline std::string getTimestamp() {
+inline std::string getTimestamp()
+{
 #ifdef WIN32
     char buffer[80] = {'\0'};
     time_t now = time(&now);
@@ -50,38 +51,35 @@ inline std::string getTimestamp() {
 
 #ifdef WIN32
 #if 0
-#define LOG_INFO(__level, __msg)                                               \
-{                                                                            \
-    if (__level == 1)                                                          \
-    std::cout << getTimestamp() << " INFO  [" << __level << "] " << __msg    \
-    << std::endl;                                                  \
+#define LOG_INFO(__level, __msg)                                                                \
+    {                                                                                           \
+        if (__level == 1)                                                                       \
+            std::cout << getTimestamp() << " INFO  [" << __level << "] " << __msg << std::endl; \
     }
-#define LOG_ERROR(__msg)                                                       \
-    std::cout << getTimestamp() << " ERROR [1] " << __msg << std::endl;
+#define LOG_ERROR(__msg) std::cout << getTimestamp() << " ERROR [1] " << __msg << std::endl;
 #else
-#define LOG_INFO(__level, __msg)                                               \
-{                                                                            \
-    if (__level == 1) {                                                        \
-    std::stringstream __s;                                                   \
-    __s << getTimestamp() << " [" << GetCurrentThreadId() << "] [INFO]  "    \
-    << __msg;                                                            \
-    OutputDebugString(__s.str().c_str());                                    \
-    }                                                                          \
+#define LOG_INFO(__level, __msg)                                                            \
+    {                                                                                       \
+        if (__level == 1)                                                                   \
+        {                                                                                   \
+            std::stringstream __s;                                                          \
+            __s << getTimestamp() << " [" << GetCurrentThreadId() << "] [INFO]  " << __msg; \
+            OutputDebugString(__s.str().c_str());                                           \
+        }                                                                                   \
     }
 
-#define LOG_ERROR(__msg)                                                       \
-{                                                                            \
-    std::stringstream __s;                                                     \
-    __s << getTimestamp() << " [" << GetCurrentThreadId() << "] [ERROR] "      \
-    << __msg;                                                              \
-    OutputDebugString(__s.str().c_str());                                      \
+#define LOG_ERROR(__msg)                                                                \
+    {                                                                                   \
+        std::stringstream __s;                                                          \
+        __s << getTimestamp() << " [" << GetCurrentThreadId() << "] [ERROR] " << __msg; \
+        OutputDebugString(__s.str().c_str());                                           \
     }
 #endif // 0
 #else
-#define LOG_INFO(__level, __msg)                                               \
-{                                                                            \
-    if (__level == 1)                                                          \
-    std::cout << __msg << std::endl;                                         \
+#define LOG_INFO(__level, __msg)             \
+    {                                        \
+        if (__level == 1)                    \
+            std::cout << __msg << std::endl; \
     }
 #define LOG_ERROR(__msg) std::cerr << __msg << std::endl;
 #endif

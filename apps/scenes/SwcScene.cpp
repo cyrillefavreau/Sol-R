@@ -1,9 +1,22 @@
-/*
-* Copyright (C) 2014 Cyrille Favreau - All Rights Reserved
-* Unauthorized copying of this file, via any medium is strictly prohibited
-* Proprietary and confidential
-* Written by Cyrille Favreau <cyrille_favreau@hotmail.com>
-*/
+/* Copyright (c) 2011-2014, Cyrille Favreau
+ * All rights reserved. Do not distribute without permission.
+ * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+ *
+ * This file is part of Sol-R <https://github.com/cyrillefavreau/Sol-R>
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3.0 as published
+ * by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
 
 #include <math.h>
 #include <stdlib.h>
@@ -18,9 +31,14 @@
 #include <io/FileMarshaller.h>
 
 SwcScene::SwcScene(const std::string &name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox), m_counter(0) {}
+    : Scene(name, nbMaxPrimitivePerBox)
+    , m_counter(0)
+{
+}
 
-SwcScene::~SwcScene(void) {}
+SwcScene::~SwcScene(void)
+{
+}
 
 /*
 ________________________________________________________________________________
@@ -28,7 +46,8 @@ ________________________________________________________________________________
 Create simple scene for box validation
 ________________________________________________________________________________
 */
-void SwcScene::doInitialize() {
+void SwcScene::doInitialize()
+{
     // initialization
     std::vector<std::string> proteinNames;
     std::string folder("../medias/swc");
@@ -41,9 +60,12 @@ void SwcScene::doInitialize() {
     fullFilter = folder;
     fullFilter += "*.swc";
     hFind = FindFirstFile(fullFilter.c_str(), &FindData);
-    if (hFind != INVALID_HANDLE_VALUE) {
-        do {
-            if (strlen(FindData.cFileName) != 0) {
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (strlen(FindData.cFileName) != 0)
+            {
                 std::string shortName(FindData.cFileName);
                 shortName = shortName.substr(0, shortName.rfind(".swc"));
                 proteinNames.push_back(shortName);
@@ -53,13 +75,17 @@ void SwcScene::doInitialize() {
 #else
     DIR *dp;
     struct dirent *dirp;
-    if ((dp = opendir(folder.c_str())) == NULL) {
+    if ((dp = opendir(folder.c_str())) == NULL)
+    {
         LOG_ERROR(errno << " opening " << folder);
-    } else {
-        while ((dirp = readdir(dp)) != NULL) {
+    }
+    else
+    {
+        while ((dirp = readdir(dp)) != NULL)
+        {
             std::string filename(dirp->d_name);
-            if (filename != "." && filename != ".." &&
-                    filename.find(".swc") != std::string::npos) {
+            if (filename != "." && filename != ".." && filename.find(".swc") != std::string::npos)
+            {
                 filename = filename.substr(0, filename.find(".swc"));
                 std::string fullPath(folder);
                 fullPath += "/";
@@ -72,14 +98,16 @@ void SwcScene::doInitialize() {
     }
 #endif // WIN32
 
-    if (proteinNames.size() != 0) {
+    if (proteinNames.size() != 0)
+    {
         m_currentModel = m_currentModel % proteinNames.size();
         Vertex scale = {100.f, 100.f, 100.f, 1000.f};
         std::string fileName;
 
         // Scene
         Vertex center = {0.f, 0.f, 0.f};
-        for (int i(0); i < proteinNames.size(); ++i) {
+        for (int i(0); i < proteinNames.size(); ++i)
+        {
             m_name = proteinNames[i];
             SWCReader swcReader;
 #ifdef WIN32
@@ -91,8 +119,8 @@ void SwcScene::doInitialize() {
             fileName += ".swc";
             int materialId = 1001; //(i%10==0) ? 1001 : 1098;
             LOG_INFO(1, fileName);
-            CPUBoundingBox AABB = swcReader.loadMorphologyFromFile(
-                        fileName, *m_gpuKernel, center, true, scale, true, materialId);
+            CPUBoundingBox AABB =
+                swcReader.loadMorphologyFromFile(fileName, *m_gpuKernel, center, true, scale, true, materialId);
 
             if (i == 0)
                 m_morphologies = swcReader.getMorphologies();
@@ -108,19 +136,21 @@ void SwcScene::doInitialize() {
     fm.saveToFile(*m_gpuKernel, "NeuronMorphologies.irt");
 }
 
-void SwcScene::doAnimate() {
+void SwcScene::doAnimate()
+{
     int index = m_counter % m_morphologies.size();
     Morphology &m = m_morphologies[index];
-    if (m_counter > 0) {
-        m_gpuKernel->setPrimitiveMaterial(m_previousPrimitiveId,
-                                          m_previousMaterial);
+    if (m_counter > 0)
+    {
+        m_gpuKernel->setPrimitiveMaterial(m_previousPrimitiveId, m_previousMaterial);
     }
     m_previousMaterial = m_gpuKernel->getPrimitiveMaterial(m.primitiveId);
     m_gpuKernel->setPrimitiveMaterial(m.primitiveId, DEFAULT_LIGHT_MATERIAL);
     m_previousPrimitiveId = m.primitiveId;
 
     int light = m_gpuKernel->getLight(0);
-    if (light != -1) {
+    if (light != -1)
+    {
         CPUPrimitive *lamp = m_gpuKernel->getPrimitive(light);
         lamp->p0.x = m.x;
         lamp->p0.y = m.y;
@@ -132,10 +162,10 @@ void SwcScene::doAnimate() {
     m_counter += 1;
 }
 
-void SwcScene::doAddLights() {
+void SwcScene::doAddLights()
+{
     // lights
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, -10000.f, 10000.f, -10000.f, 20.f,
-                              0.f, 0, DEFAULT_LIGHT_MATERIAL);
+    m_gpuKernel->setPrimitive(m_nbPrimitives, -10000.f, 10000.f, -10000.f, 20.f, 0.f, 0, DEFAULT_LIGHT_MATERIAL);
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 }

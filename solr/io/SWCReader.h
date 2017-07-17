@@ -24,7 +24,8 @@
 
 #include "../GPUKernel.h"
 
-struct Morphology {
+struct Morphology
+{
     int branch;
     float x;
     float y;
@@ -35,20 +36,17 @@ struct Morphology {
 };
 typedef std::map<int, Morphology> Morphologies;
 
-class SOLR_API SWCReader {
+class SOLR_API SWCReader
+{
 public:
     SWCReader();
     ~SWCReader();
 
-    CPUBoundingBox loadMorphologyFromFile(const std::string &filename,
-                                          GPUKernel &cudaKernel,
-                                          const Vertex &center,
-                                          const bool autoScale,
-                                          const Vertex &scale, bool autoCenter,
+    CPUBoundingBox loadMorphologyFromFile(const std::string &filename, GPUKernel &cudaKernel, const Vertex &center,
+                                          const bool autoScale, const Vertex &scale, bool autoCenter,
                                           const int materialId);
 
     Morphologies getMorphologies() { return m_morphologies; }
-
 private:
     Morphologies m_morphologies;
 };

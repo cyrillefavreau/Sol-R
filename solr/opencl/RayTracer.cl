@@ -1,21 +1,22 @@
-// Copyright (c) 2011-2014, Cyrille Favreau
-// All rights reserved. Do not distribute without permission.
-// Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
-//
-// This file is part of Sol-R <https://github.com/cyrillefavreau/Sol-R>
-//
-// This library is free software; you can redistribute it and/or modify it under
-// the terms of the GNU Lesser General Public License version 3.0 as published
-// by the Free Software Foundation.
-//
-// This library is distributed in the hope that it will be useful, but WITHOUT
-// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
-// details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with this library; if not, write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+/* Copyright (c) 2011-2014, Cyrille Favreau
+ * All rights reserved. Do not distribute without permission.
+ * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
+ *
+ * This file is part of Sol-R <https://github.com/cyrillefavreau/Sol-R>
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License version 3.0 as published
+ * by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
 
 // Typedefs
 typedef float4        Vertex;
@@ -462,12 +463,12 @@ void mandelbrotSet(
    float W = (float)(*material).textureMapping.x;
    float H = (float)(*material).textureMapping.y;
 
-   float  MinRe		= -2.f;
-   float  MaxRe		=	1.f;
-   float  MinIm		= -1.2f;
-   float  MaxIm		=	MinIm + (MaxRe - MinRe) * H/W;
-   float  Re_factor	=	(MaxRe - MinRe) / (W - 1.f);
-   float  Im_factor	=	(MaxIm - MinIm) / (H - 1.f);
+   float  MinRe = -2.f;
+   float  MaxRe = 1.f;
+   float  MinIm = -1.2f;
+   float  MaxIm = MinIm + (MaxRe - MinRe) * H/W;
+   float  Re_factor = (MaxRe - MinRe) / (W - 1.f);
+   float  Im_factor = (MaxIm - MinIm) / (H - 1.f);
    float  maxIterations = NB_MAX_ITERATIONS+(*sceneInfo).pathTracingIteration;
 
    float c_im = MaxIm - y*Im_factor;
@@ -2164,14 +2165,14 @@ inline float4 launchVolumeRendering(
 /*
 ________________________________________________________________________________
 
-Calculate the reflected vector                   
-We now have to know the colour of this (*intersection)                                        
+Calculate the reflected vector
+We now have to know the colour of this (*intersection)
 Color_from_object will compute the amount of light received by the
 (*intersection) float4 and  will also compute the shadows.
-The resulted color is stored in result.                     
+The resulted color is stored in result.
 The first parameter is the closest object to the (*intersection) (following 
 the ray). It can  be considered as a light source if its inner light rate 
-is > 0.                            
+is > 0.
 ________________________________________________________________________________
 */
 inline float4 launchRayTracing(
@@ -2630,7 +2631,7 @@ __kernel void k_standardRenderer(
    // And only process pixels that need extra rendering
    if(index>=sceneInfo.size.x*sceneInfo.size.y/occupancyParameters.x ||
       (sceneInfo.pathTracingIteration>primitiveXYIds[index].y &&   // Still need to process iterations
-      primitiveXYIds[index].w==0 &&                                 // Shadows? if so, compute soft shadows by randomizing light positions
+      primitiveXYIds[index].w==0 &&                                // Shadows? if so, compute soft shadows by randomizing light positions
       sceneInfo.pathTracingIteration>0 && 
       sceneInfo.pathTracingIteration<=NB_MAX_ITERATIONS)) return;
 
@@ -2998,7 +2999,6 @@ __kernel void k_anaglyphRenderer(
    eyeRay.direction.y = direction.y + step.y*(float)(y - (sceneInfo.size.y/2));
    eyeRay.direction.z = direction.z;
 
-   //vectorRotation( eyeRay.origin, rotationCenter, angles );
    vectorRotation( &eyeRay.direction, rotationCenter, angles );
 
    float4 colorRight = launchRayTracing(

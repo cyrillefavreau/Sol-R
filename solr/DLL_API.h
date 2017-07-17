@@ -26,7 +26,7 @@
 #ifdef SOLR_EXPORTS
 #define SOLR_API __declspec(dllexport)
 #else
-#define SOLR_API 
+#define SOLR_API
 #endif
 #else
 #define SOLR_API

@@ -44,14 +44,18 @@ typedef cl_int Lamp;
 
 const long MAX_DEVICES = 10;
 
-class SOLR_API OpenCLKernel : public GPUKernel {
+class SOLR_API OpenCLKernel : public GPUKernel
+{
+public:
+    enum KernelSourceType
+    {
+        kst_file,
+        kst_string
+    };
 
 public:
-    enum KernelSourceType { kst_file, kst_string };
-
-public:
-    OpenCLKernel(const bool activeLogging, const int optimalNbOfPrimmitivesPerBox,
-                 const int platform, const int device);
+    OpenCLKernel(const bool activeLogging, const int optimalNbOfPrimmitivesPerBox, const int platform,
+                 const int device);
     ~OpenCLKernel();
 
     virtual void initBuffers();

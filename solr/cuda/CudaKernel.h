@@ -23,10 +23,10 @@
 #include "../DLL_API.h"
 #include "../GPUKernel.h"
 
-class SOLR_API CudaKernel : public GPUKernel {
+class SOLR_API CudaKernel : public GPUKernel
+{
 public:
-    CudaKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform,
-               int device);
+    CudaKernel(bool activeLogging, int optimalNbOfPrimmitivesPerBox, int platform, int device);
     ~CudaKernel();
 
     void initBuffers() final;
@@ -55,13 +55,13 @@ public:
     virtual std::string getGPUDescription();
 
 public:
-    void setBlockSize(int x, int y, int z) {
+    void setBlockSize(int x, int y, int z)
+    {
         m_blockSize.x = x;
         m_blockSize.y = y;
         m_blockSize.z = z;
     };
     void setSharedMemSize(int sharedMemSize) { m_sharedMemSize = sharedMemSize; };
-
 private:
     // Runtime kernel execution parameters
     int4 m_blockSize;
