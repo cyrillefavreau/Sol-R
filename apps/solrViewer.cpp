@@ -1188,7 +1188,6 @@ void Cleanup(int iExitCode)
     LOG_INFO(1, "Benchmark: " << gTickCount << " tick counts");
     LOG_INFO(1, "--------------------------------------------------------------------------------");
 #endif // WIN32
-    delete gScene->getKernel();
     delete gScene;
     exit(iExitCode);
 }

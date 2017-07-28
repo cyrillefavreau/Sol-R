@@ -30,7 +30,7 @@
 
 #pragma comment(lib, "FaceTrackLib.lib")
 
-using namespace SolR;
+using namespace solr;
 
 KinectFaceTrackingScene::KinectFaceTrackingScene(const std::string& name, const int nbMaxPrimitivePerBox)
     : Scene(name, nbMaxPrimitivePerBox)

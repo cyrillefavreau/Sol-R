@@ -25,10 +25,10 @@
 #ifdef WIN32
 #include <windows.h>
 #else
-#include <fstream>
 #include <math.h>
 #include <stdlib.h>
 #endif
+#include <fstream>
 
 using namespace solr;
 

@@ -24,34 +24,31 @@
 #ifdef WIN32
 #include <windows.h>
 #else
-#include <algorithm>
 #include <dirent.h>
 #endif // WIN32
+#include <algorithm>
 
 Strings getFilesFromFolder(const std::string& folder, const Strings& extensions)
 {
     Strings filenames;
 #ifdef WIN32
     // Textures
-    HANDLE hFind(0);
-    WIN32_FIND_DATA FindData;
-
-    std::string fullFilter(folder);
-    fullFilter += "/";
-    fullFilter += filter;
-    hFind = FindFirstFile(fullFilter.c_str(), &FindData);
-    if (hFind != INVALID_HANDLE_VALUE)
+    for (Strings::const_iterator it = extensions.begin(); it != extensions.end(); ++it)
     {
-        do
-        {
-            std::string fullPath(folder);
-            fullPath += FindData.cFileName;
-            if (m_gpuKernel->loadTextureFromFile(m_gpuKernel->getNbActiveTextures(), fullPath))
+        std::string fullFilter(folder);
+        fullFilter += "/*";
+        fullFilter += (*it);
+
+        WIN32_FIND_DATA FindData;
+        HANDLE hFind = FindFirstFile(fullFilter.c_str(), &FindData);
+        if (hFind != INVALID_HANDLE_VALUE)
+            do
             {
-                LOG_INFO(3, "[Slot " << m_gpuKernel->getNbActiveTextures() - 1 << "] Texture " << fullPath
-                                     << " successfully loaded");
-            }
-        } while (FindNextFile(hFind, &FindData));
+                std::string fullPath(folder);
+                fullPath += "/";
+                fullPath += FindData.cFileName;
+                filenames.push_back(fullPath);
+            } while (FindNextFile(hFind, &FindData));
     }
 #else
     DIR* dp;

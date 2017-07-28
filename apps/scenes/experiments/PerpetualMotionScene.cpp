@@ -96,7 +96,6 @@ void PerpetualMotionScene::doAnimate()
 void PerpetualMotionScene::doAddLights()
 {
     // lights
-    LOG_INFO(1, "Adding light");
     float size = 1000.f;
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptXZPlane);
     m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, 5000.f, -5000.f, size, 0.f, size * 4.f, DEFAULT_LIGHT_MATERIAL);

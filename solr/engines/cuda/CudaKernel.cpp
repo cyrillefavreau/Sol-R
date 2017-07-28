@@ -140,7 +140,7 @@ void CudaKernel::initializeDevice()
                      ,
                      m_hBoundingBoxes, m_hPrimitives
 #endif
-                     );
+    );
     reshape_scene(m_occupancyParameters, m_sceneInfo);
 }
 
@@ -162,7 +162,7 @@ void CudaKernel::releaseDevice()
                    ,
                    m_hBoundingBoxes, m_hPrimitives
 #endif
-                   );
+    );
 }
 
 /*
@@ -201,7 +201,8 @@ void CudaKernel::render_begin(const float timer)
             std::vector<Primitive> ps;
             for (Primitives::iterator i = _hPrimitives.begin(); i != _hPrimitives.end(); ++i)
                 ps.push_back((*i).second);
-            h2d_scene(m_occupancyParameters, m_hBoundingBoxes, nbBoxes, ps.data(), ps.size(), m_hLamps, nbLamps);
+            h2d_scene(m_occupancyParameters, m_hBoundingBoxes, nbBoxes, ps.data(), static_cast<int>(ps.size()),
+                      m_hLamps, nbLamps);
 
             LOG_INFO(3, "Transfering " << m_lightInformationSize << " light elements");
             h2d_lightInformation(m_occupancyParameters, m_lightInformation, m_lightInformationSize);
@@ -299,7 +300,7 @@ void CudaKernel::render_begin(const float timer)
                    ,
                    m_hBoundingBoxes, m_hPrimitives
 #endif
-                   );
+        );
     }
     m_refresh = (m_sceneInfo.pathTracingIteration < m_sceneInfo.maxPathTracingIterations);
 }

@@ -183,7 +183,9 @@ ________________________________________________________________________________
  */
 Scene::~Scene(void)
 {
-    m_gpuKernel->cleanup();
+    if (m_gpuKernel)
+        m_gpuKernel->cleanup();
+
 #ifdef USE_SIXENSE
     // Sixense
     sixenseExit();
@@ -1484,7 +1486,7 @@ void Scene::animateSkeleton()
                                           m_skeletonThickness * 2.0f, 41, // Head size and material
                                           m_skeletonThickness * 1.5f, 42, // Hands size and material
                                           m_skeletonThickness * 1.8f, 43  // Feet size and material
-                                          );
+    );
     m_gpuKernel->getSceneInfo().pathTracingIteration = 0;
 
     if (hr == S_OK)

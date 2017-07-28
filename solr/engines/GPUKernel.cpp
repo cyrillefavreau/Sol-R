@@ -1254,7 +1254,7 @@ void GPUKernel::streamDataToGPU()
 
                 m_lightInformation[m_lightInformationSize] = lightInformation;
 
-                LOG_INFO(1, "Adding Light Information: " << m_lightInformation[m_lightInformationSize].attribute.x
+                LOG_INFO(3, "Adding Light Information: " << m_lightInformation[m_lightInformationSize].attribute.x
                                                          << ","
                                                          << m_lightInformation[m_lightInformationSize].attribute.y
                                                          << ":" << m_lightInformation[m_lightInformationSize].location.x
@@ -1292,7 +1292,7 @@ void GPUKernel::streamDataToGPU()
     // buildLightInformationFromTexture(4);
 
     // Done
-    LOG_INFO(1, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame]
+    LOG_INFO(3, "Compacted " << m_nbActiveBoxes[m_frame] << " boxes, " << m_nbActivePrimitives[m_frame]
                              << " primitives and " << m_nbActiveLamps[m_frame] << " lamps");
     if (m_nbActivePrimitives[m_frame] != m_primitives[m_frame].size())
     {
@@ -1493,7 +1493,7 @@ void GPUKernel::rotatePrimitives(const vec3f &rotationCenter, const vec4f &angle
 
 void GPUKernel::translatePrimitives(const vec3f &translation)
 {
-    LOG_INFO(1, "GPUKernel::translatePrimitives (" << m_boundingBoxes[m_frame][0].size() << ")");
+    LOG_INFO(3, "GPUKernel::translatePrimitives (" << m_boundingBoxes[m_frame][0].size() << ")");
     m_primitivesTransfered = false;
     for (BoxContainer::iterator itb = m_boundingBoxes[m_frame][0].begin(); itb != m_boundingBoxes[m_frame][0].end();
          ++itb)
