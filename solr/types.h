@@ -48,9 +48,8 @@ typedef cl_int4 PrimitiveXYIdBuffer;
 
 typedef float2 vec2f;
 typedef int2 vec2i;
-typedef float4 vec3f; // In order to align to OpenCL structures, vec3f is a float4 and not a float3. See OpenCL
-typedef int4 vec3i;   // documentation for more details. cl_int3 and cl_float3 are identical in size, alignment and
-                      // behavior to cl_int4 and cl_float4. See section 6.1.5.
+typedef float3 vec3f;
+typedef int3 vec3i;
 typedef int4 vec4i;
 typedef float4 vec4f;
 typedef int4 PrimitiveXYIdBuffer;
