@@ -19,8 +19,8 @@
  */
 
 // Project
-#include "../../types.h"
-#include "../../Logging.h"
+#include <types.h>
+#include <Logging.h>
 #include "TextureMapping.cuh"
 #include "GeometryIntersections.cuh"
 #include "VectorUtils.cuh"

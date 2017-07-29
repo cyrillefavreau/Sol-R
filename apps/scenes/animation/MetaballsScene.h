@@ -22,9 +22,12 @@
 
 #include <scenes/Scene.h>
 
-#ifdef USE_LEAPMOTION
 // Leap motion
-#include <leap.h>
+#ifdef USE_LEAPMOTION
+namespace Leap
+{
+class Controller;
+}
 #endif // USE_LEAPMOTION
 
 const int maxGridSize = 60;

@@ -978,7 +978,7 @@ int GPUKernel::processBoxes(const int boxSize, bool simulate)
             {
                 // Lights are added to first box of higher level
                 m_boundingBoxes[m_frame][m_treeDepth][0].primitives.push_back(p);
-                LOG_INFO(1, "[" << m_treeDepth << "] Lamp " << p << " added (" << primitive.p0.x << ","
+                LOG_INFO(3, "[" << m_treeDepth << "] Lamp " << p << " added (" << primitive.p0.x << ","
                                 << primitive.p0.y << "," << primitive.p0.z << " " << m_nbActiveLamps[m_frame] << "/"
                                 << NB_MAX_LAMPS << "), Material ID=" << primitive.materialId);
             }
@@ -1099,7 +1099,7 @@ int GPUKernel::compactBoxes(bool reconstructBoxes)
             processOutterBoxes(nbBoxes, m_treeDepth);
             nbBoxes /= gridDivider;
         } while (nbBoxes > gridGranularity);
-        LOG_INFO(1, "Scene depth=" << m_treeDepth);
+        LOG_INFO(3, "Scene depth=" << m_treeDepth);
     }
 
     LOG_INFO(3, "Streaming data to GPU");

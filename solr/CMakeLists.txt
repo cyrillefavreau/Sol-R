@@ -1,4 +1,4 @@
-include_directories(${PROJECT_SOURCE_DIR}/solr)
+include_directories(${PROJECT_SOURCE_DIR}/solr ${PROJECT_SOURCE_DIR}/generated)
 
 SET(SOLR_SOURCES
     DLL_API.h
@@ -35,24 +35,26 @@ SET(SOLR_SOURCES
 )
 
 if (CUDA_FOUND)
+	set(CUDA_INCLUDE_USER_DIRECTORIES -I${PROJECT_SOURCE_DIR}/solr -I${PROJECT_SOURCE_DIR}/generated)
+	set(CUDA_NVCC_USER_ARGS -D_FORCE_INLINES --maxrregcount=32 --use_fast_math)
 	if (KINECT_FOUND)
-		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -D_FORCE_INLINES -DUSE_KINECT --maxrregcount=32 --use_fast_math)
-	else()
-		set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -D_FORCE_INLINES --maxrregcount=32 --use_fast_math)
+		list(APPEND CUDA_NVCC_USER_ARGS -DUSE_KINECT)
 	endif()
-    CUDA_COMPILE(CUDARAYTRACER_O engines/cuda/CudaRayTracer.cu)
+	set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} ${CUDA_INCLUDE_USER_DIRECTORIES} ${CUDA_NVCC_USER_ARGS})
+    CUDA_COMPILE(
+		CUDARAYTRACER_O engines/cuda/CudaRayTracer.cu)
     CUDA_ADD_LIBRARY(
 		solr
-                engines/cuda/CudaKernel.cpp
-                engines/cuda/CudaKernel.h
-                engines/cuda/CudaRayTracer.h
-                engines/cuda/TextureMapping.cuh
-                engines/cuda/VectorUtils.cuh
-                engines/cuda/GeometryIntersections.cuh
-                engines/cuda/GeometryShaders.cuh
-                ${CUDARAYTRACER_O}
-                ${SOLR_SOURCES}
-                )
+		engines/cuda/CudaKernel.cpp
+		engines/cuda/CudaKernel.h
+		engines/cuda/CudaRayTracer.h
+		engines/cuda/TextureMapping.cuh
+		engines/cuda/VectorUtils.cuh
+		engines/cuda/GeometryIntersections.cuh
+		engines/cuda/GeometryShaders.cuh
+		${CUDARAYTRACER_O}
+		${SOLR_SOURCES}
+		)
     TARGET_LINK_LIBRARIES(
 		solr
 		${FREEGLUT_LIBRARIES}
@@ -60,12 +62,13 @@ if (CUDA_FOUND)
 		${KINECT_LIBRARIES}
 		${OCULUS_SDK_LIBRARIES}
 		${SIXENSESDK_LIBRARIES}
+		${LEAP_LIBRARY}
 		)
 endif()
 
 if(OPENCL_FOUND)
     ADD_LIBRARY(
-		solr 
+		solr STATIC 
 		engines/opencl/OpenCLKernel.cpp 
                 engines/opencl/RayTracer.cl
                 ${SOLR_SOURCES})
@@ -79,6 +82,7 @@ if(OPENCL_FOUND)
 		${KINECT_LIBRARIES}
 		${OCULUS_SDK_LIBRARIES}
 		${SIXENSESDK_LIBRARIES}
+		${LEAP_LIBRARY}
         )
 endif()
 

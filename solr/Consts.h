@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "../generated/defines.h"
-
 // CUDA Managed Memory
 #undef USE_MANAGED_MEMORY
 
@@ -116,7 +114,6 @@ const int PURPLE_MATERIAL = NB_MAX_MATERIALS - 40;
 // Ground material
 const int SKYBOX_SPHERE_MATERIAL = NB_MAX_MATERIALS - 41;
 
-#ifdef USE_KINECT
 // Kinect
 const int KINECT_COLOR_MATERIAL = NB_MAX_MATERIALS - 42;
 const int KINECT_DEPTH_MATERIAL = NB_MAX_MATERIALS - 43;
@@ -133,5 +130,3 @@ const int KINECT_DEPTH_WIDTH = 320;
 const int KINECT_DEPTH_HEIGHT = 240;
 const int KINECT_DEPTH_DEPTH = 2;
 const int KINECT_DEPTH_SIZE = KINECT_DEPTH_WIDTH * KINECT_DEPTH_HEIGHT * KINECT_DEPTH_DEPTH;
-
-#endif // USE_KINECT

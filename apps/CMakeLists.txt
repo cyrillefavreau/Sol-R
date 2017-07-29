@@ -1,5 +1,7 @@
-include_directories(${PROJECT_SOURCE_DIR}/apps)
-include_directories(${PROJECT_SOURCE_DIR})
+include_directories(
+	${PROJECT_SOURCE_DIR}
+	${PROJECT_SOURCE_DIR}/apps 
+	${PROJECT_SOURCE_DIR}/generated)
 
 ADD_EXECUTABLE(
   solrViewer

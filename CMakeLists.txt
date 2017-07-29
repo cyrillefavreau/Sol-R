@@ -20,6 +20,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 option(SOLR_KINECT_ENABLED "Activate Kinect" OFF)
 option(SOLR_OCULUS_ENABLED "Activate Oculus" OFF)
 option(SOLR_SIXENSE_ENABLED "Activate Sixense Controller" OFF)
+option(SOLR_LEAPMOTION_ENABLED "Activate Leap Motion Controller" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -106,6 +107,15 @@ if (${SOLR_ENGINE} STREQUAL "CUDA")
 endif()
 
 # ================================================================================
+# OpenMP
+# ================================================================================
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
+# ================================================================================
 # KINECT 1.8
 # ================================================================================
 if(SOLR_KINECT_ENABLED)
@@ -144,6 +154,20 @@ if(SOLR_SIXENSE_ENABLED)
 		list(APPEND FIND_PACKAGES_DEFINES USE_SIXENSE)
 	else()
 		message(ERROR " Sixense not found!")
+	endif()
+endif()
+
+# ================================================================================
+# Leap Motion SDK
+# ================================================================================
+if(SOLR_LEAPMOTION_ENABLED)
+	find_package(Leap REQUIRED SYSTEM)
+	if (LEAP_FOUND)
+		message(STATUS "Leap Motion found and selected for build")
+		include_directories(${LEAP_INCLUDE_DIR})
+		list(APPEND FIND_PACKAGES_DEFINES USE_LEAPMOTION)
+	else()
+		message(ERROR " Leap Motion not found!")
 	endif()
 endif()
 

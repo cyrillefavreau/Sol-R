@@ -20,14 +20,16 @@
 
 #include "MetaballsScene.h"
 
+#ifdef USE_LEAPMOTION
+#undef PI
+#undef EPSILON
+#include <Leap.h>
+#endif // USE_LEAPMOTION
+
 #include <opengl/rtgl.h>
 #include <math.h>
 
 using namespace solr;
-
-#ifdef USE_LEAPMOTION
-#pragma comment(lib, "Leap.lib")
-#endif // USE_LEAPMOTION
 
 const int minGridSize = 40;
 float threshold = 1.0f;
@@ -39,13 +41,14 @@ vec4f size = {numMetaballs * 10.f, numMetaballs * 10.f, numMetaballs * 10.f};
 vec4f amplitude = {size.x / 5.f, size.y / 5.f, size.z / 5.f};
 vec4f scale = {2500.f / numMetaballs, 2500.f / numMetaballs, 2500.f / numMetaballs};
 #else
-int gridSize = 60;
-const int numMetaballs = 10;
-vec4f size = {numMetaballs * 5.f, numMetaballs * 5.f, numMetaballs * 5.f};
-vec4f amplitude = {size.x / 5.f, size.y / 5.f, size.z / 5.f};
-vec4f scale = {2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs};
+int gridSize = 30;
+int numMetaballs = 50;
+const int gridScale = 3.f;
+vec3f size = {numMetaballs * gridScale, numMetaballs* gridScale, numMetaballs* gridScale};
+vec3f amplitude = {size.x / gridScale, size.y / gridScale, size.z / gridScale};
+vec3f scale = {2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs};
 #endif // USE_KINECT
-METABALL metaballs[numMetaballs];
+METABALL metaballs[50];
 
 MetaballsScene::MetaballsScene(const std::string& name, const int nbMaxPrimitivePerBox)
     : Scene(name, nbMaxPrimitivePerBox)
@@ -84,14 +87,14 @@ void MetaballsScene::Init()
     // VERTICES
     numVertices = (gridSize + 1) * (gridSize + 1) * (gridSize + 1);
 
-    int currentVertex = 0;
-
+#pragma omp parallel for
     for (int i = 0; i < gridSize + 1; i++)
     {
         for (int j = 0; j < gridSize + 1; j++)
         {
             for (int k = 0; k < gridSize + 1; k++)
             {
+                const size_t currentVertex = i * (gridSize + 1) * (gridSize + 1) + j * (gridSize + 1) + k;
                 vertices[currentVertex].position.x = (i * size.x) / (gridSize)-size.x / 2.f;
                 vertices[currentVertex].position.y = (j * size.y) / (gridSize)-size.y / 2.f;
                 vertices[currentVertex].position.z = (k * size.z) / (gridSize)-size.z / 2.f;
@@ -100,8 +103,6 @@ void MetaballsScene::Init()
                 vertices[currentVertex].textCoords.y = static_cast<float>(j) / static_cast<float>(gridSize);
                 ;
                 vertices[currentVertex].textCoords.z = 0.f;
-
-                currentVertex++;
             }
         }
     }
@@ -109,14 +110,14 @@ void MetaballsScene::Init()
     // CUBES
     numCubes = (gridSize) * (gridSize) * (gridSize);
 
-    int currentCube = 0;
-
+#pragma omp parallel for
     for (int i = 0; i < gridSize; i++)
     {
         for (int j = 0; j < gridSize; j++)
         {
             for (int k = 0; k < gridSize; k++)
             {
+                const size_t currentCube = i * gridSize * gridSize + j * gridSize + k;
                 cubes[currentCube].vertices[0] = &vertices[(i * (gridSize + 1) + j) * (gridSize + 1) + k];
                 cubes[currentCube].vertices[1] = &vertices[(i * (gridSize + 1) + j) * (gridSize + 1) + k + 1];
                 cubes[currentCube].vertices[2] = &vertices[(i * (gridSize + 1) + (j + 1)) * (gridSize + 1) + k + 1];
@@ -126,8 +127,6 @@ void MetaballsScene::Init()
                 cubes[currentCube].vertices[6] =
                     &vertices[((i + 1) * (gridSize + 1) + (j + 1)) * (gridSize + 1) + k + 1];
                 cubes[currentCube].vertices[7] = &vertices[((i + 1) * (gridSize + 1) + (j + 1)) * (gridSize + 1) + k];
-
-                currentCube++;
             }
         }
     }
@@ -154,63 +153,69 @@ void MetaballsScene::doAnimate()
 {
     m_gpuKernel->resetFrame();
 
+    vec4f center = {0.f, 0.f, 0.f};
+    float ratio;
+#ifdef USE_LEAPMOTION
+    ratio = 1.f;
+    if (m_leapMotionController)
+    {
+        Leap::Frame frame = m_leapMotionController->frame();
+        if (frame.isValid())
+        {
+            Leap::HandList hands = frame.hands();
+            LOG_INFO(2, "Seeing " << hands.count() << " hands");
+
+            int i = 0;
+            int handId(-1);
+
+            Leap::InteractionBox box = frame.interactionBox();
+            size.x = box.width();
+            size.z = box.depth();
+            size.y = box.height();
+
+            Leap::HandList::const_iterator it(hands.begin());
+            while (it != hands.end())
+            {
+                if (handId == -1)
+                {
+                    Leap::Hand hand = frame.hand((*it).id());
+                    Leap::FingerList fingers = hand.fingers();
+                    LOG_INFO(3, "Seeing " << fingers.count() << " fingers");
+                    for (int j = 0; j < fingers.count(); ++j)
+                    {
+                        Leap::Finger finger = fingers[j];
+                        for (int k = 0; k < 4; ++k)
+                        {
+                            Leap::Bone bone = finger.bone(static_cast<Leap::Bone::Type>(k));
+                            Leap::Vector v = bone.center();
+                            metaballs[i].position.x = v.x / 2;
+                            metaballs[i].position.y = v.y / 2 - 40;
+                            metaballs[i].position.z = -v.z / 2 + 40;
+                            metaballs[i].squaredRadius = finger.width() * finger.width() / 3;
+                            ++i;
+                        }
+                    }
+                }
+                ++it;
+            }
+            numMetaballs = i;
+        }
+    }
+#endif
+#ifdef USE_KINECT
+    vec4f pos;
+    ratio = 0.1f;
+    if (m_gpuKernel->getSkeletonPosition(i, pos))
+    {
+        center.x = -pos.x * amplitude.x;
+        center.y = pos.y * amplitude.y;
+        center.z = pos.z * amplitude.z;
+    }
     // update balls' position
     for (int i(0); i < numMetaballs; ++i)
     {
-        // float timer = static_cast<float>(i*10+m_timer*m_postProcessingInfo.param2.x/20.f);
         float timer = static_cast<float>(i * 3 + m_timer * 40.f);
         float c = 2.0f * (float)cos(timer / 600);
-        vec4f center = {0.f, 0.f, 0.f};
-        float ratio;
-#ifdef USE_KINECT
-        vec4f pos;
-        ratio = 0.1f;
-        if (m_gpuKernel->getSkeletonPosition(i, pos))
-        {
-            center.x = -pos.x * amplitude.x;
-            center.y = pos.y * amplitude.y;
-            center.z = pos.z * amplitude.z;
-        }
-#else
-#ifdef USE_LEAPMOTION
-        ratio = 1.f;
-        if (m_leapMotionController)
-        {
-            Leap::Frame frame = m_leapMotionController->frame();
-            if (frame.isValid())
-            {
-                Leap::HandList hands = frame.hands();
-
-                int handId(-1);
-                Leap::HandList::const_iterator it(hands.begin());
-                while (it != hands.end())
-                {
-                    if (handId == -1)
-                    {
-                        if (hands.count() != 0)
-                        {
-                            Leap::Hand hand = frame.hand((*it).id());
-                            Leap::FingerList fingers = hand.fingers();
-                            if (fingers.count() != 0)
-                            {
-                                Leap::Finger finger = fingers[i % numMetaballs];
-                                Leap::Vector v = finger.tipPosition();
-                                metaballs[i].position.x = v.x / 20.f;
-                                metaballs[i].position.y = v.z / 20.f;
-                                metaballs[i].position.z = v.y / 20.f;
-                            }
-                        }
-                    }
-                    ++it;
-                }
-            }
-        }
-#else
-        ratio = 1.f;
-#endif // USE_LEAPMOTION
-#endif // USE_KINECT
-
-#ifndef USE_LEAPMOTION
         switch (i % 4)
         {
         case 0:
@@ -238,12 +243,13 @@ void MetaballsScene::doAnimate()
             metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (450 + i))) - c);
             break;
         }
-#endif // USE_LEAPMOTION
     }
+#endif // USE_LEAPMOTION
 
     Init();
 
-    // clear the field
+// clear the field
+#pragma omp parallel for
     for (int i = 0; i < numVertices; i++)
     {
         vertices[i].value = 0.0f;
@@ -259,7 +265,7 @@ void MetaballsScene::doAnimate()
     float normalScale;
     int i = 0;
 
-#pragma omp parallel
+#pragma omp parallel for
     for (i = 0; i < numMetaballs; i++)
     {
         squaredRadius = metaballs[i].squaredRadius / 4.f;
@@ -298,7 +304,6 @@ void MetaballsScene::doAnimate()
     {
         // loop through cubes
         int i = 0;
-#pragma omp parallel
         for (i = 0; i < numCubes; i++)
         {
             // calculate which vertices are inside the surface
@@ -365,30 +370,30 @@ void MetaballsScene::doAnimate()
                     n = edgeVertices[triTable[cubeIndex][k]].normal;
                     v = edgeVertices[triTable[cubeIndex][k]].position;
                     t = edgeVertices[triTable[cubeIndex][k]].texCoords;
-                    glNormal3f(n.x, n.z, n.y);
+                    glNormal3f(n.x, n.y, n.z);
                     glTexCoord2f((v.x / minGridSize) + 1.5f, (v.z / minGridSize) + 1.5f);
                     // glTexCoord2f(t.x,t.y);
-                    glVertex3f(center.x + scale.x * v.x, center.z + scale.z * v.z, center.y + scale.x * v.y);
+                    glVertex3f(center.x + scale.x * v.x, center.y + scale.x * v.y, center.z + scale.z * v.z);
                 }
 
                 {
                     n = edgeVertices[triTable[cubeIndex][k + 1]].normal;
                     v = edgeVertices[triTable[cubeIndex][k + 1]].position;
                     t = edgeVertices[triTable[cubeIndex][k + 1]].texCoords;
-                    glNormal3f(n.x, n.z, n.y);
+                    glNormal3f(n.x, n.y, n.z);
                     glTexCoord2f((v.x / minGridSize) + 1.5f, (v.z / minGridSize) + 1.5f);
                     // glTexCoord2f(t.x,t.y);
-                    glVertex3f(center.x + scale.x * v.x, center.z + scale.z * v.z, center.y + scale.x * v.y);
+                    glVertex3f(center.x + scale.x * v.x, center.y + scale.x * v.y, center.z + scale.z * v.z);
                 }
 
                 {
                     n = edgeVertices[triTable[cubeIndex][k + 2]].normal;
                     v = edgeVertices[triTable[cubeIndex][k + 2]].position;
                     t = edgeVertices[triTable[cubeIndex][k + 2]].texCoords;
-                    glNormal3f(n.x, n.z, n.y);
+                    glNormal3f(n.x, n.y, n.z);
                     glTexCoord2f((v.x / minGridSize) + 1.5f, (v.z / minGridSize) + 1.5f);
                     // glTexCoord2f(t.x,t.y);
-                    glVertex3f(center.x + scale.x * v.x, center.z + scale.z * v.z, center.y + scale.x * v.y);
+                    glVertex3f(center.x + scale.x * v.x, center.y + scale.x * v.y, center.z + scale.z * v.z);
                 }
 
                 glEnd();
@@ -400,56 +405,12 @@ void MetaballsScene::doAnimate()
 
     addCornellBox(m_cornellBoxType);
 
-    /*
-   {
-   vec4f r={size.x*scale.x*0.6f,size.y*scale.y*0.4f,size.z*scale.z*0.6f};
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXYPlane); m_gpuKernel->setPrimitive(m_nbPrimitives,0.f,-4000.f,
-   r.z,r.x,r.y,0.f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXYPlane);
-   m_gpuKernel->setPrimitive(m_nbPrimitives,0.f,-4000.f,-r.z,r.x,r.y,0.f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane); m_gpuKernel->setPrimitive(m_nbPrimitives,
-   r.x,-4000.f,0.f,0.f,r.y,r.z,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane);
-   m_gpuKernel->setPrimitive(m_nbPrimitives,-r.x,-4000.f,0.f,0.f,r.y,r.z,m_gpuKernel->getCurrentMaterial()+2);
-   }
-
-   {
-   vec4f r={size.x*scale.x*0.62f,size.y*scale.y*0.4f,size.z*scale.z*0.62f};
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXYPlane); m_gpuKernel->setPrimitive(m_nbPrimitives,0.f,-4000.f,
-   r.z,r.x,r.y,0.f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXYPlane);
-   m_gpuKernel->setPrimitive(m_nbPrimitives,0.f,-4000.f,-r.z,r.x,r.y,0.f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane); m_gpuKernel->setPrimitive(m_nbPrimitives,
-   r.x,-4000.f,0.f,0.f,r.y,r.z,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane);
-   m_gpuKernel->setPrimitive(m_nbPrimitives,-r.x,-4000.f,0.f,0.f,r.y,r.z,m_gpuKernel->getCurrentMaterial()+2);
-   }
-
-   {
-   vec4f r={size.x*scale.x*0.6f,size.y*scale.y*0.4f,size.z*scale.z*0.6f};
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXZPlane); m_gpuKernel->setPrimitive(m_nbPrimitives,
-   r.x,-4000.f+r.y,0.f,size.x*scale.x*0.02f,0.f,r.z*1.03f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXZPlane);
-   m_gpuKernel->setPrimitive(m_nbPrimitives,-r.x,-4000.f+r.y,0.f,size.x*scale.x*0.02f,0.f,r.z*1.03f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXZPlane); m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f,-4000.f+r.y,
-   r.z,r.x,0.f,size.z*scale.z*0.02f,m_gpuKernel->getCurrentMaterial()+2);
-   m_nbPrimitives = m_gpuKernel->addPrimitive(ptXZPlane); m_gpuKernel->setPrimitive(m_nbPrimitives,
-   0.f,-4000.f+r.y,-r.z,r.x,0.f,size.z*scale.z*0.02f,m_gpuKernel->getCurrentMaterial()+2);
-   }
-   */
-    m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-    m_gpuKernel->setPrimitive(m_nbPrimitives, 10000.f, 1000.f, 10000.f, 3000.f, 0.f, 0.f,
-                              m_gpuKernel->getCurrentMaterial() + 1);
-
 // Lamp
 #ifdef USE_KINECT
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
     m_gpuKernel->setPrimitive(m_nbPrimitives, -8000.f, 8000.f, -8000.f, 500.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL);
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 #else
-    // m_nbPrimitives = m_gpuKernel->addPrimitive(  ptSphere ); m_gpuKernel->setPrimitive(  m_nbPrimitives,
-    // 18000.f*cos(m_timer/50.f), 10000.f+5000.f*cos(m_timer/80.f), -18000.f*sin(m_timer/120.f), 500.f, 0.f, 0.f,
-    // DEFAULT_LIGHT_MATERIAL); m_gpuKernel->setPrimitiveIsMovable(  m_nbPrimitives, false );
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
     m_gpuKernel->setPrimitive(m_nbPrimitives, -10000.f, 10000.f, -10000.f, 500.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL);
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
@@ -471,6 +432,14 @@ void MetaballsScene::initializeLeapMotion()
     if (m_leapMotionController == nullptr)
     {
         m_leapMotionController = new Leap::Controller();
+        if (m_leapMotionController)
+        {
+            LOG_INFO(1, "--------------------------------------------------------------------------------");
+            LOG_INFO(1, "                     Leap Motion initialized! m(o_o)m");
+            LOG_INFO(1, "--------------------------------------------------------------------------------");
+            LOG_INFO(1, "Connected: " << (m_leapMotionController->isConnected() ? "Yes" : "No"));
+            LOG_INFO(1, "--------------------------------------------------------------------------------");
+        }
     }
 }
 

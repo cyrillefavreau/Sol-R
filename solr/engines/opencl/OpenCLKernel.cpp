@@ -18,22 +18,24 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+#include <types.h>
+#include <Logging.h>
+
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
 #include <GL/freeglut.h>
 #endif
 
-#include <Logging.h>
 #include <engines/opencl/OpenCLKernel.h>
 
 #ifdef WIN32
 #include <windows.h>
 #else
-#include <fstream>
 #include <math.h>
 #include <sstream>
 #endif
+#include <fstream>
 
 namespace solr
 {
@@ -224,8 +226,8 @@ OpenCLKernel::OpenCLKernel()
 
 #if USE_KINECT
     // Initialize Kinect
-    status = NuiInitialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON |
-                           NUI_INITIALIZE_FLAG_USES_COLOR);
+    int status = NuiInitialize(NUI_INITIALIZE_FLAG_USES_DEPTH_AND_PLAYER_INDEX | NUI_INITIALIZE_FLAG_USES_SKELETON |
+                               NUI_INITIALIZE_FLAG_USES_COLOR);
 
     m_hNextDepthFrameEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     m_hNextVideoFrameEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -531,8 +533,8 @@ void OpenCLKernel::render_begin(const float timer)
         {
             realignTexturesAndMaterials();
 
-            LOG_INFO(1, "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x"
-                                        << sizeof(RandomBuffer));
+            LOG_INFO(1,
+                     "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x" << sizeof(RandomBuffer));
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dRandoms, CL_TRUE, 0,
                                              m_sceneInfo.size.x * m_sceneInfo.size.y * sizeof(RandomBuffer), m_hRandoms,
                                              0, NULL, NULL));

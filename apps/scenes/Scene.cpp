@@ -863,7 +863,7 @@ void Scene::loadFromFile(const float scale)
 void Scene::addCornellBox(int boxType)
 {
     LOG_INFO(3, "Adding Cornell Box");
-    LOG_INFO(1, "Ground height = " << m_groundHeight);
+    LOG_INFO(3, "Ground height = " << m_groundHeight);
     vec4f skyBoxSize = {20000.f, 20000.f, 20000.f};
     vec2f groundSize = {100000.f, 100000.f};
     float groundHeight = m_groundHeight;

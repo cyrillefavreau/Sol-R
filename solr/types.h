@@ -21,6 +21,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <defines.h>
 #include "Consts.h"
 #include <vector>
 #include <map>
