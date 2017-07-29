@@ -66,7 +66,7 @@ void ObjScene::doInitialize()
         memset(&inAABB, 0, sizeof(solr::CPUBoundingBox));
         vec4f size = objectReader.loadModelFromFile(m_filename, *m_gpuKernel, objectPosition, true, m_objectScale, true,
                                                     1000, false, true, aabb, false, inAABB);
-        m_groundHeight = -size.y / 2.f * m_objectScale.y - EPSILON;
+        m_groundHeight = -size.y / 2.f - EPSILON;
     }
     else
     {
@@ -82,9 +82,10 @@ void ObjScene::doInitialize()
             memset(&inAABB, 0, sizeof(solr::CPUBoundingBox));
             vec4f size = objectReader.loadModelFromFile(m_filename, *m_gpuKernel, objectPosition, true, m_objectScale,
                                                         true, 1000, false, true, aabb, false, inAABB);
-            m_groundHeight = -size.y / 2.f * m_objectScale.y - EPSILON;
+            m_groundHeight = -size.y / 2.f - EPSILON;
         }
     }
+    LOG_INFO(1, "Ground height: " << m_groundHeight);
 }
 
 void ObjScene::doPostInitialize()
@@ -101,6 +102,6 @@ void ObjScene::doAddLights()
     if (m_gpuKernel->getNbActiveLamps() == 0)
     {
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 1000.f, 8000.f, -1000.f, 10.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 8000.f, 8000.f, -8000.f, 10.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL);
     }
 }
