@@ -747,7 +747,7 @@ void keyboard(unsigned char key, int x, int y)
         delete gScene;
         gScene = 0;
         gAnimate = false;
-        gSceneId = ((gSceneId + 1) % 15);
+        gSceneId = ((gSceneId + 1) % 16);
         createScene();
         break;
     }
@@ -1306,6 +1306,9 @@ void createScene()
         break;
     case 14:
         gScene = new TransparentScene("Transparent");
+        break;
+    case 15:
+        gScene = new SwcScene("Neuroscience");
         break;
     default:
 #ifdef _USE_KINECT

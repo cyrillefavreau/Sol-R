@@ -48,7 +48,7 @@ void SwcScene::doInitialize()
     if (fileNames.size() != 0)
     {
         m_currentModel = m_currentModel % fileNames.size();
-        vec4f scale = {100.f, 100.f, 100.f, 1000.f};
+        vec4f scale = {10.f, 10.f, 10.f, 10.f};
 
         // Scene
         vec4f center = {0.f, 0.f, 0.f};

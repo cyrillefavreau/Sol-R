@@ -115,18 +115,13 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GP
         ++it;
     }
 
-    LOG_INFO(1,
-             "----------------------------------------------------------------"
-             "----------------");
+    LOG_INFO(1, "--------------------------------------------------------------------------------");
     LOG_INFO(1, "Loaded " << filename.c_str() << " into frame " << kernel.getFrame() << " ["
                           << kernel.getNbActivePrimitives() << " primitives]");
     LOG_INFO(1, "inAABB     : (" << AABB.parameters[0].x << "," << AABB.parameters[0].y << "," << AABB.parameters[0].z
                                  << "),(" << AABB.parameters[1].x << "," << AABB.parameters[1].y << ","
                                  << AABB.parameters[1].z << ")");
-
-    LOG_INFO(1,
-             "----------------------------------------------------------------"
-             "----------------");
+    LOG_INFO(1, "--------------------------------------------------------------------------------");
     return AABB;
 }
 }
