@@ -22,6 +22,8 @@ option(SOLR_OCULUS_ENABLED "Activate Oculus" OFF)
 option(SOLR_SIXENSE_ENABLED "Activate Sixense Controller" OFF)
 option(SOLR_LEAPMOTION_ENABLED "Activate Leap Motion Controller" OFF)
 
+add_compile_options(-std=c++11)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
       "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
