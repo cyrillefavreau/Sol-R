@@ -198,11 +198,7 @@ void CudaKernel::render_begin(const float timer)
         {
             LOG_INFO(3, "Transfering " << nbBoxes << " boxes, " << nbPrimitives << " primitives and " << nbLamps
                                        << " lamps");
-            std::vector<Primitive> ps;
-            for (Primitives::iterator i = _hPrimitives.begin(); i != _hPrimitives.end(); ++i)
-                ps.push_back((*i).second);
-            h2d_scene(m_occupancyParameters, m_hBoundingBoxes, nbBoxes, ps.data(), static_cast<int>(ps.size()),
-                      m_hLamps, nbLamps);
+            h2d_scene(m_occupancyParameters, m_hBoundingBoxes, nbBoxes, m_hPrimitives, nbPrimitives, m_hLamps, nbLamps);
 
             LOG_INFO(3, "Transfering " << m_lightInformationSize << " light elements");
             h2d_lightInformation(m_occupancyParameters, m_lightInformation, m_lightInformationSize);

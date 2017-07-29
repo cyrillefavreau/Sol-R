@@ -66,7 +66,7 @@ solr::GPUKernel *gKernel = solr::SingletonKernel::kernel();
 using namespace solr;
 
 // General Settings
-const int TARGET_FPS = 200;
+const int TARGET_FPS = 60;
 const int REFRESH_DELAY = 1000 / TARGET_FPS; // ms
 
 // ----------------------------------------------------------------------
@@ -124,27 +124,29 @@ struct MenuItem
     std::string description;
     char key;
 };
-const int NB_MENU_ITEMS = 20;
+const int NB_MENU_ITEMS = 22;
 MenuItem menuItems[NB_MENU_ITEMS] = {{"a: Black background and no image noise", 'a'},
                                      {"b: Randomly set background color and image noise", 'b'},
-                                     {"f: Full screen", 'f'},
+                                     {"f: Auto-focus", 'f'},
                                      {"h: Help", 'h'},
-                                     {"i: Bounding boxes", 'i'},
+                                     {"i: Show/hide Bounding boxes", 'i'},
                                      {"m: Animate scene", 'm'},
-                                     {"n: Next 3D model (in folder ../medias/obj)", 'n'},
-                                     {"o: Perpective/Isometric 3D/Antialiasing", 'o'},
-                                     {"p: Post processing (Depth of field, ambient occlusion, enlightment", 'p'},
+                                     {"n: Load next 3D model (in folder medias/obj)", 'n'},
+                                     {"o: Switch to VR mode", 'o'},
+                                     {"p: Post processing (Depth of field, ambient occlusion, bloom, etc)", 'p'},
                                      {"r: Reset current scene", 'r'},
                                      {"t: Next scene", 't'},
                                      {"s: Change graphics level", 's'},
                                      {"v: Random materials", 'i'},
-                                     {"x: Set environment (CornellBox, SkyBox, etc.)", 'x'},
+                                     {"x: Next environment (CornellBox, SkyBox, etc.)", 'x'},
                                      {"*: View modes (Standard, Anaglyth 3D, Oculus Rift", '*'},
                                      {"1: Camera mouse control", '1'},
                                      {"2: Light mouse control", '2'},
                                      {"3: 3D model mouse control", '3'},
+                                     {"4: Depth of field mouse control", '3'},
+                                     {"5: Field of view mouse control", '3'},
                                      {"9: Shadow strength", '9'},
-                                     {"Escape: Exit application", '\033'}};
+                                     {"Esc: Exit application", '\033'}};
 
 // controlType
 enum ControlType
@@ -509,9 +511,7 @@ void initMenus()
 {
     glutCreateMenu(mainMenu);
     for (int i(0); i < NB_MENU_ITEMS; ++i)
-    {
         glutAddMenuEntry(menuItems[i].description.c_str(), menuItems[i].key);
-    }
     glutAttachMenu(GLUT_MIDDLE_BUTTON);
 }
 
@@ -544,8 +544,6 @@ void keyboard(unsigned char key, int x, int y)
 
             if (kernel)
                 kernel->generateScreenshot(filename, 2100, 2970, gScene->getSceneInfo().maxPathTracingIterations);
-            // kernel->generateScreenshot(filename, 2970, 2100,
-            // gScene->getSceneInfo().maxPathTracingIterations);
         }
         else
         {
@@ -556,16 +554,12 @@ void keyboard(unsigned char key, int x, int y)
 #endif
             filename += buffer;
             if (kernel)
-                // kernel->generateScreenshot(filename, 2970, 2100,
-                // gScene->getSceneInfo().maxPathTracingIterations);
-                // kernel->generateScreenshot(filename, 2 * 2100, 2 * 2970,
-                // gScene->getSceneInfo().maxPathTracingIterations);
                 kernel->generateScreenshot(filename, 2 * 2970, 2 * 2100,
                                            gScene->getSceneInfo().maxPathTracingIterations);
         }
         break;
     }
-    case ' ':
+    case 'K':
     {
         // Reset scene
         gSuspended = !gSuspended;
@@ -667,11 +661,11 @@ void keyboard(unsigned char key, int x, int y)
                 m->transparency = 1.f;
                 m->refraction = 1.1f;
             }
-            kernel->setMaterial(SKYBOX_GROUND_MATERIAL, m->color.x, m->color.y, m->color.z, m->color.w,
-                                1.f /*m->reflection.x*/, m->refraction, (m->attributes.y == 1), (m->attributes.z == 1),
-                                m->attributes.w, m->transparency, m->opacity, diffuseTextureId, normalTextureId,
-                                bumpTextureId, specularTextureId, reflectionTextureId, transparencyTextureId,
-                                TEXTURE_NONE, m->specular.x, m->specular.y, m->specular.z, m->innerIllumination.x,
+            kernel->setMaterial(SKYBOX_GROUND_MATERIAL, m->color.x, m->color.y, m->color.z, m->color.w, 1.f,
+                                m->refraction, (m->attributes.y == 1), (m->attributes.z == 1), m->attributes.w,
+                                m->transparency, m->opacity, diffuseTextureId, normalTextureId, bumpTextureId,
+                                specularTextureId, reflectionTextureId, transparencyTextureId, TEXTURE_NONE,
+                                m->specular.x, m->specular.y, m->specular.z, m->innerIllumination.x,
                                 m->innerIllumination.y, m->innerIllumination.z, (m->attributes.x == 1));
         }
         break;
@@ -779,12 +773,11 @@ void keyboard(unsigned char key, int x, int y)
         {
             Material *m = kernel->getMaterial(SKYBOX_SPHERE_MATERIAL);
             gSphereMaterial = (gSphereMaterial + 1) % nbHDRI;
-            kernel->setMaterial(SKYBOX_SPHERE_MATERIAL, m->color.x, m->color.y, m->color.z, m->color.w,
-                                0.f /*m->reflection.x*/, 0.f, (m->attributes.y == 1), (m->attributes.z == 1),
-                                m->attributes.w, 0.f, m->opacity, gSphereMaterial, TEXTURE_NONE, TEXTURE_NONE,
-                                TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, m->specular.x, m->specular.y,
-                                m->specular.z, m->innerIllumination.x, m->innerIllumination.y, m->innerIllumination.z,
-                                (m->attributes.x == 1));
+            kernel->setMaterial(SKYBOX_SPHERE_MATERIAL, m->color.x, m->color.y, m->color.z, m->color.w, 0.f, 0.f,
+                                (m->attributes.y == 1), (m->attributes.z == 1), m->attributes.w, 0.f, m->opacity,
+                                gSphereMaterial, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE,
+                                TEXTURE_NONE, m->specular.x, m->specular.y, m->specular.z, m->innerIllumination.x,
+                                m->innerIllumination.y, m->innerIllumination.z, (m->attributes.x == 1));
         }
         break;
     }
@@ -1345,22 +1338,16 @@ int main(int argc, char *argv[])
 
     srand(static_cast<int>(time(0)));
 
-    // First initialize OpenGL context, so we can properly set the GL for CUDA.
-    // This is necessary in order to achieve optimal performance with OpenGL/CUDA
-    // interop.
     LOG_INFO(1, "Initializing OpenGL...");
     initgl(argc, argv);
 
     initMenus();
 
-    // Create Scene
     createScene();
 
-    // glutFullScreen();
     LOG_INFO(1, "Entering OpenGL loop...");
     glutMainLoop();
 
-    // Normally unused return path
     Cleanup(EXIT_SUCCESS);
 
     return 0;

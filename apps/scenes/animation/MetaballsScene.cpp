@@ -35,29 +35,30 @@ const int minGridSize = 40;
 float threshold = 1.0f;
 
 #ifdef USE_KINECT
-int gridSize = 60;
-const int numMetaballs = 20;
+unsigned int gridSize = 60;
+const unsigned int numMetaballs = 20;
 vec4f size = {numMetaballs * 10.f, numMetaballs * 10.f, numMetaballs * 10.f};
 vec4f amplitude = {size.x / 5.f, size.y / 5.f, size.z / 5.f};
 vec4f scale = {2500.f / numMetaballs, 2500.f / numMetaballs, 2500.f / numMetaballs};
 #else
-int gridSize = 30;
-int numMetaballs = 50;
+unsigned int gridSize = 50;
+unsigned int numMetaballs = 50;
 const int gridScale = 3.f;
-vec3f size = {numMetaballs * gridScale, numMetaballs* gridScale, numMetaballs* gridScale};
+vec3f size = {static_cast<float>(numMetaballs * gridScale), static_cast<float>(numMetaballs* gridScale),
+              static_cast<float>(numMetaballs* gridScale)};
 vec3f amplitude = {size.x / gridScale, size.y / gridScale, size.z / gridScale};
 vec3f scale = {2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs};
 #endif // USE_KINECT
 METABALL metaballs[50];
 
-MetaballsScene::MetaballsScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+MetaballsScene::MetaballsScene(const std::string& name)
+    : Scene(name)
     , m_timer(0)
     , numCubes(0)
     , numFacesDrawn(0)
     , numVertices(0)
 #ifdef USE_LEAPMOTION
-    , m_leapMotionController(nullptr)
+    , m_leapMotionController(0)
 #endif // USE_LEAPMOTION
 {
     // initialise the metaBall_ size and positions
@@ -88,11 +89,11 @@ void MetaballsScene::Init()
     numVertices = (gridSize + 1) * (gridSize + 1) * (gridSize + 1);
 
 #pragma omp parallel for
-    for (int i = 0; i < gridSize + 1; i++)
+    for (int i = 0; i < static_cast<int>(gridSize + 1); i++)
     {
-        for (int j = 0; j < gridSize + 1; j++)
+        for (unsigned int j = 0; j < gridSize + 1; j++)
         {
-            for (int k = 0; k < gridSize + 1; k++)
+            for (unsigned int k = 0; k < gridSize + 1; k++)
             {
                 const size_t currentVertex = i * (gridSize + 1) * (gridSize + 1) + j * (gridSize + 1) + k;
                 vertices[currentVertex].position.x = (i * size.x) / (gridSize)-size.x / 2.f;
@@ -111,11 +112,11 @@ void MetaballsScene::Init()
     numCubes = (gridSize) * (gridSize) * (gridSize);
 
 #pragma omp parallel for
-    for (int i = 0; i < gridSize; i++)
+    for (int i = 0; i < static_cast<int>(gridSize); i++)
     {
-        for (int j = 0; j < gridSize; j++)
+        for (unsigned int j = 0; j < gridSize; j++)
         {
-            for (int k = 0; k < gridSize; k++)
+            for (unsigned int k = 0; k < gridSize; k++)
             {
                 const size_t currentCube = i * gridSize * gridSize + j * gridSize + k;
                 cubes[currentCube].vertices[0] = &vertices[(i * (gridSize + 1) + j) * (gridSize + 1) + k];
@@ -142,7 +143,7 @@ void MetaballsScene::doInitialize()
 
     m_timer = 0;
     // set up metaballs
-    for (int i = 0; i < numMetaballs; i++)
+    for (unsigned int i = 0; i < numMetaballs; i++)
     {
         vec4f zero = {0.f, 0.f, 0.f};
         metaballs[i].Init(zero, 5.0f + float(i));
@@ -159,7 +160,7 @@ void MetaballsScene::doAnimate()
     ratio = 1.f;
     if (m_leapMotionController)
     {
-        Leap::Frame frame = m_leapMotionController->frame();
+        const auto frame = m_leapMotionController->frame();
         if (frame.isValid())
         {
             Leap::HandList hands = frame.hands();
@@ -168,35 +169,32 @@ void MetaballsScene::doAnimate()
             int i = 0;
             int handId(-1);
 
-            Leap::InteractionBox box = frame.interactionBox();
+            const auto box = frame.interactionBox();
             size.x = box.width();
             size.z = box.depth();
             size.y = box.height();
 
-            Leap::HandList::const_iterator it(hands.begin());
-            while (it != hands.end())
+            for (const auto& hand : hands)
             {
                 if (handId == -1)
                 {
-                    Leap::Hand hand = frame.hand((*it).id());
-                    Leap::FingerList fingers = hand.fingers();
+                    const auto fingers = hand.fingers();
                     LOG_INFO(3, "Seeing " << fingers.count() << " fingers");
                     for (int j = 0; j < fingers.count(); ++j)
                     {
-                        Leap::Finger finger = fingers[j];
+                        const auto finger = fingers[j];
                         for (int k = 0; k < 4; ++k)
                         {
-                            Leap::Bone bone = finger.bone(static_cast<Leap::Bone::Type>(k));
-                            Leap::Vector v = bone.center();
+                            const auto bone = finger.bone(static_cast<Leap::Bone::Type>(k));
+                            const auto v = bone.center();
                             metaballs[i].position.x = v.x / 2;
                             metaballs[i].position.y = v.y / 2 - 40;
                             metaballs[i].position.z = -v.z / 2 + 40;
-                            metaballs[i].squaredRadius = finger.width() * finger.width() / 3;
+                            metaballs[i].squaredRadius = finger.width() * finger.width() / 4;
                             ++i;
                         }
                     }
                 }
-                ++it;
             }
             numMetaballs = i;
         }
@@ -263,10 +261,9 @@ void MetaballsScene::doAnimate()
     float squaredRadius;
     vec4f ballPosition;
     float normalScale;
-    int i = 0;
 
 #pragma omp parallel for
-    for (i = 0; i < numMetaballs; i++)
+    for (int i = 0; i < static_cast<int>(numMetaballs); i++)
     {
         squaredRadius = metaballs[i].squaredRadius / 4.f;
         ballPosition = metaballs[i].position;

@@ -72,9 +72,9 @@ struct CPUBoundingBox
     long indexForNextBox;
 };
 
-typedef std::map<long, CPUBoundingBox> BoxContainer;
-typedef std::map<long, CPUPrimitive> PrimitiveContainer;
-typedef std::map<long, Lamp> LampContainer;
+typedef std::map<unsigned int, CPUBoundingBox> BoxContainer;
+typedef std::map<unsigned int, CPUPrimitive> PrimitiveContainer;
+typedef std::map<unsigned int, Lamp> LampContainer;
 
 class SOLR_API GPUKernel
 {
@@ -100,7 +100,8 @@ public:
     virtual void render_begin(const float timer);
     virtual void render_end() = 0;
     BitmapBuffer *getBitmap() { return m_bitmap; };
-    void generateScreenshot(const std::string &filename, const int width, const int height, const int quality);
+    void generateScreenshot(const std::string &filename, const unsigned int width, const unsigned int height,
+                            const unsigned int quality);
 
 public:
     // ---------- Primitives ----------
@@ -217,6 +218,7 @@ public:
     void setPostProcessingInfo(PostProcessingType type, float param1, float param2, int param3);
     void setPostProcessingInfo(const PostProcessingInfo &postProcessingInfo);
     PostProcessingInfo &getPostProcessingInfo() { return m_postProcessingInfo; }
+
 public:
     // Vector Utilities
     float vectorLength(const vec3f &vector);
@@ -261,7 +263,6 @@ public:
 #endif // USE_KINECT
 
 public:
-    void setOptimalNbOfBoxes(const int optimalNbOfBoxes);
     unsigned int getNbActiveBoxes();
     unsigned int getNbActivePrimitives();
     unsigned int getNbActiveLamps();
@@ -305,10 +306,12 @@ public:
     void resetBoxes(bool resetPrimitives);
 
     void setPrimitivesTransfered(const bool value) { m_primitivesTransfered = value; }
+
 public:
     vec3f &getViewPos() { return m_viewPos; }
     vec3f &getViewDir() { return m_viewDir; }
     vec4f &getViewAngles() { return m_angles; }
+
 protected:
     // Bounding boxes management
     int processBoxes(const int boxSize, bool simulate);
@@ -322,7 +325,7 @@ protected:
 protected:
     // GPU
     BoundingBox *m_hBoundingBoxes;
-    Primitives _hPrimitives;
+    Primitive *m_hPrimitives;
     int *m_hLamps;
     Material *m_hMaterials;
 
@@ -352,10 +355,10 @@ protected:
     float m_distortion;
 
 protected:
-    int m_frame;
-    int m_nbFrames;
+    unsigned int m_frame;
+    unsigned int m_nbFrames;
     float m_morph;
-    int m_treeDepth;
+    unsigned int m_treeDepth;
 
 protected:
     // Rendering

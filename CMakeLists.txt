@@ -43,7 +43,7 @@ IF(MSVC)
     add_definitions(-DNOMINMAX)
 else(MSVC)
   if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-narrowing -Wno-deprecated-declarations -Wno-macro-redefined -Wno-shift-negative-value -Wno-comment")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++11-extensions -Wno-narrowing -Wno-deprecated-declarations -Wno-macro-redefined -Wno-shift-negative-value -Wno-comment")
   endif(APPLE)
 ENDIF(MSVC)
 

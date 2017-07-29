@@ -512,15 +512,13 @@ void OpenCLKernel::render_begin(const float timer)
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dBoundingBoxes, CL_TRUE, 0, nbBoxes * sizeof(BoundingBox),
                                              m_hBoundingBoxes, 0, NULL, NULL));
 
-            std::vector<Primitive> ps;
-            for (Primitives::iterator i = _hPrimitives.begin(); i != _hPrimitives.end(); ++i)
-                ps.push_back((*i).second);
             int errorCode;
             if (_dPrimitives)
                 CHECKSTATUS(clReleaseMemObject(_dPrimitives));
-            _dPrimitives = clCreateBuffer(m_hContext, CL_MEM_READ_ONLY, sizeof(Primitive) * ps.size(), 0, &errorCode);
-            CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, _dPrimitives, CL_TRUE, 0, ps.size() * sizeof(Primitive),
-                                             ps.data(), 0, NULL, NULL));
+            _dPrimitives =
+                clCreateBuffer(m_hContext, CL_MEM_READ_ONLY, sizeof(Primitive) * nbPrimitives, 0, &errorCode);
+            CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, _dPrimitives, CL_TRUE, 0, nbPrimitives * sizeof(Primitive),
+                                             m_hPrimitives, 0, NULL, NULL));
             CHECKSTATUS(
                 clEnqueueWriteBuffer(m_hQueue, m_dLamps, CL_TRUE, 0, nbLamps * sizeof(Lamp), m_hLamps, 0, NULL, NULL));
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dLightInformation, CL_TRUE, 0,
