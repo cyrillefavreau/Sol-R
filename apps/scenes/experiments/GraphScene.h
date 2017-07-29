@@ -25,7 +25,7 @@
 class GraphScene : public Scene
 {
 public:
-    GraphScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    GraphScene(const std::string& name);
     ~GraphScene(void);
 
 protected:

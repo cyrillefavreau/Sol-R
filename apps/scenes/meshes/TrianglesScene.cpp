@@ -26,9 +26,9 @@
 #include <io/OBJReader.h>
 #include <io/PDBReader.h>
 
-TrianglesScene::TrianglesScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : m_frameIndex(0)
-    , Scene(name, nbMaxPrimitivePerBox)
+TrianglesScene::TrianglesScene(const std::string& name)
+    : Scene(name)
+    , m_frameIndex(0)
 {
     m_currentModel = 0;
     m_groundHeight = -2500.f;

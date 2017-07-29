@@ -27,9 +27,9 @@
 
 int m_counter = 0;
 
-ObjScene::ObjScene(const std::string& name, const int nbMaxPrimitivePerBox, const std::string& filename)
-    : m_filename(filename)
-    , Scene(name, nbMaxPrimitivePerBox)
+ObjScene::ObjScene(const std::string& name, const std::string& filename)
+    : Scene(name)
+    , m_filename(filename)
 {
     m_currentModel = 0;
     m_groundHeight = -2500.f;

@@ -25,7 +25,7 @@
 class DoggyStyleScene : public Scene
 {
 public:
-    DoggyStyleScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    DoggyStyleScene(const std::string& name);
     ~DoggyStyleScene(void);
 
 protected:

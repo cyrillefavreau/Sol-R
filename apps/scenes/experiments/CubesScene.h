@@ -25,7 +25,7 @@
 class CubesScene : public Scene
 {
 public:
-    CubesScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    CubesScene(const std::string& name);
     ~CubesScene(void);
 
 protected:

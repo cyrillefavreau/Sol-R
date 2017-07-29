@@ -25,7 +25,7 @@
 class CylinderScene : public Scene
 {
 public:
-    CylinderScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    CylinderScene(const std::string& name);
     ~CylinderScene(void);
 
 protected:

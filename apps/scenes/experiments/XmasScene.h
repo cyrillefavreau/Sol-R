@@ -25,7 +25,7 @@
 class XmasScene : public Scene
 {
 public:
-    XmasScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    XmasScene(const std::string& name);
     ~XmasScene(void);
 
 protected:

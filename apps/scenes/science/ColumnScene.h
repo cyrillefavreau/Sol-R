@@ -25,7 +25,7 @@
 class ColumnScene : public Scene
 {
 public:
-    ColumnScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    ColumnScene(const std::string& name);
     ~ColumnScene(void);
 
 protected:

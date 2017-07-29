@@ -27,8 +27,8 @@
 #endif
 #include <math.h>
 
-XmasScene::XmasScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+XmasScene::XmasScene(const std::string& name)
+    : Scene(name)
 {
 }
 
@@ -126,7 +126,7 @@ void XmasScene::doInitialize()
     createTree(nbIterations, 10, nbIterations, center, material,
                1000.f, //+rand()%800,
                200.f   //+rand()%300
-               );
+    );
 }
 
 void XmasScene::doAnimate()

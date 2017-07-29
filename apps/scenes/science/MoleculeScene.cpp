@@ -35,8 +35,8 @@
 #include <io/FileMarshaller.h>
 #include <io/PDBReader.h>
 
-MoleculeScene::MoleculeScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+MoleculeScene::MoleculeScene(const std::string& name)
+    : Scene(name)
 {
     m_groundHeight = -5000.f;
 }

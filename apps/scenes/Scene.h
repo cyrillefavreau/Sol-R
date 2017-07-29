@@ -29,7 +29,7 @@
 class Scene
 {
 public:
-    Scene(const std::string& name, const int nbMaxPrimitivePerBox);
+    Scene(const std::string& name);
     virtual ~Scene(void);
 
 public:
@@ -61,6 +61,7 @@ public:
     void setCornellBoxType(int cornellBoxType) { m_cornellBoxType = cornellBoxType; }
     float getGroundHeight() { return m_groundHeight; }
     void setGroundHeight(const float h) { m_groundHeight = h; }
+
 public:
     // void setMaterialTexture( const int& index, const int& texture );
 
@@ -68,8 +69,10 @@ public:
     int getNbPrimitives() { return m_gpuKernel->getNbActivePrimitives(); }
     solr::GPUKernel* getKernel() { return m_gpuKernel; }
     int getNbHDRI() { return m_nbHDRI; }
+
 public:
     void setCurrentModel(const int& currentModel) { m_currentModel = currentModel; }
+
 protected:
     virtual void doInitialize() = 0;
     virtual void doPostInitialize(){};
@@ -92,7 +95,6 @@ protected:
     int m_cornellBoxType;
     float m_groundHeight;
     int m_maxPathTracingIterations;
-    int m_nbMaxPrimitivePerBox;
 
     // Primitives
     int m_nbPrimitives;

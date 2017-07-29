@@ -25,7 +25,7 @@
 class AnimationScene : public Scene
 {
 public:
-    AnimationScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    AnimationScene(const std::string& name);
     ~AnimationScene(void);
 
 protected:

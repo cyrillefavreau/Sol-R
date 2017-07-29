@@ -27,7 +27,7 @@ struct IFTFaceTracker;
 class KinectFaceTrackingScene : public Scene
 {
 public:
-    KinectFaceTrackingScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    KinectFaceTrackingScene(const std::string& name);
     ~KinectFaceTrackingScene(void);
 
 protected:

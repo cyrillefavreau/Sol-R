@@ -25,7 +25,7 @@
 class ObjScene : public Scene
 {
 public:
-    ObjScene(const std::string& name, const int nbMaxPrimitivePerBox, const std::string& filename);
+    ObjScene(const std::string& name, const std::string& filename);
     ~ObjScene(void);
 
 protected:

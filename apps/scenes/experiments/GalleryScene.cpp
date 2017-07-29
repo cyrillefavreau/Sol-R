@@ -29,8 +29,8 @@
 
 #include <io/FileMarshaller.h>
 
-GalleryScene::GalleryScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+GalleryScene::GalleryScene(const std::string& name)
+    : Scene(name)
 {
     m_groundHeight = -2500.f;
 }

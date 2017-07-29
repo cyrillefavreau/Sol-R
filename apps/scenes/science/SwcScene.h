@@ -26,7 +26,7 @@
 class SwcScene : public Scene
 {
 public:
-    SwcScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    SwcScene(const std::string& name);
     ~SwcScene(void);
 
 protected:

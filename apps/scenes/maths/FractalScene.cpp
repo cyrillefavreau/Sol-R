@@ -29,8 +29,8 @@
 const int NB_MODELS = 5;
 const int NB_ELEMENTS = 8;
 
-FractalScene::FractalScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+FractalScene::FractalScene(const std::string& name)
+    : Scene(name)
 {
 }
 

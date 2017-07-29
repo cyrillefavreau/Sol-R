@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #endif
 
-PerpetualMotionScene::PerpetualMotionScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+PerpetualMotionScene::PerpetualMotionScene(const std::string& name)
+    : Scene(name)
 {
 }
 

@@ -123,9 +123,8 @@ ________________________________________________________________________________
 
 ________________________________________________________________________________
  */
-Scene::Scene(const std::string &name, const int nbMaxPrimitivePerBox)
+Scene::Scene(const std::string &name)
     : m_name(name)
-    , m_nbMaxPrimitivePerBox(nbMaxPrimitivePerBox)
     , m_currentModel(0)
     , m_nbHDRI(0)
 {
@@ -210,7 +209,7 @@ void Scene::initialize(solr::GPUKernel *kernel, const int width, const int heigh
     sceneInfo.size.x = width;
     sceneInfo.size.y = height;
     sceneInfo.graphicsLevel = (gSceneMisc.w == cmVolumeRendering) ? 0 : 4;
-    sceneInfo.nbRayIterations = 5;
+    sceneInfo.nbRayIterations = 3;
     sceneInfo.transparentColor = 0.f;
     sceneInfo.viewDistance = 50000.f;
     sceneInfo.shadowIntensity = 1.0f;

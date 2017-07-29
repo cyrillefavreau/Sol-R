@@ -35,8 +35,8 @@
 #include <solr/io/FileMarshaller.h>
 #include <solr/io/OBJReader.h>
 
-ColumnScene::ColumnScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+ColumnScene::ColumnScene(const std::string& name)
+    : Scene(name)
 {
 }
 

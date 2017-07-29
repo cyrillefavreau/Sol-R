@@ -27,7 +27,7 @@ extern int m_counter;
 class SpindizzyScene : public Scene
 {
 public:
-    SpindizzyScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    SpindizzyScene(const std::string& name);
     ~SpindizzyScene(void);
 
 protected:

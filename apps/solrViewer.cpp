@@ -72,7 +72,7 @@ const int REFRESH_DELAY = 1000 / TARGET_FPS; // ms
 // ----------------------------------------------------------------------
 // Scene
 // ----------------------------------------------------------------------
-bool gCopyright(false);
+bool gCopyright(true);
 int gSceneId(0);
 bool gAutoFocus(false);
 bool gAnimate(false);
@@ -95,7 +95,6 @@ ULONGLONG gRenderingTime;
 int gTickCount = 0;
 #endif // WIN32
 bool gBenchmarking(false);
-int gOptimalNbOfBoxes(12000);
 
 // Oculus
 float gDistortion = 0.1f;
@@ -167,7 +166,7 @@ int gMaterials[2];
 int gWallTexture = 3;
 
 // Scene description and behavior
-int gCornellBoxType = 0;
+int gCornellBoxType = 1;
 int gNbBoxes = 0;
 int m_nbPrimitives = 0;
 int gLampId = 0;
@@ -432,7 +431,7 @@ void display()
             // Copyright
             const char *copyright = "http://cudaopencl.blogspot.com";
             float p = strlen(copyright) * 20.f / si.size.x;
-            RenderString(-p / 2.f, 0.f, 0.f, GLUT_BITMAP_HELVETICA_18, copyright, textColor);
+            RenderString(-p / 2.f, -0.9f, 0.f, GLUT_BITMAP_HELVETICA_18, copyright, textColor);
             gScene->renderText();
         }
 
@@ -1273,54 +1272,54 @@ void createScene()
     switch (gSceneId)
     {
     case 1:
-        gScene = new TrianglesScene("IRT models", gOptimalNbOfBoxes);
+        gScene = new TrianglesScene("IRT models");
         break;
     case 2:
-        gScene = new ObjScene("OBJ models", gOptimalNbOfBoxes, gFilename);
+        gScene = new ObjScene("OBJ models", gFilename);
         break;
     case 3:
-        gScene = new MoleculeScene("Molecules", gOptimalNbOfBoxes);
+        gScene = new MoleculeScene("Molecules");
         break;
     case 4:
-        gScene = new FractalScene("Fractals", gOptimalNbOfBoxes);
+        gScene = new FractalScene("Fractals");
         break;
     case 5:
-        gScene = new CylinderScene("Cylinders", gOptimalNbOfBoxes);
+        gScene = new CylinderScene("Cylinders");
         break;
     case 6:
-        gScene = new XmasScene("Christmas", gOptimalNbOfBoxes);
+        gScene = new XmasScene("Christmas");
         break;
     case 7:
-        gScene = new Year2013("Happy new year 2013", gOptimalNbOfBoxes);
+        gScene = new Year2013("Happy new year 2013");
         break;
     case 8:
-        gScene = new DoggyStyleScene("Doggy style", gOptimalNbOfBoxes);
+        gScene = new DoggyStyleScene("Doggy style");
         break;
     case 9:
-        gScene = new MetaballsScene("Metaballs", gOptimalNbOfBoxes);
+        gScene = new MetaballsScene("Metaballs");
         gAnimate = true;
         break;
     case 10:
-        gScene = new GraphScene("Charts", gOptimalNbOfBoxes);
+        gScene = new GraphScene("Charts");
         break;
     case 11:
-        gScene = new CornellBoxScene("Cornell Box", gOptimalNbOfBoxes);
+        gScene = new CornellBoxScene("Cornell Box");
         break;
     case 12:
-        gScene = new WaterScene("Water", gOptimalNbOfBoxes);
+        gScene = new WaterScene("Water");
         break;
     case 13:
-        gScene = new CubesScene("Cubes", gOptimalNbOfBoxes);
+        gScene = new CubesScene("Cubes");
         break;
     case 14:
-        gScene = new TransparentScene("Transparent", gOptimalNbOfBoxes);
+        gScene = new TransparentScene("Transparent");
         break;
     default:
 #ifdef _USE_KINECT
-        gScene = new KinectFaceTrackingScene("Kinect Face Tracking", gOptimalNbOfBoxes);
+        gScene = new KinectFaceTrackingScene("Kinect Face Tracking");
         break;
 #else
-        gScene = new PerpetualMotionScene("Perpetual Motion", gOptimalNbOfBoxes);
+        gScene = new PerpetualMotionScene("Perpetual Motion");
         break;
 #endif
     }
@@ -1331,7 +1330,6 @@ void createScene()
     LOG_INFO(1, "Initializing SolR...");
     gScene->initialize(gKernel, gWindowWidth, gWindowHeight);
 
-    gKernel->setOptimalNbOfBoxes(gOptimalNbOfBoxes);
     gKernel->setCamera(gViewPos, gViewDir, gViewAngles);
 }
 

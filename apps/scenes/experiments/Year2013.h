@@ -25,7 +25,7 @@
 class Year2013 : public Scene
 {
 public:
-    Year2013(const std::string& name, const int nbMaxPrimitivePerBox);
+    Year2013(const std::string& name);
     ~Year2013(void);
 
 protected:

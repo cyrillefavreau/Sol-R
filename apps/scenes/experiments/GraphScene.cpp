@@ -32,8 +32,8 @@
 
 using namespace solr;
 
-GraphScene::GraphScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+GraphScene::GraphScene(const std::string& name)
+    : Scene(name)
 {
 }
 

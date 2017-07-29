@@ -25,7 +25,7 @@
 class GalleryScene : public Scene
 {
 public:
-    GalleryScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    GalleryScene(const std::string& name);
     ~GalleryScene(void);
 
 protected:

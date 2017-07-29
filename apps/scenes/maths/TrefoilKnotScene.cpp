@@ -28,8 +28,8 @@
 
 #include <math.h>
 
-TrefoilKnotScene::TrefoilKnotScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+TrefoilKnotScene::TrefoilKnotScene(const std::string& name)
+    : Scene(name)
 {
 }
 

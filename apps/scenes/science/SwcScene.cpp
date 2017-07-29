@@ -23,8 +23,8 @@
 #include <common/Utils.h>
 #include <io/FileMarshaller.h>
 
-SwcScene::SwcScene(const std::string &name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+SwcScene::SwcScene(const std::string &name)
+    : Scene(name)
     , m_counter(0)
 {
 }

@@ -25,7 +25,7 @@
 class MoleculeScene : public Scene
 {
 public:
-    MoleculeScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    MoleculeScene(const std::string& name);
     ~MoleculeScene(void);
 
 protected:

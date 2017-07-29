@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #endif
 
-CornellBoxScene::CornellBoxScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+CornellBoxScene::CornellBoxScene(const std::string& name)
+    : Scene(name)
 {
 }
 

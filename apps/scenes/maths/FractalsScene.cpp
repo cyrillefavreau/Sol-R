@@ -28,8 +28,8 @@
 
 #include <math.h>
 
-FractalsScene::FractalsScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+FractalsScene::FractalsScene(const std::string& name)
+    : Scene(name)
 {
 }
 
@@ -222,12 +222,12 @@ float FractalsScene::DE(vec3f pos, const int iterations, const vec2f params)
 }
 
 /**
-* Decides if a point at a specific location is filled or not.  This works by iteration first checking if
-* the pixel is unfilled in successively larger squares or cannot be in the center of any larger square.
-* @param x is the x coordinate of the point being checked with zero being the first pixel
-* @param y is the y coordinate of the point being checked with zero being the first pixel
-* @return 1 if it is to be filled or 0 if it is open
-*/
+ * Decides if a point at a specific location is filled or not.  This works by iteration first checking if
+ * the pixel is unfilled in successively larger squares or cannot be in the center of any larger square.
+ * @param x is the x coordinate of the point being checked with zero being the first pixel
+ * @param y is the y coordinate of the point being checked with zero being the first pixel
+ * @return 1 if it is to be filled or 0 if it is open
+ */
 bool FractalsScene::isSierpinskiCarpetPixelFilled(int i, vec3i v)
 {
     while (v.x > 0 || v.y > 0 || v.z > 0) // when either of these reaches zero the pixel is determined to be on the edge

@@ -29,8 +29,8 @@
 int mappedSphere;
 vec3f vt0, vt1, vt2;
 
-CylinderScene::CylinderScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+CylinderScene::CylinderScene(const std::string& name)
+    : Scene(name)
 {
 }
 

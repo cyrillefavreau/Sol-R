@@ -25,7 +25,7 @@
 class TransparentScene : public Scene
 {
 public:
-    TransparentScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    TransparentScene(const std::string& name);
     ~TransparentScene(void);
 
 protected:

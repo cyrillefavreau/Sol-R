@@ -110,7 +110,6 @@ int RayTracer_InitializeKernel(bool activeLogging, int platform, int device)
         Kernel->setSceneInfo(gSceneInfoStub);
         Kernel->initBuffers();
         Kernel->setFrame(0);
-        Kernel->setOptimalNbOfBoxes(16384);
         return 0;
     }
     return -1;

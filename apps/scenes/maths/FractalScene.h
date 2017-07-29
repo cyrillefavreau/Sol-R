@@ -25,7 +25,7 @@
 class FractalScene : public Scene
 {
 public:
-    FractalScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    FractalScene(const std::string& name);
     ~FractalScene(void);
 
 protected:

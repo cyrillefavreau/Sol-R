@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #endif
 
-Year2013::Year2013(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+Year2013::Year2013(const std::string& name)
+    : Scene(name)
 {
 }
 

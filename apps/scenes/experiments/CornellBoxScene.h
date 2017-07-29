@@ -25,7 +25,7 @@
 class CornellBoxScene : public Scene
 {
 public:
-    CornellBoxScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    CornellBoxScene(const std::string& name);
     ~CornellBoxScene(void);
 
 protected:

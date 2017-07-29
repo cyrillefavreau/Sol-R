@@ -28,8 +28,8 @@
 
 #include <math.h>
 
-DoggyStyleScene::DoggyStyleScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+DoggyStyleScene::DoggyStyleScene(const std::string& name)
+    : Scene(name)
 {
 }
 

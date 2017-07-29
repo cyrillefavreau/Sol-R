@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #endif
 
-CubesScene::CubesScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+CubesScene::CubesScene(const std::string& name)
+    : Scene(name)
 {
 }
 

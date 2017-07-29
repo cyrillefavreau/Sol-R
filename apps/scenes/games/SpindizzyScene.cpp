@@ -24,8 +24,8 @@
 
 using namespace solr;
 
-SpindizzyScene::SpindizzyScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+SpindizzyScene::SpindizzyScene(const std::string& name)
+    : Scene(name)
 {
 }
 

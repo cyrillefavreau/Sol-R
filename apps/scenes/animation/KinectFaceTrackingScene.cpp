@@ -32,8 +32,8 @@
 
 using namespace solr;
 
-KinectFaceTrackingScene::KinectFaceTrackingScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+KinectFaceTrackingScene::KinectFaceTrackingScene(const std::string& name)
+    : Scene(name)
     , m_faceTracker(nullptr)
 {
 }

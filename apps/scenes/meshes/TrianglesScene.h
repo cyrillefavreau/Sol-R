@@ -27,7 +27,7 @@ extern int m_counter;
 class TrianglesScene : public Scene
 {
 public:
-    TrianglesScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    TrianglesScene(const std::string& name);
     ~TrianglesScene(void);
 
 protected:

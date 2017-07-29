@@ -25,7 +25,7 @@
 class TrefoilKnotScene : public Scene
 {
 public:
-    TrefoilKnotScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    TrefoilKnotScene(const std::string& name);
     ~TrefoilKnotScene(void);
 
 protected:

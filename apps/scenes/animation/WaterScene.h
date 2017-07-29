@@ -25,7 +25,7 @@
 class WaterScene : public Scene
 {
 public:
-    WaterScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    WaterScene(const std::string& name);
     ~WaterScene();
 
 protected:

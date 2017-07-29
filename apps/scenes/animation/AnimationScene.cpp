@@ -40,9 +40,9 @@ const int nbFrames(136);
 const int nbModels(1);
 const std::string gModels[nbModels] = {"hand"};
 
-AnimationScene::AnimationScene(const std::string& name, const int nbMaxPrimitivePerBox)
+AnimationScene::AnimationScene(const std::string& name)
     : m_wait(0)
-    , Scene(name, nbMaxPrimitivePerBox)
+    , Scene(name)
 {
     m_currentFrame = 0;
     m_forward = true;

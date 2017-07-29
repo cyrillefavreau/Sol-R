@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #endif
 
-TransparentScene::TransparentScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+TransparentScene::TransparentScene(const std::string& name)
+    : Scene(name)
 {
 }
 

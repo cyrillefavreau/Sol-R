@@ -25,7 +25,7 @@
 class PerpetualMotionScene : public Scene
 {
 public:
-    PerpetualMotionScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    PerpetualMotionScene(const std::string& name);
     ~PerpetualMotionScene(void);
 
 protected:

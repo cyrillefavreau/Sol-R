@@ -28,8 +28,8 @@
 
 #include <io/PDBReader.h>
 
-WaterScene::WaterScene(const std::string& name, const int nbMaxPrimitivePerBox)
-    : Scene(name, nbMaxPrimitivePerBox)
+WaterScene::WaterScene(const std::string& name)
+    : Scene(name)
 {
 }
 

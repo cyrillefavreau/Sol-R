@@ -379,7 +379,7 @@ const int triTable[256][16] = {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
 class MetaballsScene : public Scene
 {
 public:
-    MetaballsScene(const std::string& name, const int nbMaxPrimitivePerBox);
+    MetaballsScene(const std::string& name);
     ~MetaballsScene(void);
 
 protected:
