@@ -361,7 +361,7 @@ void MetaballsScene::doAnimate()
                 vec4f n, v, t;
 
                 glBegin(GL_TRIANGLES);
-                m_gpuKernel->setCurrentMaterial(1000);
+                m_gpuKernel->setCurrentMaterial(RANDOM_MATERIALS_OFFSET);
 
                 {
                     n = edgeVertices[triTable[cubeIndex][k]].normal;

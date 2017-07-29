@@ -639,8 +639,7 @@ void render()
 
 void glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
-    // ::SingletonKernel::kernel()->translate(x*gScale,y*gScale,-z*gScale); // Z is
-    // inverted!!
+    SingletonKernel::kernel()->translate(x * gScale, y * gScale, -z * gScale); // Z is inverted!!
 }
 
 void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)

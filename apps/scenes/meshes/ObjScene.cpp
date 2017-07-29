@@ -65,7 +65,7 @@ void ObjScene::doInitialize()
         solr::CPUBoundingBox inAABB;
         memset(&inAABB, 0, sizeof(solr::CPUBoundingBox));
         vec4f size = objectReader.loadModelFromFile(m_filename, *m_gpuKernel, objectPosition, true, m_objectScale, true,
-                                                    1000, false, true, aabb, false, inAABB);
+                                                    RANDOM_MATERIALS_OFFSET, false, true, aabb, false, inAABB);
         m_groundHeight = -size.y / 2.f - EPSILON;
     }
     else

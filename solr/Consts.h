@@ -58,6 +58,9 @@ const int gColorDepth = 3;
 
 #undef VOLUME_RENDERING_NORMALS
 
+// Where random materials start
+const unsigned int RANDOM_MATERIALS_OFFSET = 1000;
+
 // Skybox matrerials
 const unsigned int SKYBOX_FRONT_MATERIAL = NB_MAX_MATERIALS - 2;
 const unsigned int SKYBOX_RIGHT_MATERIAL = NB_MAX_MATERIALS - 3;

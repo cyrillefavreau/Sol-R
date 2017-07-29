@@ -36,6 +36,7 @@ protected:
 private:
     void buildGraph(bool update);
     void buildChart(const std::string& filename);
+    void buildFrame(const float maxValue);
 
 private:
     float m_values[100][100];
@@ -49,6 +50,5 @@ private:
     int m_startGraph;
     float m_graphSpace;
     int m_graphMaterial;
-    int m_graphMode;
     int m_graphObjectsPerBox;
 };

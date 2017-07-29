@@ -644,7 +644,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly)
             break;
 
         default:
-            if (i >= 1000)
+            if (i >= RANDOM_MATERIALS_OFFSET)
             {
                 switch (rand() % 10)
                 {
@@ -1129,40 +1129,42 @@ void Scene::addCornellBox(int boxType)
         // Ground
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCheckboard);
         m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight, 0.f, groundSize.x / 4.f, 0.f, groundSize.y / 4,
-                                  1000);
+                                  RANDOM_MATERIALS_OFFSET);
 
         // Columns
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
         m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight - 1000.f, 5000.f, -4000.f, 8000.f, 5000.f,
-                                  2000.f, 0.f, 0.f, 1112);
+                                  2000.f, 0.f, 0.f, RANDOM_MATERIALS_OFFSET + 1);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
         m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight - 1000.f, 5000.f, 4000.f, 8000.f, 5000.f, 2000.f,
-                                  0.f, 0.f, 1112);
+                                  0.f, 0.f, RANDOM_MATERIALS_OFFSET + 2);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         // Spheres
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight + 1000.f, -5000.f, 1000.f, 0.f, 0.f, 1112);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, -5000.f, groundHeight + 1000.f, -5000.f, 1000.f, 0.f, 0.f,
+                                  RANDOM_MATERIALS_OFFSET + 3);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-        m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight + 1000.f, -5000.f, 1000.f, 0.f, 0.f, 1113);
+        m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, groundHeight + 1000.f, -5000.f, 1000.f, 0.f, 0.f,
+                                  RANDOM_MATERIALS_OFFSET + 4);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         // Walls
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptXYPlane);
         m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, groundHeight + groundSize.y, groundSize.x, groundSize.x,
-                                  groundSize.y, 0.f, 1110);
+                                  groundSize.y, 0.f, RANDOM_MATERIALS_OFFSET + 5);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane);
         m_gpuKernel->setPrimitive(m_nbPrimitives, -groundSize.x, groundHeight + groundSize.y, 0.f, 0.f, groundSize.x,
-                                  groundSize.y, 1107);
+                                  groundSize.y, RANDOM_MATERIALS_OFFSET + 6);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptYZPlane);
         m_gpuKernel->setPrimitive(m_nbPrimitives, groundSize.x, groundHeight + groundSize.y, 0.f, 0.f, groundSize.x,
-                                  groundSize.y, 1108);
+                                  groundSize.y, RANDOM_MATERIALS_OFFSET + 7);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
 
         break;
