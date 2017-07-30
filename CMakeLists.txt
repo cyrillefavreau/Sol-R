@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.6)
+MESSAGE( STATUS "CMAKE_SYSTEM_VERSION: " ${CMAKE_VERSION} )
 
 set(PROJECT_NAME SolR)
 project(${PROJECT_NAME})
