@@ -16,9 +16,46 @@ May the fun continue with your contributions! :-)
 usage: solrViewer
 ```
 
+### Prerequeries
+
+#### Mandatory
+- CMake 3.x
+- Glew 2.x
+- Glut 3.7
+- Cuda 8.0 or OpenCL 1.2
+
+#### Optional
+- Kinect SDK 1.8
+- Oculus Rift DK1 SDK 0.2.5
+- Sixense SDK
+- Leap SDK 3.2.0
+
 ### Build
 ```
 mkdir Build
 cd Build
-cmake ..
+cmake .. 
 ```
+
+Optional dependencies can be activated using the following cmake options:
+```
+cmake .. -DSOLR_KINECT_ENABLED=ON -DSOLR_OCULUS_ENABLED=ON -DSOLR_SIXENSE_ENABLED -DSOLR_LEAPMOTION_ENABLED=ON
+```
+
+### Screenshots
+![Sol-R_001](doc/images/Sol-R_001.png)
+![Sol-R_002](doc/images/Sol-R_002.png)
+![Sol-R_003](doc/images/Sol-R_003.png)
+![Sol-R_004](doc/images/Sol-R_004.png)
+![Sol-R_005](doc/images/Sol-R_005.png)
+![Sol-R_006](doc/images/Sol-R_006.png)
+![Sol-R_007](doc/images/Sol-R_007.png)
+![Sol-R_008](doc/images/Sol-R_008.png)
+![Sol-R_009](doc/images/Sol-R_009.png)
+
+### Supported platforms
+
+Sol-R has currently been tested on:
+- Windows 7 with Visual Studio 2015 Community edition
+- Mac OS X Sierra 10.12.15
+- Ubuntu 16.04
