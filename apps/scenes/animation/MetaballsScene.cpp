@@ -155,9 +155,8 @@ void MetaballsScene::doAnimate()
     m_gpuKernel->resetFrame();
 
     vec4f center = {0.f, 0.f, 0.f};
-    float ratio;
 #ifdef USE_LEAPMOTION
-    ratio = 1.f;
+    float ratio = 1.f;
     if (m_leapMotionController)
     {
         const auto frame = m_leapMotionController->frame();

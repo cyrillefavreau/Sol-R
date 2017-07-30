@@ -188,13 +188,13 @@ void GraphScene::buildChart(const std::string& filename)
 
     // Values
     unsigned int m = 0;
-    for (unsigned int z = 0; z < m_valueSize.x; ++z)
+    for (int z = 0; z < m_valueSize.x; ++z)
     {
         glBegin(GL_TRIANGLES);
         glTranslatef(-m_graphScale.x * m_graphCenter.x, m_graphScale.y * m_graphCenter.y,
                      -m_graphScale.z * m_graphCenter.z);
         m_gpuKernel->setCurrentMaterial(RANDOM_MATERIALS_OFFSET + 4 + m);
-        for (unsigned int x = 0; x < m_valueSize.y; ++x)
+        for (int x = 0; x < m_valueSize.y; ++x)
         {
             LOG_INFO(1, x << "," << m_values[x][z] << "," << z);
 
@@ -210,7 +210,7 @@ void GraphScene::buildChart(const std::string& filename)
         ++m;
 
         // Labels
-        for (unsigned int x = 0; x < m_valueSize.y; ++x)
+        for (int x = 0; x < m_valueSize.y; ++x)
         {
             int p = m_gpuKernel->addPrimitive(ptXYPlane);
             m_gpuKernel->setPrimitive(p, -m_graphScale.x * m_graphCenter.x + m_graphScale.x * x,
