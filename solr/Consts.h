@@ -49,8 +49,6 @@ const int gColorDepth = 3;
 
 // Globals
 #define PI 3.14159265358979323846f
-#define EPSILON 0.1f
-#define REBOUND_EPSILON 0.00002f
 #define STANDARD_LUNINANCE_STRENGTH 0.1f
 #define SKYBOX_LUNINANCE_STRENGTH 0.2f
 #define EXTENDED_GEOMETRY // Includes spheres, cylinders, etc

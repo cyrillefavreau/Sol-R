@@ -928,6 +928,13 @@ void keyboard(unsigned char key, int x, int y)
             (gScene->getSceneInfo().shadowIntensity > 1.f) ? 0.f : gScene->getSceneInfo().shadowIntensity;
         break;
     }
+    case 'W':
+    {
+        gScene->getSceneInfo().backgroundColor.w += 0.1f;
+        gScene->getSceneInfo().backgroundColor.w =
+            (gScene->getSceneInfo().backgroundColor.w > 1.f) ? 0.f : gScene->getSceneInfo().backgroundColor.w;
+        break;
+    }
     case '+':
     {
         if (gControlType == ctLightSource)
@@ -944,19 +951,17 @@ void keyboard(unsigned char key, int x, int y)
                 }
             }
         }
-        else
+        else if (gScene->getSceneInfo().renderingType == 2) // OculusVR
         {
             gDistortion += 0.01f;
             gKernel->setDistortion(gDistortion);
             LOG_INFO(1, "Distortion = " << gDistortion);
         }
-        break;
-    }
-    case 'W':
-    {
-        gScene->getSceneInfo().backgroundColor.w += 0.1f;
-        gScene->getSceneInfo().backgroundColor.w =
-            (gScene->getSceneInfo().backgroundColor.w > 1.f) ? 0.f : gScene->getSceneInfo().backgroundColor.w;
+        else
+        {
+            gScene->getSceneInfo().epsilon.y *= 2.f;
+            LOG_INFO(1, "Epsilon = " << gScene->getSceneInfo().epsilon.y);
+        }
         break;
     }
     case '-':
@@ -975,11 +980,16 @@ void keyboard(unsigned char key, int x, int y)
                 }
             }
         }
-        else
+        else if (gScene->getSceneInfo().renderingType == 2) // OculusVR
         {
             gDistortion -= 0.01f;
             gKernel->setDistortion(gDistortion);
             LOG_INFO(1, "Distortion = " << gDistortion);
+        }
+        else
+        {
+            gScene->getSceneInfo().epsilon.y /= 2.f;
+            LOG_INFO(1, "Epsilon = " << gScene->getSceneInfo().epsilon.y);
         }
         break;
     }

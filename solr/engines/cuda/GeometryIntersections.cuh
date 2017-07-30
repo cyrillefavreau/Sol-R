@@ -103,18 +103,18 @@ __device__ __INLINE__ vec4f skyboxMapping(const SceneInfo &sceneInfo, Material *
     float t1 = (-b - r) / a;
     float t2 = (-b + r) / a;
 
-    if (t1 <= EPSILON && t2 <= EPSILON)
+    if (t1 <= sceneInfo.epsilon.x && t2 <= sceneInfo.epsilon.x)
         return result; // both intersections are behind the ray origin
 
     float t = 0.f;
-    if (t1 <= EPSILON)
+    if (t1 <= sceneInfo.epsilon.x)
         t = t2;
-    else if (t2 <= EPSILON)
+    else if (t2 <= sceneInfo.epsilon.x)
         t = t1;
     else
         t = (t1 < t2) ? t1 : t2;
 
-    if (t < EPSILON)
+    if (t < sceneInfo.epsilon.x)
         return result; // Too close to intersection
     vec3f intersection = normalize(ray.origin + t * dir);
 
@@ -187,18 +187,18 @@ __device__ __INLINE__ bool ellipsoidIntersection(const SceneInfo &sceneInfo, con
     float t1 = (-b + d) / (2.f * a);
     float t2 = (-b - d) / (2.f * a);
 
-    if (t1 <= EPSILON && t2 <= EPSILON)
+    if (t1 <= sceneInfo.epsilon.x && t2 <= sceneInfo.epsilon.x)
         return false; // both intersections are behind the ray origin
 
     float t = 0.f;
-    if (t1 <= EPSILON)
+    if (t1 <= sceneInfo.epsilon.x)
         t = t2;
-    else if (t2 <= EPSILON)
+    else if (t2 <= sceneInfo.epsilon.x)
         t = t1;
     else
         t = (t1 < t2) ? t1 : t2;
 
-    if (t < EPSILON)
+    if (t < sceneInfo.epsilon.x)
         return false; // Too close to intersection
     intersection = ray.origin + t * dir;
 
@@ -237,21 +237,21 @@ __device__ __INLINE__ bool sphereIntersection(const SceneInfo &sceneInfo, const 
     float t1 = (-b - r) / a;
     float t2 = (-b + r) / a;
 
-    if (t1 <= EPSILON && t2 <= EPSILON)
+    if (t1 <= sceneInfo.epsilon.x && t2 <= sceneInfo.epsilon.x)
         return false; // both intersections are behind the ray origin
 
     float t = 0.f;
-    if (t1 <= EPSILON)
+    if (t1 <= sceneInfo.epsilon.x)
     {
         t = t2;
         back = true;
     }
-    else if (t2 <= EPSILON)
+    else if (t2 <= sceneInfo.epsilon.x)
         t = t1;
     else
         t = (t1 < t2) ? t1 : t2;
 
-    if (t < EPSILON)
+    if (t < sceneInfo.epsilon.x)
         return false; // Too close to intersection
     intersection = ray.origin + t * dir;
 
@@ -300,7 +300,7 @@ __device__ __INLINE__ bool cylinderIntersection(const SceneInfo &sceneInfo, cons
     float ln = length(n);
 
     // Parallel? (?)
-    if ((ln < EPSILON) && (ln > -EPSILON))
+    if ((ln < sceneInfo.epsilon.x) && (ln > -sceneInfo.epsilon.x))
         return false;
 
     n = normalize(n);
@@ -327,7 +327,7 @@ __device__ __INLINE__ bool cylinderIntersection(const SceneInfo &sceneInfo, cons
     float scale1 = dot(HB1, cylinder.n1);
     float scale2 = dot(HB2, cylinder.n1);
     // Cylinder length
-    if (scale1 < EPSILON || scale2 > EPSILON)
+    if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
     {
         intersection = ray.origin + t2 * dir;
         HB1 = intersection - cylinder.p0;
@@ -335,7 +335,7 @@ __device__ __INLINE__ bool cylinderIntersection(const SceneInfo &sceneInfo, cons
         scale1 = dot(HB1, cylinder.n1);
         scale2 = dot(HB2, cylinder.n1);
         // Cylinder length
-        if (scale1 < EPSILON || scale2 > EPSILON)
+        if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
             return false;
     }
 
@@ -365,7 +365,7 @@ __device__ __INLINE__ bool coneIntersection(const SceneInfo &sceneInfo, const Pr
     float ln = length(n);
 
     // Parallel? (?)
-    if ((ln < EPSILON) && (ln > -EPSILON))
+    if ((ln < sceneInfo.epsilon.x) && (ln > -sceneInfo.epsilon.x))
         return false;
 
     n = normalize(n);
@@ -392,7 +392,7 @@ __device__ __INLINE__ bool coneIntersection(const SceneInfo &sceneInfo, const Pr
     float scale1 = dot(HB1, cone.n1);
     float scale2 = dot(HB2, cone.n1);
     // Cylinder length
-    if (scale1 < EPSILON || scale2 > EPSILON)
+    if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
     {
         intersection = ray.origin + t2 * dir;
         HB1 = intersection - cone.p0;
@@ -400,7 +400,7 @@ __device__ __INLINE__ bool coneIntersection(const SceneInfo &sceneInfo, const Pr
         scale1 = dot(HB1, cone.n1);
         scale2 = dot(HB2, cone.n1);
         // Cylinder length
-        if (scale1 < EPSILON || scale2 > EPSILON)
+        if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
             return false;
     }
 
@@ -583,7 +583,7 @@ __device__ __INLINE__ bool triangleIntersection(const SceneInfo &sceneInfo, cons
     vec3f P = crossProduct(ray.direction, E03);
     float det = dot(E01, P);
 
-    if (fabs(det) < EPSILON)
+    if (fabs(det) < sceneInfo.epsilon.x)
         return false;
 
     vec3f T = ray.origin - triangle.p0;
@@ -604,7 +604,7 @@ __device__ __INLINE__ bool triangleIntersection(const SceneInfo &sceneInfo, cons
         vec3f E21 = triangle.p1 - triangle.p1;
         vec3f P_ = crossProduct(ray.direction, E21);
         float det_ = dot(E23, P_);
-        if (fabs(det_) < EPSILON)
+        if (fabs(det_) < sceneInfo.epsilon.x)
             return false;
         vec3f T_ = ray.origin - triangle.p2;
         float a_ = dot(T_, P_) / det_;
@@ -748,7 +748,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
 
                         float distance = length(intersection - r.origin);
 
-                        if (i && distance > EPSILON && distance < minDistance)
+                        if (i && distance > sceneInfo.epsilon.x && distance < minDistance)
                         {
                             // Only keep intersection with the closest object
                             minDistance = distance;
@@ -807,8 +807,8 @@ __device__ __INLINE__ float processShadows(const SceneInfo &sceneInfo, BoundingB
     color.y = 0.f;
     color.z = 0.f;
     Ray r;
-    r.origin = origin;
     r.direction = lampCenter - origin;
+    r.origin = origin + normalize(r.direction) * sceneInfo.epsilon.y;
     computeRayAttributes(r);
     const float minDistance = (iteration < 2) ? sceneInfo.viewDistance : sceneInfo.viewDistance / (iteration + 1);
 
@@ -874,7 +874,7 @@ __device__ __INLINE__ float processShadows(const SceneInfo &sceneInfo, BoundingB
                         vec3f O_I = intersection - r.origin;
                         vec3f O_L = r.direction;
                         float l = length(O_I);
-                        if (l > EPSILON && l < length(O_L))
+                        if (l > sceneInfo.epsilon.x && l < length(O_L))
                         {
                             float ratio = shadowIntensity * sceneInfo.shadowIntensity;
                             if (materials[primitive.materialId].transparency != 0.f)
@@ -884,7 +884,7 @@ __device__ __INLINE__ float processShadows(const SceneInfo &sceneInfo, BoundingB
                                 float a = fabs(dot(O_L, normal));
                                 float r = (materials[primitive.materialId].transparency == 0.f)
                                               ? 1.f
-                                              : (1.f - /*0.8f**/ materials[primitive.materialId].transparency);
+                                              : (1.f - materials[primitive.materialId].transparency);
                                 ratio *= r * a;
                                 color.x += ratio * (0.3f - 0.3f * materials[primitive.materialId].color.x);
                                 color.y += ratio * (0.3f - 0.3f * materials[primitive.materialId].color.y);

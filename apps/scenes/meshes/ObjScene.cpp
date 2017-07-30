@@ -66,7 +66,7 @@ void ObjScene::doInitialize()
         memset(&inAABB, 0, sizeof(solr::CPUBoundingBox));
         vec4f size = objectReader.loadModelFromFile(m_filename, *m_gpuKernel, objectPosition, true, m_objectScale, true,
                                                     RANDOM_MATERIALS_OFFSET, false, true, aabb, false, inAABB);
-        m_groundHeight = -size.y / 2.f - EPSILON;
+        m_groundHeight = -size.y / 2.f - sceneInfo.epsilon.x;
     }
     else
     {
@@ -82,7 +82,7 @@ void ObjScene::doInitialize()
             memset(&inAABB, 0, sizeof(solr::CPUBoundingBox));
             vec4f size = objectReader.loadModelFromFile(m_filename, *m_gpuKernel, objectPosition, true, m_objectScale,
                                                         true, 1000, false, true, aabb, false, inAABB);
-            m_groundHeight = -size.y / 2.f - EPSILON;
+            m_groundHeight = -size.y / 2.f - sceneInfo.epsilon.x;
         }
     }
     LOG_INFO(1, "Ground height: " << m_groundHeight);

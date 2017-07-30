@@ -159,6 +159,9 @@ struct __ALIGN16__ SceneInfo
     vec4i skybox;                 // x: size
                                   // y: material Id
                                   // z and w: currently unused
+    vec2f epsilon;                // Ray-tracing epsilons
+                                  // x: Geometry
+                                  // y: Rays
 };
 
 // Ray structure

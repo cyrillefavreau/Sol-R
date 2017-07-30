@@ -45,8 +45,6 @@ typedef struct
 
 // Globals
 #define PI 3.14159265358979323846f
-#define EPSILON 1.f
-#define REBOUND_EPSILON 0.00015f
 
 // Kinect
 #define KINECT_COLOR_WIDTH  640
@@ -106,15 +104,18 @@ typedef struct
    int    pathTracingIteration;     // Current iteration for current frame
    int    maxPathTracingIterations; // Maximum number of iterations for current frame
    int4   misc;                     // x : Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
-   // y: Timer
-   // z: Fog( 0: disabled, 1: enabled )
-   // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
-   int4    parameters;              // x: Double-sided triangles( 0:disabled, 1:enabled )
-   // y: Extended geometry ( 0:disabled, 1:enabled )
-   // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
-   // w: Draft mode(0:disabled, 1:enabled)
-   int4    skybox;                  // x: size
-   // y: material Id
+                                   // y: Timer
+                                   // z: Fog( 0: disabled, 1: enabled )
+                                   // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
+   int4   parameters;              // x: Double-sided triangles( 0:disabled, 1:enabled )
+                                   // y: Extended geometry ( 0:disabled, 1:enabled )
+                                   // z: Advanced features( 0:disabled, 1:global illumination, 2: random lightning )
+                                   // w: Draft mode(0:disabled, 1:enabled)
+   int4   skybox;                  // x: size
+                                   // y: material Id
+   float2 epsilon;                 // Ray-tracing epsilons
+                                   // x: Geometry
+                                   // y: Rays
 } SceneInfo;
 
 typedef struct
@@ -122,7 +123,7 @@ typedef struct
    vec4f origin;                    // Origin of the ray
    vec4f direction;                 // Direction of the ray
    vec4f inv_direction;             // Inverted direction( Used for optimal Ray-Box intersection )
-   int4   signs;                     // Signs ( Used for optimal Ray-Box intersection )
+   int4  signs;                     // Signs ( Used for optimal Ray-Box intersection )
 } Ray;
 
 typedef struct
@@ -926,18 +927,19 @@ static bool ellipsoidIntersection(
    float t1 = (-b+d)/(2.f*a);
    float t2 = (-b-d)/(2.f*a);
 
-   if( t1<=EPSILON && t2<=EPSILON ) return false; // both intersections are behind the ray origin
+   if( t1<=(*sceneInfo).epsilon.x && t2<=(*sceneInfo).epsilon.x )
+      return false; // both intersections are behind the ray origin
 
    float t=0.f;
-   if( t1<=EPSILON ) 
+   if( t1<=(*sceneInfo).epsilon.x )
       t = t2;
    else 
-      if( t2<=EPSILON )
+      if( t2<=(*sceneInfo).epsilon.x )
          t = t1;
       else
          t=(t1<t2) ? t1 : t2;
 
-   if( t<EPSILON ) return false; // Too close to intersection
+   if( t<(*sceneInfo).epsilon.x ) return false; // Too close to intersection
    (*intersection) = (*ray).origin + t*dir;
 
    (*normal) = (*intersection)-(*ellipsoid).p0;
@@ -977,18 +979,20 @@ static float4 skyboxMapping(
    float t1 = (-b-r)/a;
    float t2 = (-b+r)/a;
 
-   if( t1<=EPSILON && t2<=EPSILON ) return result; // both intersections are behind the ray origin
+   if( t1<=(*sceneInfo).epsilon.x && t2<=(*sceneInfo).epsilon.x )
+      return result; // both intersections are behind the ray origin
 
    float t=0.f;
-   if( t1<=EPSILON ) 
+   if( t1<=(*sceneInfo).epsilon.x )
       t=t2;
    else 
-      if( t2<=EPSILON )
+      if( t2<=(*sceneInfo).epsilon.x )
          t=t1;
       else
          t=(t1<t2) ? t1 : t2;
 
-   if( t<EPSILON ) return result; // Too close to intersection
+   if( t<(*sceneInfo).epsilon.x )
+      return result; // Too close to intersection
    vec4f intersection = normalize((*ray).origin+t*dir);
 
    // Intersection found, no get skybox color
@@ -1052,21 +1056,23 @@ static bool sphereIntersection(
    float t1 = (-b-r)/a;
    float t2 = (-b+r)/a;
 
-   if( t1<=EPSILON && t2<=EPSILON ) return false; // both intersections are behind the ray origin
+   if( t1<=(*sceneInfo).epsilon.x && t2<=(*sceneInfo).epsilon.x )
+      return false; // both intersections are behind the ray origin
 
    float t=0.f;
-   if( t1<=EPSILON ) 
+   if( t1<=(*sceneInfo).epsilon.x )
    {
       back=true;
       t=t2;
    }
    else 
-      if( t2<=EPSILON )
+      if( t2<=(*sceneInfo).epsilon.x )
          t=t1;
       else
          t=(t1<t2) ? t1 : t2;
 
-   if( t<EPSILON ) return false; // Too close to intersection
+   if( t<(*sceneInfo).epsilon.x )
+      return false; // Too close to intersection
    (*intersection) = (*ray).origin+t*dir;
 
    if( materials[(*sphere).materialId].attributes.y==0) 
@@ -1119,7 +1125,7 @@ static bool cylinderIntersection(
    float ln = length(n);
 
    // Parallel? (?)
-   if( ln<EPSILON && ln>-EPSILON )
+   if( ln<(*sceneInfo).epsilon.x && ln>-(*sceneInfo).epsilon.x )
     return false;
 
    n = normalize(n);
@@ -1146,7 +1152,7 @@ static bool cylinderIntersection(
    float scale1 = dot(HB1,(*cylinder).n1);
    float scale2 = dot(HB2,(*cylinder).n1);
    // Cylinder length
-   if( scale1 < EPSILON || scale2 > EPSILON ) 
+   if( scale1 < (*sceneInfo).epsilon.x || scale2 > (*sceneInfo).epsilon.x )
    {
       (*intersection) = (*ray).origin+t2*dir;
       HB1 = (*intersection)-(*cylinder).p0;
@@ -1154,7 +1160,7 @@ static bool cylinderIntersection(
       scale1 = dot(HB1,(*cylinder).n1);
       scale2 = dot(HB2,(*cylinder).n1);
       // Cylinder length
-      if( scale1 < EPSILON || scale2 > EPSILON )
+      if( scale1 < (*sceneInfo).epsilon.x || scale2 > (*sceneInfo).epsilon.x )
         return false;
         (*normal) = normalize(*normal);
    }
@@ -1361,7 +1367,7 @@ static bool triangleIntersection(
    vec4f P = cross((*ray).direction,E03);
    float det = dot(E01,P);
 
-   if(fabs(det)<EPSILON) return false;
+   if(fabs(det)<(*sceneInfo).epsilon.x) return false;
 
    vec4f T = (*ray).origin-(*triangle).p0;
    float a = dot(T,P)/det;
@@ -1379,7 +1385,7 @@ static bool triangleIntersection(
       vec4f E21 = (*triangle).p1-(*triangle).p1;
       vec4f P_ = cross((*ray).direction,E21);
       float det_ = dot(E23,P_);
-      if(fabs(det_) < EPSILON) return false;
+      if(fabs(det_) < (*sceneInfo).epsilon.x) return false;
       vec4f T_ = (*ray).origin-(*triangle).p2;
       float a_ = dot(T_,P_)/det_;
       if (a_ < 0.f) return false;
@@ -1575,8 +1581,8 @@ static float processShadows(
    (*color).y = 0.f;
    (*color).z = 0.f;
    Ray r;
-   r.origin    = origin;
    r.direction = lampCenter-origin;
+   r.origin    = origin + normalize(r.direction) * (*sceneInfo).epsilon.y;
    computeRayAttributes( &r );
    float minDistance  = (iteration<2) ? (*sceneInfo).viewDistance : (*sceneInfo).viewDistance/(iteration+1);
 
@@ -1618,7 +1624,7 @@ static float processShadows(
                   vec4f O_I = intersection-r.origin;
                   vec4f O_L = r.direction;
                   float l = length(O_I);
-                  if( l>EPSILON && l<length(O_L) )
+                  if( l>(*sceneInfo).epsilon.x && l<length(O_L) )
                   {
                      float ratio = shadowIntensity*(*sceneInfo).shadowIntensity;
                      if( materials[(*primitive).materialId].transparency!=0.f )
@@ -1905,7 +1911,7 @@ inline bool intersectionWithPrimitives(
                   }
 
                   float distance = length(intersection-r.origin);
-                  if( i && distance>EPSILON && distance<minDistance ) 
+                  if( i && distance>(*sceneInfo).epsilon.x && distance<minDistance )
                   {
                      // Only keep intersection with the closest object
                      minDistance            = distance;
@@ -2275,7 +2281,7 @@ inline float4 launchRayTracing(
             {
                // Global illumination
                int t=(index+(*sceneInfo).misc.y)%(MAX_BITMAP_SIZE-3);
-               pathTracingRay.origin = closestIntersection+normal*REBOUND_EPSILON; 
+               pathTracingRay.origin = closestIntersection+normal*(*sceneInfo).epsilon.y;
                pathTracingRay.direction.x = 50.f*randoms[t  ];
                pathTracingRay.direction.y = 50.f*randoms[t+1];
                pathTracingRay.direction.z = 50.f*randoms[t+2];
@@ -2351,7 +2357,7 @@ inline float4 launchRayTracing(
             if( reflectedRays==-1 && attributes.x!=0.f ) // Reflection
             {
                vectorReflection(reflectedRay.direction,O_E,normal );
-               reflectedRay.origin    = closestIntersection+reflectedRay.direction*REBOUND_EPSILON;
+               reflectedRay.origin    = closestIntersection+reflectedRay.direction*(*sceneInfo).epsilon.y;
                reflectedRay.direction = closestIntersection+reflectedRay.direction;
                reflectedRatio = attributes.x;
                reflectedRays=iteration;
@@ -2380,7 +2386,7 @@ inline float4 launchRayTracing(
          recursiveBlinn.y=(rBlinn.y>recursiveBlinn.y) ? rBlinn.y:recursiveBlinn.y;
          recursiveBlinn.z=(rBlinn.z>recursiveBlinn.z) ? rBlinn.z:recursiveBlinn.z;
 
-         rayOrigin.origin    = closestIntersection+reflectedTarget*REBOUND_EPSILON; 
+         rayOrigin.origin    = closestIntersection+reflectedTarget*(*sceneInfo).epsilon.y;
          rayOrigin.direction = closestIntersection+reflectedTarget;
 
          // Noise management

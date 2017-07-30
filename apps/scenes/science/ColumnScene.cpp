@@ -114,7 +114,7 @@ void ColumnScene::doInitialize()
             objectReader.loadModelFromFile(m_name, *m_gpuKernel, objectPosition, false, m_objectScale, false, 11, false,
                                            false, aabb, true, inAABB);
 
-            m_groundHeight = -size.y / 2.f - EPSILON;
+            m_groundHeight = -size.y / 2.f - sceneInfo.epsilon.x;
 
             if (aabb.parameters[0].x < AABB.parameters[0].x)
                 AABB.parameters[0].x = aabb.parameters[0].x;

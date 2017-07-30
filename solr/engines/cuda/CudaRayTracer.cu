@@ -160,7 +160,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
                 {
                     // Global illumination
                     int t = (index + sceneInfo.pathTracingIteration * 100 + sceneInfo.misc.y) % (MAX_BITMAP_SIZE - 3);
-                    pathTracingRay.origin = closestIntersection + normal * REBOUND_EPSILON;
+                    pathTracingRay.origin = closestIntersection + normal * sceneInfo.epsilon.y;
                     pathTracingRay.direction.x = normal.x + 100.f * randoms[t];
                     pathTracingRay.direction.y = normal.y + 100.f * randoms[t + 1];
                     pathTracingRay.direction.z = normal.z + 100.f * randoms[t + 2];
@@ -225,7 +225,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
                 if (reflectedRays == -1 && attributes.x != 0.f)
                 {
                     vectorReflection(reflectedRay.direction, O_E, normal);
-                    reflectedRay.origin = closestIntersection + reflectedRay.direction * REBOUND_EPSILON;
+                    reflectedRay.origin = closestIntersection + reflectedRay.direction * sceneInfo.epsilon.y;
                     reflectedRay.direction = closestIntersection + reflectedRay.direction;
                     reflectedRatio = attributes.x;
                     reflectedRays = iteration;
@@ -250,7 +250,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
             recursiveBlinn.y = (rBlinn.y > recursiveBlinn.y) ? rBlinn.y : recursiveBlinn.y;
             recursiveBlinn.z = (rBlinn.z > recursiveBlinn.z) ? rBlinn.z : recursiveBlinn.z;
 
-            rayOrigin.origin = closestIntersection + reflectedTarget * REBOUND_EPSILON;
+            rayOrigin.origin = closestIntersection + reflectedTarget * sceneInfo.epsilon.y;
             rayOrigin.direction = closestIntersection + reflectedTarget;
 
             // Noise management

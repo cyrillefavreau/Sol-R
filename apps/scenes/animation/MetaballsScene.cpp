@@ -22,7 +22,7 @@
 
 #ifdef USE_LEAPMOTION
 #undef PI
-#undef EPSILON
+#undef sceneInfo.(*sceneInfo).epsilon.x.x
 #include <Leap.h>
 #endif // USE_LEAPMOTION
 
