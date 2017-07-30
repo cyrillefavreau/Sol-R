@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/favreau/Sol-R.svg?branch=master)](https://travis-ci.org/favreau/Sol-R)
+
 ### Introduction
 Sol-R is a CUDA/OpenCL-based realtime ray-tracer compatible with Oculus Rift DK1, Kinect, Razor Hydra and Leap Motion devices.
 Sol-R was used by the Interactive Molecular Visualiser project (http://www.molecular-visualization.com)
