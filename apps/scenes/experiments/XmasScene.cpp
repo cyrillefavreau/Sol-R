@@ -61,8 +61,8 @@ void XmasScene::createTree(int iteration, int boxId, int maxIterations, vec3f ce
             vec4f angles = {((i == 0) ? 0.5f : 2.f) * (rand() % 100 / 100.f - 0.5f),
                             ((i == 0) ? 0.5f : 2.f) * (rand() % 100 / 100.f - 0.5f),
                             ((i == 0) ? 0.5f : 2.f) * (rand() % 100 / 100.f - 0.5f)};
-            vec3f cosAngles = {cos(angles.x), cos(angles.y), cos(angles.z)};
-            vec3f sinAngles = {sin(angles.x), sin(angles.y), sin(angles.z)};
+            vec3f cosAngles = {cosf(angles.x), cosf(angles.y), cosf(angles.z)};
+            vec3f sinAngles = {sinf(angles.x), sinf(angles.y), sinf(angles.z)};
             solr::CPUPrimitive* p = m_gpuKernel->getPrimitive(m_nbPrimitives);
             m_gpuKernel->rotatePrimitive(*p, a, cosAngles, sinAngles);
             // b.x += interval;
@@ -126,7 +126,7 @@ void XmasScene::doInitialize()
     createTree(nbIterations, 10, nbIterations, center, material,
                1000.f, //+rand()%800,
                200.f   //+rand()%300
-    );
+               );
 }
 
 void XmasScene::doAnimate()

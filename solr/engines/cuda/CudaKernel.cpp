@@ -140,7 +140,7 @@ void CudaKernel::initializeDevice()
                      ,
                      m_hBoundingBoxes, m_hPrimitives
 #endif
-    );
+                     );
     reshape_scene(m_occupancyParameters, m_sceneInfo);
 }
 
@@ -162,7 +162,7 @@ void CudaKernel::releaseDevice()
                    ,
                    m_hBoundingBoxes, m_hPrimitives
 #endif
-    );
+                   );
 }
 
 /*
@@ -296,7 +296,7 @@ void CudaKernel::render_begin(const float timer)
                    ,
                    m_hBoundingBoxes, m_hPrimitives
 #endif
-        );
+                   );
     }
     m_refresh = (m_sceneInfo.pathTracingIteration < m_sceneInfo.maxPathTracingIterations);
 }
@@ -533,7 +533,7 @@ void CudaKernel::queryDevice()
 
 void CudaKernel::reshape()
 {
-    LOG_INFO(1, "CudaKernel::reshape");
+    LOG_INFO(3, "CudaKernel::reshape");
     GPUKernel::reshape();
 }
 

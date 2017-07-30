@@ -2769,7 +2769,7 @@ void GPUKernel::nextFrame()
 
 void GPUKernel::previousFrame()
 {
-    if( m_frame > 0 )
+    if (m_frame > 0)
         m_frame--;
 }
 

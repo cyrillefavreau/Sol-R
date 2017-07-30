@@ -65,6 +65,7 @@ include_directories(${PROJECT_SOURCE_DIR}/solr)
 TARGET_LINK_LIBRARIES(
     solrViewer
     solr
+    ${LEAP_LIBRARY}
 )
 
 # ------------------------------------------------------------

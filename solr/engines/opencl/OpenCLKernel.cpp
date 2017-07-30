@@ -531,8 +531,8 @@ void OpenCLKernel::render_begin(const float timer)
         {
             realignTexturesAndMaterials();
 
-            LOG_INFO(1,
-                     "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x" << sizeof(RandomBuffer));
+            LOG_INFO(1, "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x"
+                                        << sizeof(RandomBuffer));
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dRandoms, CL_TRUE, 0,
                                              m_sceneInfo.size.x * m_sceneInfo.size.y * sizeof(RandomBuffer), m_hRandoms,
                                              0, NULL, NULL));
@@ -976,7 +976,7 @@ OpenCLKernel::~OpenCLKernel()
 
 void OpenCLKernel::reshape()
 {
-    LOG_INFO(1, "OpenCLKernel::reshape");
+    LOG_INFO(3, "OpenCLKernel::reshape");
     GPUKernel::reshape();
     if (m_dRandoms)
         CHECKSTATUS(clReleaseMemObject(m_dRandoms));
