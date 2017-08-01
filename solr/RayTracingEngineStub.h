@@ -33,7 +33,6 @@ typedef char *HANDLE;
 #include "DLL_API.h"
 #include "engines/GPUKernel.h"
 
-#ifdef USE_OPENCL
 // ---------- OpenCL ----------
 extern "C" SOLR_API int RayTracer_PopulateOpenCLInformation();
 extern "C" SOLR_API int RayTracer_GetOpenCLPlaformCount();
@@ -41,7 +40,6 @@ extern "C" SOLR_API int RayTracer_GetOpenCLPlatformDescription(int platform, cha
 extern "C" SOLR_API int RayTracer_GetOpenCLDeviceCount(int platform);
 extern "C" SOLR_API int RayTracer_GetOpenCLDeviceDescription(int platform, int device, char *value, int valueLength);
 extern "C" SOLR_API int RayTracer_RecompileKernels(char *filename);
-#endif // USE_OPENCL
 
 // ---------- Scene ----------
 extern "C" SOLR_API int RayTracer_SetSceneInfo(int width, int height, int graphicsLevel, int nbRayIterations,
@@ -51,7 +49,7 @@ extern "C" SOLR_API int RayTracer_SetSceneInfo(int width, int height, int graphi
                                                int pathTracingIteration, int maxPathTracingIterations, int outputType,
                                                int timer, int fogEffect, int isometric3D, int doubleSidedTriangles,
                                                int gradientBackGround, int advancedFeatures, int skyboxSize,
-                                               int skyboxMaterialId);
+                                               int skyboxMaterialId, double geometryEpsilon, double rayEpsilon);
 
 extern "C" SOLR_API int RayTracer_SetPostProcessingInfo(int type, double param1, double param2, int param3);
 

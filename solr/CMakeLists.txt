@@ -34,6 +34,12 @@ SET(SOLR_SOURCES
     games/MapReader.h
 )
 
+# Shared library for Windows so that it can be dynamically loaded by the UI
+if(MSVC)
+  set(SOLR_LIBRARY_TYPE SHARED)
+else(MSVC)
+  set(SOLR_LIBRARY_TYPE STATIC)
+endif(MSVC)
 
 if (CUDA_FOUND)
     if(UNIX)
@@ -61,7 +67,7 @@ if (CUDA_FOUND)
     CUDA_COMPILE(
 		CUDARAYTRACER_O engines/cuda/CudaRayTracer.cu)
     CUDA_ADD_LIBRARY(
-		solr
+		solr ${SOLR_LIBRARY_TYPE}
 		engines/cuda/CudaKernel.cpp
 		engines/cuda/CudaKernel.h
 		engines/cuda/CudaRayTracer.h
@@ -84,7 +90,7 @@ endif()
 
 if(OPENCL_FOUND)
     ADD_LIBRARY(
-		solr STATIC 
+		solr ${SOLR_LIBRARY_TYPE} 
 		engines/opencl/OpenCLKernel.cpp 
                 engines/opencl/RayTracer.cl
                 ${SOLR_SOURCES})

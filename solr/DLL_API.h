@@ -25,11 +25,7 @@
 #pragma warning(disable : 4244) // Oculus DK1 SDK
 
 #ifdef WIN32
-#ifdef SOLR_EXPORTS
 #define SOLR_API __declspec(dllexport)
-#else
-#define SOLR_API
-#endif
 #else
 #define SOLR_API
 #endif

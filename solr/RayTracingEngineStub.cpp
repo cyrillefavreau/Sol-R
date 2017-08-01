@@ -45,14 +45,16 @@ int RayTracer_SetSceneInfo(int width, int height, int graphicsLevel, int nbRayIt
                            double bgColorR, double bgColorG, double bgColorB, double bgColorA, int renderBoxes,
                            int pathTracingIteration, int maxPathTracingIterations, int outputType, int timer,
                            int fogEffect, int isometric3D, int doubleSidedTriangles, int gradientBackGround,
-                           int globalIllumination, int skyboxSize, int skyboxMaterialId)
+                           int globalIllumination, int skyboxSize, int skyboxMaterialId, double geometryEpsilon,
+                           double rayEpsilon)
 {
-    LOG_INFO(3, "RayTracer_SetSceneInfo (" << width << "," << height << "," << graphicsLevel << "," << nbRayIterations
-                                           << "," << transparentColor << "," << viewDistance << "," << shadowIntensity
-                                           << "," << width3DVision << "," << bgColorR << "," << bgColorG << ","
-                                           << bgColorB << "," << bgColorA << "," << renderingType << "," << renderBoxes
-                                           << "," << pathTracingIteration << "," << maxPathTracingIterations << ","
-                                           << outputType << "," << timer << "," << fogEffect << "," << isometric3D);
+    LOG_INFO(3, "RayTracer_SetSceneInfo ("
+                    << width << "," << height << "," << graphicsLevel << "," << nbRayIterations << ","
+                    << transparentColor << "," << viewDistance << "," << shadowIntensity << "," << width3DVision << ","
+                    << bgColorR << "," << bgColorG << "," << bgColorB << "," << bgColorA << "," << renderingType << ","
+                    << renderBoxes << "," << pathTracingIteration << "," << maxPathTracingIterations << ","
+                    << outputType << "," << timer << "," << fogEffect << "," << isometric3D << "," << geometryEpsilon
+                    << "," << rayEpsilon);
 
     gSceneInfoStub.size.x = width;
     gSceneInfoStub.size.y = height;
@@ -81,6 +83,8 @@ int RayTracer_SetSceneInfo(int width, int height, int graphicsLevel, int nbRayIt
 
     gSceneInfoStub.skybox.x = skyboxSize;
     gSceneInfoStub.skybox.y = skyboxMaterialId;
+    gSceneInfoStub.epsilon.x = geometryEpsilon;
+    gSceneInfoStub.epsilon.y = rayEpsilon;
     return 0;
 }
 
@@ -600,6 +604,40 @@ int RayTracer_RecompileKernels(char *filename)
 {
     solr::SingletonKernel::kernel()->setKernelFilename(filename);
     solr::SingletonKernel::kernel()->recompileKernels();
+    return 0;
+}
+#else
+int RayTracer_GetOpenCLPlaformCount()
+{
+    return 0;
+}
+
+int RayTracer_GetOpenCLPlatformDescription(int platform, char *value, int valueLength)
+{
+    std::string description = "This library was not compiled for OpenCL";
+    strncpy(value, description.c_str(), valueLength);
+    return 0;
+}
+
+int RayTracer_GetOpenCLDeviceCount(int platform)
+{
+    return 0;
+}
+
+int RayTracer_GetOpenCLDeviceDescription(int platform, int device, char *value, int valueLength)
+{
+    std::string description = "This library was not compiled for OpenCL";
+    strncpy(value, description.c_str(), valueLength);
+    return 0;
+}
+
+int RayTracer_PopulateOpenCLInformation()
+{
+    return 0;
+}
+
+int RayTracer_RecompileKernels(char *)
+{
     return 0;
 }
 #endif // USE_OPENCL
