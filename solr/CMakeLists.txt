@@ -5,8 +5,8 @@ SET(SOLR_SOURCES
     Logging.h
     types.h
     Consts.h
-    RayTracingEngineStub.cpp
-    RayTracingEngineStub.h
+    SolRStub.cpp
+    SolRStub.h
     engines/GPUKernel.cpp
     engines/GPUKernel.h
     #engines/cpu/CPUKernel.cpp
