@@ -99,7 +99,7 @@ public:
     // ---------- Rendering ----------
     virtual void render_begin(const float timer);
     virtual void render_end() = 0;
-    BitmapBuffer *getBitmap() { return m_bitmap; };
+    BitmapBuffer *getBitmap() { return m_bitmap; }
     void generateScreenshot(const std::string &filename, const unsigned int width, const unsigned int height,
                             const unsigned int quality);
 
@@ -195,9 +195,9 @@ public:
 
 public:
     // ---------- Textures ----------
-    void setTexture(const int index, const TextureInformation &textureInfo);
-    void getTexture(const int index, TextureInformation &textureInfo);
-    void setTexturesTransfered(const bool transfered) { m_texturesTransfered = transfered; };
+    void setTexture(const int index, const TextureInfo &textureInfo);
+    void getTexture(const int index, TextureInfo &textureInfo);
+    void setTexturesTransfered(const bool transfered) { m_texturesTransfered = transfered; }
     void realignTexturesAndMaterials();
 
     bool loadTextureFromFile(const int index, const std::string &filename);
@@ -207,8 +207,9 @@ public:
 public:
     void setSceneInfo(int width, int height, float transparentColor, int shadowsEnabled, float viewDistance,
                       float shadowIntensity, int nbRayIterations, vec4f backgroundColor, int supportFor3DVision,
-                      float width3DVision, bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
-                      OutputType outputType, int timer, int fogEffect, int skyboxSize, int skyboxMaterialId);
+                      float eyeSeparation, bool renderBoxes, int pathTracingIteration, int maxPathTracingIterations,
+                      FrameBufferType frameBufferType, int timestamp, int atmosphericEffect, int skyboxSize,
+                      int skyboxMaterialId);
 
     // Scene
     void setSceneInfo(const SceneInfo &sceneInfo);
@@ -269,14 +270,14 @@ public:
     unsigned int getNbActiveMaterials();
     unsigned int getNbActiveTextures();
     std::string getTextureFilename(const int index);
-    TextureInformation &getTextureInformation(const int index);
+    TextureInfo &getTextureInformation(const int index);
 
-    void resetAddingIndex() { m_addingIndex = 0; };
-    void doneWithAdding(const bool &doneWithAdding) { m_doneWithAdding = doneWithAdding; };
+    void resetAddingIndex() { m_addingIndex = 0; }
+    void doneWithAdding(const bool &doneWithAdding) { m_doneWithAdding = doneWithAdding; }
     void resetFrame();
     void resetAll();
 
-    void setDistortion(const float distortion) { m_distortion = distortion; };
+    void setDistortion(const float distortion) { m_distortion = distortion; }
     void setPointSize(const float pointSize);
 
 public:
@@ -330,7 +331,7 @@ protected:
     Material *m_hMaterials;
 
     // Textures
-    TextureInformation m_hTextures[NB_MAX_TEXTURES];
+    TextureInfo m_hTextures[NB_MAX_TEXTURES];
     std::map<int, std::string> m_textureFilenames;
 
     // Scene

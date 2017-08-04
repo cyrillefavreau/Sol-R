@@ -72,8 +72,8 @@ void GraphScene::buildGraph(bool update)
     material = m_graphMaterial;
     for (int i(0); i < m_nbGraphElements; ++i)
     {
-        m_graphValues[i] = (cos(m_gpuKernel->getSceneInfo().misc.y * 0.00402f + i * 0.2f) *
-                            sin(m_gpuKernel->getSceneInfo().misc.y * 0.00208f + i * 0.5f)) *
+        m_graphValues[i] = (cos(m_gpuKernel->getSceneInfo().timestamp * 0.00402f + i * 0.2f) *
+                            sin(m_gpuKernel->getSceneInfo().timestamp * 0.00208f + i * 0.5f)) *
                            2000.f;
         maxY = (m_graphValues[i] > maxY ? m_graphValues[i] : maxY);
 

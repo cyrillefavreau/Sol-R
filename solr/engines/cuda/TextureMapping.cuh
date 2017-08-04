@@ -124,8 +124,8 @@ __device__ __INLINE__ void juliaSet(const Primitive &primitive, Material *materi
 
     // pick some values for the constant c, this determines the shape of the Julia
     // Set
-    float cRe = -0.7f + 0.4f * sinf(sceneInfo.misc.y / 1500.f);
-    float cIm = 0.27015f + 0.4f * cosf(sceneInfo.misc.y / 2000.f);
+    float cRe = -0.7f + 0.4f * sinf(sceneInfo.timestamp / 1500.f);
+    float cIm = 0.27015f + 0.4f * cosf(sceneInfo.timestamp / 2000.f);
 
     // calculate the initial real and imaginary part of z, based on the pixel
     // location and zoom and position values
@@ -215,8 +215,8 @@ __device__ __INLINE__ float4 triangleUVMapping(const SceneInfo &sceneInfo, const
     float2 mappingOffset = {0.f, 0.f};
     if (material.attributes.y == 1)
     {
-        mappingOffset.x = material.mappingOffset.x * sceneInfo.misc.y;
-        mappingOffset.y = material.mappingOffset.y * sceneInfo.misc.y;
+        mappingOffset.x = material.mappingOffset.x * sceneInfo.timestamp;
+        mappingOffset.y = material.mappingOffset.y * sceneInfo.timestamp;
     }
     int u = T.x * material.textureMapping.x + mappingOffset.x;
     int v = T.y * material.textureMapping.y + mappingOffset.y;

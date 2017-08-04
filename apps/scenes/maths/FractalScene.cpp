@@ -166,7 +166,7 @@ void FractalScene::doAnimate()
     m_rotationAngles.z = 0.015f;
     m_gpuKernel->rotatePrimitives(m_rotationCenter, m_rotationAngles);
     m_gpuKernel->compactBoxes(false);
-    m_gpuKernel->getSceneInfo().misc.y++;
+    m_gpuKernel->getSceneInfo().timestamp++;
 }
 
 void FractalScene::doAddLights()

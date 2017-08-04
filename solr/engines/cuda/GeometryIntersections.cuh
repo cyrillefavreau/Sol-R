@@ -87,14 +87,14 @@ ________________________________________________________________________________
 __device__ __INLINE__ vec4f skyboxMapping(const SceneInfo &sceneInfo, Material *materials, BitmapBuffer *textures,
                                           const Ray &ray)
 {
-    Material &material = materials[sceneInfo.skybox.y];
+    Material &material = materials[sceneInfo.skyboxMaterialId];
     vec4f result = material.color;
     // solve the equation sphere-ray to find the intersections
     vec3f dir = normalize(ray.direction - ray.origin);
 
     float a = 2.f * dot(dir, dir);
     float b = 2.f * dot(ray.origin, dir);
-    float c = dot(ray.origin, ray.origin) - (sceneInfo.skybox.x * sceneInfo.skybox.x);
+    float c = dot(ray.origin, ray.origin) - (sceneInfo.skyboxRadius * sceneInfo.skyboxRadius);
     float d = b * b - 2.f * a * c;
 
     if (d <= 0.f || a == 0.f)
@@ -103,18 +103,18 @@ __device__ __INLINE__ vec4f skyboxMapping(const SceneInfo &sceneInfo, Material *
     float t1 = (-b - r) / a;
     float t2 = (-b + r) / a;
 
-    if (t1 <= sceneInfo.epsilon.x && t2 <= sceneInfo.epsilon.x)
+    if (t1 <= sceneInfo.geometryEpsilon && t2 <= sceneInfo.geometryEpsilon)
         return result; // both intersections are behind the ray origin
 
     float t = 0.f;
-    if (t1 <= sceneInfo.epsilon.x)
+    if (t1 <= sceneInfo.geometryEpsilon)
         t = t2;
-    else if (t2 <= sceneInfo.epsilon.x)
+    else if (t2 <= sceneInfo.geometryEpsilon)
         t = t1;
     else
         t = (t1 < t2) ? t1 : t2;
 
-    if (t < sceneInfo.epsilon.x)
+    if (t < sceneInfo.geometryEpsilon)
         return result; // Too close to intersection
     vec3f intersection = normalize(ray.origin + t * dir);
 
@@ -187,18 +187,18 @@ __device__ __INLINE__ bool ellipsoidIntersection(const SceneInfo &sceneInfo, con
     float t1 = (-b + d) / (2.f * a);
     float t2 = (-b - d) / (2.f * a);
 
-    if (t1 <= sceneInfo.epsilon.x && t2 <= sceneInfo.epsilon.x)
+    if (t1 <= sceneInfo.geometryEpsilon && t2 <= sceneInfo.geometryEpsilon)
         return false; // both intersections are behind the ray origin
 
     float t = 0.f;
-    if (t1 <= sceneInfo.epsilon.x)
+    if (t1 <= sceneInfo.geometryEpsilon)
         t = t2;
-    else if (t2 <= sceneInfo.epsilon.x)
+    else if (t2 <= sceneInfo.geometryEpsilon)
         t = t1;
     else
         t = (t1 < t2) ? t1 : t2;
 
-    if (t < sceneInfo.epsilon.x)
+    if (t < sceneInfo.geometryEpsilon)
         return false; // Too close to intersection
     intersection = ray.origin + t * dir;
 
@@ -237,21 +237,21 @@ __device__ __INLINE__ bool sphereIntersection(const SceneInfo &sceneInfo, const 
     float t1 = (-b - r) / a;
     float t2 = (-b + r) / a;
 
-    if (t1 <= sceneInfo.epsilon.x && t2 <= sceneInfo.epsilon.x)
+    if (t1 <= sceneInfo.geometryEpsilon && t2 <= sceneInfo.geometryEpsilon)
         return false; // both intersections are behind the ray origin
 
     float t = 0.f;
-    if (t1 <= sceneInfo.epsilon.x)
+    if (t1 <= sceneInfo.geometryEpsilon)
     {
         t = t2;
         back = true;
     }
-    else if (t2 <= sceneInfo.epsilon.x)
+    else if (t2 <= sceneInfo.geometryEpsilon)
         t = t1;
     else
         t = (t1 < t2) ? t1 : t2;
 
-    if (t < sceneInfo.epsilon.x)
+    if (t < sceneInfo.geometryEpsilon)
         return false; // Too close to intersection
     intersection = ray.origin + t * dir;
 
@@ -267,9 +267,9 @@ __device__ __INLINE__ bool sphereIntersection(const SceneInfo &sceneInfo, const 
     {
         // Procedural texture
         vec3f newCenter;
-        newCenter.x = sphere.p0.x + 0.008f * sphere.size.x * cos(sceneInfo.misc.y + intersection.x);
-        newCenter.y = sphere.p0.y + 0.008f * sphere.size.y * sin(sceneInfo.misc.y + intersection.y);
-        newCenter.z = sphere.p0.z + 0.008f * sphere.size.z * sin(cos(sceneInfo.misc.y + intersection.z));
+        newCenter.x = sphere.p0.x + 0.008f * sphere.size.x * cos(sceneInfo.timestamp + intersection.x);
+        newCenter.y = sphere.p0.y + 0.008f * sphere.size.y * sin(sceneInfo.timestamp + intersection.y);
+        newCenter.z = sphere.p0.z + 0.008f * sphere.size.z * sin(cos(sceneInfo.timestamp + intersection.z));
         normal = intersection - newCenter;
     }
     normal = normalize(normal);
@@ -300,7 +300,7 @@ __device__ __INLINE__ bool cylinderIntersection(const SceneInfo &sceneInfo, cons
     float ln = length(n);
 
     // Parallel? (?)
-    if ((ln < sceneInfo.epsilon.x) && (ln > -sceneInfo.epsilon.x))
+    if ((ln < sceneInfo.geometryEpsilon) && (ln > -sceneInfo.geometryEpsilon))
         return false;
 
     n = normalize(n);
@@ -327,7 +327,7 @@ __device__ __INLINE__ bool cylinderIntersection(const SceneInfo &sceneInfo, cons
     float scale1 = dot(HB1, cylinder.n1);
     float scale2 = dot(HB2, cylinder.n1);
     // Cylinder length
-    if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
+    if (scale1 < sceneInfo.geometryEpsilon || scale2 > sceneInfo.geometryEpsilon)
     {
         intersection = ray.origin + t2 * dir;
         HB1 = intersection - cylinder.p0;
@@ -335,7 +335,7 @@ __device__ __INLINE__ bool cylinderIntersection(const SceneInfo &sceneInfo, cons
         scale1 = dot(HB1, cylinder.n1);
         scale2 = dot(HB2, cylinder.n1);
         // Cylinder length
-        if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
+        if (scale1 < sceneInfo.geometryEpsilon || scale2 > sceneInfo.geometryEpsilon)
             return false;
     }
 
@@ -365,7 +365,7 @@ __device__ __INLINE__ bool coneIntersection(const SceneInfo &sceneInfo, const Pr
     float ln = length(n);
 
     // Parallel? (?)
-    if ((ln < sceneInfo.epsilon.x) && (ln > -sceneInfo.epsilon.x))
+    if ((ln < sceneInfo.geometryEpsilon) && (ln > -sceneInfo.geometryEpsilon))
         return false;
 
     n = normalize(n);
@@ -392,7 +392,7 @@ __device__ __INLINE__ bool coneIntersection(const SceneInfo &sceneInfo, const Pr
     float scale1 = dot(HB1, cone.n1);
     float scale2 = dot(HB2, cone.n1);
     // Cylinder length
-    if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
+    if (scale1 < sceneInfo.geometryEpsilon || scale2 > sceneInfo.geometryEpsilon)
     {
         intersection = ray.origin + t2 * dir;
         HB1 = intersection - cone.p0;
@@ -400,7 +400,7 @@ __device__ __INLINE__ bool coneIntersection(const SceneInfo &sceneInfo, const Pr
         scale1 = dot(HB1, cone.n1);
         scale2 = dot(HB2, cone.n1);
         // Cylinder length
-        if (scale1 < sceneInfo.epsilon.x || scale2 > sceneInfo.epsilon.x)
+        if (scale1 < sceneInfo.geometryEpsilon || scale2 > sceneInfo.geometryEpsilon)
             return false;
     }
 
@@ -583,7 +583,7 @@ __device__ __INLINE__ bool triangleIntersection(const SceneInfo &sceneInfo, cons
     vec3f P = crossProduct(ray.direction, E03);
     float det = dot(E01, P);
 
-    if (fabs(det) < sceneInfo.epsilon.x)
+    if (fabs(det) < sceneInfo.geometryEpsilon)
         return false;
 
     vec3f T = ray.origin - triangle.p0;
@@ -604,7 +604,7 @@ __device__ __INLINE__ bool triangleIntersection(const SceneInfo &sceneInfo, cons
         vec3f E21 = triangle.p1 - triangle.p1;
         vec3f P_ = crossProduct(ray.direction, E21);
         float det_ = dot(E23, P_);
-        if (fabs(det_) < sceneInfo.epsilon.x)
+        if (fabs(det_) < sceneInfo.geometryEpsilon)
             return false;
         vec3f T_ = ray.origin - triangle.p2;
         float a_ = dot(T_, P_) / det_;
@@ -635,7 +635,7 @@ __device__ __INLINE__ bool triangleIntersection(const SceneInfo &sceneInfo, cons
     normal = normalize((triangle.n0 * areas.x + triangle.n1 * areas.y + triangle.n2 * areas.z) /
                        (areas.x + areas.y + areas.z));
 
-    if (sceneInfo.parameters.x == 1)
+    if (sceneInfo.doubleSidedTriangles)
     {
         // Double Sided triangles
         // Reject triangles with normal opposite to ray.
@@ -709,7 +709,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
                                                                                                    // QUALITY !!!
                     {
                         vec3f areas = {0.f, 0.f, 0.f};
-                        if (sceneInfo.parameters.y == 1) // Extended geometry
+                        if (sceneInfo.extendedGeometry)
                         {
                             i = false;
                             switch (primitive.type)
@@ -748,7 +748,7 @@ __device__ __INLINE__ bool intersectionWithPrimitives(
 
                         float distance = length(intersection - r.origin);
 
-                        if (i && distance > sceneInfo.epsilon.x && distance < minDistance)
+                        if (i && distance > sceneInfo.geometryEpsilon && distance < minDistance)
                         {
                             // Only keep intersection with the closest object
                             minDistance = distance;
@@ -808,7 +808,7 @@ __device__ __INLINE__ float processShadows(const SceneInfo &sceneInfo, BoundingB
     color.z = 0.f;
     Ray r;
     r.direction = lampCenter - origin;
-    r.origin = origin + normalize(r.direction) * sceneInfo.epsilon.y;
+    r.origin = origin + normalize(r.direction) * sceneInfo.rayEpsilon;
     computeRayAttributes(r);
     const float minDistance = (iteration < 2) ? sceneInfo.viewDistance : sceneInfo.viewDistance / (iteration + 1);
 
@@ -830,7 +830,7 @@ __device__ __INLINE__ float processShadows(const SceneInfo &sceneInfo, BoundingB
                     materials[primitive.materialId].attributes.x == 0)
                 {
                     bool hit = false;
-                    if (sceneInfo.parameters.y == 1)
+                    if (sceneInfo.extendedGeometry)
                     {
                         switch (primitive.type)
                         {
@@ -874,7 +874,7 @@ __device__ __INLINE__ float processShadows(const SceneInfo &sceneInfo, BoundingB
                         vec3f O_I = intersection - r.origin;
                         vec3f O_L = r.direction;
                         float l = length(O_I);
-                        if (l > sceneInfo.epsilon.x && l < length(O_L))
+                        if (l > sceneInfo.geometryEpsilon && l < length(O_L))
                         {
                             float ratio = shadowIntensity * sceneInfo.shadowIntensity;
                             if (materials[primitive.materialId].transparency != 0.f)
@@ -950,7 +950,7 @@ __device__ __INLINE__ vec4f primitiveShader(
         return intersectionColor;
     }
 
-    if (sceneInfo.graphicsLevel > 0)
+    if (sceneInfo.graphicsLevel > glNoShading)
     {
         closestColor *= material.innerIllumination.x;
         for (int cpt = 0; cpt < lightInformationSize; ++cpt)
@@ -958,14 +958,14 @@ __device__ __INLINE__ vec4f primitiveShader(
             int cptLamp = (sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS)
                               ? (sceneInfo.pathTracingIteration % lightInformationSize)
                               : 0;
-            if (lightInformation[cptLamp].attribute.x != primitive.index)
+            if (lightInformation[cptLamp].primitiveId != primitive.index)
             {
                 vec3f center;
                 // randomize lamp center
                 center = lightInformation[cptLamp].location;
 
-                int t = (index + sceneInfo.misc.y) % (MAX_BITMAP_SIZE - 3);
-                Material &m = materials[lightInformation[cptLamp].attribute.y];
+                int t = (index + sceneInfo.timestamp) % (MAX_BITMAP_SIZE - 3);
+                Material &m = materials[lightInformation[cptLamp].materialId];
                 if (sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS)
                 {
                     float a = m.innerIllumination.y * 10.f * sceneInfo.pathTracingIteration /
@@ -994,10 +994,10 @@ __device__ __INLINE__ vec4f primitiveShader(
                         shadowIntensity =
                             processShadows(sceneInfo, boundingBoxes, nbActiveBoxes, primitives, materials, textures,
                                            nbActivePrimitives, center, intersection,
-                                           lightInformation[cptLamp].attribute.x, iteration, shadowColor, objectId);
+                                           lightInformation[cptLamp].primitiveId, iteration, shadowColor, objectId);
                     }
 
-                    if (sceneInfo.graphicsLevel > 0)
+                    if (sceneInfo.graphicsLevel > glNoShading)
                     {
                         float photonEnergy = sqrt(lightRayLength / m.innerIllumination.z);
                         photonEnergy = (photonEnergy > 1.f) ? 1.f : photonEnergy;
@@ -1008,9 +1008,9 @@ __device__ __INLINE__ vec4f primitiveShader(
                         // depends on the transparency rate.
                         lambert *= (lambert < 0.f) ? -materials[primitive.materialId].transparency : 1.f;
 
-                        if (lightInformation[cptLamp].attribute.y != MATERIAL_NONE)
+                        if (lightInformation[cptLamp].materialId != MATERIAL_NONE)
                         {
-                            Material &m = materials[lightInformation[cptLamp].attribute.y];
+                            Material &m = materials[lightInformation[cptLamp].materialId];
                             lambert *= m.innerIllumination.x; // Lamp illumination
                         }
                         else
@@ -1129,7 +1129,7 @@ __device__ __INLINE__ vec4f intersectionsWithPrimitives(
                 Primitive &primitive = primitives[box.startIndex + cptPrimitives];
                 Material &material = materials[primitive.materialId];
                 vec3f areas = {0.f, 0.f, 0.f};
-                if (sceneInfo.parameters.y == 1) // Extended geometry
+                if (sceneInfo.extendedGeometry)
                 {
                     switch (primitive.type)
                     {
@@ -1171,7 +1171,7 @@ __device__ __INLINE__ vec4f intersectionsWithPrimitives(
                     {
                         ++nbIntersections;
                         vec4f color = material.color;
-                        if (sceneInfo.graphicsLevel != 0)
+                        if (sceneInfo.graphicsLevel != glNoShading)
                         {
                             color *= (1.f - material.transparency);
                             vec4f attributes;

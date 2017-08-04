@@ -524,83 +524,78 @@ void keyboard(unsigned char key, int x, int y)
 
     switch (key)
     {
-    case 'q':
-    case 'Q':
+    case 'A':
     {
-        time_t rawtime;
-        struct tm *timeinfo;
-        char buffer[255];
-        time(&rawtime);
-        timeinfo = localtime(&rawtime);
-        strftime(buffer, 255, "%Y-%m-%d_%H-%M-%S.jpg", timeinfo);
-        if (key == 'q')
+        gScene->getSceneInfo().backgroundColor = gBkColor;
+        break;
+    }
+    case 'a':
+    {
+        // Translate camera position
+        gViewPos.x -= 100.f;
+        gViewDir.x -= 100.f;
+        break;
+    }
+    case 'B':
+    {
+        gScene->getSceneInfo().backgroundColor.x = 1.f;
+        gScene->getSceneInfo().backgroundColor.y = 1.f;
+        gScene->getSceneInfo().backgroundColor.z = 1.f;
+        gScene->getSceneInfo().backgroundColor.w = 0.5f;
+        gScene->getSceneInfo().skyboxMaterialId =
+            (gScene->getSceneInfo().skyboxMaterialId == MATERIAL_NONE) ? SKYBOX_SPHERE_MATERIAL : MATERIAL_NONE;
+        break;
+    }
+    case 'b':
+    {
+        vec4f color = {rand() % 255 / 255.f, rand() % 255 / 255.f, rand() % 255 / 255.f, 0.5f};
+        gScene->getSceneInfo().backgroundColor = color;
+        break;
+    }
+    case 'D':
+    {
+        // Draft mode
+        gDraft = !gDraft;
+        break;
+    }
+    case 'd':
+    {
+        // Translate camera position
+        gViewPos.x += 100.f;
+        gViewDir.x += 100.f;
+        break;
+    }
+    case 'E':
+    {
+        // Extended geometry
+        gScene->getSceneInfo().extendedGeometry = !gScene->getSceneInfo().extendedGeometry;
+        break;
+    }
+    case 'e':
+    {
+        int nbTextures = kernel->getNbActiveTextures();
+        int nbHDRI = gScene->getNbHDRI();
+        if (nbTextures >= nbHDRI)
         {
-#ifdef WIN32
-            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/1K/CudaSolR_");
-#else
-            std::string filename("~/Pictures/1K/CudaSolR_");
-#endif
-            filename += buffer;
-
-            if (kernel)
-                kernel->generateScreenshot(filename, 2100, 2970, gScene->getSceneInfo().maxPathTracingIterations);
-        }
-        else
-        {
-#ifdef WIN32
-            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/4K/CudaSolR_");
-#else
-            std::string filename("~/Pictures/4K/CudaSolR_");
-#endif
-            filename += buffer;
-            if (kernel)
-                kernel->generateScreenshot(filename, 2 * 2970, 2 * 2100,
-                                           gScene->getSceneInfo().maxPathTracingIterations);
+            Material *m = kernel->getMaterial(SKYBOX_SPHERE_MATERIAL);
+            gSphereMaterial = (gSphereMaterial + 1) % nbHDRI;
+            kernel->setMaterial(SKYBOX_SPHERE_MATERIAL, m->color.x, m->color.y, m->color.z, m->color.w, 0.f, 0.f,
+                                (m->attributes.y == 1), (m->attributes.z == 1), m->attributes.w, 0.f, m->opacity,
+                                gSphereMaterial, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE,
+                                TEXTURE_NONE, m->specular.x, m->specular.y, m->specular.z, m->innerIllumination.x,
+                                m->innerIllumination.y, m->innerIllumination.z, (m->attributes.x == 1));
         }
         break;
     }
-    case 'K':
-    {
-        // Reset scene
-        gSuspended = !gSuspended;
-        break;
-    }
-    case 'n':
-    {
-        // Reset scene
-        delete gScene;
-        gScene = 0;
-        m_counter++;
-        createScene();
-        break;
-    }
-    case 'S':
-    {
-        gScene->getSceneInfo().graphicsLevel++;
-        if (gScene->getSceneInfo().graphicsLevel > 4)
-            gScene->getSceneInfo().graphicsLevel = 0;
-        break;
-    }
-    case 'r':
-    {
-        // Reset scene
-        delete gScene;
-        gScene = 0;
-        createScene();
-        break;
-    }
-#ifdef USE_OPENCL
-    case 'R':
-    {
-        // Recompile OpenCL Kernel
-        gScene->getKernel()->recompileKernels();
-        break;
-    }
-#endif
     case 'F':
     {
         // Toggle to full screen mode
         glutFullScreen();
+        break;
+    }
+    case 'f':
+    {
+        gAutoFocus = !gAutoFocus;
         break;
     }
     case 'G':
@@ -626,7 +621,7 @@ void keyboard(unsigned char key, int x, int y)
             for (int t(0); t < 5; ++t)
             {
                 int idx = index + t;
-                TextureInformation ti = kernel->getTextureInformation(idx);
+                TextureInfo ti = kernel->getTextureInformation(idx);
                 switch (ti.type)
                 {
                 case tex_bump:
@@ -670,16 +665,55 @@ void keyboard(unsigned char key, int x, int y)
         }
         break;
     }
+    case 'h':
+    {
+        gHelp = !gHelp;
+        break;
+    }
+    case 'I':
+    {
+        gScene->getSceneInfo().advancedIllumination =
+            static_cast<AdvancedIllumination>((gScene->getSceneInfo().advancedIllumination + 1) % 3);
+        break;
+    }
+    case 'i':
+    {
+        gScene->getSceneInfo().renderBoxes++;
+        if (gScene->getSceneInfo().renderBoxes == 2)
+            gScene->getSceneInfo().renderBoxes = 0;
+        LOG_INFO(1, "Render Boxes: " << gScene->getSceneInfo().renderBoxes);
+        break;
+    }
+    case 'k':
+    {
+        gScene->getSceneInfo().gradientBackground = !gScene->getSceneInfo().gradientBackground;
+        break;
+    }
+    case 'K':
+    {
+        // Reset scene
+        gSuspended = !gSuspended;
+        break;
+    }
+    case 'L':
+    {
+        kernel->resetAll();
+        kernel->loadFromFile("test.irt");
+        kernel->compactBoxes(true);
+        break;
+    }
     case 'm':
     {
         gAnimate = !gAnimate;
         break;
     }
-    case 'o':
+    case 'n':
     {
-        gScene->getSceneInfo().misc.w = (gScene->getSceneInfo().misc.w == 3) ? 0 : 3;
-        gScene->getSceneInfo().graphicsLevel = (gScene->getSceneInfo().misc.w == 3) ? 1 : 4;
-        gScene->getSceneInfo().backgroundColor.w = (gScene->getSceneInfo().misc.w == 3) ? 0.01f : 0.5f;
+        // Reset scene
+        delete gScene;
+        gScene = 0;
+        m_counter++;
+        createScene();
         break;
     }
     case 'O':
@@ -687,41 +721,76 @@ void keyboard(unsigned char key, int x, int y)
         gScene->getKernel()->switchOculusVR();
         break;
     }
-    case 'B':
+    case 'o':
     {
-        gScene->getSceneInfo().backgroundColor.x = 1.f;
-        gScene->getSceneInfo().backgroundColor.y = 1.f;
-        gScene->getSceneInfo().backgroundColor.z = 1.f;
-        gScene->getSceneInfo().backgroundColor.w = 0.5f;
-        gScene->getSceneInfo().skybox.y =
-            (gScene->getSceneInfo().skybox.y == MATERIAL_NONE) ? SKYBOX_SPHERE_MATERIAL : MATERIAL_NONE;
+        gScene->getSceneInfo().cameraType =
+            (gScene->getSceneInfo().cameraType == ctVolumeRendering) ? ctPerspective : ctVolumeRendering;
+        gScene->getSceneInfo().graphicsLevel =
+            (gScene->getSceneInfo().cameraType == ctVolumeRendering) ? glNoShading : glReflectionsAndRefractions;
+        gScene->getSceneInfo().backgroundColor.w =
+            (gScene->getSceneInfo().cameraType == ctVolumeRendering) ? 0.01f : 0.5f;
         break;
     }
-    case 'b':
+    case 'p':
     {
-        vec4f color = {rand() % 255 / 255.f, rand() % 255 / 255.f, rand() % 255 / 255.f, 0.5f};
-        gScene->getSceneInfo().backgroundColor = color;
+        gPostProcessingInfo.type++;
+        gPostProcessingInfo.type %= 6;
         break;
     }
-    case 'a':
+    case 'q':
+    case 'Q':
     {
-        // Translate camera position
-        gViewPos.x -= 100.f;
-        gViewDir.x -= 100.f;
+        time_t rawtime;
+        struct tm *timeinfo;
+        char buffer[255];
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        strftime(buffer, 255, "%Y-%m-%d_%H-%M-%S.jpg", timeinfo);
+        if (key == 'q')
+        {
+#ifdef WIN32
+            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/1K/CudaSolR_");
+#else
+            std::string filename("~/Pictures/1K/CudaSolR_");
+#endif
+            filename += buffer;
+
+            if (kernel)
+                kernel->generateScreenshot(filename, 2100, 2970, gScene->getSceneInfo().maxPathTracingIterations);
+        }
+        else
+        {
+#ifdef WIN32
+            std::string filename("E:/Cloud/Dropbox/Samsung Link/Photos/4K/CudaSolR_");
+#else
+            std::string filename("~/Pictures/4K/CudaSolR_");
+#endif
+            filename += buffer;
+            if (kernel)
+                kernel->generateScreenshot(filename, 2 * 2970, 2 * 2100,
+                                           gScene->getSceneInfo().maxPathTracingIterations);
+        }
         break;
     }
-    case 'd':
+    case 'R':
     {
-        // Translate camera position
-        gViewPos.x += 100.f;
-        gViewDir.x += 100.f;
+        // Recompile OpenCL Kernel
+        gScene->getKernel()->recompileKernels();
         break;
     }
-    case 'w':
+    case 'r':
     {
-        // Translate camera position
-        gViewPos.y += 100.f;
-        gViewDir.y += 100.f;
+        // Reset scene
+        delete gScene;
+        gScene = 0;
+        createScene();
+        break;
+    }
+    case 'S':
+    {
+        gScene->getSceneInfo().graphicsLevel = static_cast<GraphicsLevel>(gScene->getSceneInfo().graphicsLevel + 1);
+        if (gScene->getSceneInfo().graphicsLevel > glFull)
+            gScene->getSceneInfo().graphicsLevel = glNoShading;
         break;
     }
     case 's':
@@ -731,14 +800,10 @@ void keyboard(unsigned char key, int x, int y)
         gViewDir.y -= 100.f;
         break;
     }
-    case 'A':
+    case 'T':
     {
-        gScene->getSceneInfo().backgroundColor = gBkColor;
-        break;
-    }
-    case 'f':
-    {
-        gAutoFocus = !gAutoFocus;
+        // Double sided triangles
+        gScene->getSceneInfo().doubleSidedTriangles = !gScene->getSceneInfo().doubleSidedTriangles;
         break;
     }
     case 't':
@@ -751,77 +816,23 @@ void keyboard(unsigned char key, int x, int y)
         createScene();
         break;
     }
-    case 'T':
-    {
-        // Double sided triangles
-        int p = gScene->getSceneInfo().parameters.x;
-        p = (p == 0) ? 1 : 0;
-        gScene->getSceneInfo().parameters.x = p;
-        break;
-    }
-    case 'D':
-    {
-        // Draft mode
-        gDraft = !gDraft;
-        break;
-    }
-    case 'e':
-    {
-        int nbTextures = kernel->getNbActiveTextures();
-        int nbHDRI = gScene->getNbHDRI();
-        if (nbTextures >= nbHDRI)
-        {
-            Material *m = kernel->getMaterial(SKYBOX_SPHERE_MATERIAL);
-            gSphereMaterial = (gSphereMaterial + 1) % nbHDRI;
-            kernel->setMaterial(SKYBOX_SPHERE_MATERIAL, m->color.x, m->color.y, m->color.z, m->color.w, 0.f, 0.f,
-                                (m->attributes.y == 1), (m->attributes.z == 1), m->attributes.w, 0.f, m->opacity,
-                                gSphereMaterial, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE, TEXTURE_NONE,
-                                TEXTURE_NONE, m->specular.x, m->specular.y, m->specular.z, m->innerIllumination.x,
-                                m->innerIllumination.y, m->innerIllumination.z, (m->attributes.x == 1));
-        }
-        break;
-    }
-    case 'E':
-    {
-        // Extended geometry
-        int p = gScene->getSceneInfo().parameters.y;
-        p = (p == 0) ? 1 : 0;
-        gScene->getSceneInfo().parameters.y = p;
-        break;
-    }
-    case 'h':
-    {
-        gHelp = !gHelp;
-        break;
-    }
-    case 'i':
-    {
-        gScene->getSceneInfo().renderBoxes++;
-        if (gScene->getSceneInfo().renderBoxes == 2)
-            gScene->getSceneInfo().renderBoxes = 0;
-        LOG_INFO(1, "Render Boxes: " << gScene->getSceneInfo().renderBoxes);
-        break;
-    }
-    case 'I':
-    {
-        gScene->getSceneInfo().parameters.z = (gScene->getSceneInfo().parameters.z + 1) % 3;
-        break;
-    }
     case 'v':
     {
         gScene->createRandomMaterials(true, false);
         break;
     }
-    case 'l':
+    case 'w':
     {
-        kernel->saveToFile("test.irt");
+        // Translate camera position
+        gViewPos.y += 100.f;
+        gViewDir.y += 100.f;
         break;
     }
-    case 'L':
+    case 'W':
     {
-        kernel->resetAll();
-        kernel->loadFromFile("test.irt");
-        kernel->compactBoxes(true);
+        gScene->getSceneInfo().backgroundColor.w += 0.1f;
+        gScene->getSceneInfo().backgroundColor.w =
+            (gScene->getSceneInfo().backgroundColor.w > 1.f) ? 0.f : gScene->getSceneInfo().backgroundColor.w;
         break;
     }
     case 'x':
@@ -831,12 +842,6 @@ void keyboard(unsigned char key, int x, int y)
         gScene = 0;
         gCornellBoxType = (gCornellBoxType + 1) % 10;
         createScene();
-        break;
-    }
-    case 'p':
-    {
-        gPostProcessingInfo.type++;
-        gPostProcessingInfo.type %= 6;
         break;
     }
     case 'y':
@@ -865,8 +870,13 @@ void keyboard(unsigned char key, int x, int y)
     }
     case '*':
     {
-        gScene->getSceneInfo().renderingType = (gScene->getSceneInfo().renderingType + 1) % 5;
-        gScene->getSceneInfo().graphicsLevel = (gScene->getSceneInfo().renderingType == cmVolumeRendering) ? 0 : 4;
+        gScene->getSceneInfo().cameraType = static_cast<CameraType>((gScene->getSceneInfo().cameraType + 1) % 7);
+        LOG_INFO(1, "Camera type: " << gScene->getSceneInfo().cameraType);
+        break;
+    }
+    case 'l':
+    {
+        kernel->saveToFile("test.irt");
         break;
     }
     case '1':
@@ -928,13 +938,6 @@ void keyboard(unsigned char key, int x, int y)
             (gScene->getSceneInfo().shadowIntensity > 1.f) ? 0.f : gScene->getSceneInfo().shadowIntensity;
         break;
     }
-    case 'W':
-    {
-        gScene->getSceneInfo().backgroundColor.w += 0.1f;
-        gScene->getSceneInfo().backgroundColor.w =
-            (gScene->getSceneInfo().backgroundColor.w > 1.f) ? 0.f : gScene->getSceneInfo().backgroundColor.w;
-        break;
-    }
     case '+':
     {
         if (gControlType == ctLightSource)
@@ -951,7 +954,7 @@ void keyboard(unsigned char key, int x, int y)
                 }
             }
         }
-        else if (gScene->getSceneInfo().renderingType == 2) // OculusVR
+        else if (gScene->getSceneInfo().cameraType == ctVR)
         {
             gDistortion += 0.01f;
             gKernel->setDistortion(gDistortion);
@@ -959,8 +962,8 @@ void keyboard(unsigned char key, int x, int y)
         }
         else
         {
-            gScene->getSceneInfo().epsilon.y *= 2.f;
-            LOG_INFO(1, "Epsilon = " << gScene->getSceneInfo().epsilon.y);
+            gScene->getSceneInfo().rayEpsilon *= 2.f;
+            LOG_INFO(1, "Epsilon = " << gScene->getSceneInfo().rayEpsilon);
         }
         break;
     }
@@ -980,7 +983,7 @@ void keyboard(unsigned char key, int x, int y)
                 }
             }
         }
-        else if (gScene->getSceneInfo().renderingType == 2) // OculusVR
+        else if (gScene->getSceneInfo().cameraType == ctVR)
         {
             gDistortion -= 0.01f;
             gKernel->setDistortion(gDistortion);
@@ -988,8 +991,8 @@ void keyboard(unsigned char key, int x, int y)
         }
         else
         {
-            gScene->getSceneInfo().epsilon.y /= 2.f;
-            LOG_INFO(1, "Epsilon = " << gScene->getSceneInfo().epsilon.y);
+            gScene->getSceneInfo().rayEpsilon /= 2.f;
+            LOG_INFO(1, "Epsilon = " << gScene->getSceneInfo().rayEpsilon);
         }
         break;
     }
@@ -1012,7 +1015,7 @@ void mouse(int button, int state, int x, int y)
     {
         mouse_buttons |= 1 << button;
         if (gDraft)
-            // si.parameters.w = 1;
+            // si.draftMode = 1;
             si.renderBoxes = 2;
     }
     else
@@ -1022,7 +1025,7 @@ void mouse(int button, int state, int x, int y)
             mouse_buttons = 0;
             si.renderBoxes = 0;
             si.pathTracingIteration = 0;
-            // si.parameters.w = 0;
+            // si.draftMode = 0;
         }
     }
     mouse_old_x = x;
@@ -1093,7 +1096,7 @@ void motion(int x, int y)
         }
         case ct3DVision: // Eye width
         {
-            gScene->getSceneInfo().width3DVision += (mouse_old_y - y);
+            gScene->getSceneInfo().eyeSeparation += (mouse_old_y - y);
             break;
         }
         default:
@@ -1143,9 +1146,9 @@ void motion(int x, int y)
             // Changing camera angle
             gViewPos.z -= 50 * (mouse_old_y - y);
             gViewAngles.w -= 50 * (mouse_old_x - x);
-            LOG_INFO(1, "ViewPos  = " << gViewPos.x << "," << gViewPos.y << "," << gViewPos.z);
-            LOG_INFO(1, "ViewDir  = " << gViewDir.x << "," << gViewDir.y << "," << gViewDir.z);
-            LOG_INFO(1, "Distance = " << gScene->getSceneInfo().width3DVision);
+            LOG_INFO(1, "ViewPos        = " << gViewPos.x << "," << gViewPos.y << "," << gViewPos.z);
+            LOG_INFO(1, "ViewDir        = " << gViewDir.x << "," << gViewDir.y << "," << gViewDir.z);
+            LOG_INFO(1, "Eye Separation = " << gScene->getSceneInfo().eyeSeparation);
             break;
         }
         case ctGroundHeight:

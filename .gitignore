@@ -9,4 +9,5 @@ generated
 *.includes
 *.creator*
 *.user
-
+.DS_Store
+.vs*

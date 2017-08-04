@@ -42,7 +42,7 @@ vec3f WaterScene::F(float x, float z, float stepX, float stepZ)
 #ifdef WIN32
     float timer = static_cast<float>(GetTickCount()) / 1000.f;
 #else
-    float timer = m_gpuKernel->getSceneInfo().misc.y;
+    float timer = m_gpuKernel->getSceneInfo().timestamp;
 #endif
     vec3f returnValue;
     float t = x;
@@ -61,7 +61,7 @@ vec3f WaterScene::P(float t, float stepX, float stepZ)
 #ifdef WIN32
     float timer = static_cast<float>(GetTickCount()) / 200.f;
 #else
-    float timer = m_gpuKernel->getSceneInfo().misc.y;
+    float timer = m_gpuKernel->getSceneInfo().timestamp;
 #endif
     vec3f returnValue;
     float tx = t + stepX;

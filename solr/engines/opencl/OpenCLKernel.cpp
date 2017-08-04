@@ -202,6 +202,7 @@ OpenCLKernel::OpenCLKernel()
     , m_dLightInformation(0)
     , m_preferredWorkGroupSize(0)
     , m_hProgram(0)
+    , m_kAlignment(0)
     , m_kStandardRenderer(0)
     , m_kAnaglyphRenderer(0)
     , m_k3DVisionRenderer(0)
@@ -292,22 +293,50 @@ void OpenCLKernel::recompileKernels()
             clCreateProgramWithSource(m_hContext, 1, (const char **)&kernel_code, (const size_t *)&len, &status);
         CHECKSTATUS(status);
 
-        LOG_INFO(1, "Build Program");
-        status = clBuildProgram(m_hProgram, 0, NULL, "-cl-fast-relaxed-math", NULL, NULL);
+        std::string compilationOptions =
+            "-cl-no-signed-zeros -cl-fast-relaxed-math -cl-unsafe-math-optimizations "
+            "-cl-mad-enable";
+#ifdef WIN32
+        compilationOptions += " -DMSVC";
+#endif
+        LOG_INFO(1, "Building Program... " << compilationOptions);
+
+        status = clBuildProgram(m_hProgram, 0, NULL, compilationOptions.c_str(), NULL, NULL);
         size_t length;
         char buffer[MAX_SOURCE_SIZE];
         CHECKSTATUS(
             clGetProgramBuildInfo(m_hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
         if (status == CL_SUCCESS)
-            LOG_INFO(1, buffer)
+        {
+            if (strlen(buffer) != 0)
+                LOG_INFO(1, buffer);
+        }
         else
         {
             LOG_ERROR("Program Build failed [" << status << "]: " << buffer);
             exit(1);
         }
 
+        LOG_INFO(1, "Creating kernels...");
+        // Text kernels
+        m_kAlignment = clCreateKernel(m_hProgram, "k_alignment", &status);
+        CHECKSTATUS(status);
+        size_t szLocalWorkSize[] = {1, 1};
+        size_t szGlobalWorkSize[] = {1, 1};
+        CHECKSTATUS(
+            clEnqueueNDRangeKernel(m_hQueue, m_kAlignment, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
+        LOG_INFO(1, "--==   Data structures   ==--");
+        LOG_INFO(1, "Ray               : " << sizeof(Ray));
+        LOG_INFO(1, "SceneInfo         : " << sizeof(SceneInfo));
+        LOG_INFO(1, "PostProcessingInfo: " << sizeof(PostProcessingInfo));
+        LOG_INFO(1, "TextureInfo       : " << sizeof(TextureInfo));
+        LOG_INFO(1, "Primitive         : " << sizeof(Primitive));
+        LOG_INFO(1, "BoundingBox       : " << sizeof(BoundingBox));
+        LOG_INFO(1, "Material          : " << sizeof(Material));
+        LOG_INFO(1, "LightInformation  : " << sizeof(LightInformation));
+        LOG_INFO(1, "------------------------------");
+
         // Rendering kernels
-        LOG_INFO(1, "Create kernels");
         m_kStandardRenderer = clCreateKernel(m_hProgram, "k_standardRenderer", &status);
         CHECKSTATUS(status);
 
@@ -348,18 +377,18 @@ void OpenCLKernel::recompileKernels()
 
 void OpenCLKernel::initializeDevice()
 {
-    LOG_INFO(1, "Platform: " << m_platform << ", Device: " << m_device);
     int status(0);
 
     // Populate OpenCL Information
     queryDevice();
 
     // initialize OpenCL device
+    LOG_INFO(1, "Initializing OpenCL context on platform: " << m_platform << ", device: " << m_device);
     m_hDeviceId = m_devices[m_platform][m_device];
     m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], &m_hDeviceId, NULL, NULL, &status);
     CHECKSTATUS(status);
     if (m_hContext)
-        LOG_INFO(1, "Context successfully created");
+        LOG_INFO(1, "Context successfully created on platform: " << m_platform << ", device: " << m_device);
     m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, 0, &status);
     CHECKSTATUS(status);
     if (m_hQueue)
@@ -367,7 +396,7 @@ void OpenCLKernel::initializeDevice()
 
     // Setup device memory
     LOG_INFO(3, "Setup device memory");
-    cl_int errorCode = 0;
+    vec1i errorCode = 0;
     reshape();
     m_dBoundingBoxes = clCreateBuffer(m_hContext, CL_MEM_READ_ONLY, sizeof(BoundingBox) * NB_MAX_BOXES, 0, &errorCode);
     m_dLamps = clCreateBuffer(m_hContext, CL_MEM_READ_ONLY, sizeof(Lamp) * NB_MAX_LAMPS, 0, &errorCode);
@@ -385,6 +414,12 @@ void OpenCLKernel::initializeDevice()
 
 void OpenCLKernel::releaseKernels()
 {
+    // Test kernels
+    if (m_kAlignment)
+    {
+        CHECKSTATUS(clReleaseKernel(m_kAlignment));
+        m_kAlignment = 0;
+    }
     // Rendering kernels
     if (m_kStandardRenderer)
     {
@@ -495,6 +530,7 @@ void OpenCLKernel::render_begin(const float timer)
     if (m_sceneInfo.pathTracingIteration == 0)
         m_counter = GetTickCount();
 #endif
+
     GPUKernel::render_begin(timer);
     int status(0);
     if (m_refresh)
@@ -531,8 +567,8 @@ void OpenCLKernel::render_begin(const float timer)
         {
             realignTexturesAndMaterials();
 
-            LOG_INFO(1, "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x"
-                                        << sizeof(RandomBuffer));
+            LOG_INFO(1,
+                     "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x" << sizeof(RandomBuffer));
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dRandoms, CL_TRUE, 0,
                                              m_sceneInfo.size.x * m_sceneInfo.size.y * sizeof(RandomBuffer), m_hRandoms,
                                              0, NULL, NULL));
@@ -631,28 +667,28 @@ void OpenCLKernel::render_begin(const float timer)
         LOG_INFO(3, "CPU Material            : " << sizeof(Material));
 
         SceneInfo sceneInfo = m_sceneInfo;
-        if (m_sceneInfo.parameters.w == 1 && m_sceneInfo.pathTracingIteration == 0)
-            sceneInfo.graphicsLevel = 1;
+        if (m_sceneInfo.draftMode && m_sceneInfo.pathTracingIteration == 0)
+            sceneInfo.graphicsLevel = glNoShading;
 
         size_t szLocalWorkSize[] = {1, 1};
         size_t szGlobalWorkSize[] = {m_sceneInfo.size.x / szLocalWorkSize[0], m_sceneInfo.size.y / szLocalWorkSize[1]};
         int zero(0);
         LOG_INFO(3, "Running default rendering kernel");
-        switch (sceneInfo.renderingType)
+        switch (sceneInfo.cameraType)
         {
-        case vtAnaglyph:
+        case ctAnaglyph:
         {
             // Run the post processing kernel!!
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 1, sizeof(cl_int), (void *)&zero));
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 2, sizeof(cl_int), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 1, sizeof(vec1i), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 2, sizeof(vec1i), (void *)&zero));
             CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 3, sizeof(cl_mem), (void *)&m_dBoundingBoxes));
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 4, sizeof(cl_int), (void *)&nbBoxes));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 4, sizeof(vec1i), (void *)&nbBoxes));
             CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 5, sizeof(cl_mem), (void *)&_dPrimitives));
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 6, sizeof(cl_int), (void *)&nbPrimitives));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 6, sizeof(vec1i), (void *)&nbPrimitives));
             CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 7, sizeof(cl_mem), (void *)&m_dLightInformation));
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 8, sizeof(cl_int), (void *)&m_lightInformationSize));
-            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 9, sizeof(cl_int), (void *)&nbLamps));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 8, sizeof(vec1i), (void *)&m_lightInformationSize));
+            CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 9, sizeof(vec1i), (void *)&nbLamps));
             CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 10, sizeof(cl_mem), (void *)&m_dMaterials));
             CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 11, sizeof(cl_mem), (void *)&m_dTextures));
             CHECKSTATUS(clSetKernelArg(m_kAnaglyphRenderer, 12, sizeof(cl_mem), (void *)&m_dRandoms));
@@ -668,18 +704,18 @@ void OpenCLKernel::render_begin(const float timer)
                                                szLocalWorkSize, 0, 0, 0));
             break;
         }
-        case vt3DVision:
+        case ctVR:
         {
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 1, sizeof(cl_int), (void *)&zero));
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 2, sizeof(cl_int), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 1, sizeof(vec1i), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 2, sizeof(vec1i), (void *)&zero));
             CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 3, sizeof(cl_mem), (void *)&m_dBoundingBoxes));
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 4, sizeof(cl_int), (void *)&nbBoxes));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 4, sizeof(vec1i), (void *)&nbBoxes));
             CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 5, sizeof(cl_mem), (void *)&_dPrimitives));
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 6, sizeof(cl_int), (void *)&nbPrimitives));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 6, sizeof(vec1i), (void *)&nbPrimitives));
             CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 7, sizeof(cl_mem), (void *)&m_dLightInformation));
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 8, sizeof(cl_int), (void *)&m_lightInformationSize));
-            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 9, sizeof(cl_int), (void *)&nbLamps));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 8, sizeof(vec1i), (void *)&m_lightInformationSize));
+            CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 9, sizeof(vec1i), (void *)&nbLamps));
             CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 10, sizeof(cl_mem), (void *)&m_dMaterials));
             CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 11, sizeof(cl_mem), (void *)&m_dTextures));
             CHECKSTATUS(clSetKernelArg(m_k3DVisionRenderer, 12, sizeof(cl_mem), (void *)&m_dRandoms));
@@ -695,18 +731,18 @@ void OpenCLKernel::render_begin(const float timer)
                                                szLocalWorkSize, 0, 0, 0));
             break;
         }
-        case vtFishEye:
+        case ctPanoramic:
         {
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 1, sizeof(cl_int), (void *)&zero));
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 2, sizeof(cl_int), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 1, sizeof(vec1i), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 2, sizeof(vec1i), (void *)&zero));
             CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 3, sizeof(cl_mem), (void *)&m_dBoundingBoxes));
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 4, sizeof(cl_int), (void *)&nbBoxes));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 4, sizeof(vec1i), (void *)&nbBoxes));
             CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 5, sizeof(cl_mem), (void *)&_dPrimitives));
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 6, sizeof(cl_int), (void *)&nbPrimitives));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 6, sizeof(vec1i), (void *)&nbPrimitives));
             CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 7, sizeof(cl_mem), (void *)&m_dLightInformation));
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 8, sizeof(cl_int), (void *)&m_lightInformationSize));
-            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 9, sizeof(cl_int), (void *)&nbLamps));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 8, sizeof(vec1i), (void *)&m_lightInformationSize));
+            CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 9, sizeof(vec1i), (void *)&nbLamps));
             CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 10, sizeof(cl_mem), (void *)&m_dMaterials));
             CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 11, sizeof(cl_mem), (void *)&m_dTextures));
             CHECKSTATUS(clSetKernelArg(m_kFishEyeRenderer, 12, sizeof(cl_mem), (void *)&m_dRandoms));
@@ -722,18 +758,18 @@ void OpenCLKernel::render_begin(const float timer)
                                                0, 0, 0));
             break;
         }
-        case vtVolumeRendering:
+        case ctVolumeRendering:
         {
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 1, sizeof(cl_int), (void *)&zero));
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 2, sizeof(cl_int), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 1, sizeof(vec1i), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 2, sizeof(vec1i), (void *)&zero));
             CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 3, sizeof(cl_mem), (void *)&m_dBoundingBoxes));
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 4, sizeof(cl_int), (void *)&nbBoxes));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 4, sizeof(vec1i), (void *)&nbBoxes));
             CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 5, sizeof(cl_mem), (void *)&_dPrimitives));
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 6, sizeof(cl_int), (void *)&nbPrimitives));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 6, sizeof(vec1i), (void *)&nbPrimitives));
             CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 7, sizeof(cl_mem), (void *)&m_dLightInformation));
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 8, sizeof(cl_int), (void *)&m_lightInformationSize));
-            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 9, sizeof(cl_int), (void *)&nbLamps));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 8, sizeof(vec1i), (void *)&m_lightInformationSize));
+            CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 9, sizeof(vec1i), (void *)&nbLamps));
             CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 10, sizeof(cl_mem), (void *)&m_dMaterials));
             CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 11, sizeof(cl_mem), (void *)&m_dTextures));
             CHECKSTATUS(clSetKernelArg(m_kVolumeRenderer, 12, sizeof(cl_mem), (void *)&m_dRandoms));
@@ -751,16 +787,16 @@ void OpenCLKernel::render_begin(const float timer)
         }
         default:
         {
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 1, sizeof(cl_int), (void *)&zero));
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 2, sizeof(cl_int), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 1, sizeof(vec1i), (void *)&zero));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 2, sizeof(vec1i), (void *)&zero));
             CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 3, sizeof(cl_mem), (void *)&m_dBoundingBoxes));
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 4, sizeof(cl_int), (void *)&nbBoxes));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 4, sizeof(vec1i), (void *)&nbBoxes));
             CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 5, sizeof(cl_mem), (void *)&_dPrimitives));
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 6, sizeof(cl_int), (void *)&nbPrimitives));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 6, sizeof(vec1i), (void *)&nbPrimitives));
             CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 7, sizeof(cl_mem), (void *)&m_dLightInformation));
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 8, sizeof(cl_int), (void *)&m_lightInformationSize));
-            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 9, sizeof(cl_int), (void *)&nbLamps));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 8, sizeof(vec1i), (void *)&m_lightInformationSize));
+            CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 9, sizeof(vec1i), (void *)&nbLamps));
             CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 10, sizeof(cl_mem), (void *)&m_dMaterials));
             CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 11, sizeof(cl_mem), (void *)&m_dTextures));
             CHECKSTATUS(clSetKernelArg(m_kStandardRenderer, 12, sizeof(cl_mem), (void *)&m_dRandoms));
@@ -786,7 +822,7 @@ void OpenCLKernel::render_begin(const float timer)
         switch (m_postProcessingInfo.type)
         {
         case ppe_depthOfField:
-            CHECKSTATUS(clSetKernelArg(m_kDepthOfField, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kDepthOfField, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
             CHECKSTATUS(clSetKernelArg(m_kDepthOfField, 1, sizeof(SceneInfo), (void *)&sceneInfo));
             CHECKSTATUS(clSetKernelArg(m_kDepthOfField, 2, sizeof(PostProcessingInfo), (void *)&m_postProcessingInfo));
             CHECKSTATUS(clSetKernelArg(m_kDepthOfField, 3, sizeof(cl_mem), (void *)&m_dPostProcessingBuffer));
@@ -796,7 +832,7 @@ void OpenCLKernel::render_begin(const float timer)
                 clEnqueueNDRangeKernel(m_hQueue, m_kDepthOfField, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
             break;
         case ppe_ambientOcclusion:
-            CHECKSTATUS(clSetKernelArg(m_kAmbientOcclusion, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kAmbientOcclusion, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
             CHECKSTATUS(clSetKernelArg(m_kAmbientOcclusion, 1, sizeof(SceneInfo), (void *)&sceneInfo));
             CHECKSTATUS(
                 clSetKernelArg(m_kAmbientOcclusion, 2, sizeof(PostProcessingInfo), (void *)&m_postProcessingInfo));
@@ -807,7 +843,7 @@ void OpenCLKernel::render_begin(const float timer)
                                                szLocalWorkSize, 0, 0, 0));
             break;
         case ppe_radiosity:
-            CHECKSTATUS(clSetKernelArg(m_kRadiosity, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kRadiosity, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
             CHECKSTATUS(clSetKernelArg(m_kRadiosity, 1, sizeof(SceneInfo), (void *)&sceneInfo));
             CHECKSTATUS(clSetKernelArg(m_kRadiosity, 2, sizeof(PostProcessingInfo), (void *)&m_postProcessingInfo));
             CHECKSTATUS(clSetKernelArg(m_kRadiosity, 3, sizeof(cl_mem), (void *)&m_dPrimitivesXYIds));
@@ -818,7 +854,7 @@ void OpenCLKernel::render_begin(const float timer)
                 clEnqueueNDRangeKernel(m_hQueue, m_kRadiosity, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
             break;
         case ppe_filter:
-            CHECKSTATUS(clSetKernelArg(m_kFilter, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kFilter, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
             CHECKSTATUS(clSetKernelArg(m_kFilter, 1, sizeof(SceneInfo), (void *)&sceneInfo));
             CHECKSTATUS(clSetKernelArg(m_kFilter, 2, sizeof(PostProcessingInfo), (void *)&m_postProcessingInfo));
             CHECKSTATUS(clSetKernelArg(m_kFilter, 3, sizeof(cl_mem), (void *)&m_dPostProcessingBuffer));
@@ -827,7 +863,7 @@ void OpenCLKernel::render_begin(const float timer)
                 clEnqueueNDRangeKernel(m_hQueue, m_kFilter, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
             break;
         default:
-            CHECKSTATUS(clSetKernelArg(m_kDefault, 0, sizeof(cl_int2), (void *)&m_occupancyParameters));
+            CHECKSTATUS(clSetKernelArg(m_kDefault, 0, sizeof(vec2i), (void *)&m_occupancyParameters));
             CHECKSTATUS(clSetKernelArg(m_kDefault, 1, sizeof(SceneInfo), (void *)&sceneInfo));
             CHECKSTATUS(clSetKernelArg(m_kDefault, 2, sizeof(cl_mem), (void *)&m_dPostProcessingBuffer));
             CHECKSTATUS(clSetKernelArg(m_kDefault, 3, sizeof(cl_mem), (void *)&m_dBitmap));
@@ -861,7 +897,7 @@ void OpenCLKernel::render_end()
     }
 #endif
 
-    if (m_sceneInfo.misc.x == 0)
+    if (m_sceneInfo.frameBufferType == 0)
     {
         ::glEnable(GL_TEXTURE_2D);
         //::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -871,7 +907,7 @@ void OpenCLKernel::render_end()
         ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.size.x, m_sceneInfo.size.y, 0, GL_RGB,
                        GL_UNSIGNED_BYTE, m_bitmap);
 
-        if (m_sceneInfo.renderingType == vt3DVision)
+        if (m_sceneInfo.cameraType == ctVR)
         {
             float step = 0.1f;
             float halfStep = 1.f;
@@ -1028,9 +1064,8 @@ void OpenCLKernel::queryDevice()
     std::stringstream s;
 
     LOG_INFO(1, "--------------------------------------------------------------------------------");
-    LOG_INFO(3, "clGetPlatformIDs");
     CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, m_platforms, &m_numberOfPlatforms));
-    LOG_INFO(1, "Number of m_platforms detected: " << m_platforms);
+    LOG_INFO(1, "Number of platforms detected: " << m_numberOfPlatforms);
 
     for (cl_uint platform(0); platform < m_numberOfPlatforms; ++platform)
     {
@@ -1068,7 +1103,7 @@ void OpenCLKernel::queryDevice()
 
         m_platformsDescription[platform] = platformDescription;
 
-        if (clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_CPU, MAX_DEVICES, m_devices[platform],
+        if (clGetDeviceIDs(m_platforms[platform], CL_DEVICE_TYPE_ALL, MAX_DEVICES, m_devices[platform],
                            &m_numberOfDevices[platform]) == CL_SUCCESS)
         {
             // m_devices
@@ -1160,17 +1195,24 @@ void OpenCLKernel::queryDevice()
             LOG_INFO(1, "   -------------------------------------");
         }
     }
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
-    LOG_INFO(1, "Data types:");
-    LOG_INFO(1, "- float : " << sizeof(float));
-    LOG_INFO(1, "- vec2f : " << sizeof(vec2f));
-    LOG_INFO(1, "- vec3f : " << sizeof(vec3f));
-    LOG_INFO(1, "- vec4f : " << sizeof(vec4f));
-    LOG_INFO(1, "- int   : " << sizeof(int));
-    LOG_INFO(1, "- vec2i : " << sizeof(vec2i));
-    LOG_INFO(1, "- vec3i : " << sizeof(vec3i));
-    LOG_INFO(1, "- vec4i : " << sizeof(vec4i));
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
+    LOG_INFO(3, "--------------------------------------------------------------------------------");
+    LOG_INFO(3, "Data type sizes (in bytes)");
+    LOG_INFO(3, "- float             : " << sizeof(float));
+    LOG_INFO(3, "- vec2f             : " << sizeof(vec2f));
+    LOG_INFO(3, "- vec3f             : " << sizeof(vec3f));
+    LOG_INFO(3, "- vec4f             : " << sizeof(vec4f));
+    LOG_INFO(3, "- int               : " << sizeof(int));
+    LOG_INFO(3, "- vec2i             : " << sizeof(vec2i));
+    LOG_INFO(3, "- vec3i             : " << sizeof(vec3i));
+    LOG_INFO(3, "- vec4i             : " << sizeof(vec4i));
+    LOG_INFO(3, "- SceneInfo         : " << sizeof(SceneInfo));
+    LOG_INFO(3, "- Ray               : " << sizeof(Ray));
+    LOG_INFO(3, "- LightInformation  : " << sizeof(LightInformation));
+    LOG_INFO(3, "- Material          : " << sizeof(Material));
+    LOG_INFO(3, "- BoundingBox       : " << sizeof(BoundingBox));
+    LOG_INFO(3, "- Primitive         : " << sizeof(Primitive));
+    LOG_INFO(3, "- TextureInfo       : " << sizeof(TextureInfo));
+    LOG_INFO(3, "- PostProcessingInfo: " << sizeof(PostProcessingInfo));
+    LOG_INFO(3, "--------------------------------------------------------------------------------");
 }
 }

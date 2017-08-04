@@ -29,8 +29,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif(NOT CMAKE_BUILD_TYPE)
 
+# Engine
 set(SOLR_ENGINE "OPENCL" CACHE STRING "engine use (CUDA or OPENCL)")
 set_property(CACHE SOLR_ENGINE PROPERTY STRINGS CUDA OPENCL)
+
+# Library type
+set(SOLR_LIBRARY_TYPE "STATIC" CACHE STRING "solr library type (STATIC or SHARED)")
+set_property(CACHE SOLR_LIBRARY_TYPE PROPERTY STRINGS STATIC SHARED)
 
 # Windows' math include does not define constants by default.
 # Set this definition so it does.

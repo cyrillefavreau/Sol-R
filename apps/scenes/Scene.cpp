@@ -62,16 +62,6 @@ using namespace solr;
 
 const int gTotalPathTracingIterations = 2000;
 
-vec4i gSceneMisc = {
-    otOpenGL, 0, 0,
-    cmStandard // cmIsometric3D
-};
-
-vec4i gSceneParameters = {dtDoubleSidedTrianglesOff, gcExtendedGeometry,
-                          // aiGlobalIllumination,
-                          // aiAdvancedGlobalIllumination,
-                          aiNone, dmDraftModeOff};
-
 #ifdef USE_SIXENSE
 // flags that the controller manager system can set to tell the graphics system
 // to draw the instructions
@@ -208,26 +198,32 @@ void Scene::initialize(solr::GPUKernel *kernel, const int width, const int heigh
     // Scene
     sceneInfo.size.x = width;
     sceneInfo.size.y = height;
-    sceneInfo.graphicsLevel = (gSceneMisc.w == cmVolumeRendering) ? 0 : 4;
+    sceneInfo.graphicsLevel = (sceneInfo.cameraType == ctVolumeRendering) ? glNoShading : glFull;
     sceneInfo.nbRayIterations = 3;
     sceneInfo.transparentColor = 0.f;
     sceneInfo.viewDistance = 50000.f;
     sceneInfo.shadowIntensity = 1.0f;
-    sceneInfo.width3DVision = 380.f;
+    sceneInfo.eyeSeparation = 380.f;
     sceneInfo.backgroundColor.x = 0.0f;
     sceneInfo.backgroundColor.y = 0.0f;
     sceneInfo.backgroundColor.z = 0.0f;
     sceneInfo.backgroundColor.w = 0.5f;
-    sceneInfo.renderingType = vtStandard;
     sceneInfo.renderBoxes = 0;
     sceneInfo.pathTracingIteration = 0;
     sceneInfo.maxPathTracingIterations = gTotalPathTracingIterations;
-    sceneInfo.misc = gSceneMisc;
-    sceneInfo.parameters = gSceneParameters;
-    sceneInfo.skybox.x = static_cast<int>(sceneInfo.viewDistance * 0.9f);
-    sceneInfo.skybox.y = MATERIAL_NONE; // SKYBOX_SPHERE_MATERIAL;
-    sceneInfo.epsilon.x = 0.1f;
-    sceneInfo.epsilon.y = 0.05f;
+    sceneInfo.frameBufferType = ftRGB;
+    sceneInfo.timestamp = 0;
+    sceneInfo.atmosphericEffect = aeNone;
+    sceneInfo.cameraType = ctPerspective;
+    sceneInfo.doubleSidedTriangles = false;
+    sceneInfo.extendedGeometry = true;
+    sceneInfo.advancedIllumination = aiNone;
+    sceneInfo.draftMode = false;
+    sceneInfo.skyboxRadius = static_cast<int>(sceneInfo.viewDistance * 0.9f);
+    sceneInfo.skyboxMaterialId = SKYBOX_SPHERE_MATERIAL;
+    sceneInfo.gradientBackground = 0;
+    sceneInfo.geometryEpsilon = 0.001f;
+    sceneInfo.rayEpsilon = 0.05f;
 
     // HDRI
     Strings filters;
@@ -674,7 +670,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly)
                         for (int t(0); t < 5; ++t)
                         {
                             int idx = index + t;
-                            TextureInformation ti = m_gpuKernel->getTextureInformation(idx);
+                            TextureInfo ti = m_gpuKernel->getTextureInformation(idx);
                             switch (ti.type)
                             {
                             case tex_bump:
@@ -1489,7 +1485,7 @@ void Scene::animateSkeleton()
                                           m_skeletonThickness * 2.0f, 41, // Head size and material
                                           m_skeletonThickness * 1.5f, 42, // Hands size and material
                                           m_skeletonThickness * 1.8f, 43  // Feet size and material
-                                          );
+    );
     m_gpuKernel->getSceneInfo().pathTracingIteration = 0;
 
     if (hr == S_OK)
@@ -1580,14 +1576,10 @@ void Scene::animateSkeleton()
                     // Buttons
                     left_states.update(&acd.controllers[cont]);
                     if (left_states.buttonJustPressed(SIXENSE_BUTTON_2))
-                    {
                         createRandomMaterials(true, false);
-                    }
                     if (left_states.buttonJustPressed(SIXENSE_BUTTON_3))
-                    {
-                        m_gpuKernel->getSceneInfo().graphicsLevel++;
-                        m_gpuKernel->getSceneInfo().graphicsLevel = m_gpuKernel->getSceneInfo().graphicsLevel % 5;
-                    }
+                        m_gpuKernel->getSceneInfo().graphicsLevel =
+                            static_cast<GraphicsLevel>((m_gpuKernel->getSceneInfo().graphicsLevel + 1) % 5);
                     if (left_states.buttonJustPressed(SIXENSE_BUTTON_4))
                     {
                         m_gpuKernel->getPostProcessingInfo().type++;
@@ -1603,7 +1595,7 @@ void Scene::animateSkeleton()
 
                 if (cont == right_index)
                 {
-                    m_gpuKernel->getSceneInfo().width3DVision += 50.f * acd.controllers[cont].joystick_x;
+                    m_gpuKernel->getSceneInfo().eyeSeparation += 50.f * acd.controllers[cont].joystick_x;
                     m_gpuKernel->getViewDir().z += 50.f * acd.controllers[cont].joystick_y;
                 }
             }

@@ -56,6 +56,7 @@ public:
     virtual void setPlatformId(const int platform) { m_platform = platform; }
     virtual void setDeviceId(const int device) { m_device = device; }
     virtual void setKernelFilename(const std::string &kernelFilename) { m_kernelFilename = kernelFilename; }
+
 public:
     // ---------- Devices ----------
     void initializeDevice();
@@ -103,6 +104,9 @@ private:
 
 private:
     cl_program m_hProgram;
+
+    // Test kernels
+    cl_kernel m_kAlignment;
 
     // Rendering kernels
     cl_kernel m_kStandardRenderer;

@@ -135,8 +135,8 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
             size_t id;
             myfile.read((char *)&id, sizeof(size_t));
 
-            TextureInformation texInfo;
-            myfile.read((char *)&texInfo, sizeof(TextureInformation));
+            TextureInfo texInfo;
+            myfile.read((char *)&texInfo, sizeof(TextureInfo));
             LOG_INFO(1, "Texture with id " << id << " and size: " << texInfo.size.x << "x" << texInfo.size.y << "x"
                                            << texInfo.size.z << " loaded into slot " << nbActiveTextures + i);
 
@@ -242,7 +242,7 @@ void FileMarshaller::saveToFile(GPUKernel &kernel, const std::string &filename)
         }
 
         // Determine textures in use
-        std::map<size_t, TextureInformation> textures;
+        std::map<size_t, TextureInfo> textures;
         for (auto material : materials)
         {
             if (material.second->textureIds.x != TEXTURE_NONE)
@@ -277,7 +277,7 @@ void FileMarshaller::saveToFile(GPUKernel &kernel, const std::string &filename)
         idMapping[TEXTURE_NONE] = TEXTURE_NONE;
         for (const auto &texture : textures)
         {
-            TextureInformation texInfo = texture.second;
+            TextureInfo texInfo = texture.second;
             BitmapBuffer *savedBuffer = texInfo.buffer;
             texInfo.buffer = 0;
             texInfo.offset = 0;
@@ -286,7 +286,7 @@ void FileMarshaller::saveToFile(GPUKernel &kernel, const std::string &filename)
             LOG_INFO(1, "Texture " << id << ": " << texInfo.size.x << "x" << texInfo.size.y << "x" << texInfo.size.z
                                    << " saved with id " << index);
             myfile.write((char *)(&index), sizeof(size_t));
-            myfile.write((char *)(&texInfo), sizeof(TextureInformation));
+            myfile.write((char *)(&texInfo), sizeof(TextureInfo));
             myfile.write((char *)(savedBuffer), texInfo.size.x * texInfo.size.y * texInfo.size.z);
             ++index;
         }
