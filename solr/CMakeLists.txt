@@ -34,13 +34,6 @@ SET(SOLR_SOURCES
     games/MapReader.h
 )
 
-# Shared library for Windows so that it can be dynamically loaded by the UI
-if(MSVC)
-  set(SOLR_LIBRARY_TYPE SHARED)
-else(MSVC)
-  set(SOLR_LIBRARY_TYPE STATIC)
-endif(MSVC)
-
 if (CUDA_FOUND)
     if(UNIX)
         set(CUDA_NVCC_USER_ARGS

@@ -332,7 +332,7 @@ void GPUKernel::initBuffers()
     memset(m_hLamps, 0, NB_MAX_LAMPS * sizeof(Lamp));
 
     // Textures
-    memset(m_hTextures, 0, NB_MAX_TEXTURES * sizeof(TextureInformation));
+    memset(m_hTextures, 0, NB_MAX_TEXTURES * sizeof(TextureInfo));
 
     // Randoms
     size_t size = MAX_BITMAP_WIDTH * MAX_BITMAP_HEIGHT;
@@ -407,7 +407,7 @@ void GPUKernel::cleanup()
         }
 #endif // USE_KINECT
     }
-    memset(m_hTextures, 0, NB_MAX_TEXTURES * sizeof(TextureInformation));
+    memset(m_hTextures, 0, NB_MAX_TEXTURES * sizeof(TextureInfo));
 
     m_vertices.clear();
     m_normals.clear();
@@ -1207,8 +1207,8 @@ void GPUKernel::streamDataToGPU()
                 Material &material = m_hMaterials[primitive.materialId];
                 LightInformation lightInformation;
                 LOG_INFO(3, "LightInformation " << (*itp) << ", MaterialId=" << primitive.materialId);
-                lightInformation.attribute.x = (*itp);
-                lightInformation.attribute.y = primitive.materialId;
+                lightInformation.primitiveId = (*itp);
+                lightInformation.materialId = primitive.materialId;
 
                 lightInformation.location.x = primitive.p0.x;
                 lightInformation.location.y = primitive.p0.y;
@@ -1221,9 +1221,8 @@ void GPUKernel::streamDataToGPU()
 
                 m_lightInformation[m_lightInformationSize] = lightInformation;
 
-                LOG_INFO(3, "Adding Light Information: " << m_lightInformation[m_lightInformationSize].attribute.x
-                                                         << ","
-                                                         << m_lightInformation[m_lightInformationSize].attribute.y
+                LOG_INFO(3, "Adding Light Information: " << m_lightInformation[m_lightInformationSize].primitiveId
+                                                         << "," << m_lightInformation[m_lightInformationSize].materialId
                                                          << ":" << m_lightInformation[m_lightInformationSize].location.x
                                                          << "," << m_lightInformation[m_lightInformationSize].location.y
                                                          << "," << m_lightInformation[m_lightInformationSize].location.z
@@ -1336,7 +1335,7 @@ void GPUKernel::resetAll()
         }
 #endif // USE_KINECT
     }
-    memset(&m_hTextures[0], 0, NB_MAX_TEXTURES * sizeof(TextureInformation));
+    memset(&m_hTextures[0], 0, NB_MAX_TEXTURES * sizeof(TextureInfo));
     m_nbActiveTextures = 0;
     m_texturesTransfered = false;
 #ifdef USE_KINECT
@@ -2010,7 +2009,7 @@ Material *GPUKernel::getMaterial(const int index)
 }
 
 // ---------- Textures ----------
-void GPUKernel::setTexture(const int index, const TextureInformation &textureInfo)
+void GPUKernel::setTexture(const int index, const TextureInfo &textureInfo)
 {
     LOG_INFO(1, "GPUKernel::setTexture(" << index << "/" << m_nbActiveTextures << ")");
     if (index >= m_nbActiveTextures)
@@ -2028,7 +2027,7 @@ void GPUKernel::setTexture(const int index, const TextureInformation &textureInf
     m_texturesTransfered = false;
 }
 
-void GPUKernel::getTexture(const int index, TextureInformation &textureInfo)
+void GPUKernel::getTexture(const int index, TextureInfo &textureInfo)
 {
     LOG_INFO(3, "GPUKernel::getTexture(" << index << ")");
     if (index <= m_nbActiveTextures)
@@ -2037,32 +2036,31 @@ void GPUKernel::getTexture(const int index, TextureInformation &textureInfo)
     }
 }
 
-void GPUKernel::setSceneInfo(int width, int height, float transparentColor, int shadowsEnabled, float viewDistance,
-                             float shadowIntensity, int nbRayIterations, vec4f backgroundColor, int renderingType,
-                             float width3DVision, bool renderBoxes, int pathTracingIteration,
-                             int maxPathTracingIterations, OutputType outputType, int timer, int fogEffect,
-                             int skyboxSize, int skyboxMaterialId)
+void GPUKernel::setSceneInfo(int width, int height, float transparentColor, int graphicsLevel, float viewDistance,
+                             float shadowIntensity, int nbRayIterations, vec4f backgroundColor, int cameraType,
+                             float eyeSeparation, bool renderBoxes, int pathTracingIteration,
+                             int maxPathTracingIterations, FrameBufferType frameBufferType, int timestamp,
+                             int atmosphericEffect, int skyboxSize, int skyboxMaterialId)
 {
     LOG_INFO(3, "GPUKernel::setSceneInfo");
     memset(&m_sceneInfo, 0, sizeof(SceneInfo));
     m_sceneInfo.size.x = width;
     m_sceneInfo.size.y = height;
     m_sceneInfo.transparentColor = transparentColor;
-    m_sceneInfo.graphicsLevel = shadowsEnabled;
+    m_sceneInfo.graphicsLevel = static_cast<GraphicsLevel>(graphicsLevel);
     m_sceneInfo.viewDistance = viewDistance;
     m_sceneInfo.shadowIntensity = shadowIntensity;
     m_sceneInfo.nbRayIterations = nbRayIterations;
     m_sceneInfo.backgroundColor = backgroundColor;
-    m_sceneInfo.renderingType = renderingType;
-    m_sceneInfo.width3DVision = width3DVision;
+    m_sceneInfo.eyeSeparation = eyeSeparation;
     m_sceneInfo.renderBoxes = renderBoxes;
     m_sceneInfo.pathTracingIteration = pathTracingIteration;
     m_sceneInfo.maxPathTracingIterations = maxPathTracingIterations;
-    m_sceneInfo.misc.x = outputType;
-    m_sceneInfo.misc.y = timer;
-    m_sceneInfo.misc.z = fogEffect;
-    m_sceneInfo.skybox.x = skyboxSize;
-    m_sceneInfo.skybox.y = skyboxMaterialId;
+    m_sceneInfo.frameBufferType = frameBufferType;
+    m_sceneInfo.timestamp = timestamp;
+    m_sceneInfo.atmosphericEffect = static_cast<AtmosphericEffect>(atmosphericEffect);
+    m_sceneInfo.skyboxRadius = skyboxSize;
+    m_sceneInfo.skyboxMaterialId = skyboxMaterialId;
 }
 
 void GPUKernel::setSceneInfo(const SceneInfo &sceneInfo)
@@ -2196,15 +2194,15 @@ void GPUKernel::reorganizeLights()
                         lightInformation.location.x = primitive.p0.x;
                         lightInformation.location.y = primitive.p0.y;
                         lightInformation.location.z = primitive.p0.z;
-                        lightInformation.attribute.x = (*itp);
-                        lightInformation.attribute.y = primitive.materialId;
+                        lightInformation.primitiveId = (*itp);
+                        lightInformation.materialId = primitive.materialId;
                         lightInformation.color.x = material.color.x;
                         lightInformation.color.y = material.color.y;
                         lightInformation.color.z = material.color.z;
                         lightInformation.color.w = 0.f; // not used
 
-                        LOG_INFO(3, "Lamp " << m_lightInformation[m_lightInformationSize].attribute.x << ","
-                                            << m_lightInformation[m_lightInformationSize].attribute.y << ":"
+                        LOG_INFO(3, "Lamp " << m_lightInformation[m_lightInformationSize].primitiveId << ","
+                                            << m_lightInformation[m_lightInformationSize].materialId << ":"
                                             << m_lightInformation[m_lightInformationSize].location.x << ","
                                             << m_lightInformation[m_lightInformationSize].location.y << ","
                                             << m_lightInformation[m_lightInformationSize].location.z << " "
@@ -2225,7 +2223,7 @@ void GPUKernel::reorganizeLights()
     LOG_INFO(3, "Reorganized " << m_lightInformationSize << " Lights");
 }
 
-TextureInformation &GPUKernel::getTextureInformation(const int index)
+TextureInfo &GPUKernel::getTextureInformation(const int index)
 {
     LOG_INFO(3, "Getting texture " << index << ": " << m_hTextures[index].size.x << "x" << m_hTextures[index].size.y
                                    << "x" << m_hTextures[index].size.z);
@@ -2369,7 +2367,7 @@ void GPUKernel::initializeKinectTextures()
     m_nbActiveTextures = 2;
 }
 
-int GPUKernel::updateSkeletons(unsigned int primitiveIndex, vec4f skeletonPosition, float size, float radius,
+int GPUKernel::updateSkeletons(unsigned int primitiveIndex, vec3f skeletonPosition, float size, float radius,
                                int materialId, float head_radius, int head_materialId, float hands_radius,
                                int hands_materialId, float feet_radius, int feet_materialId)
 {
@@ -2423,7 +2421,7 @@ int GPUKernel::updateSkeletons(unsigned int primitiveIndex, vec4f skeletonPositi
     return found ? S_OK : S_FALSE;
 }
 
-bool GPUKernel::getSkeletonPosition(int index, vec4f &position)
+bool GPUKernel::getSkeletonPosition(int index, vec3f &position)
 {
     bool returnValue(false);
     if (m_skeletonIndex != -1)
@@ -2720,7 +2718,7 @@ void GPUKernel::render_begin(const float timer)
 
     // Random
     const size_t size = m_sceneInfo.size.x * m_sceneInfo.size.y;
-    m_sceneInfo.misc.y = rand() % 10000;
+    m_sceneInfo.timestamp = rand() % 10000;
     if (!m_randomsTransfered || m_sceneInfo.pathTracingIteration % 50 == 1)
     {
         m_randomsTransfered = false;
@@ -2740,7 +2738,7 @@ void GPUKernel::render_begin(const float timer)
         m_angles.y = -PI * orientation.y;
         m_angles.z = PI * orientation.z;
         m_sceneInfo.pathTracingIteration = 0;
-        m_sceneInfo.renderingType = vt3DVision;
+        m_sceneInfo.cameraType = ctVR;
     }
 #endif // USE_OCULUS
 }
@@ -2820,10 +2818,9 @@ void GPUKernel::generateScreenshot(const std::string &filename, const unsigned i
 #endif
         LOG_INFO(1, "Saving bitmap to disk");
         size_t size = sceneInfo.size.x * sceneInfo.size.y * gColorDepth;
-        switch (sceneInfo.misc.x)
+        switch (sceneInfo.frameBufferType)
         {
-        case otOpenGL:
-        case otJPEG:
+        case ftRGB:
         {
             BitmapBuffer *dst = new BitmapBuffer[size];
             for (int i(0); i < size; i += gColorDepth)

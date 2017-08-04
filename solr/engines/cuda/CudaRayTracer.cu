@@ -119,7 +119,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
 
     float4 rBlinn = {0.f, 0.f, 0.f, 0.f};
     int currentMaxIteration =
-        (sceneInfo.graphicsLevel < 3) ? 1 : sceneInfo.nbRayIterations + sceneInfo.pathTracingIteration;
+        (sceneInfo.graphicsLevel < glReflectionsAndRefractions) ? 1 : sceneInfo.nbRayIterations + sceneInfo.pathTracingIteration;
     currentMaxIteration = (currentMaxIteration > NB_MAX_ITERATIONS) ? NB_MAX_ITERATIONS : currentMaxIteration;
 
     while (iteration < currentMaxIteration && rayLength < sceneInfo.viewDistance && carryon)
@@ -155,12 +155,12 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
                 depthOfField = length(firstIntersection - ray.origin);
 
                 if (materials[primitives[closestPrimitive].materialId].innerIllumination.x == 0.f &&
-                    (sceneInfo.parameters.z == aiGlobalIllumination ||
-                     sceneInfo.parameters.z == aiAdvancedGlobalIllumination))
+                    (sceneInfo.advancedIllumination == aiBasic ||
+                     sceneInfo.advancedIllumination == aiFull))
                 {
                     // Global illumination
-                    int t = (index + sceneInfo.pathTracingIteration * 100 + sceneInfo.misc.y) % (MAX_BITMAP_SIZE - 3);
-                    pathTracingRay.origin = closestIntersection + normal * sceneInfo.epsilon.y;
+                    int t = (index + sceneInfo.pathTracingIteration * 100 + sceneInfo.timestamp) % (MAX_BITMAP_SIZE - 3);
+                    pathTracingRay.origin = closestIntersection + normal * sceneInfo.rayEpsilon;
                     pathTracingRay.direction.x = normal.x + 100.f * randoms[t];
                     pathTracingRay.direction.y = normal.y + 100.f * randoms[t + 1];
                     pathTracingRay.direction.z = normal.z + 100.f * randoms[t + 2];
@@ -225,7 +225,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
                 if (reflectedRays == -1 && attributes.x != 0.f)
                 {
                     vectorReflection(reflectedRay.direction, O_E, normal);
-                    reflectedRay.origin = closestIntersection + reflectedRay.direction * sceneInfo.epsilon.y;
+                    reflectedRay.origin = closestIntersection + reflectedRay.direction * sceneInfo.rayEpsilon;
                     reflectedRay.direction = closestIntersection + reflectedRay.direction;
                     reflectedRatio = attributes.x;
                     reflectedRays = iteration;
@@ -250,7 +250,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
             recursiveBlinn.y = (rBlinn.y > recursiveBlinn.y) ? rBlinn.y : recursiveBlinn.y;
             recursiveBlinn.z = (rBlinn.z > recursiveBlinn.z) ? rBlinn.z : recursiveBlinn.z;
 
-            rayOrigin.origin = closestIntersection + reflectedTarget * sceneInfo.epsilon.y;
+            rayOrigin.origin = closestIntersection + reflectedTarget * sceneInfo.rayEpsilon;
             rayOrigin.direction = closestIntersection + reflectedTarget;
 
             // Noise management
@@ -260,7 +260,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
                 // Randomize view
                 float ratio = materials[primitives[closestPrimitive].materialId].color.w;
                 ratio *= (attributes.y == 0.f) ? 1000.f : 1.f;
-                int rindex = (index + sceneInfo.misc.y) % (MAX_BITMAP_SIZE - 3);
+                int rindex = (index + sceneInfo.timestamp) % (MAX_BITMAP_SIZE - 3);
                 rayOrigin.direction.x += randoms[rindex] * ratio;
                 rayOrigin.direction.y += randoms[rindex + 1] * ratio;
                 rayOrigin.direction.z += randoms[rindex + 2] * ratio;
@@ -268,14 +268,14 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
         }
         else
         {
-            if (sceneInfo.skybox.y != MATERIAL_NONE)
+            if (sceneInfo.skyboxMaterialId != MATERIAL_NONE)
             {
                 colors[iteration] = skyboxMapping(sceneInfo, materials, textures, rayOrigin);
                 float rad = colors[iteration].x + colors[iteration].y + colors[iteration].z;
                 primitiveXYId.z += (rad > 2.5f) ? rad * 256.f : 0.f;
             }
             else
-                if (sceneInfo.parameters.y == 2)
+                if (sceneInfo.gradientBackground)
                 {
                     // Background
                     vec3f normal = {0.f, 1.f, 0.f};
@@ -294,7 +294,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
     }
 
     vec3f areas = {0.f, 0.f, 0.f};
-    if (sceneInfo.graphicsLevel >= 3 &&
+    if (sceneInfo.graphicsLevel >= glReflectionsAndRefractions &&
         reflectedRays != -1) // TODO: Draft mode should only test "sceneInfo.pathTracingIteration==iteration"
         // TODO: Dodgy implementation
         if (intersectionWithPrimitives(sceneInfo, postProcessingInfo, boundingBoxes, nbActiveBoxes, primitives,
@@ -315,10 +315,10 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
         }
 
     bool test(true);
-    if ((sceneInfo.parameters.z == aiGlobalIllumination || sceneInfo.parameters.z == aiAdvancedGlobalIllumination) &&
+    if ((sceneInfo.advancedIllumination == aiBasic || sceneInfo.advancedIllumination == aiFull) &&
         sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS)
     {
-        if (useGlobalIllumination && sceneInfo.parameters.z == aiAdvancedGlobalIllumination)
+        if (useGlobalIllumination && sceneInfo.advancedIllumination == aiFull)
         {
             // Global illumination
             if (intersectionWithPrimitives(sceneInfo, postProcessingInfo, boundingBoxes, nbActiveBoxes, primitives,
@@ -360,7 +360,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
             }
             else
                 // Background
-                if (sceneInfo.skybox.y != MATERIAL_NONE)
+                if (sceneInfo.skyboxMaterialId != MATERIAL_NONE)
                 {
                     pathTracingColor = skyboxMapping(sceneInfo, materials, textures, pathTracingRay);
                     pathTracingRatio *= SKYBOX_LUNINANCE_STRENGTH;
@@ -368,7 +368,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
         }
         else
             // Background
-            if (sceneInfo.skybox.y != MATERIAL_NONE)
+            if (sceneInfo.skyboxMaterialId != MATERIAL_NONE)
             {
                 pathTracingColor = skyboxMapping(sceneInfo, materials, textures, pathTracingRay);
                 pathTracingRatio *= SKYBOX_LUNINANCE_STRENGTH;
@@ -389,7 +389,7 @@ __device__ __INLINE__ float4 launchRayTracing(const int& index, BoundingBox* bou
 
     // Background color
     float D1 = sceneInfo.viewDistance * 0.95f;
-    if (sceneInfo.misc.z == 1 && depthOfField > D1)
+    if (sceneInfo.atmosphericEffect == aeFog && depthOfField > D1)
     {
         float D2 = sceneInfo.viewDistance * 0.05f;
         float a = depthOfField - D1;
@@ -462,24 +462,24 @@ __global__ void k_standardRenderer(const int2 occupancyParameters, int device_sp
     ray.direction = direction;
 
     vec3f rotationCenter = {0.f, 0.f, 0.f};
-    if (sceneInfo.renderingType == vt3DVision)
+    if (sceneInfo.cameraType == ctVR)
         rotationCenter = origin;
 
-    bool antialiasingActivated = (sceneInfo.misc.w == 2);
+    bool antialiasingActivated = (sceneInfo.cameraType == ctAntialiazed);
 
 #ifdef NATURAL_DEPTHOFFIELD
     if (postProcessingInfo.type != ppe_depthOfField && sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS)
     {
         // Randomize view for natural depth of field
         float a = (postProcessingInfo.param1 / 20000.f);
-        int rindex = index + sceneInfo.misc.y % (MAX_BITMAP_SIZE - 2);
+        int rindex = index + sceneInfo.timestamp % (MAX_BITMAP_SIZE - 2);
         ray.origin.x += randoms[rindex] * postProcessingBuffer[index].colorInfo.w * a;
         ray.origin.y += randoms[rindex + 1] * postProcessingBuffer[index].colorInfo.w * a;
     }
 #endif // NATURAL_DEPTHOFFIELD
 
     float dof = 0.f;
-    if (sceneInfo.misc.w == 1) // Isometric 3D
+    if (sceneInfo.cameraType == ctOrthographic)
     {
         ray.direction.x = ray.origin.z * 0.001f * (x - (sceneInfo.size.x / 2));
         ray.direction.y = -ray.origin.z * 0.001f * (device_split + stream_split + y - (sceneInfo.size.y / 2));
@@ -524,10 +524,10 @@ __global__ void k_standardRenderer(const int2 occupancyParameters, int device_sp
                               lightInformationSize, nbActiveLamps, materials, textures, randoms, r, sceneInfo,
                               postProcessingInfo, dof, primitiveXYIds[index]);
 
-    if (sceneInfo.parameters.z == aiRandomIllumination)
+    if (sceneInfo.advancedIllumination == aiRandomIllumination)
     {
         // Randomize light intensity
-        int rindex = (index + sceneInfo.misc.y) % MAX_BITMAP_SIZE;
+        int rindex = (index + sceneInfo.timestamp) % MAX_BITMAP_SIZE;
         color += sceneInfo.backgroundColor * randoms[rindex] * 5.f;
     }
 
@@ -617,22 +617,22 @@ __global__ void k_volumeRenderer(const int2 occupancyParameters, int device_spli
     ray.direction = direction;
 
     vec3f rotationCenter = {0.f, 0.f, 0.f};
-    if (sceneInfo.renderingType == vt3DVision)
+    if (sceneInfo.cameraType == ctVR)
         rotationCenter = origin;
 
-    bool antialiasingActivated = (sceneInfo.misc.w == 2);
+    bool antialiasingActivated = (sceneInfo.cameraType == ctAntialiazed);
 
     if (postProcessingInfo.type != ppe_depthOfField && sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS)
     {
         // Randomize view for natural depth of field
         float a = (postProcessingInfo.param1 / 20000.f);
-        int rindex = index + sceneInfo.misc.y % (MAX_BITMAP_SIZE - 2);
+        int rindex = index + sceneInfo.timestamp % (MAX_BITMAP_SIZE - 2);
         ray.origin.x += randoms[rindex] * postProcessingBuffer[index].colorInfo.w * a;
         ray.origin.y += randoms[rindex + 1] * postProcessingBuffer[index].colorInfo.w * a;
     }
 
     float dof = 0.f;
-    if (sceneInfo.misc.w == 1) // Isometric 3D
+    if (sceneInfo.cameraType == ctOrthographic)
     {
         ray.direction.x = ray.origin.z * 0.001f * (x - (sceneInfo.size.x / 2));
         ray.direction.y = -ray.origin.z * 0.001f * (device_split + stream_split + y - (sceneInfo.size.y / 2));
@@ -674,10 +674,10 @@ __global__ void k_volumeRenderer(const int2 occupancyParameters, int device_spli
                                    lightInformation, lightInformationSize, nbActiveLamps, materials, textures, randoms,
                                    r, sceneInfo, postProcessingInfo, dof, primitiveXYIds[index]);
 
-    if (sceneInfo.parameters.z == aiRandomIllumination)
+    if (sceneInfo.advancedIllumination == aiRandomIllumination)
     {
         // Randomize light intensity
-        int rindex = (index + sceneInfo.misc.y) % MAX_BITMAP_SIZE;
+        int rindex = (index + sceneInfo.timestamp) % MAX_BITMAP_SIZE;
         color += sceneInfo.backgroundColor * randoms[rindex] * 5.f;
     }
 
@@ -765,7 +765,7 @@ __global__ void k_fishEyeRenderer(const int2 occupancyParameters, int split_y, B
     // Randomize view for natural depth of field
     if (sceneInfo.pathTracingIteration >= NB_MAX_ITERATIONS)
     {
-        int rindex = (index + sceneInfo.misc.y) % (MAX_BITMAP_SIZE - 3);
+        int rindex = (index + sceneInfo.timestamp) % (MAX_BITMAP_SIZE - 3);
         float a = float(sceneInfo.pathTracingIteration) / float(sceneInfo.maxPathTracingIterations);
         ray.direction.x += randoms[rindex] * postProcessingBuffer[index].colorInfo.w * postProcessingInfo.param2 * a;
         ray.direction.y +=
@@ -787,12 +787,8 @@ __global__ void k_fishEyeRenderer(const int2 occupancyParameters, int split_y, B
 
     vec4f fishEyeAngles = {0.f, 0.f, 0.f, 0.f};
     fishEyeAngles.y = angles.y + step.x * (float)x;
-    // fishEyeAngles.x = angles.x + step.y*(float)y;
 
     vectorRotation(ray.direction, ray.origin, fishEyeAngles);
-
-    // vectorRotation( ray.origin,    rotationCenter, angles );
-    // vectorRotation( ray.direction, rotationCenter, angles );
 
     float4 color = {0.f, 0.f, 0.f, 0.f};
     color += launchRayTracing(index, BoundingBoxes, nbActiveBoxes, primitives, nbActivePrimitives, lightInformation,
@@ -818,7 +814,7 @@ __global__ void k_fishEyeRenderer(const int2 occupancyParameters, int split_y, B
 
 /*!
 * ------------------------------------------------------------------------------------------------------------------------
-* \brief      This kernel processes an anaglyph image. The sceneInfo.width3DVision parameter specifies the distance
+* \brief      This kernel processes an anaglyph image. The sceneInfo.eyeSeparation parameter specifies the distance
 *             between both eyes.
 * ------------------------------------------------------------------------------------------------------------------------
 * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
@@ -861,7 +857,7 @@ __global__ void k_anaglyphRenderer(const int2 occupancyParameters, BoundingBox* 
         return;
 
     vec3f rotationCenter = {0.f, 0.f, 0.f};
-    if (sceneInfo.renderingType == vt3DVision)
+    if (sceneInfo.cameraType == ctVR)
         rotationCenter = origin;
 
     float dof = 0.f;
@@ -873,7 +869,7 @@ __global__ void k_anaglyphRenderer(const int2 occupancyParameters, BoundingBox* 
     step.y = angles.w / (float)sceneInfo.size.y;
 
     // Left eye
-    eyeRay.origin.x = origin.x - sceneInfo.width3DVision;
+    eyeRay.origin.x = origin.x - sceneInfo.eyeSeparation;
     eyeRay.origin.y = origin.y;
     eyeRay.origin.z = origin.z;
 
@@ -889,7 +885,7 @@ __global__ void k_anaglyphRenderer(const int2 occupancyParameters, BoundingBox* 
                                         randoms, eyeRay, sceneInfo, postProcessingInfo, dof, primitiveXYIds[index]);
 
     // Right eye
-    eyeRay.origin.x = origin.x + sceneInfo.width3DVision;
+    eyeRay.origin.x = origin.x + sceneInfo.eyeSeparation;
     eyeRay.origin.y = origin.y;
     eyeRay.origin.z = origin.z;
 
@@ -931,7 +927,7 @@ __global__ void k_anaglyphRenderer(const int2 occupancyParameters, BoundingBox* 
 
 /*!
 * ------------------------------------------------------------------------------------------------------------------------
-* \brief      This kernel processes two images in a side-by-side format. The sceneInfo.width3DVision parameter specifies
+* \brief      This kernel processes two images in a side-by-side format. The sceneInfo.eyeSeparation parameter specifies
 *             the distance between both eyes.
 * ------------------------------------------------------------------------------------------------------------------------
 * \param[in]  occupancyParameters Contains the number of GPUs and streams involded in the GPU processing
@@ -974,10 +970,10 @@ __global__ void k_3DVisionRenderer(const int2 occupancyParameters, BoundingBox* 
         return;
 
     float focus = fabs(postProcessingBuffer[sceneInfo.size.x / 2 * sceneInfo.size.y / 2].colorInfo.w - origin.z);
-    float eyeSeparation = sceneInfo.width3DVision * (direction.z / focus);
+    float eyeSeparation = sceneInfo.eyeSeparation * (direction.z / focus);
 
     vec3f rotationCenter = {0.f, 0.f, 0.f};
-    if (sceneInfo.renderingType == vt3DVision)
+    if (sceneInfo.cameraType == ctVR)
         rotationCenter = origin;
 
     float dof = postProcessingInfo.param1;
@@ -997,7 +993,7 @@ __global__ void k_3DVisionRenderer(const int2 occupancyParameters, BoundingBox* 
         eyeRay.origin.z = origin.z;
 
         eyeRay.direction.x =
-            direction.x - step.x * (float)(x - (sceneInfo.size.x / 2) + halfWidth / 2) + sceneInfo.width3DVision;
+            direction.x - step.x * (float)(x - (sceneInfo.size.x / 2) + halfWidth / 2) + sceneInfo.eyeSeparation;
         eyeRay.direction.y = direction.y + step.y * (float)(y - (sceneInfo.size.y / 2));
         eyeRay.direction.z = direction.z;
     }
@@ -1009,7 +1005,7 @@ __global__ void k_3DVisionRenderer(const int2 occupancyParameters, BoundingBox* 
         eyeRay.origin.z = origin.z;
 
         eyeRay.direction.x =
-            direction.x - step.x * (float)(x - (sceneInfo.size.x / 2) - halfWidth / 2) - sceneInfo.width3DVision;
+            direction.x - step.x * (float)(x - (sceneInfo.size.x / 2) - halfWidth / 2) - sceneInfo.eyeSeparation;
         eyeRay.direction.y = direction.y + step.y * (float)(y - (sceneInfo.size.y / 2));
         eyeRay.direction.z = direction.z;
     }
@@ -1021,10 +1017,10 @@ __global__ void k_3DVisionRenderer(const int2 occupancyParameters, BoundingBox* 
                                     lightInformation, lightInformationSize, nbActiveLamps, materials, textures, randoms,
                                     eyeRay, sceneInfo, postProcessingInfo, dof, primitiveXYIds[index]);
 
-    if (sceneInfo.parameters.z == aiRandomIllumination)
+    if (sceneInfo.advancedIllumination == aiRandomIllumination)
     {
         // Randomize light intensity
-        int rindex = (index + sceneInfo.misc.y) % MAX_BITMAP_SIZE;
+        int rindex = (index + sceneInfo.timestamp) % MAX_BITMAP_SIZE;
         color += sceneInfo.backgroundColor * randoms[rindex] * 5.f;
     }
 
@@ -1054,7 +1050,8 @@ __global__ void k_3DVisionRenderer(const int2 occupancyParameters, BoundingBox* 
 * \param[in]  sceneInfo Information about the scene and environment
 * \param[in]  postProcessingInfo Information about PostProcessing effect
 * \param[in]  postProcessingBuffer Pointer to the output array of color information
-* \param[out] Bitmap Pointer to a bitmap. The bitmap is encoded according to the value of the sceneInfo.misc.x parameter
+* \param[out] Bitmap Pointer to a bitmap. The bitmap is encoded according to the value of the sceneInfo.frameBufferType 
+*             parameter
 * ------------------------------------------------------------------------------------------------------------------------
 */
 __global__ void k_default(const int2 occupancyParameters, SceneInfo sceneInfo, PostProcessingInfo PostProcessingInfo,
@@ -1160,14 +1157,10 @@ __global__ void k_ambiantOcclusion(const int2 occupancyParameters, SceneInfo sce
             {
                 int localIndex = yy * sceneInfo.size.x + xx;
                 if (postProcessingBuffer[localIndex].colorInfo.w >= depth)
-                {
                     occ += 1.f;
-                }
             }
             else
-            {
                 occ += 1.f;
-            }
         }
 
     occ /= (float)c;
@@ -1583,7 +1576,7 @@ extern "C" void h2d_randoms(int2 occupancyParameters, float* randoms)
     }
 }
 
-extern "C" void h2d_textures(int2 occupancyParameters, int activeTextures, TextureInformation* textureInfos)
+extern "C" void h2d_textures(int2 occupancyParameters, int activeTextures, TextureInfo* textureInfos)
 {
     for (int device(0); device < occupancyParameters.x; ++device)
     {
@@ -1720,9 +1713,9 @@ extern "C" void cudaRender(int2 occupancyParameters, int4 blockSize, SceneInfo s
 
         for (int stream(0); stream < occupancyParameters.y; ++stream)
         {
-            switch (sceneInfo.renderingType)
+            switch (sceneInfo.cameraType)
             {
-            case vtAnaglyph:
+            case ctAnaglyph:
             {
                 k_anaglyphRenderer<<<grid, blocks, 0, d_streams[device][stream]>>>(
                     occupancyParameters,
@@ -1742,7 +1735,7 @@ extern "C" void cudaRender(int2 occupancyParameters, int4 blockSize, SceneInfo s
                     d_postProcessingBuffer[device], d_primitivesXYIds[device]);
                 break;
             }
-            case vt3DVision:
+            case ctVR:
             {
                 k_3DVisionRenderer<<<grid, blocks, 0, d_streams[device][stream]>>>(
                     occupancyParameters,
@@ -1762,7 +1755,7 @@ extern "C" void cudaRender(int2 occupancyParameters, int4 blockSize, SceneInfo s
                     d_postProcessingBuffer[device], d_primitivesXYIds[device]);
                 break;
             }
-            case vtFishEye:
+            case ctPanoramic:
             {
                 k_fishEyeRenderer<<<grid, blocks, 0, d_streams[device][stream]>>>(
                     occupancyParameters, device * stream * size.y,
@@ -1782,7 +1775,7 @@ extern "C" void cudaRender(int2 occupancyParameters, int4 blockSize, SceneInfo s
                     d_postProcessingBuffer[device], d_primitivesXYIds[device]);
                 break;
             }
-            case vtVolumeRendering:
+            case ctVolumeRendering:
             {
                 k_volumeRenderer<<<grid, blocks, 0, d_streams[device][stream]>>>(
                     occupancyParameters, device * (size.y / occupancyParameters.x), stream * size.y,

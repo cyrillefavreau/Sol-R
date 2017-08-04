@@ -44,11 +44,11 @@ extern "C" SOLR_API int SolR_RecompileKernels(char *filename);
 // ---------- Scene ----------
 extern "C" SOLR_API int SolR_SetSceneInfo(int width, int height, int graphicsLevel, int nbRayIterations,
                                           double transparentColor, double viewDistance, double shadowIntensity,
-                                          int supportFor3DVision, double width3DVision, double bgColorR,
-                                          double bgColorG, double bgColorB, double bgColorA, int renderBoxes,
-                                          int pathTracingIteration, int maxPathTracingIterations, int outputType,
-                                          int timer, int fogEffect, int isometric3D, int doubleSidedTriangles,
-                                          int gradientBackGround, int advancedFeatures, int skyboxSize,
+                                          double eyeSeparation, double bgColorR, double bgColorG, double bgColorB,
+                                          double bgColorA, int renderBoxes, int pathTracingIteration,
+                                          int maxPathTracingIterations, int frameBufferType, int timestamp,
+                                          int atmosphericEffect, int cameraType, int doubleSidedTriangles,
+                                          int extendedGeometry, int advancedIllumination, int skyboxSize,
                                           int skyboxMaterialId, double geometryEpsilon, double rayEpsilon);
 
 extern "C" SOLR_API int SolR_SetPostProcessingInfo(int type, double param1, double param2, int param3);

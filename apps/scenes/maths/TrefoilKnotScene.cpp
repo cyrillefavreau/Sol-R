@@ -265,8 +265,8 @@ void TrefoilKnotScene::doInitialize()
 
 void TrefoilKnotScene::doAnimate()
 {
-    // m_rotationAngles.y = sin(m_sceneInfo.misc.y*0.0023f)*0.1f;
-    // m_rotationAngles.z = cos(m_sceneInfo.misc.y*0.0031f)*0.1f;
+    // m_rotationAngles.y = sin(m_sceneInfo.timestamp*0.0023f)*0.1f;
+    // m_rotationAngles.z = cos(m_sceneInfo.timestamp*0.0031f)*0.1f;
     m_rotationAngles.y = 0.1f;
     m_gpuKernel->rotatePrimitives(m_rotationCenter, m_rotationAngles);
     m_gpuKernel->compactBoxes(false);

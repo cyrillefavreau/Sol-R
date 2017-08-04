@@ -38,7 +38,6 @@ namespace solr
 SceneInfo gSceneInfo;
 PostProcessingInfo glPostProcessingInfo;
 const int gTotalPathTracingIterations = 1;
-vec4i gMisc = {otOpenGL, 0, 0, 0};
 vec4f gRotationCenter = {0.f, 0.f, 0.f};
 float gScale = 1.0f;
 // Current Material
@@ -74,21 +73,23 @@ void Initialize(const int width, const int height, const char *openCLKernel = 0)
     // Scene
     gSceneInfo.size.x = width;
     gSceneInfo.size.y = height;
-    gSceneInfo.graphicsLevel = 4;
+    gSceneInfo.graphicsLevel = glFull;
     gSceneInfo.nbRayIterations = 5;
     gSceneInfo.transparentColor = 0.f;
     gSceneInfo.viewDistance = 100000.f;
     gSceneInfo.shadowIntensity = 0.9f;
-    gSceneInfo.width3DVision = 1.3f;
+    gSceneInfo.eyeSeparation = 1.3f;
     gSceneInfo.backgroundColor.x = 1.f;
     gSceneInfo.backgroundColor.y = 1.f;
     gSceneInfo.backgroundColor.z = 1.f;
     gSceneInfo.backgroundColor.w = 0.f;
-    gSceneInfo.renderingType = vtStandard;
     gSceneInfo.renderBoxes = 0;
     gSceneInfo.pathTracingIteration = 0;
     gSceneInfo.maxPathTracingIterations = gTotalPathTracingIterations;
-    gSceneInfo.misc = gMisc;
+    gSceneInfo.frameBufferType = ftRGB;
+    gSceneInfo.timestamp = 0;
+    gSceneInfo.atmosphericEffect = aeNone;
+    gSceneInfo.cameraType = ctPerspective;
 
     glPostProcessingInfo.type = ppe_none;
     glPostProcessingInfo.param1 = 10000.f;
@@ -528,7 +529,7 @@ void glBindTexture(GLenum target, GLuint texture)
 int gluBuild2DMipmaps(GLenum target, GLint components, GLint width, GLint height, GLenum format, GLenum type,
                       const void *data)
 {
-    TextureInformation textureInfo;
+    TextureInfo textureInfo;
     textureInfo.size.x = width;
     textureInfo.size.y = height;
 
@@ -603,7 +604,7 @@ void glVertex2i(GLint x, GLint y)
 
 void glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble nearVal, GLdouble farVal)
 {
-    // gMisc.w = 1;
+    SingletonKernel::kernel()->getSceneInfo().cameraType = ctOrthographic;
 }
 
 void render()

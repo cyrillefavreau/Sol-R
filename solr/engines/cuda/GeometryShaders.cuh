@@ -40,7 +40,7 @@ __device__ vec4f intersectionShader(const SceneInfo &sceneInfo, const Primitive 
     vec4f colorAtIntersection = materials[primitive.materialId].color;
     colorAtIntersection.w = 0.f; // w attribute is used to dtermine light intensity of the material
 
-    if (sceneInfo.parameters.y == 1) // Extended geometry
+    if (sceneInfo.extendedGeometry)
     {
         switch (primitive.type)
         {
@@ -139,17 +139,9 @@ __device__ __INLINE__ void makeColor(const SceneInfo &sceneInfo, vec4f &color, B
     color.y = (color.y < 0.f) ? 0.f : color.y;
     color.z = (color.z < 0.f) ? 0.f : color.z;
 
-    switch (sceneInfo.misc.x)
+    switch (sceneInfo.frameBufferType)
     {
-    case otOpenGL:
-    {
-        // OpenGL
-        bitmap[mdc_index] = (BitmapBuffer)(color.x * 255.f);     // Red
-        bitmap[mdc_index + 1] = (BitmapBuffer)(color.y * 255.f); // Green
-        bitmap[mdc_index + 2] = (BitmapBuffer)(color.z * 255.f); // Blue
-        break;
-    }
-    case otDelphi:
+    case ftBGR:
     {
         // Delphi
         int y = index / sceneInfo.size.y;
@@ -161,13 +153,13 @@ __device__ __INLINE__ void makeColor(const SceneInfo &sceneInfo, vec4f &color, B
         bitmap[i + 2] = (BitmapBuffer)(color.x * 255.f); // Red
         break;
     }
-    case otJPEG:
-    {
-        // JPEG
-        bitmap[mdc_index + 2] = (BitmapBuffer)(color.z * 255.f); // Blue
-        bitmap[mdc_index + 1] = (BitmapBuffer)(color.y * 255.f); // Green
-        bitmap[mdc_index] = (BitmapBuffer)(color.x * 255.f);     // Red
-        break;
-    }
-    }
+	default:
+	{
+		// OpenGL
+		bitmap[mdc_index] = (BitmapBuffer)(color.x * 255.f);     // Red
+		bitmap[mdc_index + 1] = (BitmapBuffer)(color.y * 255.f); // Green
+		bitmap[mdc_index + 2] = (BitmapBuffer)(color.z * 255.f); // Blue
+		break;
+	}
+	}
 }

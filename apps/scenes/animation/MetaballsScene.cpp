@@ -36,7 +36,7 @@ float threshold = 1.0f;
 
 #ifdef USE_KINECT
 unsigned int gridSize = 60;
-const unsigned int numMetaballs = 20;
+unsigned int numMetaballs = 20;
 vec4f size = {numMetaballs * 10.f, numMetaballs * 10.f, numMetaballs * 10.f};
 vec4f amplitude = {size.x / 5.f, size.y / 5.f, size.z / 5.f};
 vec4f scale = {2500.f / numMetaballs, 2500.f / numMetaballs, 2500.f / numMetaballs};
@@ -200,17 +200,18 @@ void MetaballsScene::doAnimate()
     }
 #endif
 #ifdef USE_KINECT
-    vec4f pos;
+    vec3f pos;
     ratio = 0.1f;
-    if (m_gpuKernel->getSkeletonPosition(i, pos))
-    {
-        center.x = -pos.x * amplitude.x;
-        center.y = pos.y * amplitude.y;
-        center.z = pos.z * amplitude.z;
-    }
     // update balls' position
-    for (int i(0); i < numMetaballs; ++i)
+    for (unsigned int i = 0; i < 20 && i < numMetaballs; ++i)
     {
+        if (m_gpuKernel->getSkeletonPosition(i, pos))
+        {
+            center.x = -pos.x * amplitude.x;
+            center.y = pos.y * amplitude.y;
+            center.z = pos.z * amplitude.z;
+        }
+
         float timer = static_cast<float>(i * 3 + m_timer * 40.f);
         float c = 2.0f * (float)cos(timer / 600);
         switch (i % 4)
@@ -414,7 +415,7 @@ void MetaballsScene::doAnimate()
 
     m_gpuKernel->compactBoxes(true);
     m_timer += 1.5f;
-    m_gpuKernel->getSceneInfo().misc.y += 1;
+    m_gpuKernel->getSceneInfo().timestamp += 1;
 }
 
 void MetaballsScene::doAddLights()

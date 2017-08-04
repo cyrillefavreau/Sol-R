@@ -67,7 +67,7 @@ ImageLoader::~ImageLoader(void)
 {
 }
 
-bool ImageLoader::loadBMP24(const int index, const std::string &filename, TextureInformation *textureInformations)
+bool ImageLoader::loadBMP24(const int index, const std::string &filename, TextureInfo *textureInformations)
 {
     FILE *filePtr(0);                  // our file pointer
     BITMAPFILEHEADER bitmapFileHeader; // our bitmap file header
@@ -167,7 +167,7 @@ bool ImageLoader::loadBMP24(const int index, const std::string &filename, Textur
     return true;
 }
 
-bool ImageLoader::loadJPEG(const int index, const std::string &filename, TextureInformation *textureInformations)
+bool ImageLoader::loadJPEG(const int index, const std::string &filename, TextureInfo *textureInformations)
 {
     int width, height, actual_comps, req_comps(3);
     BitmapBuffer *buffer =
@@ -209,7 +209,7 @@ bool ImageLoader::loadJPEG(const int index, const std::string &filename, Texture
     return false;
 }
 
-bool ImageLoader::loadTGA(const int index, const std::string &filename, TextureInformation *textureInformations)
+bool ImageLoader::loadTGA(const int index, const std::string &filename, TextureInfo *textureInformations)
 {
 #if 0
     TGAFILE tgaFile;

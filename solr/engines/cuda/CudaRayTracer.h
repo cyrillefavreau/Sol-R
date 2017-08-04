@@ -46,7 +46,7 @@ extern "C" void h2d_materials(vec2i occupancyParameters, Material *materials, in
 
 extern "C" void h2d_randoms(vec2i occupancyParameters, float *randoms);
 
-extern "C" void h2d_textures(vec2i occupancyParameters, int activeTextures, TextureInformation *textureInfos);
+extern "C" void h2d_textures(vec2i occupancyParameters, int activeTextures, TextureInfo *textureInfos);
 
 extern "C" void h2d_lightInformation(vec2i occupancyParameters, LightInformation *lightInformation,
                                      int lightInformationSize);

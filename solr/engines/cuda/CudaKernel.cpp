@@ -285,10 +285,10 @@ void CudaKernel::render_begin(const float timer)
         objects.w = m_lightInformationSize;
 
         SceneInfo sceneInfo = m_sceneInfo;
-        if (m_sceneInfo.parameters.w == 1 && m_sceneInfo.pathTracingIteration == 0)
-            sceneInfo.graphicsLevel = 0;
-        if (m_sceneInfo.parameters.w == 1 && m_sceneInfo.pathTracingIteration == m_sceneInfo.maxPathTracingIterations)
-            sceneInfo.misc.w = 2;
+        if (m_sceneInfo.draftMode && m_sceneInfo.pathTracingIteration == 0)
+            sceneInfo.graphicsLevel = glNoShading;
+        if (m_sceneInfo.draftMode && m_sceneInfo.pathTracingIteration == m_sceneInfo.maxPathTracingIterations)
+            sceneInfo.cameraType = ctAntialiazed;
 
         cudaRender(m_occupancyParameters, m_blockSize, sceneInfo, objects, m_postProcessingInfo, m_viewPos, m_viewDir,
                    m_angles
@@ -310,14 +310,14 @@ void CudaKernel::render_end()
     if (m_sceneInfo.pathTracingIteration == m_sceneInfo.maxPathTracingIterations - 1)
         LOG_INFO(1, "Rendering completed in " << GetTickCount() - m_counter << " ms");
 #endif // WIN32
-    if (m_sceneInfo.misc.x == 0)
+    if (m_sceneInfo.frameBufferType == ftRGB)
     {
         ::glEnable(GL_TEXTURE_2D);
         ::glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         ::glTexImage2D(GL_TEXTURE_2D, 0, gColorDepth, m_sceneInfo.size.x, m_sceneInfo.size.y, 0, GL_RGB,
                        GL_UNSIGNED_BYTE, m_bitmap);
 
-        if (m_sceneInfo.renderingType == vt3DVision)
+        if (m_sceneInfo.cameraType == ctVR)
         {
             // Projection distortion
             float step = 0.125f;
@@ -474,17 +474,25 @@ void CudaKernel::queryDevice()
             NULL};
         LOG_INFO(1, "  Compute Mode:");
         LOG_INFO(1, "     < " << sComputeMode[deviceProp.computeMode] << " >");
-        LOG_INFO(1, "--------------------------------------------------------------------------------");
-        LOG_INFO(1, "Data types:");
-        LOG_INFO(1, "- float : " << sizeof(float));
-        LOG_INFO(1, "- vec2f : " << sizeof(vec2f));
-        LOG_INFO(1, "- vec3f : " << sizeof(vec3f));
-        LOG_INFO(1, "- vec4f : " << sizeof(vec4f));
-        LOG_INFO(1, "- int   : " << sizeof(int));
-        LOG_INFO(1, "- vec2i : " << sizeof(vec2i));
-        LOG_INFO(1, "- vec3i : " << sizeof(vec3i));
-        LOG_INFO(1, "- vec4i : " << sizeof(vec4i));
-        LOG_INFO(1, "--------------------------------------------------------------------------------");
+        LOG_INFO(3, "--------------------------------------------------------------------------------");
+        LOG_INFO(3, "Data type sizes (in bytes)");
+        LOG_INFO(3, "- float             : " << sizeof(float));
+        LOG_INFO(3, "- vec2f             : " << sizeof(vec2f));
+        LOG_INFO(3, "- vec3f             : " << sizeof(vec3f));
+        LOG_INFO(3, "- vec4f             : " << sizeof(vec4f));
+        LOG_INFO(3, "- int               : " << sizeof(int));
+        LOG_INFO(3, "- vec2i             : " << sizeof(vec2i));
+        LOG_INFO(3, "- vec3i             : " << sizeof(vec3i));
+        LOG_INFO(3, "- vec4i             : " << sizeof(vec4i));
+        LOG_INFO(3, "- SceneInfo         : " << sizeof(SceneInfo));
+        LOG_INFO(3, "- Ray               : " << sizeof(Ray));
+        LOG_INFO(3, "- LightInformation  : " << sizeof(LightInformation));
+        LOG_INFO(3, "- Material          : " << sizeof(Material));
+        LOG_INFO(3, "- BoundingBox       : " << sizeof(BoundingBox));
+        LOG_INFO(3, "- Primitive         : " << sizeof(Primitive));
+        LOG_INFO(3, "- TextureInfo       : " << sizeof(TextureInfo));
+        LOG_INFO(3, "- PostProcessingInfo: " << sizeof(PostProcessingInfo));
+        LOG_INFO(3, "--------------------------------------------------------------------------------");
     }
 
     // exe and CUDA driver name

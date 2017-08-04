@@ -40,50 +40,55 @@ PostProcessingInfo gPostProcessingInfoStub;
 // --------------------------------------------------------------------------------
 // Implementation
 // --------------------------------------------------------------------------------
-int SolR_SetSceneInfo(int width, int height, int graphicsLevel, int nbRayIterations, double transparentColor,
-                      double viewDistance, double shadowIntensity, int renderingType, double width3DVision,
-                      double bgColorR, double bgColorG, double bgColorB, double bgColorA, int renderBoxes,
-                      int pathTracingIteration, int maxPathTracingIterations, int outputType, int timer, int fogEffect,
-                      int isometric3D, int doubleSidedTriangles, int gradientBackGround, int globalIllumination,
-                      int skyboxSize, int skyboxMaterialId, double geometryEpsilon, double rayEpsilon)
+int SolR_SetSceneInfo1()
+{
+    return 0;
+}
+
+extern "C" SOLR_API int SolR_SetSceneInfo(int width, int height, int graphicsLevel, int nbRayIterations,
+                                          double transparentColor, double viewDistance, double shadowIntensity,
+                                          double eyeSeparation, double bgColorR, double bgColorG, double bgColorB,
+                                          double bgColorA, int renderBoxes, int pathTracingIteration,
+                                          int maxPathTracingIterations, int frameBufferType, int timestamp,
+                                          int atmosphericEffect, int cameraType, int doubleSidedTriangles,
+                                          int extendedGeometry, int advancedIllumination, int skyboxSize,
+                                          int skyboxMaterialId, double geometryEpsilon, double rayEpsilon)
 {
     LOG_INFO(3, "SolR_SetSceneInfo (" << width << "," << height << "," << graphicsLevel << "," << nbRayIterations << ","
                                       << transparentColor << "," << viewDistance << "," << shadowIntensity << ","
-                                      << width3DVision << "," << bgColorR << "," << bgColorG << "," << bgColorB << ","
-                                      << bgColorA << "," << renderingType << "," << renderBoxes << ","
-                                      << pathTracingIteration << "," << maxPathTracingIterations << "," << outputType
-                                      << "," << timer << "," << fogEffect << "," << isometric3D << ","
-                                      << geometryEpsilon << "," << rayEpsilon);
+                                      << eyeSeparation << "," << bgColorR << "," << bgColorG << "," << bgColorB << ","
+                                      << bgColorA << "," << cameraType << "," << renderBoxes << ","
+                                      << pathTracingIteration << "," << maxPathTracingIterations << ","
+                                      << frameBufferType << "," << timestamp << "," << atmosphericEffect << ","
+                                      << cameraType << "," << geometryEpsilon << "," << rayEpsilon);
 
     gSceneInfoStub.size.x = width;
     gSceneInfoStub.size.y = height;
-    gSceneInfoStub.graphicsLevel = graphicsLevel;
+    gSceneInfoStub.graphicsLevel = static_cast<GraphicsLevel>(graphicsLevel);
     gSceneInfoStub.nbRayIterations = nbRayIterations;
     gSceneInfoStub.transparentColor = static_cast<float>(transparentColor);
     gSceneInfoStub.viewDistance = static_cast<float>(viewDistance);
     gSceneInfoStub.shadowIntensity = static_cast<float>(shadowIntensity);
-    gSceneInfoStub.width3DVision = static_cast<float>(width3DVision);
+    gSceneInfoStub.eyeSeparation = static_cast<float>(eyeSeparation);
     gSceneInfoStub.backgroundColor.x = static_cast<float>(bgColorR);
     gSceneInfoStub.backgroundColor.y = static_cast<float>(bgColorG);
     gSceneInfoStub.backgroundColor.z = static_cast<float>(bgColorB);
     gSceneInfoStub.backgroundColor.w = static_cast<float>(bgColorA);
-    gSceneInfoStub.renderingType = renderingType;
     gSceneInfoStub.renderBoxes = static_cast<int>(renderBoxes);
     gSceneInfoStub.pathTracingIteration = pathTracingIteration;
     gSceneInfoStub.maxPathTracingIterations = maxPathTracingIterations;
-    gSceneInfoStub.misc.x = outputType;
-    gSceneInfoStub.misc.y = timer;
-    gSceneInfoStub.misc.z = fogEffect;
-    gSceneInfoStub.misc.w = isometric3D;
-    gSceneInfoStub.parameters.x = doubleSidedTriangles;
-    gSceneInfoStub.parameters.y = gradientBackGround;
-    gSceneInfoStub.parameters.z = globalIllumination;
-    // gSceneInfoStub.parameters.w              = draftMode;
+    gSceneInfoStub.frameBufferType = static_cast<FrameBufferType>(frameBufferType);
+    gSceneInfoStub.timestamp = timestamp;
+    gSceneInfoStub.atmosphericEffect = static_cast<AtmosphericEffect>(atmosphericEffect);
+    gSceneInfoStub.cameraType = static_cast<CameraType>(cameraType);
+    gSceneInfoStub.doubleSidedTriangles = doubleSidedTriangles;
+    gSceneInfoStub.extendedGeometry = extendedGeometry;
+    gSceneInfoStub.advancedIllumination = static_cast<AdvancedIllumination>(advancedIllumination);
 
-    gSceneInfoStub.skybox.x = skyboxSize;
-    gSceneInfoStub.skybox.y = skyboxMaterialId;
-    gSceneInfoStub.epsilon.x = geometryEpsilon;
-    gSceneInfoStub.epsilon.y = rayEpsilon;
+    gSceneInfoStub.skyboxRadius = skyboxSize;
+    gSceneInfoStub.skyboxMaterialId = skyboxMaterialId;
+    gSceneInfoStub.geometryEpsilon = geometryEpsilon;
+    gSceneInfoStub.rayEpsilon = rayEpsilon;
     return 0;
 }
 
@@ -99,7 +104,7 @@ int SolR_SetPostProcessingInfo(int type, double param1, double param2, int param
 
 int SolR_SetDraftMode(int draft)
 {
-    gSceneInfoStub.parameters.w = draft;
+    gSceneInfoStub.draftMode = draft;
     return 0;
 }
 
@@ -329,8 +334,8 @@ int SolR_GetTextureSize(int index, int &width, int &height, int &depth)
     LOG_INFO(3, "SolR_GetTextureSize");
     if (index < static_cast<int>(solr::SingletonKernel::kernel()->getNbActiveTextures()))
     {
-        TextureInformation texInfo;
-        memset(&texInfo, 0, sizeof(TextureInformation));
+        TextureInfo texInfo;
+        memset(&texInfo, 0, sizeof(TextureInfo));
         solr::SingletonKernel::kernel()->getTexture(index, texInfo);
         if (texInfo.buffer)
         {
@@ -348,8 +353,8 @@ int SolR_GetTexture(int index, BitmapBuffer *image)
     LOG_INFO(3, "SolR_GetTexture");
     if (index < static_cast<int>(solr::SingletonKernel::kernel()->getNbActiveTextures()))
     {
-        TextureInformation texInfo;
-        memset(&texInfo, 0, sizeof(TextureInformation));
+        TextureInfo texInfo;
+        memset(&texInfo, 0, sizeof(TextureInfo));
         solr::SingletonKernel::kernel()->getTexture(index, texInfo);
         if (texInfo.buffer)
         {

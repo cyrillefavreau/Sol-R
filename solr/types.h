@@ -34,9 +34,11 @@
 #include <CL/cl.h>
 #endif // __APPLE__
 
+typedef cl_float vec1f;
 typedef cl_float2 vec2f;
-typedef cl_float3 vec3f;
+typedef cl_float4 vec3f;
 typedef cl_float4 vec4f;
+typedef cl_int vec1i;
 typedef cl_int2 vec2i;
 typedef cl_int3 vec3i;
 typedef cl_int4 vec4i;
@@ -46,12 +48,14 @@ typedef cl_int4 PrimitiveXYIdBuffer;
 #else
 #include <vector_types.h>
 
+typedef float vec1f;
 typedef float2 vec2f;
-typedef int2 vec2i;
 typedef float3 vec3f;
+typedef float4 vec4f;
+typedef int vec1i;
+typedef int2 vec2i;
 typedef int3 vec3i;
 typedef int4 vec4i;
-typedef float4 vec4f;
 typedef int4 PrimitiveXYIdBuffer;
 
 #define __ALIGN16__ __align__(16)
@@ -78,90 +82,75 @@ struct PostProcessingBuffer
     vec4f sceneInfo;
 };
 
-// 3D vision tqype
-enum VisionType
+enum CameraType
 {
-    vtStandard = 0,
-    vtAnaglyph = 1,
-    vt3DVision = 2,
-    vtFishEye = 3,
-    vtVolumeRendering = 4
+    ctPerspective = 0,
+    ctOrthographic = 1,
+    ctAnaglyph = 2,
+    ctVR = 3,
+    ctPanoramic = 4,
+    ctAntialiazed = 5,
+    ctVolumeRendering = 6
 };
 
-enum GeometryComplexity
+enum FrameBufferType
 {
-    gcTrianglesOnly = 0,
-    gcExtendedGeometry = 1
-};
-
-enum DoubleSidedTriangles
-{
-    dtDoubleSidedTrianglesOff = 0,
-    dtDoubleSidedTrianglesOn = 1
-};
-
-enum DraftMode
-{
-    dmDraftModeOff = 0,
-    dmDraftModeOn = 1
-};
-
-enum CameraModes
-{
-    cmStandard = 0,
-    cmIsometric3D = 1,
-    cmAntialiazing = 2,
-    cmVolumeRendering = 3
-};
-
-// Bitmap format
-enum OutputType
-{
-    otOpenGL = 0, // RGB 24bit
-    otDelphi = 1, // BGR 24bit
-    otJPEG = 2    // RGB 24bit inverted bitmap
+    ftRGB = 0, // RGB 24bit
+    ftBGR = 1  // BGR 24bit
 };
 
 enum AdvancedIllumination
 {
     aiNone = 0,
-    aiGlobalIllumination,
-    aiAdvancedGlobalIllumination,
-    aiRandomIllumination
+    aiBasic = 1,
+    aiFull = 2,
+    aiRandomIllumination = 3
+};
+
+enum GraphicsLevel
+{
+    glNoShading = 0,
+    glPhong = 1,
+    glPhongAndBlinn = 2,
+    glReflectionsAndRefractions = 3,
+    glFull = 4
+};
+
+enum AtmosphericEffect
+{
+    aeNone = 0,
+    aeFog = 1
 };
 
 // Scene information
 struct __ALIGN16__ SceneInfo
 {
-    vec2i size;                   // Image size
-    int graphicsLevel;            // Graphics level( No Shading=0, Lambert=1, Specular=2, textured=3, Reflections and
-                                  // Refractions=4, Shadows=5)
-    int nbRayIterations;          // Maximum number of ray iterations for current frame
-    float transparentColor;       // Value above which r+g+b color is considered as transparent
-    float viewDistance;           // Maximum viewing distance
-    float shadowIntensity;        // Shadow intensity( off=0, pitch black=1)
-    float width3DVision;          // 3D: Distance between both eyes
-    vec4f backgroundColor;        // Background color
-    int renderingType;            // Rendering type( Standard=0, Anaglyph=1, OculusVR=2, FishEye=3)
-    int renderBoxes;              // Activate bounding box rendering( off=0, on=1 );
-    int pathTracingIteration;     // Current iteration for current frame
-    int maxPathTracingIterations; // Maximum number of iterations for current
-                                  // frame
-    vec4i misc;                   // x: Bitmap encoding( OpenGL=0, Delphi=1, JPEG=2 )
-                                  // y: Timer
-                                  // z: Fog( 0:disabled, 1:enabled )
-                                  // w: Camera modes( Standard=0, Isometric 3D=1, Antialiazing=2 )
-    vec4i parameters;             // x: Double-sided triangles( 0:disabled, 1:enabled )
-                                  // y: Extended geometry ( 0:disabled, 1:enabled )
-                                  // z: Advanced features( 0:disabled, 1:global illumination, 2: advanced global
-                                  // illumination, 3: random lightning )
-                                  // w: Draft mode(0:disabled, 1:enabled)
-    vec4i skybox;                 // x: size
-                                  // y: material Id
-                                  // z and w: currently unused
-    vec2f epsilon;                // Ray-tracing epsilons
-                                  // x: Geometry
-                                  // y: Rays
+    vec2i size;                  // Image size
+    CameraType cameraType;       // Camera type( Perspective, Orthographic, Anaglyph, VR, Panoramic, Antialiazed, Volume
+                                 // rendering )
+    GraphicsLevel graphicsLevel; // Graphics level( No Shading=0, Lambert=1, Specular=2, textured=3, Reflections and
+                                 // Refractions=4, Shadows=5)
+    vec1i nbRayIterations;       // Maximum number of ray iterations for current frame
+    vec1f transparentColor;      // Value above which r+g+b color is considered as transparent
+    vec1f viewDistance;          // Maximum viewing distance
+    vec1f shadowIntensity;       // Shadow intensity( off=0, pitch black=1)
+    vec1f eyeSeparation;         // Distance between both eyes (3D stereo)
+    vec1i renderBoxes;           // Activate bounding box rendering
+    vec1i pathTracingIteration;  // Current iteration for current frame
+    vec1i maxPathTracingIterations;            // Maximum number of iterations for current frame
+    FrameBufferType frameBufferType;           // Frame buffer type( RGB or BGR )
+    vec1i timestamp;                           // Timestamp
+    AtmosphericEffect atmosphericEffect;       // Atmospheric effects
+    vec1i doubleSidedTriangles;                // Use double-sided triangles
+    vec1i extendedGeometry;                    // Use extended geometry
+    AdvancedIllumination advancedIllumination; // Advanced features (Global illumination, random lightning, etc)
+    vec1i draftMode;                           // Draft mode when camera in motion
+    vec1i skyboxRadius;                        // Skybox sphere radius
+    vec1i skyboxMaterialId;                    // Skybox material Id
+    vec1i gradientBackground;                  // Gradient background
+    vec1f geometryEpsilon;                     // Geometry epsilon
+    vec1f rayEpsilon;                          // Ray epsilon
+    vec4f backgroundColor;                     // Background color
 };
 
 // Ray structure
@@ -179,9 +168,10 @@ struct __ALIGN16__ Ray
 // that very structure, in order to simulate global illumination
 struct __ALIGN16__ LightInformation
 {
-    vec2i attribute; // x: ID of the emitting primitive, y: Material ID
-    vec3f location;  // Position in space
-    vec4f color;     // Light
+    vec1i primitiveId; // ID of the emitting primitive
+    vec1i materialId;  // Material ID of the emitting primitive
+    vec3f location;    // Position in space
+    vec4f color;       // Light
 };
 
 // Primitive types
@@ -214,10 +204,10 @@ struct __ALIGN16__ Material
                              // y: Power
                              // z: <not used>
                              // w: <not used>
-    float reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
-    float refraction;        // Refraction index( ex: glass=1.33 )
-    float transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
-    float opacity;           // Opacity strength
+    vec1f reflection;        // Reflection rate( No reflection=0 -> Full reflection=1 )
+    vec1f refraction;        // Refraction index( ex: glass=1.33 )
+    vec1f transparency;      // Transparency rate( Opaque=0 -> Full transparency=1 )
+    vec1f opacity;           // Opacity strength
     vec4i attributes;        // x: Fast transparency( off=0, on=1 ). Fast transparency
     // produces no shadows and drops intersections if rays intersects primitive with the same material ID
     // y: Procedural textures( off=0, on=1 )
@@ -243,15 +233,15 @@ struct __ALIGN16__ Material
                                  // y: Transparency map
                                  // z: Ambiant Occulusion
                                  // w: not used
-    vec2f mappingOffset;         // Texture mapping offsets based on sceneInfo.misc.y
+    vec2f mappingOffset;         // Texture mapping offsets based on sceneInfo.timestamp
 };
 
 // Bounding Box Structure
 struct __ALIGN16__ BoundingBox
 {
     vec3f parameters[2];   // Bottom-Left and Top-Right corners
-    int nbPrimitives;      // Number of primitives in the box
-    int startIndex;        // Index of the first primitive in the box
+    vec1i nbPrimitives;    // Number of primitives in the box
+    vec1i startIndex;      // Index of the first primitive in the box
     vec2i indexForNextBox; // If no intersection, how many of the following boxes can be skipped?
 };
 typedef std::map<size_t, BoundingBox> BoundingBoxes;
@@ -270,11 +260,11 @@ struct __ALIGN16__ Primitive
     // Size( x,y,z )
     vec3f size;
     // Type( See PrimitiveType )
-    int type;
+    vec1i type;
     // Index
-    int index;
+    vec1i index;
     // Material ID
-    int materialId;
+    vec1i materialId;
     // Texture coordinates
     vec3f vt0;
     vec3f vt1;
@@ -284,7 +274,7 @@ typedef std::map<size_t, Primitive> Primitives;
 
 enum TextureType
 {
-    tex_diffuse,
+    tex_diffuse = 0,
     tex_bump,
     tex_normal,
     tex_ambient_occlusion,
@@ -294,10 +284,10 @@ enum TextureType
 };
 
 // Texture information structure
-struct __ALIGN16__ TextureInformation
+struct __ALIGN16__ TextureInfo
 {
     unsigned char *buffer; // Pointer to the texture
-    int offset;            // Offset of the texture in the global texture buffer (the one
+    vec1i offset;          // Offset of the texture in the global texture buffer (the one
                            // that will be transfered to the GPU)
     vec3i size;            // Size of the texture
     TextureType type;      // Texture type (diffuse, normal, bump, etc.)
@@ -316,12 +306,12 @@ enum PostProcessingType
 };
 
 // Post processing information
-struct PostProcessingInfo
+struct __ALIGN16__ PostProcessingInfo
 {
-    int type;     // Type( See PostProcessingType enum )
-    float param1; // Parameter role depends on post processing type
-    float param2; // Parameter role depends on post processing type
-    int param3;   // Parameter role depends on post processing type
+    vec1i type;   // Type( See PostProcessingType enum )
+    vec1f param1; // Parameter role depends on post processing type
+    vec1f param2; // Parameter role depends on post processing type
+    vec1i param3; // Parameter role depends on post processing type
 };
 
 #endif // TYPES_H
