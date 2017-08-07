@@ -254,11 +254,11 @@ public:
     // ---------- Kinect ----------
     void initializeKinectTextures();
 
-    int updateSkeletons(unsigned int primitiveIndex, vec4f skeletonPosition, float size, float radius, int materialId,
+    int updateSkeletons(unsigned int primitiveIndex, vec3f skeletonPosition, float size, float radius, int materialId,
                         float head_radius, int head_materialId, float hands_radius, int hands_materialId,
                         float feet_radius, int feet_materialId);
 
-    bool getSkeletonPosition(int index, vec4f &position);
+    bool getSkeletonPosition(int index, vec3f &position);
     BitmapBuffer *getDepthBitmap() { return m_hDepth; }
     BitmapBuffer *getVideoBitmap() { return m_hVideo; }
 #endif // USE_KINECT

@@ -1490,7 +1490,7 @@ void Scene::animateSkeleton()
 
     if (hr == S_OK)
     {
-        vec4f position;
+        vec3f position;
         // Head
         if (m_gpuKernel->getSkeletonPosition(NUI_SKELETON_POSITION_HEAD, position))
         {
@@ -1551,7 +1551,7 @@ void Scene::animateSkeleton()
                     angles.y = PI * (m_modelRotationAngle.y - acd.controllers[cont].rot_quat[1]);
                     angles.z = PI * (m_modelRotationAngle.z + acd.controllers[cont].rot_quat[2]);
 
-                    vec4f translation;
+                    vec3f translation;
                     translation.x = 10.f * (acd.controllers[cont].pos[0] - m_modelTranslation.x);
                     translation.y = 10.f * (acd.controllers[cont].pos[1] - m_modelTranslation.y);
                     translation.z = 10.f * (m_modelTranslation.z - acd.controllers[cont].pos[2]);

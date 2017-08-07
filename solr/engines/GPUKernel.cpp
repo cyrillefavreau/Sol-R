@@ -2367,7 +2367,7 @@ void GPUKernel::initializeKinectTextures()
     m_nbActiveTextures = 2;
 }
 
-int GPUKernel::updateSkeletons(unsigned int primitiveIndex, vec4f skeletonPosition, float size, float radius,
+int GPUKernel::updateSkeletons(unsigned int primitiveIndex, vec3f skeletonPosition, float size, float radius,
                                int materialId, float head_radius, int head_materialId, float hands_radius,
                                int hands_materialId, float feet_radius, int feet_materialId)
 {
@@ -2421,7 +2421,7 @@ int GPUKernel::updateSkeletons(unsigned int primitiveIndex, vec4f skeletonPositi
     return found ? S_OK : S_FALSE;
 }
 
-bool GPUKernel::getSkeletonPosition(int index, vec4f &position)
+bool GPUKernel::getSkeletonPosition(int index, vec3f &position)
 {
     bool returnValue(false);
     if (m_skeletonIndex != -1)

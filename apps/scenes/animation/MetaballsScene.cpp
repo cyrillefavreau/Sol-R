@@ -200,7 +200,7 @@ void MetaballsScene::doAnimate()
     }
 #endif
 #ifdef USE_KINECT
-    vec4f pos;
+    vec3f pos;
     ratio = 0.1f;
     // update balls' position
     for (unsigned int i = 0; i < 20 && i < numMetaballs; ++i)

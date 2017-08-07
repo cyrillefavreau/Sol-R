@@ -114,8 +114,8 @@ protected:
     int m_skeletonPrimitiveIndex;
     float m_skeletonSize;
     float m_skeletonThickness;
-    vec4f m_skeletonPosition;
-    vec4f m_skeletonOldPosition;
+    vec3f m_skeletonPosition;
+    vec3f m_skeletonOldPosition;
 
     float m_skeletonKinectSpace;
     float m_skeletonKinectSize;
@@ -128,6 +128,6 @@ protected:
 
 private:
     vec4f m_modelRotationAngle;
-    vec4f m_modelPosition;
+    vec3f m_modelPosition;
     vec4f m_modelTranslation;
 };
