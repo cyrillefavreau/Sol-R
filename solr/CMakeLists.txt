@@ -98,6 +98,16 @@ if(OPENCL_FOUND)
 		${OCULUS_SDK_LIBRARIES}
 		${SIXENSESDK_LIBRARIES}
         )
+    # ================================================================================
+    # Install kernels
+    # ================================================================================
+    INSTALL( FILES engines/opencl/RayTracer.cl DESTINATION bin/kernels )
 endif()
 
-INSTALL(TARGETS solr DESTINATION lib)
+# ================================================================================
+# Install binaries
+# ================================================================================
+INSTALL(TARGETS solr 
+    RUNTIME DESTINATION bin 
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib)
