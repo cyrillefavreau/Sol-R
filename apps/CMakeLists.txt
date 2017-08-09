@@ -1,3 +1,7 @@
+if(MSVC)
+  set(WINDOWS_RESOURCE_PATH ${PROJECT_SOURCE_DIR}/apps/solr.rc)
+endif(MSVC)
+
 include_directories(
 	${PROJECT_SOURCE_DIR}
 	${PROJECT_SOURCE_DIR}/apps 
@@ -5,6 +9,7 @@ include_directories(
 
 ADD_EXECUTABLE(
   solrViewer
+  ${WINDOWS_RESOURCE_PATH}
   solrViewer.cpp
   common/Types.h
   common/Utils.cpp
@@ -68,6 +73,25 @@ TARGET_LINK_LIBRARIES(
     ${LEAP_LIBRARY}
 )
 
-# ------------------------------------------------------------
-INSTALL(TARGETS solrViewer DESTINATION bin)
-# ------------------------------------------------------------
+# ================================================================================
+# Install binaries
+# ================================================================================
+
+INSTALL(TARGETS solrViewer 
+    RUNTIME DESTINATION bin 
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib)
+
+# ================================================================================
+# Install medias
+# ================================================================================
+SET(
+    SOLR_MEDIA_FOLDERS 
+    ${PROJECT_SOURCE_DIR}/medias/hdri
+    ${PROJECT_SOURCE_DIR}/medias/irt
+    ${PROJECT_SOURCE_DIR}/medias/textures
+    ${PROJECT_SOURCE_DIR}/medias/obj
+    ${PROJECT_SOURCE_DIR}/medias/pdb
+    ${PROJECT_SOURCE_DIR}/medias/swc
+    )
+INSTALL( DIRECTORY ${SOLR_MEDIA_FOLDERS} DESTINATION bin )
