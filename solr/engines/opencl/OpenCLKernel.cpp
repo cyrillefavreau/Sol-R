@@ -286,7 +286,7 @@ void OpenCLKernel::recompileKernels()
             exit(1);
         }
 
-        LOG_INFO(1, "Create Program from source");
+        LOG_INFO(3, "Create Program from source");
         const char *kernel_code = kernelCode.c_str();
         const size_t len = kernelCode.length();
         m_hProgram =
@@ -299,7 +299,10 @@ void OpenCLKernel::recompileKernels()
 #ifdef WIN32
         compilationOptions += " -DMSVC";
 #endif
-        LOG_INFO(1, "Building Program... " << compilationOptions);
+#ifdef DEBUG
+        compilationOptions += " -DDEBUG";
+#endif
+        LOG_INFO(1, "Building Program with " << compilationOptions);
 
         status = clBuildProgram(m_hProgram, 0, NULL, compilationOptions.c_str(), NULL, NULL);
         size_t length;
@@ -308,7 +311,7 @@ void OpenCLKernel::recompileKernels()
             clGetProgramBuildInfo(m_hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
         if (status == CL_SUCCESS)
         {
-            if (strlen(buffer) != 0)
+            if (length > 2)
                 LOG_INFO(1, buffer);
         }
         else
@@ -317,7 +320,6 @@ void OpenCLKernel::recompileKernels()
             exit(1);
         }
 
-        LOG_INFO(1, "Creating kernels...");
         // Text kernels
         m_kAlignment = clCreateKernel(m_hProgram, "k_alignment", &status);
         CHECKSTATUS(status);
@@ -325,16 +327,16 @@ void OpenCLKernel::recompileKernels()
         size_t szGlobalWorkSize[] = {1, 1};
         CHECKSTATUS(
             clEnqueueNDRangeKernel(m_hQueue, m_kAlignment, 2, NULL, szGlobalWorkSize, szLocalWorkSize, 0, 0, 0));
-        LOG_INFO(1, "--==   Data structures   ==--");
-        LOG_INFO(1, "Ray               : " << sizeof(Ray));
-        LOG_INFO(1, "SceneInfo         : " << sizeof(SceneInfo));
-        LOG_INFO(1, "PostProcessingInfo: " << sizeof(PostProcessingInfo));
-        LOG_INFO(1, "TextureInfo       : " << sizeof(TextureInfo));
-        LOG_INFO(1, "Primitive         : " << sizeof(Primitive));
-        LOG_INFO(1, "BoundingBox       : " << sizeof(BoundingBox));
-        LOG_INFO(1, "Material          : " << sizeof(Material));
-        LOG_INFO(1, "LightInformation  : " << sizeof(LightInformation));
-        LOG_INFO(1, "------------------------------");
+        LOG_INFO(3, "--== C++ Data structures ==--");
+        LOG_INFO(3, "Ray               : " << sizeof(Ray));
+        LOG_INFO(3, "SceneInfo         : " << sizeof(SceneInfo));
+        LOG_INFO(3, "PostProcessingInfo: " << sizeof(PostProcessingInfo));
+        LOG_INFO(3, "TextureInfo       : " << sizeof(TextureInfo));
+        LOG_INFO(3, "Primitive         : " << sizeof(Primitive));
+        LOG_INFO(3, "BoundingBox       : " << sizeof(BoundingBox));
+        LOG_INFO(3, "Material          : " << sizeof(Material));
+        LOG_INFO(3, "LightInformation  : " << sizeof(LightInformation));
+        LOG_INFO(3, "------------------------------");
 
         // Rendering kernels
         m_kStandardRenderer = clCreateKernel(m_hProgram, "k_standardRenderer", &status);
@@ -352,8 +354,9 @@ void OpenCLKernel::recompileKernels()
         m_kVolumeRenderer = clCreateKernel(m_hProgram, "k_volumeRenderer", &status);
         CHECKSTATUS(status);
 
+        LOG_INFO(1, "Rendering kernels created");
+
         // Post-processing kernels
-        LOG_INFO(1, "Creating Post-processing kernels");
         m_kDefault = clCreateKernel(m_hProgram, "k_default", &status);
         CHECKSTATUS(status);
 
@@ -368,6 +371,7 @@ void OpenCLKernel::recompileKernels()
 
         m_kFilter = clCreateKernel(m_hProgram, "k_filter", &status);
         CHECKSTATUS(status);
+        LOG_INFO(1, "Post-processing kernels created");
     }
     catch (...)
     {
@@ -383,16 +387,16 @@ void OpenCLKernel::initializeDevice()
     queryDevice();
 
     // initialize OpenCL device
-    LOG_INFO(1, "Initializing OpenCL context on platform: " << m_platform << ", device: " << m_device);
+    LOG_INFO(3, "Initializing OpenCL context on platform: " << m_platform << ", device: " << m_device);
     m_hDeviceId = m_devices[m_platform][m_device];
     m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], &m_hDeviceId, NULL, NULL, &status);
     CHECKSTATUS(status);
     if (m_hContext)
-        LOG_INFO(1, "Context successfully created on platform: " << m_platform << ", device: " << m_device);
+        LOG_INFO(1, "OpenCL context successfully initialized on platform: " << m_platform << ", device: " << m_device);
     m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, 0, &status);
     CHECKSTATUS(status);
     if (m_hQueue)
-        LOG_INFO(1, "Queue successfully created");
+        LOG_INFO(3, "Queue successfully created");
 
     // Setup device memory
     LOG_INFO(3, "Setup device memory");
@@ -567,8 +571,6 @@ void OpenCLKernel::render_begin(const float timer)
         {
             realignTexturesAndMaterials();
 
-            LOG_INFO(1,
-                     "Randoms size=" << m_sceneInfo.size.x << "x" << m_sceneInfo.size.y << "x" << sizeof(RandomBuffer));
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dRandoms, CL_TRUE, 0,
                                              m_sceneInfo.size.x * m_sceneInfo.size.y * sizeof(RandomBuffer), m_hRandoms,
                                              0, NULL, NULL));
@@ -628,11 +630,11 @@ void OpenCLKernel::render_begin(const float timer)
             {
                 totalSize += m_hTextures[i].size.x * m_hTextures[i].size.y * m_hTextures[i].size.z;
             }
-            LOG_INFO(1, "Total texture size: " << totalSize << " bytes");
+            LOG_INFO(3, "Total texture size: " << totalSize << " bytes");
 
             if (m_dTextures)
             {
-                LOG_INFO(1, "Releasing existing texture resources");
+                LOG_INFO(3, "Releasing existing texture resources");
                 CHECKSTATUS(clReleaseMemObject(m_dTextures));
                 m_dTextures = 0;
             }
@@ -649,11 +651,11 @@ void OpenCLKernel::render_begin(const float timer)
                         memcpy(tmpTextures + m_hTextures[i].offset, m_hTextures[i].buffer, textureSize);
                     }
                 }
-                LOG_INFO(1, "Creating texture buffer");
+                LOG_INFO(3, "Creating texture buffer");
                 m_dTextures = clCreateBuffer(m_hContext, CL_MEM_READ_ONLY, totalSize * sizeof(BitmapBuffer), 0, NULL);
                 CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dTextures, CL_TRUE, 0, totalSize * sizeof(BitmapBuffer),
                                                  tmpTextures, 0, NULL, NULL));
-                LOG_INFO(1, "Total GPU texture memory allocated: " << totalSize << " bytes");
+                LOG_INFO(3, "Total GPU texture memory allocated: " << totalSize << " bytes");
                 delete[] tmpTextures;
             }
             m_texturesTransfered = true;
@@ -943,13 +945,6 @@ void OpenCLKernel::render_end()
                         d2 = 1.f - pow(d2, 2.f) * m_distortion;
                         d3 = 1.f - pow(d3, 2.f) * m_distortion;
 
-                        /*
-                        d0 = (d0==0.f) ? 1.f : (1.f/(sin(d0-M_PI/2.f)+m_distortion));
-                        d1 = (d1==0.f) ? 1.f : (1.f/(sin(d1-M_PI/2.f)+m_distortion));
-                        d2 = (d2==0.f) ? 1.f : (1.f/(sin(d2-M_PI/2.f)+m_distortion));
-                        d3 = (d3==0.f) ? 1.f : (1.f/(sin(d3-M_PI/2.f)+m_distortion));
-                        */
-
                         ::glBegin(GL_QUADS);
                         ::glTexCoord2f(1.f - (b + (x / 2.f)), y);
                         ::glVertex3f(center.x + 0.5f * p0.x * d0, center.y + p0.y * d0, 0.f);
@@ -1063,7 +1058,6 @@ void OpenCLKernel::queryDevice()
     size_t len;
     std::stringstream s;
 
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
     CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, m_platforms, &m_numberOfPlatforms));
     LOG_INFO(1, "Number of platforms detected: " << m_numberOfPlatforms);
 
@@ -1071,35 +1065,33 @@ void OpenCLKernel::queryDevice()
     {
         // Platform details
         std::string platformDescription;
-        LOG_INFO(1, "----------------------------------------");
         LOG_INFO(1, "Platform " << platform);
-        LOG_INFO(1, "----------------------------------------");
 
         CHECKSTATUS(clGetPlatformInfo(m_platforms[platform], CL_PLATFORM_NAME, MAX_SOURCE_SIZE, buffer, &len));
         buffer[len] = 0;
-        LOG_INFO(1, "  Name       : " << buffer);
+        LOG_INFO(1, "  Name..............: " << buffer);
         platformDescription = buffer;
 
         CHECKSTATUS(clGetPlatformInfo(m_platforms[platform], CL_PLATFORM_VERSION, MAX_SOURCE_SIZE, buffer, &len));
         buffer[len] = 0;
-        LOG_INFO(1, "  Version    : " << buffer);
+        LOG_INFO(1, "  Version...........: " << buffer);
         platformDescription += " (";
         platformDescription += buffer;
 
         CHECKSTATUS(clGetPlatformInfo(m_platforms[platform], CL_PLATFORM_VENDOR, MAX_SOURCE_SIZE, buffer, &len));
         buffer[len] = 0;
-        LOG_INFO(1, "  Vendor     : " << buffer);
+        LOG_INFO(1, "  Vendor............: " << buffer);
         platformDescription += ", ";
         platformDescription += buffer;
         platformDescription += ")";
 
         CHECKSTATUS(clGetPlatformInfo(m_platforms[platform], CL_PLATFORM_PROFILE, MAX_SOURCE_SIZE, buffer, &len));
         buffer[len] = 0;
-        LOG_INFO(1, "  Profile    : " << buffer);
+        LOG_INFO(1, "  Profile...........: " << buffer);
 
         CHECKSTATUS(clGetPlatformInfo(m_platforms[platform], CL_PLATFORM_EXTENSIONS, MAX_SOURCE_SIZE, buffer, &len));
         buffer[len] = 0;
-        LOG_INFO(1, "  Extensions : " << buffer);
+        LOG_INFO(3, "  Extensions........: " << buffer);
 
         m_platformsDescription[platform] = platformDescription;
 
@@ -1109,29 +1101,27 @@ void OpenCLKernel::queryDevice()
             // m_devices
             for (cl_uint device = 0; device < m_numberOfDevices[platform]; ++device)
             {
-                LOG_INFO(1, "  --------------------------------------");
                 LOG_INFO(1, "  Device " << device);
-                LOG_INFO(1, "  --------------------------------------");
                 std::string deviceDescription;
                 CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
-                LOG_INFO(1, "    DEVICE_NAME                        : " << buffer);
+                LOG_INFO(1, "    Name............: " << buffer);
                 deviceDescription = buffer;
 
                 CHECKSTATUS(
                     clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_VENDOR, sizeof(buffer), buffer, NULL));
-                LOG_INFO(1, "    DEVICE_VENDOR                      : " << buffer);
+                LOG_INFO(1, "    Vendor..........: " << buffer);
                 deviceDescription += " (";
                 deviceDescription += buffer;
 
                 CHECKSTATUS(
                     clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_VERSION, sizeof(buffer), buffer, NULL));
-                LOG_INFO(1, "    DEVICE_VERSION                     : " << buffer);
+                LOG_INFO(1, "    Version.........: " << buffer);
                 deviceDescription += ", ";
                 deviceDescription += buffer;
 
                 CHECKSTATUS(
                     clGetDeviceInfo(m_devices[platform][device], CL_DRIVER_VERSION, sizeof(buffer), buffer, NULL));
-                LOG_INFO(1, "    DRIVER_VERSION                     : " << buffer);
+                LOG_INFO(1, "    Driver version..: " << buffer);
                 deviceDescription += ", ";
                 deviceDescription += buffer;
                 deviceDescription += ")";
@@ -1142,60 +1132,50 @@ void OpenCLKernel::queryDevice()
                 cl_uint values[10];
                 CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(value),
                                             &value, NULL));
-                LOG_INFO(1, "    DEVICE_MAX_COMPUTE_UNITS           : " << value);
+                LOG_INFO(3, "    Compute units...: " << value);
                 CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS,
                                             sizeof(value), &value, NULL));
-                LOG_INFO(1, "    CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS : " << value);
-                // CHECKSTATUS(clGetDeviceInfo(m_hDevices[d],
-                // CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(value), &value, NULL));
-                // LOG_INFO(1,"    CL_DEVICE_MAX_WORK_GROUP_SIZE      : " << value <<
-                // "\n";
+                LOG_INFO(3, "    Work item dims..: " << value);
                 CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(values),
                                             &values, NULL));
-                LOG_INFO(1, "    CL_DEVICE_MAX_WORK_ITEM_SIZES      : " << values[0] << ", " << values[1] << ", "
-                                                                        << values[2]);
+                LOG_INFO(3, "    Work item size..: " << values[0] << ", " << values[1] << ", " << values[2]);
                 CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_MAX_CLOCK_FREQUENCY, sizeof(value),
                                             &value, NULL));
-                LOG_INFO(1, "    CL_DEVICE_MAX_CLOCK_FREQUENCY      : " << value);
+                LOG_INFO(1, "    Clock frequency.: " << value << " Hz");
 
                 cl_device_type infoType;
                 CHECKSTATUS(
                     clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_TYPE, sizeof(infoType), &infoType, NULL));
-                LOG_INFO(1, "    DEVICE_TYPE                        : ");
                 if (infoType & CL_DEVICE_TYPE_DEFAULT)
                 {
                     infoType &= ~CL_DEVICE_TYPE_DEFAULT;
-                    LOG_INFO(1, "      Default");
+                    LOG_INFO(1, "    Type............: Default");
                 }
                 if (infoType & CL_DEVICE_TYPE_CPU)
                 {
                     infoType &= ~CL_DEVICE_TYPE_CPU;
-                    LOG_INFO(1, "      CPU");
+                    LOG_INFO(1, "    Type............: CPU");
                 }
                 if (infoType & CL_DEVICE_TYPE_GPU)
                 {
                     infoType &= ~CL_DEVICE_TYPE_GPU;
-                    LOG_INFO(1, "      GPU");
+                    LOG_INFO(1, "    Type............: GPU");
                 }
                 if (infoType & CL_DEVICE_TYPE_ACCELERATOR)
                 {
                     infoType &= ~CL_DEVICE_TYPE_ACCELERATOR;
-                    LOG_INFO(1, "      Accelerator");
+                    LOG_INFO(1, "    Type............: Accelerator");
                 }
                 if (infoType != 0)
-                {
-                    LOG_INFO(1, "      Unknown " << infoType);
-                }
+                    LOG_INFO(1, "    Type............: Unknown " << infoType);
             }
         }
         else
         {
-            LOG_INFO(1, "   -------------------------------------");
             LOG_INFO(1, "   No device for this platform");
-            LOG_INFO(1, "   -------------------------------------");
         }
     }
-    LOG_INFO(3, "--------------------------------------------------------------------------------");
+
     LOG_INFO(3, "Data type sizes (in bytes)");
     LOG_INFO(3, "- float             : " << sizeof(float));
     LOG_INFO(3, "- vec2f             : " << sizeof(vec2f));
@@ -1213,6 +1193,6 @@ void OpenCLKernel::queryDevice()
     LOG_INFO(3, "- Primitive         : " << sizeof(Primitive));
     LOG_INFO(3, "- TextureInfo       : " << sizeof(TextureInfo));
     LOG_INFO(3, "- PostProcessingInfo: " << sizeof(PostProcessingInfo));
-    LOG_INFO(3, "--------------------------------------------------------------------------------");
+    LOG_INFO(3, "_______________________________________|");
 }
 }

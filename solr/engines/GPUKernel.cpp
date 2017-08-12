@@ -230,6 +230,17 @@ GPUKernel::GPUKernel()
     , m_currentMaterial(0)
     , m_treeDepth(2)
 {
+    LOG_INFO(1, "");
+    LOG_INFO(1, "                     _|_|_|            _|              _|_|_|  ");
+    LOG_INFO(1, "                   _|          _|_|    _|              _|    _|");
+    LOG_INFO(1, "                     _|_|    _|    _|  _|  _|_|_|_|_|  _|_|_|  ");
+    LOG_INFO(1, "                         _|  _|    _|  _|              _|    _|");
+    LOG_INFO(1, "                   _|_|_|      _|_|    _|              _|    _|");
+    LOG_INFO(1, "");
+    LOG_INFO(1, "                            Speed Of Light Ray-tracer");
+    LOG_INFO(1, "                       Created by cyrille.favreau@gmail.com");
+    LOG_INFO(1, "");
+
     for (int i(0); i < NB_MAX_FRAMES; ++i)
     {
         m_nbActiveBoxes[i] = 0;
@@ -1036,7 +1047,6 @@ int GPUKernel::processOutterBoxes(const int boxSize, const int boundingBoxesDept
 int GPUKernel::compactBoxes(bool reconstructBoxes)
 {
     LOG_INFO(3, "GPUKernel::compactBoxes (" << (reconstructBoxes ? "true" : "false") << ")");
-    LOG_INFO(3, "Number of primitives: " << m_primitives[m_frame].size());
 
     // First box of highest level is dedicated to light sources
     m_primitivesTransfered = false;
@@ -1069,7 +1079,8 @@ int GPUKernel::compactBoxes(bool reconstructBoxes)
             processOutterBoxes(nbBoxes, m_treeDepth);
             nbBoxes /= gridDivider;
         } while (nbBoxes > gridGranularity);
-        LOG_INFO(3, "Scene depth=" << m_treeDepth);
+        LOG_INFO(1, "Primitives.........: " << m_primitives[m_frame].size());
+        LOG_INFO(1, "Scene depth........: " << m_treeDepth);
     }
 
     LOG_INFO(3, "Streaming data to GPU");
@@ -2232,7 +2243,7 @@ TextureInfo &GPUKernel::getTextureInformation(const int index)
 
 void GPUKernel::realignTexturesAndMaterials()
 {
-    LOG_INFO(1, "Realign Textures And Materials");
+    LOG_INFO(3, "Realigning Textures And Materials");
 
     // Texture offsets
     processTextureOffsets();

@@ -3327,14 +3327,16 @@ ________________________________________________________________________________
 */
 __kernel void k_alignment()
 {
-    printf("--== OCL Data structures ==--\n");
-    printf("Ray               :  %i\n", sizeof(Ray));
-    printf("SceneInfo         :  %i\n", sizeof(SceneInfo));
-    printf("PostProcessingInfo:  %i\n", sizeof(PostProcessingInfo));
-    printf("TextureInfo       :  %i\n", sizeof(TextureInfo));
-    printf("Primitive         :  %i\n", sizeof(Primitive));
-    printf("BoundingBox       :  %i\n", sizeof(BoundingBox));
-    printf("Material          :  %i\n", sizeof(Material));
-    printf("LightInformation  :  %i\n", sizeof(LightInformation));
-    printf("-----------------------------\n");
+#ifdef DEBUG
+    printf("OCL  [1] --== OCL Data structures ==--\n");
+    printf("OCL  [1] Ray               :  %i\n", sizeof(Ray));
+    printf("OCL  [1] SceneInfo         :  %i\n", sizeof(SceneInfo));
+    printf("OCL  [1] PostProcessingInfo:  %i\n", sizeof(PostProcessingInfo));
+    printf("OCL  [1] TextureInfo       :  %i\n", sizeof(TextureInfo));
+    printf("OCL  [1] Primitive         :  %i\n", sizeof(Primitive));
+    printf("OCL  [1] BoundingBox       :  %i\n", sizeof(BoundingBox));
+    printf("OCL  [1] Material          :  %i\n", sizeof(Material));
+    printf("OCL  [1] LightInformation  :  %i\n", sizeof(LightInformation));
+    printf("OCL  [1] -----------------------------\n");
+#endif
 }

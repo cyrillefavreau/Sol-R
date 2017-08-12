@@ -134,7 +134,7 @@ ________________________________________________________________________________
 */
 void CudaKernel::initializeDevice()
 {
-    LOG_INFO(1, "CudaKernel::initializeDevice");
+    LOG_INFO(3, "CudaKernel::initializeDevice");
     initialize_scene(m_occupancyParameters, m_sceneInfo, NB_MAX_PRIMITIVES, NB_MAX_LAMPS, NB_MAX_MATERIALS
 #ifdef USE_MANAGED_MEMORY
                      ,
@@ -208,7 +208,7 @@ void CudaKernel::render_begin(const float timer)
         if (!m_randomsTransfered)
         {
             h2d_randoms(m_occupancyParameters, m_hRandoms);
-            LOG_INFO(1, "Transfering random numbers");
+            LOG_INFO(3, "Transfering random numbers");
             m_randomsTransfered = true;
         }
 
@@ -217,13 +217,13 @@ void CudaKernel::render_begin(const float timer)
             realignTexturesAndMaterials();
 
             h2d_materials(m_occupancyParameters, m_hMaterials, nbMaterials);
-            LOG_INFO(1, "Transfering " << nbMaterials << " materials");
+            LOG_INFO(3, "Transfering " << nbMaterials << " materials");
             m_materialsTransfered = true;
         }
 
         if (!m_texturesTransfered)
         {
-            LOG_INFO(1, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize
+            LOG_INFO(3, "Transfering " << m_nbActiveTextures << " textures, and " << m_lightInformationSize
                                        << " light information");
             h2d_textures(m_occupancyParameters, NB_MAX_TEXTURES, m_hTextures);
             m_texturesTransfered = true;
@@ -412,59 +412,60 @@ void CudaKernel::queryDevice()
         cudaDeviceProp deviceProp;
         cudaGetDeviceProperties(&deviceProp, dev);
 
-        LOG_INFO(1, "--------------------------------------------------------------------------------");
-        LOG_INFO(1, "Device :" << dev << ", " << deviceProp.name);
+        LOG_INFO(1, "Device " << dev << ": " << deviceProp.name);
 
         m_gpuDescription = deviceProp.name;
 
         cudaDriverGetVersion(&driverVersion);
         cudaRuntimeGetVersion(&runtimeVersion);
-        LOG_INFO(1, "  CUDA Driver Version / Runtime Version          "
+        LOG_INFO(1, " - CUDA Driver Version / Runtime Version..........: "
                         << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / " << runtimeVersion / 1000
                         << "." << (runtimeVersion % 100) / 10);
-        LOG_INFO(1, "  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor);
-        LOG_INFO(1, "  Total amount of global memory: " << (float)deviceProp.totalGlobalMem / 1048576.0f << "MBytes ("
-                                                        << (unsigned long long)deviceProp.totalGlobalMem << " bytes)");
-        LOG_INFO(1, "  Max Texture Dimension Size (x,y,z)             1D=("
+        LOG_INFO(1, " - CUDA Capability Major/Minor version number.....: " << deviceProp.major << "."
+                                                                           << deviceProp.minor);
+        LOG_INFO(1, " - Total amount of global memory..................: "
+                        << (float)deviceProp.totalGlobalMem / 1048576.0f << "MBytes ("
+                        << (unsigned long long)deviceProp.totalGlobalMem << " bytes)");
+        LOG_INFO(3, " - Max Texture Dimension Size (x,y,z).............: 1D=("
                         << deviceProp.maxTexture1D << "), 2D=(" << deviceProp.maxTexture2D[0] << ","
                         << deviceProp.maxTexture2D[1] << "), 3D=(" << deviceProp.maxTexture3D[0] << ","
                         << deviceProp.maxTexture3D[1] << "," << deviceProp.maxTexture3D[2] << ")");
-        LOG_INFO(1, "  Max Layered Texture Size (dim) x layers        1D=("
+        LOG_INFO(3, " - Max Layered Texture Size (dim) x layers........: 1D=("
                         << deviceProp.maxTexture1DLayered[0] << ") x " << deviceProp.maxTexture1DLayered[1] << ", 2D=("
                         << deviceProp.maxTexture2DLayered[0] << "," << deviceProp.maxTexture2DLayered[1] << ") x "
                         << deviceProp.maxTexture2DLayered[2]);
-        LOG_INFO(1, "  Total amount of constant memory:               " << deviceProp.totalConstMem << "bytes");
-        LOG_INFO(1, "  Total amount of shared memory per block:       " << deviceProp.sharedMemPerBlock << "bytes");
-        LOG_INFO(1, "  Total number of registers available per block: " << deviceProp.regsPerBlock);
-        LOG_INFO(1, "  Warp size:                                     " << deviceProp.warpSize);
-        LOG_INFO(1, "  Maximum number of threads per multiprocessor:  " << deviceProp.maxThreadsPerMultiProcessor);
-        LOG_INFO(1, "  Maximum number of threads per block:           " << deviceProp.maxThreadsPerBlock);
-        LOG_INFO(1, "  Maximum sizes of each dimension of a block:    " << deviceProp.maxThreadsDim[0] << " x "
-                                                                        << deviceProp.maxThreadsDim[1] << " x "
-                                                                        << deviceProp.maxThreadsDim[2]);
-        LOG_INFO(1, "  Maximum sizes of each dimension of a grid:     " << deviceProp.maxGridSize[0] << " x "
-                                                                        << deviceProp.maxGridSize[1] << " x "
-                                                                        << deviceProp.maxGridSize[2]);
-        LOG_INFO(1, "  Maximum memory pitch:                          " << deviceProp.memPitch << "bytes");
-        LOG_INFO(1, "  Texture alignment:                             " << deviceProp.textureAlignment << "bytes");
-        LOG_INFO(1, "  Concurrent copy and execution:                 " << (deviceProp.deviceOverlap ? "Yes" : "No")
-                                                                        << " with " << deviceProp.asyncEngineCount
-                                                                        << "copy engine(s)");
-        LOG_INFO(1, "  Run time limit on kernels:                     "
+        LOG_INFO(3, " - Total amount of constant memory................: " << deviceProp.totalConstMem << "bytes");
+        LOG_INFO(3, " - Total amount of shared memory per block........: " << deviceProp.sharedMemPerBlock << "bytes");
+        LOG_INFO(3, " - Total number of registers available per block..: " << deviceProp.regsPerBlock);
+        LOG_INFO(3, " - Warp size......................................: " << deviceProp.warpSize);
+        LOG_INFO(3, " - Maximum number of threads per multiprocessor...: " << deviceProp.maxThreadsPerMultiProcessor);
+        LOG_INFO(3, " - Maximum number of threads per block............: " << deviceProp.maxThreadsPerBlock);
+        LOG_INFO(3, " - Maximum sizes of each dimension of a block.....: " << deviceProp.maxThreadsDim[0] << " x "
+                                                                           << deviceProp.maxThreadsDim[1] << " x "
+                                                                           << deviceProp.maxThreadsDim[2]);
+        LOG_INFO(3, " - Maximum sizes of each dimension of a grid......: " << deviceProp.maxGridSize[0] << " x "
+                                                                           << deviceProp.maxGridSize[1] << " x "
+                                                                           << deviceProp.maxGridSize[2]);
+        LOG_INFO(3, " - Maximum memory pitch...........................: " << deviceProp.memPitch << "bytes");
+        LOG_INFO(3, " - Texture alignment..............................: " << deviceProp.textureAlignment << "bytes");
+        LOG_INFO(3, " - Concurrent copy and execution..................: " << (deviceProp.deviceOverlap ? "Yes" : "No")
+                                                                           << " with " << deviceProp.asyncEngineCount
+                                                                           << "copy engine(s)");
+        LOG_INFO(3, " - Run time limit on kernels......................: "
                         << (deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No"));
-        LOG_INFO(1, "  Integrated GPU sharing Host Memory:            " << (deviceProp.integrated ? "Yes" : "No"));
-        LOG_INFO(1,
-                 "  Support host page-locked memory mapping:       " << (deviceProp.canMapHostMemory ? "Yes" : "No"));
-        LOG_INFO(1,
-                 "  Concurrent GPUKernel execution:                " << (deviceProp.concurrentKernels ? "Yes" : "No"));
-        LOG_INFO(1,
-                 "  Alignment requirement for Surfaces:            " << (deviceProp.surfaceAlignment ? "Yes" : "No"));
-        LOG_INFO(1, "  Device has ECC support enabled:                " << (deviceProp.ECCEnabled ? "Yes" : "No"));
-        LOG_INFO(1, "  Device is using TCC driver mode:               " << (deviceProp.tccDriver ? "Yes" : "No"));
-        LOG_INFO(1,
-                 "  Device supports Unified Addressing (UVA):      " << (deviceProp.unifiedAddressing ? "Yes" : "No"));
-        LOG_INFO(1, "  Device PCI Bus ID / PCI location ID:           " << deviceProp.pciBusID << "/"
-                                                                        << deviceProp.pciDeviceID);
+        LOG_INFO(3, " - Integrated GPU sharing Host Memory.............: " << (deviceProp.integrated ? "Yes" : "No"));
+        LOG_INFO(3, " - Support host page-locked memory mapping........: " << (deviceProp.canMapHostMemory ? "Yes"
+                                                                                                           : "No"));
+        LOG_INFO(3, " - Concurrent GPUKernel execution.................: " << (deviceProp.concurrentKernels ? "Yes"
+                                                                                                            : "No"));
+        LOG_INFO(3, " - Alignment requirement for Surfaces.............: " << (deviceProp.surfaceAlignment ? "Yes"
+                                                                                                           : "No"));
+        LOG_INFO(3, " - Device has ECC support enabled.................: " << (deviceProp.ECCEnabled ? "Yes" : "No"));
+        LOG_INFO(3, " - Device is using TCC driver mode................: " << (deviceProp.tccDriver ? "Yes" : "No"));
+        LOG_INFO(3, " - Device supports Unified Addressing (UVA).......: " << (deviceProp.unifiedAddressing ? "Yes"
+                                                                                                            : "No"));
+        LOG_INFO(3, " - Device PCI Bus ID / PCI location ID............: " << deviceProp.pciBusID << "/"
+                                                                           << deviceProp.pciDeviceID);
 
         const char *sComputeMode[] = {
             "Default (multiple host threads can use ::cudaSetDevice() with device simultaneously)",
@@ -472,27 +473,25 @@ void CudaKernel::queryDevice()
             "Prohibited (no host thread can use ::cudaSetDevice() with this device)",
             "Exclusive Process (many threads in one process is able to use ::cudaSetDevice() with this device) Unknown",
             NULL};
-        LOG_INFO(1, "  Compute Mode:");
-        LOG_INFO(1, "     < " << sComputeMode[deviceProp.computeMode] << " >");
-        LOG_INFO(3, "--------------------------------------------------------------------------------");
+        LOG_INFO(3, " - Compute Mode...................................: " << sComputeMode[deviceProp.computeMode]);
+        LOG_INFO(3, "");
         LOG_INFO(3, "Data type sizes (in bytes)");
-        LOG_INFO(3, "- float             : " << sizeof(float));
-        LOG_INFO(3, "- vec2f             : " << sizeof(vec2f));
-        LOG_INFO(3, "- vec3f             : " << sizeof(vec3f));
-        LOG_INFO(3, "- vec4f             : " << sizeof(vec4f));
-        LOG_INFO(3, "- int               : " << sizeof(int));
-        LOG_INFO(3, "- vec2i             : " << sizeof(vec2i));
-        LOG_INFO(3, "- vec3i             : " << sizeof(vec3i));
-        LOG_INFO(3, "- vec4i             : " << sizeof(vec4i));
-        LOG_INFO(3, "- SceneInfo         : " << sizeof(SceneInfo));
-        LOG_INFO(3, "- Ray               : " << sizeof(Ray));
-        LOG_INFO(3, "- LightInformation  : " << sizeof(LightInformation));
-        LOG_INFO(3, "- Material          : " << sizeof(Material));
-        LOG_INFO(3, "- BoundingBox       : " << sizeof(BoundingBox));
-        LOG_INFO(3, "- Primitive         : " << sizeof(Primitive));
-        LOG_INFO(3, "- TextureInfo       : " << sizeof(TextureInfo));
-        LOG_INFO(3, "- PostProcessingInfo: " << sizeof(PostProcessingInfo));
-        LOG_INFO(3, "--------------------------------------------------------------------------------");
+        LOG_INFO(3, " - float             : " << sizeof(float));
+        LOG_INFO(3, " - vec2f             : " << sizeof(vec2f));
+        LOG_INFO(3, " - vec3f             : " << sizeof(vec3f));
+        LOG_INFO(3, " - vec4f             : " << sizeof(vec4f));
+        LOG_INFO(3, " - int               : " << sizeof(int));
+        LOG_INFO(3, " - vec2i             : " << sizeof(vec2i));
+        LOG_INFO(3, " - vec3i             : " << sizeof(vec3i));
+        LOG_INFO(3, " - vec4i             : " << sizeof(vec4i));
+        LOG_INFO(3, " - SceneInfo         : " << sizeof(SceneInfo));
+        LOG_INFO(3, " - Ray               : " << sizeof(Ray));
+        LOG_INFO(3, " - LightInformation  : " << sizeof(LightInformation));
+        LOG_INFO(3, " - Material          : " << sizeof(Material));
+        LOG_INFO(3, " - BoundingBox       : " << sizeof(BoundingBox));
+        LOG_INFO(3, " - Primitive         : " << sizeof(Primitive));
+        LOG_INFO(3, " - TextureInfo       : " << sizeof(TextureInfo));
+        LOG_INFO(3, " - PostProcessingInfo: " << sizeof(PostProcessingInfo));
     }
 
     // exe and CUDA driver name
@@ -534,9 +533,7 @@ void CudaKernel::queryDevice()
         sProfileString += ", Device = ";
         sProfileString += deviceProp.name;
     }
-
-    sProfileString += "\n";
-    LOG_INFO(3, sProfileString.c_str());
+    LOG_INFO(3, " - Profile........................................: " << sProfileString);
 }
 
 void CudaKernel::reshape()

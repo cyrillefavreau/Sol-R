@@ -37,12 +37,12 @@ GraphScene::GraphScene(const std::string& name)
 {
 }
 
-GraphScene::~GraphScene(void)
+GraphScene::~GraphScene()
 {
     delete m_graphValues;
 }
 
-void GraphScene::buildGraph(bool update)
+void GraphScene::buildGraph(const bool update)
 {
     LOG_INFO(1, "Chart size: " << m_valueSize.x << "x" << m_valueSize.y);
     m_graphSize.x = 200.f;
@@ -122,12 +122,11 @@ void GraphScene::buildGraph(bool update)
         ++material;
     }
     m_gpuKernel->rotatePrimitives(m_rotationCenter, m_rotationAngles);
-    buildFrame(maxY);
+    buildFrame();
 }
 
 void GraphScene::buildChart(const std::string& filename)
 {
-    LOG_INFO(1, "Chart size: " << m_valueSize.x << "x" << m_valueSize.y);
     m_graphSize.x = 4000.f;
     m_graphSize.y = 2000.f;
     m_graphSize.z = 2000.f;
@@ -196,8 +195,6 @@ void GraphScene::buildChart(const std::string& filename)
         m_gpuKernel->setCurrentMaterial(RANDOM_MATERIALS_OFFSET + 4 + m);
         for (int x = 0; x < m_valueSize.y; ++x)
         {
-            LOG_INFO(1, x << "," << m_values[x][z] << "," << z);
-
             glVertex3f(m_graphScale.x * x, m_graphScale.y * m_values[x][z], -m_graphScale.z * z);
             glVertex3f(m_graphScale.x * (x + 1), m_graphScale.y * m_values[x + 1][z], -m_graphScale.z * z);
             glVertex3f(m_graphScale.x * (x + 1), m_graphScale.y * m_values[x + 1][z + 1], -m_graphScale.z * (z + 1));
@@ -220,12 +217,11 @@ void GraphScene::buildChart(const std::string& filename)
         }
     }
 
-    buildFrame(maxY);
+    buildFrame();
 }
 
-void GraphScene::buildFrame(const float maxValue)
+void GraphScene::buildFrame()
 {
-    LOG_INFO(1, "Chart size: " << m_valueSize.x << "x" << m_valueSize.y);
     m_graphSize.x = 4000.f;
     m_graphSize.y = 2000.f;
     m_graphSize.z = 2000.f;

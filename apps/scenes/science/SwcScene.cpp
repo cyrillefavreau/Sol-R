@@ -29,7 +29,7 @@ SwcScene::SwcScene(const std::string &name)
 {
 }
 
-SwcScene::~SwcScene(void)
+SwcScene::~SwcScene()
 {
 }
 
@@ -51,36 +51,30 @@ void SwcScene::doInitialize()
         vec4f scale = {10.f, 10.f, 10.f, 10.f};
 
         // Scene
-        vec4f center = {0.f, 0.f, 0.f};
+        const vec4f position = {0.f, 0.f, 0.f};
         for (int i(0); i < fileNames.size(); ++i)
         {
             solr::SWCReader swcReader;
-            int materialId = 1001;
-            swcReader.loadMorphologyFromFile(fileNames[i], *m_gpuKernel, center, true, scale, true, materialId);
+            swcReader.loadMorphologyFromFile(fileNames[i], *m_gpuKernel, position, scale, 1001);
 
             if (i == 0)
                 m_morphologies = swcReader.getMorphologies();
         }
     }
-
-    // Save to binary file
-    solr::FileMarshaller fm;
-    fm.saveToFile(*m_gpuKernel, "NeuronMorphologies.irt");
 }
 
 void SwcScene::doAnimate()
 {
-    int index = m_counter % m_morphologies.size();
+    const int index = m_counter % m_morphologies.size();
     solr::Morphology &m = m_morphologies[index];
     if (m_counter > 0)
-    {
         m_gpuKernel->setPrimitiveMaterial(m_previousPrimitiveId, m_previousMaterial);
-    }
+
     m_previousMaterial = m_gpuKernel->getPrimitiveMaterial(m.primitiveId);
     m_gpuKernel->setPrimitiveMaterial(m.primitiveId, DEFAULT_LIGHT_MATERIAL);
     m_previousPrimitiveId = m.primitiveId;
 
-    int light = m_gpuKernel->getLight(0);
+    const int light = m_gpuKernel->getLight(0);
     if (light != -1)
     {
         solr::CPUPrimitive *lamp = m_gpuKernel->getPrimitive(light);

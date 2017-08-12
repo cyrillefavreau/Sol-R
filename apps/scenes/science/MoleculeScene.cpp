@@ -49,7 +49,6 @@ void MoleculeScene::doInitialize()
 {
     // initialization
     int geometryType(rand() % 5);
-    LOG_INFO(1, "Geometry type: " << geometryType);
     int atomMaterialType(0);
     float defaultAtomSize(100.f);
     float defaultStickSize(10.f);
@@ -71,8 +70,6 @@ void MoleculeScene::doInitialize()
         pdbReader.loadAtomsFromFile(m_name, *m_gpuKernel, static_cast<solr::GeometryType>(geometryType),
                                     defaultAtomSize, defaultStickSize, atomMaterialType, scale, loadModels);
     }
-    solr::FileMarshaller fm;
-    fm.saveToFile(*m_gpuKernel, "Molecule.irt");
 }
 
 void MoleculeScene::doAnimate()
