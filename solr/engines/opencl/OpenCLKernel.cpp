@@ -50,14 +50,13 @@ void getKernelCode(std::string &str)
 const long MAX_SOURCE_SIZE = 3 * 65535;
 
 // Platforms
-cl_platform_id OpenCLKernel::m_platforms[MAX_DEVICES];
 cl_uint OpenCLKernel::m_numberOfPlatforms;
-std::string OpenCLKernel::m_platformsDescription[MAX_DEVICES];
+std::string OpenCLKernel::m_platformsDescription[MAX_PLATFORMS];
 
 // Devices
-cl_device_id OpenCLKernel::m_devices[MAX_DEVICES][MAX_DEVICES];
-cl_uint OpenCLKernel::m_numberOfDevices[MAX_DEVICES];
-std::string OpenCLKernel::m_devicesDescription[MAX_DEVICES][MAX_DEVICES];
+cl_device_id OpenCLKernel::m_devices[MAX_PLATFORMS][MAX_DEVICES];
+cl_uint OpenCLKernel::m_numberOfDevices[MAX_PLATFORMS];
+std::string OpenCLKernel::m_devicesDescription[MAX_PLATFORMS][MAX_DEVICES];
 
 /*
  * getErrorDesc
@@ -161,11 +160,15 @@ std::string getErrorDesc(int err)
 }
 
 /*
- * Callback function for clBuildProgram notifications
+ * Callback function for OpenCL notifications
  */
-void pfn_notify(cl_program, void *user_data)
+void buildNotify(cl_program, void *user_data)
 {
-    LOG_ERROR("OpenCL Error (via pfn_notify): " << user_data);
+    LOG_ERROR("OpenCL Error (via buildNotify): " << user_data);
+}
+void contextNotify(const char *errinfo, const void *private_info, size_t cb, void *user_data)
+{
+    LOG_ERROR("OpenCL Error (via contextNotify): " << errinfo);
 }
 
 /*
@@ -302,26 +305,19 @@ void OpenCLKernel::recompileKernels()
         compilationOptions += " -DMSVC";
 #endif
 #ifdef DEBUG
-        compilationOptions += " -DDEBUG";
+        compilationOptions += " -DDEBUG -g";
 #endif
         LOG_INFO(1, "Building Program with " << compilationOptions);
-
-        status = clBuildProgram(m_hProgram, 0, NULL, compilationOptions.c_str(), NULL, NULL);
-        size_t length;
-        char buffer[MAX_SOURCE_SIZE];
         CHECKSTATUS(
-            clGetProgramBuildInfo(m_hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length));
-        if (status == CL_SUCCESS)
-        {
-            if (length > 2)
-                LOG_INFO(1, buffer);
-        }
-        else
-        {
-            LOG_ERROR("Program Build failed [" << status << "]: " << buffer);
-            exit(1);
-        }
-
+            clBuildProgram(m_hProgram, m_numberOfDevices[m_platform], m_devices[m_platform], compilationOptions.c_str(), &buildNotify, NULL));
+        size_t logSize;
+        CHECKSTATUS(clGetProgramBuildInfo(m_hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize));
+        char* log = new char[logSize];
+        CHECKSTATUS(clGetProgramBuildInfo(m_hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, logSize, log, NULL));
+        if (logSize > 1)
+            LOG_INFO(1, log);
+        delete[] log;
+#if DEBUG
         // Text kernels
         m_kAlignment = clCreateKernel(m_hProgram, "k_alignment", &status);
         CHECKSTATUS(status);
@@ -339,6 +335,7 @@ void OpenCLKernel::recompileKernels()
         LOG_INFO(3, "Material          : " << sizeof(Material));
         LOG_INFO(3, "LightInformation  : " << sizeof(LightInformation));
         LOG_INFO(3, "------------------------------");
+#endif
 
         // Rendering kernels
         m_kStandardRenderer = clCreateKernel(m_hProgram, "k_standardRenderer", &status);
@@ -390,7 +387,7 @@ void OpenCLKernel::initializeDevice()
 
     // initialize OpenCL device
     LOG_INFO(1, "Initializing OpenCL context on platform: " << m_platform << ", device: " << m_hDeviceId);
-    m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], m_devices[m_platform], NULL, NULL, &status);
+    m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], m_devices[m_platform], &contextNotify, NULL, &status);
     CHECKSTATUS(status);
     m_hDeviceId = m_devices[m_platform][m_device];
     if (m_hContext)

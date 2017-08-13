@@ -34,6 +34,7 @@
 #include <nuiapi.h>
 #endif // USE_KINECT
 
+const long MAX_PLATFORMS = 10;
 const long MAX_DEVICES = 10;
 
 namespace solr
@@ -83,14 +84,14 @@ public:
 
 private:
     // Platforms
-    static cl_platform_id m_platforms[MAX_DEVICES];
+    cl_platform_id m_platforms[MAX_PLATFORMS];
     static cl_uint m_numberOfPlatforms;
-    static std::string m_platformsDescription[MAX_DEVICES];
+    static std::string m_platformsDescription[MAX_PLATFORMS];
 
     // Devices
-    static cl_device_id m_devices[MAX_DEVICES][MAX_DEVICES];
-    static cl_uint m_numberOfDevices[MAX_DEVICES];
-    static std::string m_devicesDescription[MAX_DEVICES][MAX_DEVICES];
+    static cl_device_id m_devices[MAX_PLATFORMS][MAX_DEVICES];
+    static cl_uint m_numberOfDevices[MAX_PLATFORMS];
+    static std::string m_devicesDescription[MAX_PLATFORMS][MAX_DEVICES];
 
 private:
     // OpenCL Objects
