@@ -37,11 +37,11 @@ namespace solr
 {
 const int NB_MAX_FACES = static_cast<int>(NB_MAX_PRIMITIVES * 0.9f); // Max number of faces
 
-OBJReader::OBJReader(void)
+OBJReader::OBJReader()
 {
 }
 
-OBJReader::~OBJReader(void)
+OBJReader::~OBJReader()
 {
 }
 
@@ -161,7 +161,7 @@ unsigned int OBJReader::loadMaterialsFromFile(const std::string &filename,
                                               std::map<std::string, MaterialMTL> &materials, GPUKernel &kernel,
                                               int materialId)
 {
-    LOG_INFO(1, "Loading material library from " << filename);
+    LOG_INFO(1, " - Material library: " << filename);
     const float innerDiffusion = 1000.f;
     const float diffusionRatio = 4.f;
 
@@ -177,9 +177,7 @@ unsigned int OBJReader::loadMaterialsFromFile(const std::string &filename,
 
             // remove spaces
             while (line.length() != 0 && line[0] < 32)
-            {
                 line = line.substr(1);
-            }
 
             if (line.find("newmtl") == 0)
             {
@@ -242,26 +240,26 @@ unsigned int OBJReader::loadMaterialsFromFile(const std::string &filename,
                 materials[id].Ks = readVertex(line);
             }
 
-            bool diffuseMap = (line.find("map_Kd") == 0);
-            bool bumpMap = (line.find("map_bump") == 0);
-            bool normalMap = (line.find("map_norm") == 0);
-            bool specularlMap = (line.find("map_spec") == 0);
+            const bool diffuseMap = (line.find("map_Kd") == 0);
+            const bool bumpMap = (line.find("map_bump") == 0);
+            const bool normalMap = (line.find("map_norm") == 0);
+            const bool specularlMap = (line.find("map_spec") == 0);
             if (diffuseMap || bumpMap || normalMap || specularlMap)
             {
                 if (diffuseMap)
                     line = line.substr(7);
+
                 if (bumpMap || normalMap || specularlMap)
                     line = line.substr(9);
+
                 std::string folder(filename);
                 size_t backSlashPos = filename.rfind('/');
                 if (backSlashPos == -1)
-                {
                     backSlashPos = filename.rfind('\\');
-                }
+
                 if (backSlashPos != -1)
-                {
                     folder = filename.substr(0, backSlashPos);
-                }
+
                 folder += '/';
                 folder += line;
                 int idx = kernel.getNbActiveTextures();
@@ -297,9 +295,7 @@ unsigned int OBJReader::loadMaterialsFromFile(const std::string &filename,
                     }
                 }
                 else
-                {
                     LOG_ERROR("Failed to load texture " << folder);
-                }
             }
 
             if (/*line.find("d")==0 ||*/ line.find("Tr") == 0)
@@ -314,9 +310,7 @@ unsigned int OBJReader::loadMaterialsFromFile(const std::string &filename,
             }
 
             if (line.find("SoL_R_Light") != -1)
-            {
                 materials[id].isSketchupLightMaterial = true;
-            }
 
             if (line.find("illum") == 0)
             {
@@ -402,7 +396,7 @@ void OBJReader::addLightComponent(GPUKernel &kernel, std::vector<vec4f> &solrVer
         float radius = sqrt(L.x * L.x + L.y * L.y + L.z * L.z) / 2.f;
 
         int nbPrimitives = kernel.addPrimitive(ptSphere);
-        LOG_INFO(1, "Adding SoL-R light [" << material << "] to primitive " << nbPrimitives << " (" << lightCenter.x
+        LOG_INFO(3, "Adding SoL-R light [" << material << "] to primitive " << nbPrimitives << " (" << lightCenter.x
                                            << "," << lightCenter.y << "," << lightCenter.z << ") r=" << radius);
         kernel.setPrimitive(nbPrimitives, center.x + objectScale.x * (-objectCenter.x + lightCenter.x),
                             center.y + objectScale.y * (-objectCenter.y + lightCenter.y),
@@ -417,8 +411,7 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
                                    bool allSpheres, bool autoCenter, CPUBoundingBox &aabb, const bool &checkInAABB,
                                    const CPUBoundingBox &inAABB)
 {
-    LOG_INFO(1, "Loading OBJ file " << filename);
-
+    LOG_INFO(1, "OBJ Filename.......: " << filename);
     std::map<int, vec3f> vertices;
     std::map<int, vec3f> normals;
     std::map<int, vec3f> textureCoordinates;
@@ -439,50 +432,6 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
     modelFilename += ".obj";
 
     vec4f objectSize = {0.f, 0.f, 0.f};
-#if 0
-    std::ifstream file(filename.c_str());
-    if( file.is_open() )
-    {
-        while( file.good() )
-        {
-            std::string id;
-            file >> id;
-            if(id[0]=='v' && id[1]==0)
-            {
-                vec4f v;
-                file >> v.x >> v.y >> v.z;
-                vertices[index_vertices] = v;
-                ++index_vertices;
-                LOG_INFO(1, "v = " << v.x << "," << v.y << "," << v.z);
-            }
-            if(id[0]=='v' && id[1]=='t')
-            {
-                vec4f v;
-                file >> v.x >> v.y >> v.z;
-                textureCoordinates[index_textureCoordinates] = v;
-                ++index_textureCoordinates;
-                //LOG_INFO(1, "t = " << v.x << "," << v.y << "," << v.z);
-            }
-            if(id[0]=='v' && id[1]=='n')
-            {
-                vec4f v;
-                file >> v.x >> v.y >> v.z;
-                normals[index_normals] = v;
-                ++index_normals;
-                //LOG_INFO(1, "n = " << v.x << "," << v.y << "," << v.z);
-            }
-            file.clear();
-        }
-        file.close();
-    }
-    LOG_INFO(1,"Loaded");
-
-    LOG_INFO(1,"Vertices : " << index_vertices );
-    LOG_INFO(1,"Normals  : " << index_normals );
-    LOG_INFO(1,"TexCoords: " << index_textureCoordinates );
-
-    return objectSize;
-#else
     aabb.parameters[0].x = 100000.f;
     aabb.parameters[0].y = 100000.f;
     aabb.parameters[0].z = 100000.f;
@@ -644,8 +593,6 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
             return objectSize;
     }
 
-    LOG_INFO(1, "Object contains " << vertices.size() << " vertices");
-
     // Scale object
     vec4f objectCenter = objectPosition;
     vec4f objectScale = scale;
@@ -714,9 +661,7 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
                         }
                     }
                     else
-                    {
                         LOG_ERROR("Unknown Material " << value);
-                    }
                 }
 
                 if (line[0] == 'f')
@@ -731,14 +676,12 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
                         if (line[i] != ' ')
                             value += line[i];
                         if (i == (line.length() - 1) || (line[i] == ' ' && previousChar != ' '))
-                        {
                             if (value.length() != 0)
                             {
                                 vec4i v = readFace(value);
                                 face.push_back(v);
                                 value = "";
                             }
-                        }
 
                         previousChar = line[i];
                         ++i;
@@ -767,12 +710,8 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
                         s.y = std::max(sphereRadius[0].y, std::max(sphereRadius[1].y, sphereRadius[2].y));
                         s.z = std::max(sphereRadius[0].z, std::max(sphereRadius[1].z, sphereRadius[2].z));
 
-                        // float radius = objectScale.x*sqrt(s.x*s.x+s.y*s.y+s.z*s.z);
-
                         if (isSketchupLightMaterial)
-                        {
                             solrVertices.push_back(sphereCenter);
-                        }
                         else
                         {
                             nbPrimitives = kernel.addPrimitive(ptEllipsoid);
@@ -871,37 +810,28 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
 
         // Remaining SoL-R lights
         if (solrVertices.size() != 0)
-        {
             addLightComponent(kernel, solrVertices, objectPosition, objectCenter, objectScale, sketchupMaterial, aabb);
-        }
     }
 
     objectSize.x = objectScale.x * (aabb.parameters[1].x - aabb.parameters[0].x);
     objectSize.y = objectScale.y * (aabb.parameters[1].y - aabb.parameters[0].y);
     objectSize.z = objectScale.z * (aabb.parameters[1].z - aabb.parameters[0].z);
 
-    LOG_INFO(1,
-             "----------------------------------------------------------------"
-             "----------------");
-    LOG_INFO(1, "Loaded " << modelFilename.c_str() << " into frame " << kernel.getFrame() << " ["
-                          << kernel.getNbActivePrimitives() << " primitives]");
-    LOG_INFO(1, "Nb Vertices: " << kernel.getNbActivePrimitives());
-    LOG_INFO(1, "Min        : " << aabb.parameters[0].x << "," << aabb.parameters[0].y << "," << aabb.parameters[0].z);
-    LOG_INFO(1, "Max        : " << aabb.parameters[1].x << "," << aabb.parameters[1].y << "," << aabb.parameters[1].z);
-    LOG_INFO(1, "Center     : " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z);
-    LOG_INFO(1, "Scale      : " << objectScale.x << "," << objectScale.y << "," << objectScale.z);
-    LOG_INFO(1, "Object size: " << objectSize.x << "," << objectSize.y << "," << objectSize.z);
-    LOG_INFO(1, "AABB       : (" << aabb.parameters[0].x << "," << aabb.parameters[0].y << "," << aabb.parameters[0].z
-                                 << "),(" << aabb.parameters[1].x << "," << aabb.parameters[1].y << ","
-                                 << aabb.parameters[1].z << ")");
-    LOG_INFO(1, "inAABB     : (" << inAABB.parameters[0].x << "," << inAABB.parameters[0].y << ","
-                                 << inAABB.parameters[0].z << "),(" << inAABB.parameters[1].x << ","
-                                 << inAABB.parameters[1].y << "," << inAABB.parameters[1].z << ")");
-
-    LOG_INFO(1,
-             "----------------------------------------------------------------"
-             "----------------");
+    LOG_INFO(1, " - Vertices........: " << kernel.getNbActivePrimitives());
+    LOG_INFO(1, " - Faces...........: " << kernel.getNbActivePrimitives() / 3);
+    LOG_INFO(3, " - Min.............: " << aabb.parameters[0].x << "," << aabb.parameters[0].y << ","
+                                        << aabb.parameters[0].z);
+    LOG_INFO(3, " - Max.............: " << aabb.parameters[1].x << "," << aabb.parameters[1].y << ","
+                                        << aabb.parameters[1].z);
+    LOG_INFO(3, " - Center..........: " << objectCenter.x << "," << objectCenter.y << "," << objectCenter.z);
+    LOG_INFO(3, " - Scale...........: " << objectScale.x << "," << objectScale.y << "," << objectScale.z);
+    LOG_INFO(1, " - Object size.....: " << objectSize.x << "," << objectSize.y << "," << objectSize.z);
+    LOG_INFO(3, " - AABB............: (" << aabb.parameters[0].x << "," << aabb.parameters[0].y << ","
+                                         << aabb.parameters[0].z << "),(" << aabb.parameters[1].x << ","
+                                         << aabb.parameters[1].y << "," << aabb.parameters[1].z << ")");
+    LOG_INFO(3, " - inAABB..........: (" << inAABB.parameters[0].x << "," << inAABB.parameters[0].y << ","
+                                         << inAABB.parameters[0].z << "),(" << inAABB.parameters[1].x << ","
+                                         << inAABB.parameters[1].y << "," << inAABB.parameters[1].z << ")");
     return objectSize;
-#endif
 }
 }

@@ -188,7 +188,9 @@ ________________________________________________________________________________
  */
 void Scene::initialize(solr::GPUKernel *kernel, const int width, const int height)
 {
-    LOG_INFO(1, "Initializing Kernel...");
+    LOG_INFO(1, "--------------------------------------------------------------------------------");
+    LOG_INFO(1, "Scene...............: " << m_name);
+
     m_gpuKernel = kernel;
     m_gpuKernel->initBuffers();
     m_gpuKernel->resetAll();
@@ -231,25 +233,22 @@ void Scene::initialize(solr::GPUKernel *kernel, const int width, const int heigh
     filters.push_back(".jpg");
     loadTextures(std::string(DEFAULT_MEDIA_FOLDER) + "/hdri", filters);
     m_nbHDRI = m_gpuKernel->getNbActiveTextures();
-    LOG_INFO(1, m_nbHDRI << " HDRI textures loaded");
+    LOG_INFO(1, "HDRI textures......: " << m_nbHDRI);
 
     // Textures
     loadTextures(std::string(DEFAULT_MEDIA_FOLDER) + "/textures", filters);
-    LOG_INFO(1, m_gpuKernel->getNbActiveTextures() - m_nbHDRI << " Material textures loaded");
+    LOG_INFO(1, "Material textures..: " << m_gpuKernel->getNbActiveTextures() - m_nbHDRI);
 
     // Materials
-    LOG_INFO(1, "Creating random materials...");
     createRandomMaterials(false, false);
 
     // Initialize Scene
     doInitialize();
 
     // Lights TODO
-    LOG_INFO(1, "Adding lights...");
     doAddLights();
 
     // Cornel Box
-    LOG_INFO(1, "Creating Cornell Box...");
     addCornellBox(m_cornellBoxType);
 
 #ifdef USE_KINECT
@@ -321,13 +320,10 @@ void Scene::render(const bool &animate)
 {
     animateSkeleton();
 
-    // Render scene
     m_gpuKernel->render_begin(0);
 
     if (animate)
-    {
         doAnimate();
-    }
 
     m_gpuKernel->render_end();
 }
@@ -355,18 +351,13 @@ ________________________________________________________________________________
  */
 void Scene::createRandomMaterials(bool update, bool lightsOnly)
 {
-    LOG_INFO(1, "Creating materials");
     int nbMaterialTexturePacks = (m_gpuKernel->getNbActiveTextures() - m_nbHDRI) / 5;
     int start(0);
     int end(NB_MAX_MATERIALS);
     if (update)
-    {
         start = 1000;
-    }
+
     // Materials
-    long R = 0;
-    long G = 0;
-    long B = 0;
     for (int i(start); i < end; ++i)
     {
         vec4f specular = {0.f, 0.f, 0.f, 0.f};
@@ -706,13 +697,9 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly)
         }
 
         if (update)
-        {
             m_nbMaterials = i;
-        }
         else
-        {
             m_nbMaterials = m_gpuKernel->addMaterial();
-        }
 
         m_gpuKernel->setMaterial(m_nbMaterials, r, g, b, noise, reflection, refraction, procedural, wireframe,
                                  wireframeDepth, transparency, opacity, diffuseTextureId, normalTextureId,
@@ -860,7 +847,6 @@ void Scene::loadFromFile(const float scale)
 void Scene::addCornellBox(int boxType)
 {
     LOG_INFO(3, "Adding Cornell Box");
-    LOG_INFO(3, "Ground height = " << m_groundHeight);
     vec4f skyBoxSize = {20000.f, 20000.f, 20000.f};
     vec2f groundSize = {100000.f, 100000.f};
     float groundHeight = m_groundHeight;
@@ -1485,7 +1471,7 @@ void Scene::animateSkeleton()
                                           m_skeletonThickness * 2.0f, 41, // Head size and material
                                           m_skeletonThickness * 1.5f, 42, // Hands size and material
                                           m_skeletonThickness * 1.8f, 43  // Feet size and material
-    );
+                                          );
     m_gpuKernel->getSceneInfo().pathTracingIteration = 0;
 
     if (hr == S_OK)

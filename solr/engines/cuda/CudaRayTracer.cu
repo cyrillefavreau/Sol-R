@@ -1372,29 +1372,29 @@ extern "C" void reshape_scene(int2 occupancyParameters, SceneInfo sceneInfo)
 
         // Randoms
         size_t size = MAX_BITMAP_WIDTH * MAX_BITMAP_HEIGHT * sizeof(RandomBuffer);
-        LOG_INFO(1, "d_randoms: " << size << " bytes");
+        LOG_INFO(3, "d_randoms: " << size << " bytes");
         checkCudaErrors(cudaMalloc((void**)&d_randoms[device], size));
         totalMemoryAllocation += size;
 
         // Post-processing
         size = MAX_BITMAP_WIDTH * MAX_BITMAP_HEIGHT * sizeof(PostProcessingBuffer) / occupancyParameters.x;
-        LOG_INFO(1, "d_postProcessingBuffer: " << size << " bytes");
+        LOG_INFO(3, "d_postProcessingBuffer: " << size << " bytes");
         checkCudaErrors(cudaMalloc((void**)&d_postProcessingBuffer[device], size));
         totalMemoryAllocation += size;
 
         // Bitmap
         size = MAX_BITMAP_WIDTH * MAX_BITMAP_HEIGHT * gColorDepth * sizeof(BitmapBuffer) / occupancyParameters.x;
-        LOG_INFO(1, "d_bitmap: " << size << " bytes");
+        LOG_INFO(3, "d_bitmap: " << size << " bytes");
         checkCudaErrors(cudaMalloc((void**)&d_bitmap[device], size));
         totalMemoryAllocation += size;
 
         // Primitive IDs
         size = MAX_BITMAP_WIDTH * MAX_BITMAP_HEIGHT * sizeof(PrimitiveXYIdBuffer) / occupancyParameters.x;
-        LOG_INFO(1, "d_primitivesXYIds: " << size << " bytes");
+        LOG_INFO(3, "d_primitivesXYIds: " << size << " bytes");
         checkCudaErrors(cudaMalloc((void**)&d_primitivesXYIds[device], size));
         totalMemoryAllocation += size;
 
-        LOG_INFO(1, "Total variable GPU memory allocated on device " << device << ": " << totalMemoryAllocation
+        LOG_INFO(1, " - Total variable GPU memory allocated on device " << device << ": " << totalMemoryAllocation
                                                                      << " bytes");
     }
 }
@@ -1426,7 +1426,7 @@ extern "C" void initialize_scene(int2 occupancyParameters, SceneInfo sceneInfo, 
         occupancyParameters.x = nbGPUs;
     }
     else
-        LOG_INFO(1, "CUDA-capable device count: " << occupancyParameters.x);
+        LOG_INFO(3, "CUDA-capable device count: " << occupancyParameters.x);
 
     for (int device(0); device < occupancyParameters.x; ++device)
     {
@@ -1434,11 +1434,11 @@ extern "C" void initialize_scene(int2 occupancyParameters, SceneInfo sceneInfo, 
         checkCudaErrors(cudaSetDevice(device));
         for (int stream(0); stream < occupancyParameters.y; ++stream)
             checkCudaErrors(cudaStreamCreate(&d_streams[device][stream]));
-        LOG_INFO(1, "Created " << occupancyParameters.y << " streams on device " << device);
+        LOG_INFO(3, "Created " << occupancyParameters.y << " streams on device " << device);
 
         // Bounding boxes
         int size(NB_MAX_BOXES * sizeof(BoundingBox));
-        LOG_INFO(1, "d_boundingBoxes: " << size << " bytes");
+        LOG_INFO(3, "d_boundingBoxes: " << size << " bytes");
 #ifdef USE_MANAGED_MEMORY
         checkCudaErrors(cudaMallocManaged(&boundingBoxes, size, cudaMemAttachHost));
 #else
@@ -1448,7 +1448,7 @@ extern "C" void initialize_scene(int2 occupancyParameters, SceneInfo sceneInfo, 
 
         // Primitives
         size = NB_MAX_PRIMITIVES * sizeof(Primitive);
-        LOG_INFO(1, "d_primitives: " << size << " bytes");
+        LOG_INFO(3, "d_primitives: " << size << " bytes");
 #ifdef USE_MANAGED_MEMORY
         checkCudaErrors(cudaMallocManaged(&primitives, size, cudaMemAttachHost));
 #else
@@ -1503,7 +1503,7 @@ extern "C" void finalize_scene(int2 occupancyParameters
 #endif
                                )
 {
-    LOG_INFO(1, "Releasing device resources");
+    LOG_INFO(3, "Releasing device resources");
     for (int device(0); device < occupancyParameters.x; ++device)
     {
         checkCudaErrors(cudaSetDevice(device));
@@ -1527,8 +1527,7 @@ extern "C" void finalize_scene(int2 occupancyParameters
             checkCudaErrors(cudaStreamDestroy(d_streams[device][stream]));
             d_streams[device][stream] = 0;
         }
-        LOG_INFO(1, "Resetting device");
-        cudaDeviceReset();
+        checkCudaErrors(cudaDeviceReset());
     }
 }
 
@@ -1595,7 +1594,7 @@ extern "C" void h2d_textures(int2 occupancyParameters, int activeTextures, Textu
         if (totalSize > 0)
         {
             totalSize *= sizeof(BitmapBuffer);
-            LOG_INFO(1, "Total GPU texture memory to allocate: " << totalSize << " bytes");
+            LOG_INFO(3, "Total GPU texture memory to allocate: " << totalSize << " bytes");
             checkCudaErrors(cudaMalloc((void**)&d_textures[device], totalSize));
 
             for (int i(0); i < activeTextures; ++i)

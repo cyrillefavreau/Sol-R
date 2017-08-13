@@ -34,9 +34,9 @@ protected:
     virtual void doAddLights();
 
 private:
-    void buildGraph(bool update);
+    void buildGraph(const bool update);
     void buildChart(const std::string& filename);
-    void buildFrame(const float maxValue);
+    void buildFrame();
 
 private:
     float m_values[100][100];

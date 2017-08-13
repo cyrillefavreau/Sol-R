@@ -85,7 +85,6 @@ void ObjScene::doInitialize()
             m_groundHeight = -size.y / 2.f - sceneInfo.geometryEpsilon * 10.f;
         }
     }
-    LOG_INFO(1, "Ground height: " << m_groundHeight);
 }
 
 void ObjScene::doPostInitialize()

@@ -257,10 +257,7 @@ void readParameters(const std::vector<std::string> &parameters)
             if (key.find("-benchmark") != std::string::npos)
                 gBenchmarking = (atoi(value.c_str()) == 1);
             if (key.find("-scene") != std::string::npos)
-            {
                 gSceneId = atoi(value.c_str());
-                LOG_INFO(1, "Scene: " << gSceneId);
-            }
             if (key.find("-cornellBox") != std::string::npos)
                 gCornellBoxType = atoi(value.c_str());
         }
@@ -1189,11 +1186,10 @@ void Cleanup(int iExitCode)
 {
 #ifdef WIN32
     gTickCount = GetTickCount() - gTickCount;
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
     LOG_INFO(1, "Benchmark: " << gTickCount << " tick counts");
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
 #endif // WIN32
     delete gScene;
+    LOG_INFO(1, "Looking forward to seeing you again (^_^)/");
     exit(iExitCode);
 }
 
@@ -1272,8 +1268,6 @@ void createKinectScene(int platform, int device)
 void createScene()
 {
     gAnimate = false;
-
-    LOG_INFO(1, "Creating Scene (" << gSceneId << ") ...");
     gHint = "Camera";
     switch (gSceneId)
     {
@@ -1335,16 +1329,12 @@ void createScene()
 
     gScene->setCornellBoxType(gCornellBoxType);
     gScene->setCurrentModel(m_counter);
-
-    LOG_INFO(1, "Initializing SolR...");
     gScene->initialize(gKernel, gWindowWidth, gWindowHeight);
-
     gKernel->setCamera(gViewPos, gViewDir, gViewAngles);
 }
 
 int main(int argc, char *argv[])
 {
-    LOG_INFO(1, "Starting program...");
     std::vector<std::string> arguments;
     for (int i(0); i < argc; ++i)
     {
@@ -1354,14 +1344,13 @@ int main(int argc, char *argv[])
 
     srand(static_cast<int>(time(0)));
 
-    LOG_INFO(1, "Initializing OpenGL...");
     initgl(argc, argv);
 
     initMenus();
 
     createScene();
 
-    LOG_INFO(1, "Entering OpenGL loop...");
+    LOG_INFO(1, "Sol-R is happily running... (^_^)y");
     glutMainLoop();
 
     Cleanup(EXIT_SUCCESS);

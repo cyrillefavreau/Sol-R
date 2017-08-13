@@ -68,7 +68,7 @@ void TrianglesScene::doAddLights()
     // lights
     if (m_gpuKernel->getNbActiveLamps() == 0)
     {
-        LOG_INFO(1, "Adding sun light");
+        LOG_INFO(3, "Adding sun light");
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
         m_gpuKernel->setPrimitive(m_nbPrimitives, 5000.f, 5000.f, -5000.f, 10.f, 0.f, 0.f, DEFAULT_LIGHT_MATERIAL);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);

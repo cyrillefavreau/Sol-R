@@ -54,7 +54,7 @@ namespace solr
 vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filename, const vec4f &center,
                                    const float scale)
 {
-    LOG_INFO(1, "Loading 3D scene from " << filename);
+    LOG_INFO(1, "IRT Filename.......: " << filename);
 
     vec4f returnValue = {0.f, 0.f, 0.f, 0.f};
     vec4f min = {kernel.getSceneInfo().viewDistance, kernel.getSceneInfo().viewDistance,
@@ -69,7 +69,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
         // Format
         size_t version;
         myfile.read((char *)&version, sizeof(size_t));
-        LOG_INFO(1, "Version: " << version);
+        LOG_INFO(1, " - Version.........: " << version);
 
         if (version != FORMAT_VERSION)
         {
@@ -86,7 +86,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
         // --------------------------------------------------------------------------------
         size_t nbElements(0);
         myfile.read((char *)&nbElements, sizeof(size_t));
-        LOG_INFO(1, "Loading " << nbElements << " primitives...");
+        LOG_INFO(1, " - Primitives......: " << nbElements);
 
         size_t position = myfile.tellg();
 
@@ -127,7 +127,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
         // --------------------------------------------------------------------------------
         size_t nbTextures(0);
         myfile.read((char *)&nbTextures, sizeof(size_t));
-        LOG_INFO(1, "Loading " << nbTextures << " textures...");
+        LOG_INFO(1, " - Textures........: " << nbTextures);
 
         int nbActiveTextures = kernel.getNbActiveTextures();
         for (unsigned int i(0); i < nbTextures; ++i)
@@ -137,7 +137,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
 
             TextureInfo texInfo;
             myfile.read((char *)&texInfo, sizeof(TextureInfo));
-            LOG_INFO(1, "Texture with id " << id << " and size: " << texInfo.size.x << "x" << texInfo.size.y << "x"
+            LOG_INFO(3, "Texture with id " << id << " and size: " << texInfo.size.x << "x" << texInfo.size.y << "x"
                                            << texInfo.size.z << " loaded into slot " << nbActiveTextures + i);
 
             size_t imageSize = texInfo.size.x * texInfo.size.y * texInfo.size.z;
@@ -153,7 +153,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
         // --------------------------------------------------------------------------------
         size_t nbMaterials(0);
         myfile.read((char *)&nbMaterials, sizeof(size_t));
-        LOG_INFO(1, "Loading " << nbMaterials << " materials...");
+        LOG_INFO(1, " - Materials.......: " << nbMaterials);
 
         for (unsigned int i(0); i < nbMaterials; ++i)
         {
@@ -177,7 +177,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
                 material.advancedTextureIds.z += nbActiveTextures;
             if (material.advancedTextureIds.w != TEXTURE_NONE)
                 material.advancedTextureIds.w += nbActiveTextures;
-            LOG_INFO(1, "Loading material " << id << " (" << material.textureIds.x << "," << material.textureIds.y
+            LOG_INFO(3, "Loading material " << id << " (" << material.textureIds.x << "," << material.textureIds.y
                                             << "," << material.textureIds.z << "," << material.textureIds.w
                                             << material.advancedTextureIds.x << "," << material.advancedTextureIds.y
                                             << "," << material.advancedTextureIds.z << ","
@@ -186,7 +186,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
         }
     }
     myfile.close();
-    LOG_INFO(1, "File " << filename << " successfully loaded!");
+    LOG_INFO(3, "File " << filename << " successfully loaded!");
 
     // Object size
     returnValue.x = fabs(max.x - min.x);
@@ -197,7 +197,7 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
     float ratio = scale / returnValue.y; // std::max(returnValue.x,std::max(returnValue.y,returnValue.z));
     kernel.scalePrimitives(ratio, 0, NB_MAX_BOXES);
 
-    LOG_INFO(1, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z);
+    LOG_INFO(3, "Object size: " << returnValue.x << ", " << returnValue.y << ", " << returnValue.z);
     return returnValue;
 }
 

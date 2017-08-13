@@ -35,24 +35,21 @@
 
 namespace solr
 {
-SWCReader::SWCReader(void)
+SWCReader::SWCReader()
 {
 }
 
-SWCReader::~SWCReader(void)
+SWCReader::~SWCReader()
 {
 }
 
-CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GPUKernel &kernel, const vec4f &center,
-                                                 const bool autoScale, const vec4f &scale, bool autoCenter,
-                                                 const int materialId)
+CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GPUKernel &kernel, const vec4f &position,
+                                                 const vec4f &scale, const int materialId)
 {
     CPUBoundingBox AABB;
-    LOG_INFO(1, "Loading SWC file " << filename);
+    LOG_INFO(1, "SWC Filename.......: " << filename);
 
-    vec4f ObjectSize = {0.f, 0.f, 0.f};
-
-    // Read vertices
+    // Read points
     std::ifstream file(filename.c_str());
     if (file.is_open())
     {
@@ -68,26 +65,34 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GP
                 Morphology morphology;
                 int id = atoi(A.c_str());
                 morphology.branch = atoi(B.c_str());
-                morphology.x = static_cast<float>(scale.x * (center.x + atof(C.c_str())));
-                morphology.y = static_cast<float>(scale.y * (center.y + atof(D.c_str())));
-                morphology.z = static_cast<float>(scale.z * (center.z + atof(E.c_str())));
+                morphology.x = static_cast<float>(scale.x * (position.x + atof(C.c_str())));
+                morphology.y = static_cast<float>(scale.y * (position.y + atof(D.c_str())));
+                morphology.z = static_cast<float>(scale.z * (position.z + atof(E.c_str())));
                 morphology.radius = static_cast<float>(scale.w * atof(F.c_str()));
                 morphology.parent = atoi(G.c_str());
                 m_morphologies[id] = morphology;
+
+                AABB.parameters[0].x = std::min(AABB.parameters[0].x, morphology.x);
+                AABB.parameters[0].y = std::min(AABB.parameters[0].y, morphology.y);
+                AABB.parameters[0].z = std::min(AABB.parameters[0].z, morphology.z);
+                AABB.parameters[1].x = std::max(AABB.parameters[1].x, morphology.x);
+                AABB.parameters[1].y = std::max(AABB.parameters[1].y, morphology.y);
+                AABB.parameters[1].z = std::max(AABB.parameters[1].z, morphology.z);
             }
         }
         file.close();
     }
 
+    // Build geometry
     Morphologies::iterator it = m_morphologies.begin();
     while (it != m_morphologies.end())
     {
         Morphology &a = (*it).second;
         if (a.parent == -1)
         {
-            vec3f vt0 = {0.f, 0.f, 0.f};
-            vec3f vt1 = {2.f, 2.f, 0.f};
-            vec3f vt2 = {0.f, 0.f, 0.f};
+            const vec3f vt0 = {0.f, 0.f, 0.f};
+            const vec3f vt1 = {2.f, 2.f, 0.f};
+            const vec3f vt2 = {0.f, 0.f, 0.f};
 
             a.primitiveId = kernel.addPrimitive(ptSphere, true);
             kernel.setPrimitive(a.primitiveId, a.x, a.y, a.z, a.radius * 1.5f, 0.f, 0.f, materialId);
@@ -98,16 +103,16 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GP
             Morphology &b = m_morphologies[a.parent];
             if (b.parent != -1)
             {
-                vec3f vt0 = {0.f, 0.f, 0.f};
-                vec3f vt1 = {1.f, 1.f, 0.f};
-                vec3f vt2 = {0.f, 0.f, 0.f};
+                const vec3f vt0 = {0.f, 0.f, 0.f};
+                const vec3f vt1 = {1.f, 1.f, 0.f};
+                const vec3f vt2 = {0.f, 0.f, 0.f};
 
-                float ra = a.radius;
-                float rb = b.radius;
+                const float ra = a.radius;
+                const float rb = b.radius;
                 b.primitiveId = kernel.addPrimitive(ptCylinder, true);
                 kernel.setPrimitive(b.primitiveId, a.x, a.y, a.z, b.x, b.y, b.z, ra, 0.f, 0.f, materialId);
                 kernel.setPrimitiveTextureCoordinates(b.primitiveId, vt0, vt1, vt2);
-                int p = kernel.addPrimitive(ptSphere, true);
+                const int p = kernel.addPrimitive(ptSphere, true);
                 kernel.setPrimitive(p, b.x, b.y, b.z, rb, 0.f, 0.f, materialId);
                 kernel.setPrimitiveTextureCoordinates(p, vt0, vt1, vt2);
             }
@@ -115,13 +120,10 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GP
         ++it;
     }
 
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
-    LOG_INFO(1, "Loaded " << filename.c_str() << " into frame " << kernel.getFrame() << " ["
-                          << kernel.getNbActivePrimitives() << " primitives]");
-    LOG_INFO(1, "inAABB     : (" << AABB.parameters[0].x << "," << AABB.parameters[0].y << "," << AABB.parameters[0].z
-                                 << "),(" << AABB.parameters[1].x << "," << AABB.parameters[1].y << ","
-                                 << AABB.parameters[1].z << ")");
-    LOG_INFO(1, "--------------------------------------------------------------------------------");
+    LOG_INFO(1, " - Points..........: " << m_morphologies.size());
+    LOG_INFO(1, " - Bounding box....: (" << AABB.parameters[0].x << "," << AABB.parameters[0].y << ","
+                                         << AABB.parameters[0].z << "),(" << AABB.parameters[1].x << ","
+                                         << AABB.parameters[1].y << "," << AABB.parameters[1].z << ")");
     return AABB;
 }
 }
