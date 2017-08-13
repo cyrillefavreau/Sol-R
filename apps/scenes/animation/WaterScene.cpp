@@ -129,9 +129,9 @@ void WaterScene::processCurve(bool update)
                                              verticesNormals[3]);
 
             {
-                const vec3f tc0 = make_vec3f(tx, ty);
-                const vec3f tc1 = make_vec3f(tx + tstep, ty);
-                const vec3f tc2 = make_vec3f(tx + tstep, ty + tstep);
+                const vec2f tc0 = make_vec2f(tx, ty);
+                const vec2f tc1 = make_vec2f(tx + tstep, ty);
+                const vec2f tc2 = make_vec2f(tx + tstep, ty + tstep);
                 m_gpuKernel->setPrimitiveTextureCoordinates(primitiveIndex, tc0, tc1, tc2);
             }
 
@@ -154,9 +154,9 @@ void WaterScene::processCurve(bool update)
                                              verticesNormals[0]);
 
             {
-                const vec3f tc0 = make_vec3f(tx + tstep, ty + tstep);
-                const vec3f tc1 = make_vec3f(tx, ty + tstep);
-                const vec3f tc2 = make_vec3f(tx, ty);
+                const vec2f tc0 = make_vec2f(tx + tstep, ty + tstep);
+                const vec2f tc1 = make_vec2f(tx, ty + tstep);
+                const vec2f tc2 = make_vec2f(tx, ty);
                 m_gpuKernel->setPrimitiveTextureCoordinates(primitiveIndex, tc0, tc1, tc2);
             }
             ty += tstep;

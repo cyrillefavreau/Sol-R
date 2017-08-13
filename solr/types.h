@@ -280,9 +280,9 @@ struct __ALIGN16__ Primitive
     // Material ID
     vec1i materialId;
     // Texture coordinates
-    vec3f vt0;
-    vec3f vt1;
-    vec3f vt2;
+    vec2f vt0;
+    vec2f vt1;
+    vec2f vt2;
 };
 typedef std::map<size_t, Primitive> Primitives;
 

@@ -96,9 +96,9 @@ extern "C" SOLR_API int SolR_GetPrimitiveMaterial(int index);
 extern "C" SOLR_API int SolR_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z, double n1_x,
                                                  double n1_y, double n1_z, double n2_x, double n2_y, double n2_z);
 
-extern "C" SOLR_API int SolR_SetPrimitiveTextureCoordinates(int index, double t0_x, double t0_y, double t0_z,
-                                                            double t1_x, double t1_y, double t1_z, double t2_x,
-                                                            double t2_y, double t2_z);
+extern "C" SOLR_API int SolR_SetPrimitiveTextureCoordinates(int index, double t0_x, double t0_y, 
+                                                            double t1_x, double t1_y, double t2_x,
+                                                            double t2_y);
 
 // ---------- Materials ----------
 extern "C" SOLR_API int SolR_AddMaterial();

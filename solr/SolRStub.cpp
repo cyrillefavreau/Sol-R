@@ -280,13 +280,13 @@ int SolR_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z, d
     return 0;
 }
 
-int SolR_SetPrimitiveTextureCoordinates(int index, double t0_x, double t0_y, double t0_z, double t1_x, double t1_y,
-                                        double t1_z, double t2_x, double t2_y, double t2_z)
+int SolR_SetPrimitiveTextureCoordinates(int index, double t0_x, double t0_y, double t1_x, double t1_y,
+                                        double t2_x, double t2_y)
 {
     LOG_INFO(3, "SolR_SetPrimitiveTextureCoordinates");
-    vec3f t0 = make_vec3f(static_cast<float>(t0_x), static_cast<float>(t0_y), static_cast<float>(t0_z));
-    vec3f t1 = make_vec3f(static_cast<float>(t1_x), static_cast<float>(t1_y), static_cast<float>(t1_z));
-    vec3f t2 = make_vec3f(static_cast<float>(t2_x), static_cast<float>(t2_y), static_cast<float>(t2_z));
+    const vec2f t0 = make_vec2f(static_cast<float>(t0_x), static_cast<float>(t0_y));
+    const vec2f t1 = make_vec2f(static_cast<float>(t1_x), static_cast<float>(t1_y));
+    const vec2f t2 = make_vec2f(static_cast<float>(t2_x), static_cast<float>(t2_y));
     solr::SingletonKernel::kernel()->setPrimitiveTextureCoordinates(index, t0, t1, t2);
     return 0;
 }

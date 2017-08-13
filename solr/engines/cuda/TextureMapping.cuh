@@ -210,7 +210,7 @@ __device__ __INLINE__ float4 triangleUVMapping(const SceneInfo &sceneInfo, const
     Material &material = materials[primitive.materialId];
     float4 result = material.color;
 
-    vec3f T =
+    vec2f T =
         (primitive.vt0 * areas.x + primitive.vt1 * areas.y + primitive.vt2 * areas.z) / (areas.x + areas.y + areas.z);
     float2 mappingOffset = {0.f, 0.f};
     if (material.attributes.y == 1)

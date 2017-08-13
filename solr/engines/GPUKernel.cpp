@@ -540,7 +540,6 @@ void GPUKernel::setPrimitive(const int &index, float x0, float y0, float z0, flo
                              float y2, float z2, float w, float h, float d, int materialId)
 {
     float scale = 1.f;
-    vec3f zero = make_vec3f(0.f, 0.f, 0.f);
     m_primitivesTransfered = false;
     if (index >= 0 && index <= m_primitives[m_frame].size())
     {
@@ -557,12 +556,12 @@ void GPUKernel::setPrimitive(const int &index, float x0, float y0, float z0, flo
         (m_primitives[m_frame])[index].size.x = w * scale;
         (m_primitives[m_frame])[index].size.y = h * scale;
         (m_primitives[m_frame])[index].size.z = d * scale;
-        (m_primitives[m_frame])[index].n0 = zero;
-        (m_primitives[m_frame])[index].n1 = zero;
-        (m_primitives[m_frame])[index].n2 = zero;
-        (m_primitives[m_frame])[index].vt0 = zero;
-        (m_primitives[m_frame])[index].vt1 = zero;
-        (m_primitives[m_frame])[index].vt2 = zero;
+        (m_primitives[m_frame])[index].n0 = make_vec3f();
+        (m_primitives[m_frame])[index].n1 = make_vec3f();
+        (m_primitives[m_frame])[index].n2 = make_vec3f();
+        (m_primitives[m_frame])[index].vt0 = make_vec2f();
+        (m_primitives[m_frame])[index].vt1 = make_vec2f();
+        (m_primitives[m_frame])[index].vt2 = make_vec2f();
         (m_primitives[m_frame])[index].materialId = materialId;
 
         switch ((m_primitives[m_frame])[index].type)
@@ -702,7 +701,7 @@ void GPUKernel::setPrimitiveBellongsToModel(const int &index, bool bellongsToMod
     }
 }
 
-void GPUKernel::setPrimitiveTextureCoordinates(unsigned int index, vec3f vt0, vec3f vt1, vec3f vt2)
+void GPUKernel::setPrimitiveTextureCoordinates(const unsigned int index, const vec2f& vt0, const vec2f& vt1, const vec2f& vt2)
 {
     if (index < m_primitives[m_frame].size())
     {
@@ -2630,9 +2629,9 @@ void GPUKernel::addNormal(float x, float y, float z)
     m_normals.push_back(make_vec3f(x, y, z));
 }
 
-void GPUKernel::addTextCoord(float x, float y, float z)
+void GPUKernel::addTextureCoordinates(float x, float y)
 {
-    m_textCoords.push_back(make_vec3f(x, y, z));
+    m_textCoords.push_back(make_vec2f(x, y));
 }
 
 void GPUKernel::translate(float x, float y, float z)

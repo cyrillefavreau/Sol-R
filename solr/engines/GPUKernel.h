@@ -56,9 +56,9 @@ struct CPUPrimitive
     vec3f size;
     int type;
     int materialId;
-    vec3f vt0; // Texture coordinates
-    vec3f vt1;
-    vec3f vt2;
+    vec2f vt0; // Texture coordinates
+    vec2f vt1;
+    vec2f vt2;
     vec3f speed0;
     vec3f speed1;
     vec3f speed2;
@@ -138,7 +138,7 @@ public:
     void setPrimitiveCenter(unsigned int index, const vec3f &center);
 
     // Texture coordinates
-    void setPrimitiveTextureCoordinates(unsigned int index, vec3f vt0, vec3f vt1, vec3f vt2);
+    void setPrimitiveTextureCoordinates(const unsigned int index, const vec2f& vt0, const vec2f& vt1, const vec2f& vt2);
 
     // Normals
     void setPrimitiveNormals(unsigned int index, vec3f n0, vec3f n1, vec3f n2);
@@ -153,7 +153,7 @@ public:
     int setGLMode(const int &glMode);
     void addVertex(float x, float y, float z);
     void addNormal(float x, float y, float z);
-    void addTextCoord(float x, float y, float z);
+    void addTextureCoordinates(float x, float y);
     void translate(float x, float y, float z);
     void rotate(float x, float y, float z);
 
@@ -411,7 +411,7 @@ protected:
     int m_GLMode;
     vec3fs m_vertices;
     vec3fs m_normals;
-    vec3fs m_textCoords;
+    vec2fs m_textCoords;
     vec3f m_translation;
     vec4f m_rotation;
     int m_currentMaterial;

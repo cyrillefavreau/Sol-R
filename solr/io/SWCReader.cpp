@@ -90,9 +90,9 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GP
         Morphology &a = (*it).second;
         if (a.parent == -1)
         {
-            const vec3f vt0 = make_vec3f(0.f, 0.f);
-            const vec3f vt1 = make_vec3f(2.f, 2.f);
-            const vec3f vt2 = make_vec3f(0.f, 0.f);
+            const vec2f vt0 = make_vec2f(0.f, 0.f);
+            const vec2f vt1 = make_vec2f(2.f, 2.f);
+            const vec2f vt2 = make_vec2f(0.f, 0.f);
 
             a.primitiveId = kernel.addPrimitive(ptSphere, true);
             kernel.setPrimitive(a.primitiveId, a.x, a.y, a.z, a.radius * 1.5f, 0.f, 0.f, materialId);
@@ -103,9 +103,9 @@ CPUBoundingBox SWCReader::loadMorphologyFromFile(const std::string &filename, GP
             Morphology &b = m_morphologies[a.parent];
             if (b.parent != -1)
             {
-                const vec3f vt0 = make_vec3f(0.f, 0.f);
-                const vec3f vt1 = make_vec3f(1.f, 1.f);
-                const vec3f vt2 = make_vec3f(0.f, 0.f);
+                const vec2f vt0 = make_vec2f(0.f, 0.f);
+                const vec2f vt1 = make_vec2f(1.f, 1.f);
+                const vec2f vt2 = make_vec2f(0.f, 0.f);
 
                 const float ra = a.radius;
                 const float rb = b.radius;

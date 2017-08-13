@@ -26,9 +26,6 @@
 #include <stdlib.h>
 #endif
 
-int mappedSphere;
-vec3f vt0, vt1, vt2;
-
 CylinderScene::CylinderScene(const std::string& name)
     : Scene(name)
 {
@@ -76,17 +73,13 @@ void CylinderScene::doInitialize()
     float size = 400.f;
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
     m_gpuKernel->setPrimitive(m_nbPrimitives, 2500, 0, 0, 1000, 0.f, 0.f, 55);
-    vt0.x = 0.f;
-    vt0.y = 0.f;
-    vt0.z = 0.f;
-    vt1.x = 10.f;
-    vt1.y = 10.f;
-    vt1.z = 0.f;
-    m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
-    mappedSphere = m_nbPrimitives;
+    m_vt0 = make_vec2f();
+    m_vt1 = make_vec2f(10.f, 10.f);
+    m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, m_vt0, m_vt1, m_vt2);
+    m_mappedSphere = m_nbPrimitives;
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
     m_gpuKernel->setPrimitive(m_nbPrimitives, -2500, 0, 0, 1000.f, 0.f, 0.f, 45);
-    m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
+    m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, m_vt0, m_vt1, m_vt2);
 
     // Cylinders
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
@@ -111,11 +104,10 @@ void CylinderScene::doAnimate()
 {
     m_rotationAngles.y = 0.01f;
     m_gpuKernel->rotatePrimitives(m_rotationCenter, m_rotationAngles);
-    vt0.x = -PI / 2.f;
-    vt0.y -= 0.05f;
-    vt0.z -= 0.05f;
-    m_gpuKernel->setPrimitiveTextureCoordinates(mappedSphere, vt0, vt1, vt2);
-    m_gpuKernel->setPrimitiveTextureCoordinates(mappedSphere + 1, vt0, vt1, vt2);
+    m_vt0.x = -PI / 2.f;
+    m_vt0.y -= 0.05f;
+    m_gpuKernel->setPrimitiveTextureCoordinates(m_mappedSphere, m_vt0, m_vt1, m_vt2);
+    m_gpuKernel->setPrimitiveTextureCoordinates(m_mappedSphere + 1, m_vt0, m_vt1, m_vt2);
     m_gpuKernel->compactBoxes(false);
 }
 

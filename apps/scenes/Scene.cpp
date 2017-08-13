@@ -1157,9 +1157,9 @@ void Scene::addCornellBox(int boxType)
     {
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
         m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, 0.f, 0.f, skyBoxSize.x, 0.f, 0.f, SKYBOX_SPHERE_MATERIAL);
-        const vec3f vt0 = make_vec3f(0.f, 0.f);
-        const vec3f vt1 = make_vec3f(1.f, 1.f);
-        const vec3f vt2 = make_vec3f(0.f, 0.f);
+        const vec2f vt0 = make_vec2f(0.f, 0.f);
+        const vec2f vt1 = make_vec2f(1.f, 1.f);
+        const vec2f vt2 = make_vec2f(0.f, 0.f);
         m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         break;
@@ -1246,9 +1246,9 @@ void Scene::addCornellBox(int boxType)
                                       0.f, material);
             const vec3f n = make_vec3f(0.f, 1.f, 0.f);
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, n, n, n);
-            const vec3f vt0 = make_vec3f();
-            const vec3f vt1 = make_vec3f(repeats, 0.f, 0.f);
-            const vec3f vt2 = make_vec3f(repeats, repeats, 0.f);
+            const vec2f vt0 = make_vec2f();
+            const vec2f vt1 = make_vec2f(repeats, 0.f);
+            const vec2f vt2 = make_vec2f(repeats, repeats);
             m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }
@@ -1259,9 +1259,9 @@ void Scene::addCornellBox(int boxType)
                                       0.f, material);
             const vec3f n = make_vec3f(0.f, 1.f, 0.f);
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, n, n, n);
-            const vec3f vt0 = make_vec3f(repeats, repeats, 0.f);
-            const vec3f vt1 = make_vec3f(0.f, repeats, 0.f);
-            const vec3f vt2 = make_vec3f(0.f, 0.f, 0.f);
+            const vec2f vt0 = make_vec2f(repeats, repeats);
+            const vec2f vt1 = make_vec2f(0.f, repeats);
+            const vec2f vt2 = make_vec2f(0.f, 0.f);
             m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }

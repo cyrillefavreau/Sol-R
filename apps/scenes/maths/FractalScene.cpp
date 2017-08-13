@@ -104,9 +104,9 @@ void FractalScene::createFractals(int iteration, int modelId, int mode, int maxI
                 c.z = center.z + positions[modelId][i].z * center.w * interval;
                 c.w = center.w * radius;
 
-                const vec3f vt0 = make_vec3f(0.f, 0.f);
-                const vec3f vt1 = make_vec3f(1.f, 1.f);
-                const vec3f vt2 = make_vec3f(0.f, 0.f);
+                const vec2f vt0 = make_vec2f(0.f, 0.f);
+                const vec2f vt1 = make_vec2f(1.f, 1.f);
+                const vec2f vt2 = make_vec2f(0.f, 0.f);
 
                 switch (mode)
                 {

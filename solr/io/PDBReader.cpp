@@ -649,9 +649,9 @@ vec4f PDBReader::loadAtomsFromFile(const std::string &filename, GPUKernel &cudaK
                                 objectScale.z * distanceRatio * atomDistance * (halfCenter.z - center.z),
                                 objectScale.x * stickRadius, 0.f, 0.f,
                                 (geometryType == gtSticks) ? atom.materialId : 1010);
-                            const vec3f vt0 = make_vec3f(0.f, 0.f, 0.f);
-                            const vec3f vt1 = make_vec3f(1.f, 1.f, 0.f);
-                            const vec3f vt2 = make_vec3f(0.f, 0.f, 0.f);
+                            const vec2f vt0 = make_vec2f(0.f, 0.f);
+                            const vec2f vt1 = make_vec2f(1.f, 1.f);
+                            const vec2f vt2 = make_vec2f(0.f, 0.f);
                             cudaKernel.setPrimitiveTextureCoordinates(nb, vt0, vt1, vt2);
                         }
                     }
@@ -673,9 +673,9 @@ vec4f PDBReader::loadAtomsFromFile(const std::string &filename, GPUKernel &cudaK
             if (addAtom)
             {
                 // Enveloppe
-                const vec3f vt0 = make_vec3f(0.f, 0.f, 0.f);
-                const vec3f vt1 = make_vec3f(1.f, 1.f, 0.f);
-                const vec3f vt2 = make_vec3f(0.f, 0.f, 0.f);
+                const vec2f vt0 = make_vec2f(0.f, 0.f);
+                const vec2f vt1 = make_vec2f(1.f, 1.f);
+                const vec2f vt2 = make_vec2f(0.f, 0.f);
                 if (geometryType == gtIsoSurface && atom.isBackbone && atom.chainId % 2 == 0)
                 {
                     nb = cudaKernel.addPrimitive(ptSphere, true);

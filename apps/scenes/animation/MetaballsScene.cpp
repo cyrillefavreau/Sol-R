@@ -44,10 +44,10 @@ vec4f scale = {2500.f / numMetaballs, 2500.f / numMetaballs, 2500.f / numMetabal
 unsigned int gridSize = 50;
 unsigned int numMetaballs = 50;
 const int gridScale = 3.f;
-vec3f size = {{static_cast<float>(numMetaballs * gridScale), static_cast<float>(numMetaballs* gridScale),
-    static_cast<float>(numMetaballs* gridScale)}};
-vec3f amplitude = {{size.x / gridScale, size.y / gridScale, size.z / gridScale}};
-vec3f scale = {{2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs}};
+vec3f size = make_vec3f(static_cast<float>(numMetaballs * gridScale), static_cast<float>(numMetaballs* gridScale),
+    static_cast<float>(numMetaballs* gridScale));
+const vec3f amplitude = make_vec3f(size.x / gridScale, size.y / gridScale, size.z / gridScale);
+const vec3f scale = make_vec3f(2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs);
 #endif // USE_KINECT
 METABALL metaballs[50];
 
@@ -352,9 +352,9 @@ void MetaballsScene::doAnimate()
 
 // send the vertices
 #ifdef USE_KINECT
-            vec4f center = {0.f, -3000.f, 8000.f};
+            vec4f center = make_vec4f(0.f, -3000.f, 8000.f);
 #else
-            vec4f center = {{0.f, 0.f, -2500.f}};
+            vec4f center = make_vec4f(0.f, 0.f, -2500.f);
 #endif // USE_KINECT
             for (int k = 0; triTable[cubeIndex][k] != -1; k += 3)
             {

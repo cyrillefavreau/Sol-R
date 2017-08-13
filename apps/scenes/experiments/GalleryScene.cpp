@@ -95,9 +95,9 @@ void GalleryScene::doInitialize()
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, normal0, normal1, normal2);
 
             {
-                const vec3f tc0 = make_vec3f(1.f, 1.f);
-                const vec3f tc1 = make_vec3f(0.f, 1.f);
-                const vec3f tc2 = make_vec3f(0.f, 0.f);
+                const vec2f tc0 = make_vec2f(1.f, 1.f);
+                const vec2f tc1 = make_vec2f(0.f, 1.f);
+                const vec2f tc2 = make_vec2f(0.f, 0.f);
                 m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, tc0, tc1, tc2);
             }
 
@@ -109,9 +109,9 @@ void GalleryScene::doInitialize()
                                       position.z + p0.z * size.z, 0.f, 0.f, 0.f, m);
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, normal2, normal3, normal0);
             {
-                const vec3f tc0 = make_vec3f(0.f, 0.f);
-                const vec3f tc1 = make_vec3f(1.f, 0.f);
-                const vec3f tc2 = make_vec3f(1.f, 1.f);
+                const vec2f tc0 = make_vec2f(0.f, 0.f);
+                const vec2f tc1 = make_vec2f(1.f, 0.f);
+                const vec2f tc2 = make_vec2f(1.f, 1.f);
                 m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, tc0, tc1, tc2);
             }
             ++i;

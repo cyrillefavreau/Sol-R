@@ -32,4 +32,11 @@ protected:
     virtual void doInitialize();
     virtual void doAnimate();
     virtual void doAddLights();
+
+private:
+    int m_mappedSphere;
+    vec2f m_vt0;
+    vec2f m_vt1;
+    vec2f m_vt2;
+
 };

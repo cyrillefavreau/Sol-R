@@ -414,7 +414,7 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
     LOG_INFO(1, "OBJ Filename.......: " << filename);
     std::map<int, vec3f> vertices;
     std::map<int, vec3f> normals;
-    std::map<int, vec3f> textureCoordinates;
+    std::map<int, vec2f> textureCoordinates;
     std::map<std::string, MaterialMTL> materials;
 
     int index_vertices(1);
@@ -521,33 +521,24 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
                     }
                     else if (line[1] == 't')
                     {
-                        vertex.x -= static_cast<int>(vertex.x);
-                        vertex.y -= static_cast<int>(vertex.y);
+                        vec2f texCoords = make_vec2f(vertex.x, vertex.y);
 
                         // Texture coordinates
-                        if (vertex.x < 0.f)
+                        if (texCoords.x < 0.f)
                         {
-                            int Xa = static_cast<int>(fabs(vertex.x));
-                            float Xb = fabs(vertex.x) - Xa;
-                            vertex.x = Xb;
+                            int Xa = static_cast<int>(fabs(texCoords.x));
+                            float Xb = fabs(texCoords.x) - Xa;
+                            texCoords.x = Xb;
                         }
 
-                        if (vertex.y < 0.f)
+                        if (texCoords.y < 0.f)
                         {
-                            int Ya = static_cast<int>(fabs(vertex.y));
-                            float Yb = fabs(vertex.y) - Ya;
-                            vertex.y = Yb;
+                            int Ya = static_cast<int>(fabs(texCoords.y));
+                            float Yb = fabs(texCoords.y) - Ya;
+                            texCoords.y = Yb;
                         }
 
-                        if (vertex.z < 0.f)
-                        {
-                            int Za = static_cast<int>(fabs(vertex.z));
-                            float Zb = fabs(vertex.z) - Za;
-                            vertex.z = Zb;
-                        }
-                        // LOG_INFO(1,"vt=" << vertex.x << "," << vertex.y << "," <<
-                        // vertex.z );
-                        textureCoordinates[index_textureCoordinates] = vertex;
+                        textureCoordinates[index_textureCoordinates] = texCoords;
                         ++index_textureCoordinates;
                     }
                     else

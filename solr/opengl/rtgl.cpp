@@ -298,13 +298,13 @@ void glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 void glTexCoord2f(GLfloat s, GLfloat t)
 {
     //::glTexCoord2f(s,t);
-    SingletonKernel::kernel()->addTextCoord(s, t, 0.f);
+    SingletonKernel::kernel()->addTextureCoordinates(s, t);
 }
 
-void glTexCoord3f(GLfloat x, GLfloat y, GLfloat z)
+void glTexCoord3f(GLfloat x, GLfloat y, GLfloat)
 {
     //::glTexCoord3f(x,y,z);
-    SingletonKernel::kernel()->addTextCoord(x, y, z);
+    SingletonKernel::kernel()->addTextureCoordinates(x, y);
 }
 
 void glTexEnvf(GLenum target, GLenum pname, GLfloat param)

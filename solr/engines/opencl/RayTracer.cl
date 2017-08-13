@@ -244,9 +244,9 @@ typedef struct ALIGNMENT
     // Material ID
     int materialId;
     // Texture coordinates
-    float4 vt0;
-    float4 vt1;
-    float4 vt2;
+    float2 vt0;
+    float2 vt1;
+    float2 vt2;
 } Primitive;
 
 enum TextureType
@@ -764,7 +764,7 @@ static float4 triangleUVMapping(const SceneInfo* sceneInfo, CONST Primitive* pri
     CONST Material* material = &materials[(*primitive).materialId];
     float4 result = (*material).color;
 
-    float4 T = ((*primitive).vt0 * areas.x + (*primitive).vt1 * areas.y + (*primitive).vt2 * areas.z) /
+    float2 T = ((*primitive).vt0 * areas.x + (*primitive).vt1 * areas.y + (*primitive).vt2 * areas.z) /
                (areas.x + areas.y + areas.z);
     float2 mappingOffset = {0.f, 0.f};
     if ((*material).attributes.y == 1)
