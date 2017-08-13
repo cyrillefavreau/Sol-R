@@ -126,8 +126,10 @@ protected:
     vec4f m_previewViewPos;
 #endif // USE_KINECT
 
+#ifdef USE_SIXENSE
 private:
     vec4f m_modelRotationAngle;
     vec3f m_modelPosition;
     vec4f m_modelTranslation;
+#endif
 };

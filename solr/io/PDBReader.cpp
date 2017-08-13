@@ -374,8 +374,8 @@ const AtomicRadius atomic_radius[NB_ELEMENTS] = {{"C", 67.f, 1},
                                                  {"P", 25.f, 113}};
 
 PDBReader::PDBReader(void)
-    : m_nbBoxes(0)
-    , m_nbPrimitives(0)
+    : m_nbPrimitives(0)
+    , m_nbBoxes(0)
 {
 }
 
@@ -398,16 +398,16 @@ vec4f PDBReader::loadAtomsFromFile(const std::string &filename, GPUKernel &cudaK
                                TEXTURE_NONE, 1.f, 100.f, 0.f, 0.f, cudaKernel.getSceneInfo().viewDistance, 0.f, false);
     }
 
-    int frame(0);
-    int chainSelection(rand() % 2);
     cudaKernel.resetBoxes(true);
 
     float distanceRatio = 2.f;
 
     std::map<int, Atom> atoms;
     std::vector<Connection> connections;
-    vec4f minPos = {100000.f, 100000.f, 100000.f, 0.f};
-    vec4f maxPos = {-100000.f, -100000.f, -100000.f, 0.f};
+    vec4f minPos = make_vec4f(100000.f, 100000.f, 100000.f);
+    vec4f maxPos = make_vec4f(-100000.f, -100000.f, -100000.f, 0.f);
+    LOG_INFO(1, "--------------------------------------------------------------------------------");
+    LOG_INFO(1, "Loading PDB File: " << filename);
     int index(0);
     std::ifstream file(filename.c_str());
     if (file.is_open())
@@ -649,9 +649,9 @@ vec4f PDBReader::loadAtomsFromFile(const std::string &filename, GPUKernel &cudaK
                                 objectScale.z * distanceRatio * atomDistance * (halfCenter.z - center.z),
                                 objectScale.x * stickRadius, 0.f, 0.f,
                                 (geometryType == gtSticks) ? atom.materialId : 1010);
-                            vec3f vt0 = {0.f, 0.f, 0.f};
-                            vec3f vt1 = {1.f, 1.f, 0.f};
-                            vec3f vt2 = {0.f, 0.f, 0.f};
+                            const vec3f vt0 = make_vec3f(0.f, 0.f, 0.f);
+                            const vec3f vt1 = make_vec3f(1.f, 1.f, 0.f);
+                            const vec3f vt2 = make_vec3f(0.f, 0.f, 0.f);
                             cudaKernel.setPrimitiveTextureCoordinates(nb, vt0, vt1, vt2);
                         }
                     }
@@ -673,9 +673,9 @@ vec4f PDBReader::loadAtomsFromFile(const std::string &filename, GPUKernel &cudaK
             if (addAtom)
             {
                 // Enveloppe
-                vec3f vt0 = {0.f, 0.f, 0.f};
-                vec3f vt1 = {1.f, 1.f, 0.f};
-                vec3f vt2 = {0.f, 0.f, 0.f};
+                const vec3f vt0 = make_vec3f(0.f, 0.f, 0.f);
+                const vec3f vt1 = make_vec3f(1.f, 1.f, 0.f);
+                const vec3f vt2 = make_vec3f(0.f, 0.f, 0.f);
                 if (geometryType == gtIsoSurface && atom.isBackbone && atom.chainId % 2 == 0)
                 {
                     nb = cudaKernel.addPrimitive(ptSphere, true);

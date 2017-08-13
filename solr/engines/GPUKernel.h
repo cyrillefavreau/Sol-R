@@ -338,6 +338,7 @@ protected:
     RandomBuffer *m_hRandoms;
     PrimitiveXYIdBuffer *m_hPrimitivesXYIds;
 
+    // Acceleration structures
     int m_nbActiveBoxes[NB_MAX_FRAMES];
     int m_nbActivePrimitives[NB_MAX_FRAMES];
     int m_nbActiveLamps[NB_MAX_FRAMES];
@@ -345,14 +346,15 @@ protected:
     int m_nbActiveTextures;
     int m_lightInformationSize;
     size_t m_maxPrimitivesPerBox;
+    bool m_doneWithAdding;
+    int m_addingIndex;
+    
+    // Camersa position
     vec3f m_viewPos;
     vec3f m_viewDir;
     vec4f m_angles;
 
-    bool m_doneWithAdding;
-    int m_addingIndex;
-
-    // Distortion (Oculus)
+    // Distortion (VR)
     float m_distortion;
 
 protected:

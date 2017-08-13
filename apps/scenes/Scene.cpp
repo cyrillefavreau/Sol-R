@@ -115,8 +115,8 @@ ________________________________________________________________________________
  */
 Scene::Scene(const std::string &name)
     : m_name(name)
-    , m_currentModel(0)
     , m_nbHDRI(0)
+    , m_currentModel(0)
 {
     m_nbPrimitives = 0;
     m_nbBoxes = 0;
@@ -360,7 +360,7 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly)
     // Materials
     for (int i(start); i < end; ++i)
     {
-        vec4f specular = {0.f, 0.f, 0.f, 0.f};
+        vec4f specular = make_vec4f();
         specular.x = 0.1f;
         specular.y = 200.f;
         specular.z = 0.f;
@@ -378,8 +378,8 @@ void Scene::createRandomMaterials(bool update, bool lightsOnly)
         int reflectionTextureId = TEXTURE_NONE;
         int transparencyTextureId = TEXTURE_NONE;
         int ambientOcclusionTextureId = TEXTURE_NONE;
-        vec4f innerIllumination = {0.f, m_gpuKernel->getSceneInfo().viewDistance * 10,
-                                   m_gpuKernel->getSceneInfo().viewDistance};
+        vec4f innerIllumination = make_vec4f(0.f, m_gpuKernel->getSceneInfo().viewDistance * 10,
+            m_gpuKernel->getSceneInfo().viewDistance);
         bool procedural = false;
         bool wireframe = false;
         int wireframeDepth = 0;
@@ -730,7 +730,7 @@ void Scene::createMoleculeMaterials(bool update)
         specular.z = 0.f;
         specular.w = 0.1f;
 
-        vec4f innerIllumination = {0.f, 2.f, 100000.f};
+        vec4f innerIllumination = make_vec4f(0.f, 2.f, 100000.f);
         float reflection = 0.f;
 
         // Transparency & refraction
@@ -840,15 +840,15 @@ void Scene::loadFromFile(const float scale)
     solr::FileMarshaller fm;
     std::string filename(m_name);
     filename += ".irt";
-    vec4f center = {0.f, 0.f, 0.f};
-    fm.loadFromFile(*m_gpuKernel, filename, center, scale);
+    fm.loadFromFile(*m_gpuKernel, filename, make_vec4f(), scale);
 }
 
 void Scene::addCornellBox(int boxType)
 {
     LOG_INFO(3, "Adding Cornell Box");
-    vec4f skyBoxSize = {20000.f, 20000.f, 20000.f};
-    vec2f groundSize = {100000.f, 100000.f};
+    LOG_INFO(3, "Ground height = " << m_groundHeight);
+    vec4f skyBoxSize = make_vec4f(20000.f, 20000.f, 20000.f);
+    const vec2f groundSize = make_vec2f(100000.f, 100000.f);
     float groundHeight = m_groundHeight;
     float repeats = 40.f;
 
@@ -1157,9 +1157,9 @@ void Scene::addCornellBox(int boxType)
     {
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
         m_gpuKernel->setPrimitive(m_nbPrimitives, 0.f, 0.f, 0.f, skyBoxSize.x, 0.f, 0.f, SKYBOX_SPHERE_MATERIAL);
-        vec3f vt0 = {0.f, 0.f, 0.f};
-        vec3f vt1 = {1.f, 1.f, 0.f};
-        vec3f vt2 = {0.f, 0.f, 0.f};
+        const vec3f vt0 = make_vec3f(0.f, 0.f);
+        const vec3f vt1 = make_vec3f(1.f, 1.f);
+        const vec3f vt2 = make_vec3f(0.f, 0.f);
         m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
         m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         break;
@@ -1181,11 +1181,11 @@ void Scene::addCornellBox(int boxType)
     }
     case 9:
     {
-        float ratio = 9.f / 16.f;
+        const float ratio = 9.f / 16.f;
         skyBoxSize.x = 50000.f;
         skyBoxSize.y = 50000.f;
         skyBoxSize.z = 5000.f;
-        int material = SKYBOX_SPHERE_MATERIAL;
+        const int material = SKYBOX_SPHERE_MATERIAL;
         repeats = 3.f;
         glBegin(GL_TRIANGLES);
         glVertex3f(skyBoxSize.x, ratio * groundHeight, skyBoxSize.z);
@@ -1244,11 +1244,11 @@ void Scene::addCornellBox(int boxType)
             m_gpuKernel->setPrimitive(m_nbPrimitives, -groundSize.x, groundHeight, -groundSize.y, groundSize.x,
                                       groundHeight, -groundSize.y, groundSize.x, groundHeight, groundSize.y, 0.f, 0.f,
                                       0.f, material);
-            vec3f n = {0.f, 1.f, 0.f};
+            const vec3f n = make_vec3f(0.f, 1.f, 0.f);
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, n, n, n);
-            vec3f vt0 = {0.f, 0.f, 0.f};
-            vec3f vt1 = {repeats, 0.f, 0.f};
-            vec3f vt2 = {repeats, repeats, 0.f};
+            const vec3f vt0 = make_vec3f();
+            const vec3f vt1 = make_vec3f(repeats, 0.f, 0.f);
+            const vec3f vt2 = make_vec3f(repeats, repeats, 0.f);
             m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }
@@ -1257,11 +1257,11 @@ void Scene::addCornellBox(int boxType)
             m_gpuKernel->setPrimitive(m_nbPrimitives, groundSize.x, groundHeight, groundSize.y, -groundSize.x,
                                       groundHeight, groundSize.y, -groundSize.x, groundHeight, -groundSize.y, 0.f, 0.f,
                                       0.f, material);
-            vec3f n = {0.f, 1.f, 0.f};
+            const vec3f n = make_vec3f(0.f, 1.f, 0.f);
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, n, n, n);
-            vec3f vt0 = {repeats, repeats, 0.f};
-            vec3f vt1 = {0.f, repeats, 0.f};
-            vec3f vt2 = {0.f, 0.f, 0.f};
+            const vec3f vt0 = make_vec3f(repeats, repeats, 0.f);
+            const vec3f vt1 = make_vec3f(0.f, repeats, 0.f);
+            const vec3f vt2 = make_vec3f(0.f, 0.f, 0.f);
             m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, vt0, vt1, vt2);
             m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
         }

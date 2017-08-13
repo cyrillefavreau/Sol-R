@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -100,7 +100,6 @@ private:
     cl_device_id m_hDeviceId;
     cl_context m_hContext;
     cl_command_queue m_hQueue;
-    cl_uint m_preferredWorkGroupSize;
 
 private:
     cl_program m_hProgram;
@@ -133,9 +132,6 @@ private:
     cl_mem m_dBitmap;
     cl_mem m_dPostProcessingBuffer;
     cl_mem m_dPrimitivesXYIds;
-
-private:
-    int *m_hPrimitiveIDs;
 
 #ifdef USE_KINECT
 private:

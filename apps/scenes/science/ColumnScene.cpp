@@ -57,7 +57,7 @@ void ColumnScene::doInitialize()
 
     std::string path = std::string(DEFAULT_MEDIA_FOLDER) + "/Meshes";
 
-    vec4f objectPosition = {0.f, 0.f, 0.f};
+    vec4f objectPosition = make_vec4f();
     m_objectScale.x = s;
     m_objectScale.y = s;
     m_objectScale.z = s;
@@ -81,17 +81,18 @@ void ColumnScene::doInitialize()
     solr::OBJReader objectReader;
     solr::CPUBoundingBox inAABB;
     memset(&inAABB, 0, sizeof(solr::CPUBoundingBox));
-    vec4f size = objectReader.loadModelFromFile(path + "\\" + star, *m_gpuKernel, objectPosition, false, m_objectScale,
-                                                false, 10, false, false, AABB, false, inAABB);
+    const vec4f size = 
+        objectReader.loadModelFromFile(path + "\\" + star, *m_gpuKernel, objectPosition, false, m_objectScale, 
+            false, 10, false, false, AABB, false, inAABB);
 
-    vec4f halfSize = {
-        (AABB.parameters[1].x - AABB.parameters[0].x) / 2.f, (AABB.parameters[1].y - AABB.parameters[0].y) / 2.f,
-        (AABB.parameters[1].z - AABB.parameters[0].z) / 2.f,
-    };
+    const vec4f halfSize = make_vec4f(
+        (AABB.parameters[1].x - AABB.parameters[0].x) / 2.f, 
+        (AABB.parameters[1].y - AABB.parameters[0].y) / 2.f,
+        (AABB.parameters[1].z - AABB.parameters[0].z) / 2.f);
 
-    vec4f boxCenter = {(AABB.parameters[0].x + AABB.parameters[1].x) / 2.f,
-                       (AABB.parameters[0].y + AABB.parameters[1].y) / 2.f,
-                       (AABB.parameters[0].z + AABB.parameters[1].z) / 2.f};
+    const vec4f boxCenter = make_vec4f((AABB.parameters[0].x + AABB.parameters[1].x) / 2.f,
+        (AABB.parameters[0].y + AABB.parameters[1].y) / 2.f,
+        (AABB.parameters[0].z + AABB.parameters[1].z) / 2.f);
 
     inAABB.parameters[0].x = (boxCenter.x - halfSize.x * boxScale);
     inAABB.parameters[0].y = (boxCenter.y - halfSize.y * boxScale);

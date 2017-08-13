@@ -47,47 +47,50 @@ ________________________________________________________________________________
 void FractalScene::createFractals(int iteration, int modelId, int mode, int maxIterations, vec4f center, int material,
                                   float interval, float radius)
 {
-    vec4f positions[NB_MODELS][NB_ELEMENTS] = {{{-1.f, -1.f, -1.f, 0.f},
-                                                {1.f, -1.f, -1.f, 0.f},
-                                                {0.f, -1.f, 1.f, 0.f},
-                                                {0.f, 1.f, 0.f, 0.f},
-                                                {0.f, 0.f, -1.f, 0.f},
-                                                {0.f, -1.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f}},
-                                               {{-1.f, -1.f, 1.f, 0.f},
-                                                {1.f, -1.f, 1.f, 0.f},
-                                                {-1.f, 1.f, 1.f, 0.f},
-                                                {1.f, 1.f, 1.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f}},
-                                               {// Cube
-                                                {-1.f, -1.f, -1.f, 0.f},
-                                                {1.f, -1.f, -1.f, 0.f},
-                                                {-1.f, 1.f, -1.f, 0.f},
-                                                {1.f, 1.f, -1.f, 0.f},
-                                                {-1.f, -1.f, 1.f, 0.f},
-                                                {1.f, -1.f, 1.f, 0.f},
-                                                {-1.f, 1.f, 1.f, 0.f},
-                                                {1.f, 1.f, 1.f, 0.f}},
-                                               {{1.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 1.f, 0.f},
-                                                {0.f, 2.f, 0.f, 0.f},
-                                                {-1.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, -1.f, 0.f},
-                                                {0.f, -1.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f}},
-                                               {{1.f, 1.f, 0.f, 0.f},
-                                                {-1.f, 1.f, 0.f, 0.f},
-                                                {1.f, -1.f, 0.f, 0.f},
-                                                {-1.f, -1.f, 0.f, 0.f},
-                                                {0.f, 0.f, -1.f, 0.f},
-                                                {0.f, 0.f, 1.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f},
-                                                {0.f, 0.f, 0.f, 0.f}}};
+    vec4f positions[NB_MODELS][NB_ELEMENTS] = 
+    { 
+        {make_vec4f(-1.f, -1.f, -1.f, 0.f),
+        make_vec4f(1.f, -1.f, -1.f, 0.f),
+        make_vec4f(0.f, -1.f, 1.f, 0.f),
+        make_vec4f(0.f, 1.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, -1.f, 0.f),
+        make_vec4f(0.f, -1.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f)},
+        {make_vec4f(-1.f, -1.f, 1.f, 0.f),
+        make_vec4f(1.f, -1.f, 1.f, 0.f),
+        make_vec4f(-1.f, 1.f, 1.f, 0.f),
+        make_vec4f(1.f, 1.f, 1.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f)},
+        {// Cube
+        make_vec4f(-1.f, -1.f, -1.f, 0.f),
+        make_vec4f(1.f, -1.f, -1.f, 0.f),
+        make_vec4f(-1.f, 1.f, -1.f, 0.f),
+        make_vec4f(1.f, 1.f, -1.f, 0.f),
+        make_vec4f(-1.f, -1.f, 1.f, 0.f),
+        make_vec4f(1.f, -1.f, 1.f, 0.f),
+        make_vec4f(-1.f, 1.f, 1.f, 0.f),
+        make_vec4f(1.f, 1.f, 1.f, 0.f)},
+        {make_vec4f(1.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 1.f, 0.f),
+        make_vec4f(0.f, 2.f, 0.f, 0.f),
+        make_vec4f(-1.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, -1.f, 0.f),
+        make_vec4f(0.f, -1.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f)},
+        {make_vec4f(1.f, 1.f, 0.f, 0.f),
+        make_vec4f(-1.f, 1.f, 0.f, 0.f),
+        make_vec4f(1.f, -1.f, 0.f, 0.f),
+        make_vec4f(-1.f, -1.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, -1.f, 0.f),
+        make_vec4f(0.f, 0.f, 1.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f),
+        make_vec4f(0.f, 0.f, 0.f, 0.f)}
+    };
 
     if (iteration > 0)
     {
@@ -95,15 +98,15 @@ void FractalScene::createFractals(int iteration, int modelId, int mode, int maxI
         {
             if (positions[modelId][i].x != 0.f || positions[modelId][i].y != 0.f || positions[modelId][i].z != 0.f)
             {
-                vec4f c = {0.f, 0.f, 0.f, 0.f};
+                vec4f c = make_vec4f(0.f, 0.f, 0.f, 0.f);
                 c.x = center.x + positions[modelId][i].x * center.w * interval;
                 c.y = center.y + positions[modelId][i].y * center.w * interval;
                 c.z = center.z + positions[modelId][i].z * center.w * interval;
                 c.w = center.w * radius;
 
-                vec3f vt0 = {0.f, 0.f, 0.f};
-                vec3f vt1 = {1.f, 1.f, 0.f};
-                vec3f vt2 = {0.f, 0.f, 0.f};
+                const vec3f vt0 = make_vec3f(0.f, 0.f);
+                const vec3f vt1 = make_vec3f(1.f, 1.f);
+                const vec3f vt2 = make_vec3f(0.f, 0.f);
 
                 switch (mode)
                 {
@@ -154,7 +157,7 @@ void FractalScene::doInitialize()
 {
     m_groundHeight = -5000.f;
     int nbIterations = 2 + rand() % 3;
-    vec4f center = {0.f, 0.f, 0.f, 2000.f};
+    vec4f center = make_vec4f(0.f, 0.f, 0.f, 2000.f);
     createFractals(nbIterations, rand() % NB_MODELS, rand() % 1, nbIterations, center, 1000 + rand() % 30,
                    1.0f + rand() % 500 / 1000.f, 0.5f + rand() % 200 / 1000.f);
 }

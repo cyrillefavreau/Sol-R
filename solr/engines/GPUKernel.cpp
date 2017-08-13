@@ -66,7 +66,6 @@ extern "C" FILE *__cdecl __iob_func(void)
 #endif
 #endif // USE_OCULUS
 
-const unsigned int MAX_SOURCE_SIZE = 65535 * 2;
 const unsigned int AABB_MAGIC_NUMBER = 6400;
 
 vec3f min2(const vec3f a, const vec3f b)
@@ -179,27 +178,38 @@ typedef struct
 #endif
 
 GPUKernel::GPUKernel()
-    : m_counter(0)
-    , m_maxPrimitivesPerBox(0)
-    , m_optimalNbOfBoxes(NB_MAX_BOXES)
-    , m_hPrimitives(0)
-    , m_hMaterials(0)
-    , m_hLamps(0)
+    : m_oculus(false)
     , m_hBoundingBoxes(0)
-    , m_hPrimitivesXYIds(0)
+    , m_hPrimitives(0)
+    , m_hLamps(0)
+    , m_hMaterials(0)
     , m_hRandoms(0)
+    , m_hPrimitivesXYIds(0)
     , m_nbActiveMaterials(-1)
     , m_nbActiveTextures(0)
     , m_lightInformationSize(0)
+    , m_maxPrimitivesPerBox(0)
+    , m_doneWithAdding(false)
+    , m_addingIndex(0)
+    , m_distortion(0.1f)
+    , m_frame(0)
+    , m_nbFrames(0)
+    , m_morph(0.f)
+    , m_treeDepth(2)
+    , m_bitmap(0)
+    , m_primitivesTransfered(false)
+    , m_materialsTransfered(false)
+    , m_texturesTransfered(false)
+    , m_randomsTransfered(false)
+    , m_refresh(true)
     , m_activeLogging(false)
     , m_lightInformation(0)
-    , m_oculus(false)
+    , m_optimalNbOfBoxes(NB_MAX_BOXES)
+    , m_GLMode(-1)
+    , m_currentMaterial(0)
     , m_pointSize(1.f)
-    , m_morph(0.f)
-    , m_nbFrames(0)
-    ,
 #if USE_KINECT
-    m_hVideo(0)
+    , m_hVideo(0)
     , m_hDepth(0)
     , m_skeletons(0)
     , m_hNextDepthFrameEvent(0)
@@ -210,25 +220,10 @@ GPUKernel::GPUKernel()
     , m_skeletonsBody(-1)
     , m_skeletonsLamp(-1)
     , m_skeletonIndex(-1)
-    ,
 #endif // USE_KINECT
 #ifdef USE_OCULUS
-    m_sensorFusion(0)
-    ,
+    , m_sensorFusion(0)
 #endif // USE_OCULUS
-    m_primitivesTransfered(false)
-    , m_materialsTransfered(false)
-    , m_texturesTransfered(false)
-    , m_randomsTransfered(false)
-    , m_doneWithAdding(false)
-    , m_addingIndex(0)
-    , m_refresh(true)
-    , m_bitmap(0)
-    , m_GLMode(-1)
-    , m_distortion(0.1f)
-    , m_frame(0)
-    , m_currentMaterial(0)
-    , m_treeDepth(2)
 {
     LOG_INFO(1, "");
     LOG_INFO(1, "                     _|_|_|            _|              _|_|_|  ");
@@ -545,7 +540,7 @@ void GPUKernel::setPrimitive(const int &index, float x0, float y0, float z0, flo
                              float y2, float z2, float w, float h, float d, int materialId)
 {
     float scale = 1.f;
-    vec3f zero = {0.f, 0.f, 0.f};
+    vec3f zero = make_vec3f(0.f, 0.f, 0.f);
     m_primitivesTransfered = false;
     if (index >= 0 && index <= m_primitives[m_frame].size())
     {
@@ -1652,7 +1647,7 @@ void GPUKernel::rotatePrimitive(CPUPrimitive &primitive, const vec3f &rotationCe
         rotateVector(primitive.p1, rotationCenter, cosAngles, sinAngles);
         rotateVector(primitive.p2, rotationCenter, cosAngles, sinAngles);
         // Rotate Normals
-        vec3f zeroCenter = {0.f, 0.f, 0.f};
+        vec3f zeroCenter = make_vec3f();
         rotateVector(primitive.n0, zeroCenter, cosAngles, sinAngles);
         rotateVector(primitive.n1, zeroCenter, cosAngles, sinAngles);
         rotateVector(primitive.n2, zeroCenter, cosAngles, sinAngles);
@@ -1679,7 +1674,7 @@ void GPUKernel::rotatePrimitive(CPUPrimitive &primitive, const vec3f &rotationCe
 
 vec4f GPUKernel::getPrimitiveCenter(unsigned int index)
 {
-    vec4f center = {0.f, 0.f, 0.f};
+    vec4f center = make_vec4f();
     if (index <= m_primitives[m_frame].size())
     {
         center.x = (m_primitives[m_frame])[index].p0.x;
@@ -2100,8 +2095,8 @@ void GPUKernel::setPostProcessingInfo(const PostProcessingInfo &postProcessingIn
 
 void GPUKernel::loadFromFile(const std::string &filename)
 {
-    vec4f center = {0.f, 0.f, 0.f};
-    float scale = 5000.f;
+    const vec4f center = make_vec4f();
+    const float scale = 5000.f;
     FileMarshaller fm;
     fm.loadFromFile(*this, filename, center, scale);
 }
@@ -2454,8 +2449,7 @@ void GPUKernel::saveBitmapToFile(const std::string &filename, BitmapBuffer *bitm
 
     unsigned char bmpfileheader[14] = {'B', 'M', 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0};
     unsigned char bmpinfoheader[40] = {40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 32, 0};
-    unsigned char bmppad[3] = {0, 0, 0};
-
+    
     int w = width;
     int h = height;
     int filesize = 54 + depth * w * h;
@@ -2504,7 +2498,6 @@ int GPUKernel::getLight(int index)
 int GPUKernel::setGLMode(const int &glMode)
 {
     int p = -1;
-    int frame(0);
     if (glMode == -1)
     {
         for (int i(0); i < m_vertices.size(); ++i)
@@ -2629,20 +2622,17 @@ int GPUKernel::setGLMode(const int &glMode)
 
 void GPUKernel::addVertex(float x, float y, float z)
 {
-    vec3f v = {x, y, z};
-    m_vertices.push_back(v);
+    m_vertices.push_back(make_vec3f(x,y,z));
 }
 
 void GPUKernel::addNormal(float x, float y, float z)
 {
-    vec3f v = {x, y, z};
-    m_normals.push_back(v);
+    m_normals.push_back(make_vec3f(x, y, z));
 }
 
 void GPUKernel::addTextCoord(float x, float y, float z)
 {
-    vec3f v = {x, y, z};
-    m_textCoords.push_back(v);
+    m_textCoords.push_back(make_vec3f(x, y, z));
 }
 
 void GPUKernel::translate(float x, float y, float z)
@@ -2711,9 +2701,7 @@ void GPUKernel::processTextureOffsets()
             totalSize += m_hTextures[i].size.x * m_hTextures[i].size.y * m_hTextures[i].size.z;
         }
         else
-        {
             m_hTextures[i].offset = 0;
-        }
     }
 }
 

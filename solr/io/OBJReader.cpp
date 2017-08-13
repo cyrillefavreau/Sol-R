@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -47,7 +47,7 @@ OBJReader::~OBJReader()
 
 vec4f readVertex(const std::string &value)
 {
-    vec4f returnValue = {0.f, 0.f, 0.f};
+    vec4f returnValue = make_vec4f();
     int item(0);
     std::string tmp;
     for (int i(0); i < value.length(); ++i)
@@ -78,7 +78,7 @@ vec4f readVertex(const std::string &value)
 
 vec4i readFloat3(const std::string &face)
 {
-    vec4i returnValue = {0, 0, 0, 0};
+    vec4i returnValue = make_vec4i();
     int item(0);
     std::string value;
     for (int i(0); i < face.length(); ++i)
@@ -109,7 +109,7 @@ vec4i readFloat3(const std::string &face)
 
 vec4i readFace(const std::string &face)
 {
-    vec4i returnValue = {0, 0, 0, 0};
+    vec4i returnValue = make_vec4i();
     int item(0);
     std::string value;
     for (int i(0); i < face.length(); ++i)
@@ -372,7 +372,7 @@ void OBJReader::addLightComponent(GPUKernel &kernel, std::vector<vec4f> &solrVer
     size_t len = solrVertices.size();
     if (len != 0)
     {
-        vec4f lightCenter = {0.f, 0.f, 0.f};
+        vec4f lightCenter = make_vec4f();
         aabb.parameters[0].x = 1000000.f;
         aabb.parameters[0].y = 1000000.f;
         aabb.parameters[0].z = 1000000.f;
@@ -391,11 +391,11 @@ void OBJReader::addLightComponent(GPUKernel &kernel, std::vector<vec4f> &solrVer
         lightCenter.x = (aabb.parameters[1].x + aabb.parameters[0].x) / 2.f;
         lightCenter.y = (aabb.parameters[1].y + aabb.parameters[0].y) / 2.f;
         lightCenter.z = (aabb.parameters[1].z + aabb.parameters[0].z) / 2.f;
-        vec4f L = {aabb.parameters[1].x - aabb.parameters[0].x, aabb.parameters[1].y - aabb.parameters[0].y,
-                   aabb.parameters[1].z - aabb.parameters[0].z};
-        float radius = sqrt(L.x * L.x + L.y * L.y + L.z * L.z) / 2.f;
+        const vec4f L = make_vec4f(aabb.parameters[1].x - aabb.parameters[0].x, aabb.parameters[1].y - aabb.parameters[0].y,
+            aabb.parameters[1].z - aabb.parameters[0].z);
+        const float radius = sqrt(L.x * L.x + L.y * L.y + L.z * L.z) / 2.f;
 
-        int nbPrimitives = kernel.addPrimitive(ptSphere);
+        const int nbPrimitives = kernel.addPrimitive(ptSphere);
         LOG_INFO(3, "Adding SoL-R light [" << material << "] to primitive " << nbPrimitives << " (" << lightCenter.x
                                            << "," << lightCenter.y << "," << lightCenter.z << ") r=" << radius);
         kernel.setPrimitive(nbPrimitives, center.x + objectScale.x * (-objectCenter.x + lightCenter.x),
@@ -431,7 +431,7 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
     std::string modelFilename(noExtFilename);
     modelFilename += ".obj";
 
-    vec4f objectSize = {0.f, 0.f, 0.f};
+    vec4f objectSize = make_vec4f();
     aabb.parameters[0].x = 100000.f;
     aabb.parameters[0].y = 100000.f;
     aabb.parameters[0].z = 100000.f;
@@ -461,7 +461,7 @@ vec4f OBJReader::loadModelFromFile(const std::string &filename, GPUKernel &kerne
                 if (line[0] == 'v')
                 {
                     // Vertices
-                    vec3f vertex = {0.f, 0.f, 0.f};
+                    vec3f vertex = make_vec3f();
                     std::string value("");
 
                     size_t i(1);

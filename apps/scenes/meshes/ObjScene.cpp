@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -42,7 +42,7 @@ ObjScene::~ObjScene(void)
 void ObjScene::doInitialize()
 {
     const float s = 10000.f;
-    vec4f objectPosition = {0.f, 0.f, 0.f};
+    const vec4f objectPosition = make_vec4f();
     m_objectScale.x = s;
     m_objectScale.y = s;
     m_objectScale.z = s;

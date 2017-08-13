@@ -44,19 +44,19 @@ vec4f scale = {2500.f / numMetaballs, 2500.f / numMetaballs, 2500.f / numMetabal
 unsigned int gridSize = 50;
 unsigned int numMetaballs = 50;
 const int gridScale = 3.f;
-vec3f size = {static_cast<float>(numMetaballs * gridScale), static_cast<float>(numMetaballs* gridScale),
-              static_cast<float>(numMetaballs* gridScale)};
-vec3f amplitude = {size.x / gridScale, size.y / gridScale, size.z / gridScale};
-vec3f scale = {2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs};
+vec3f size = {{static_cast<float>(numMetaballs * gridScale), static_cast<float>(numMetaballs* gridScale),
+    static_cast<float>(numMetaballs* gridScale)}};
+vec3f amplitude = {{size.x / gridScale, size.y / gridScale, size.z / gridScale}};
+vec3f scale = {{2000.f / numMetaballs, 2000.f / numMetaballs, 2000.f / numMetaballs}};
 #endif // USE_KINECT
 METABALL metaballs[50];
 
 MetaballsScene::MetaballsScene(const std::string& name)
     : Scene(name)
-    , m_timer(0)
+    , numVertices(0)
     , numCubes(0)
     , numFacesDrawn(0)
-    , numVertices(0)
+    , m_timer(0)
 #ifdef USE_LEAPMOTION
     , m_leapMotionController(0)
 #endif // USE_LEAPMOTION
@@ -144,21 +144,18 @@ void MetaballsScene::doInitialize()
     m_timer = 0;
     // set up metaballs
     for (unsigned int i = 0; i < numMetaballs; i++)
-    {
-        vec4f zero = {0.f, 0.f, 0.f};
-        metaballs[i].Init(zero, 5.0f + float(i));
-    }
+        metaballs[i].Init(make_vec4f(), 5.0f + float(i));
 }
 
 void MetaballsScene::doAnimate()
 {
     m_gpuKernel->resetFrame();
 
-    vec4f center = {0.f, 0.f, 0.f};
-    float ratio = 1.f;
 #ifdef USE_LEAPMOTION
     if (m_leapMotionController)
     {
+        vec4f center = make_vec4f();
+        float ratio = 1.f;
         const auto frame = m_leapMotionController->frame();
         if (frame.isValid())
         {
@@ -200,46 +197,49 @@ void MetaballsScene::doAnimate()
     }
 #endif
 #ifdef USE_KINECT
-    vec3f pos;
-    ratio = 0.1f;
-    // update balls' position
-    for (unsigned int i = 0; i < 20 && i < numMetaballs; ++i)
     {
-        if (m_gpuKernel->getSkeletonPosition(i, pos))
+        vec4f center = make_vec4f();
+        float ratio = 0.1f;
+        vec3f pos;
+        // update balls' position
+        for (unsigned int i = 0; i < 20 && i < numMetaballs; ++i)
         {
-            center.x = -pos.x * amplitude.x;
-            center.y = pos.y * amplitude.y;
-            center.z = pos.z * amplitude.z;
-        }
+            if (m_gpuKernel->getSkeletonPosition(i, pos))
+            {
+                center.x = -pos.x * amplitude.x;
+                center.y = pos.y * amplitude.y;
+                center.z = pos.z * amplitude.z;
+            }
 
-        float timer = static_cast<float>(i * 3 + m_timer * 40.f);
-        float c = 2.0f * (float)cos(timer / 600);
-        switch (i % 4)
-        {
-        case 0:
-            metaballs[i].position.x = center.x - ratio * amplitude.x * (float)cos(timer / (740 + i * numMetaballs)) - c;
-            metaballs[i].position.y = center.z + ratio * amplitude.y * (float)sin(timer / (620 + i * numMetaballs)) - c;
-            metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (500 + i))) - c);
-            break;
-        case 1:
-            metaballs[i].position.x = center.x + ratio * amplitude.x * (float)sin(timer / (420 + i * numMetaballs)) + c;
-            metaballs[i].position.y = center.z - ratio * amplitude.y * (float)cos(timer / (340 + i * numMetaballs)) - c;
-            metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (400 + i))) - c);
-            break;
-        case 2:
-            metaballs[i].position.x = center.x + ratio * amplitude.x * (float)cos(timer / (820 + numMetaballs)) -
-                                      0.2f * (float)sin(timer / 600);
-            metaballs[i].position.y = center.z + ratio * amplitude.y * (float)sin(timer / (512 + numMetaballs)) -
-                                      0.2f * (float)sin(timer / 400);
-            metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (450 + i))) - c);
-            break;
-        case 3:
-            metaballs[i].position.x = center.x + ratio * amplitude.x * (float)cos(timer / (1200 + numMetaballs)) -
-                                      0.4f * (float)sin(timer / 1250);
-            metaballs[i].position.y = center.z + ratio * amplitude.y * (float)sin(timer / (2120 + numMetaballs)) -
-                                      0.4f * (float)sin(timer / 640);
-            metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (450 + i))) - c);
-            break;
+            float timer = static_cast<float>(i * 3 + m_timer * 40.f);
+            float c = 2.0f * (float)cos(timer / 600);
+            switch (i % 4)
+            {
+            case 0:
+                metaballs[i].position.x = center.x - ratio * amplitude.x * (float)cos(timer / (740 + i * numMetaballs)) - c;
+                metaballs[i].position.y = center.z + ratio * amplitude.y * (float)sin(timer / (620 + i * numMetaballs)) - c;
+                metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (500 + i))) - c);
+                break;
+            case 1:
+                metaballs[i].position.x = center.x + ratio * amplitude.x * (float)sin(timer / (420 + i * numMetaballs)) + c;
+                metaballs[i].position.y = center.z - ratio * amplitude.y * (float)cos(timer / (340 + i * numMetaballs)) - c;
+                metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (400 + i))) - c);
+                break;
+            case 2:
+                metaballs[i].position.x = center.x + ratio * amplitude.x * (float)cos(timer / (820 + numMetaballs)) -
+                                          0.2f * (float)sin(timer / 600);
+                metaballs[i].position.y = center.z + ratio * amplitude.y * (float)sin(timer / (512 + numMetaballs)) -
+                                          0.2f * (float)sin(timer / 400);
+                metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (450 + i))) - c);
+                break;
+            case 3:
+                metaballs[i].position.x = center.x + ratio * amplitude.x * (float)cos(timer / (1200 + numMetaballs)) -
+                                          0.4f * (float)sin(timer / 1250);
+                metaballs[i].position.y = center.z + ratio * amplitude.y * (float)sin(timer / (2120 + numMetaballs)) -
+                                          0.4f * (float)sin(timer / 640);
+                metaballs[i].position.z = center.y + fabs(ratio * amplitude.z * (float)sin(cos(timer / (450 + i))) - c);
+                break;
+            }
         }
     }
 #endif // USE_LEAPMOTION
@@ -354,7 +354,7 @@ void MetaballsScene::doAnimate()
 #ifdef USE_KINECT
             vec4f center = {0.f, -3000.f, 8000.f};
 #else
-            vec4f center = {0.f, 0.f, -2500.f};
+            vec4f center = {{0.f, 0.f, -2500.f}};
 #endif // USE_KINECT
             for (int k = 0; triTable[cubeIndex][k] != -1; k += 3)
             {

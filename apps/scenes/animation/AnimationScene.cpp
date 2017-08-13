@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -41,8 +41,8 @@ const int nbModels(1);
 const std::string gModels[nbModels] = {"hand"};
 
 AnimationScene::AnimationScene(const std::string& name)
-    : m_wait(0)
-    , Scene(name)
+    : Scene(name)
+    , m_wait(0)
 {
     m_currentFrame = 0;
     m_forward = true;
@@ -56,10 +56,9 @@ void AnimationScene::doInitialize()
 {
     int m = 30;
     solr::OBJReader objReader;
-#if 1
-    vec4f objectSize = {3000.f, 3000.f, 3000.f};
+    vec4f objectSize = make_vec4f(3000.f, 3000.f, 3000.f);
     m_groundHeight = -1500.f;
-    vec4f center = {0.f, -m_groundHeight / objectSize.y, 0.f};
+    vec4f center = make_vec4f(0.f, -m_groundHeight / objectSize.y, 0.f);
 
     for (int frame = 0; frame < nbFrames; ++frame)
     {
@@ -69,7 +68,6 @@ void AnimationScene::doInitialize()
         sprintf_s(tmp, 50, "%02d", frame);
         fileName += "./animations/hand/hand_";
 #else
-// sprintf_s(tmp,50,"%02d", frame);
 #ifdef WIN32
         sprintf_s(tmp, 50, "%03d", frame + 1);
 #else
@@ -84,7 +82,7 @@ void AnimationScene::doInitialize()
         m_gpuKernel->resetFrame();
         solr::CPUBoundingBox aabb;
         solr::CPUBoundingBox inAABB;
-        vec4f realSize = objReader.loadModelFromFile(fileName, *m_gpuKernel, center, false, objectSize, (frame == 0), m,
+        objReader.loadModelFromFile(fileName, *m_gpuKernel, center, false, objectSize, (frame == 0), m,
                                                      false, true, aabb, false, inAABB);
 
         // lights
@@ -97,67 +95,6 @@ void AnimationScene::doInitialize()
         if (frame != 0)
             m_gpuKernel->compactBoxes(true);
     }
-#else
-    vec4f scale = {10000.f, 10000.f, 10000.f};
-    vec4f center = {0.f, 0.f, 0.f};
-    m_groundHeight = -5000.f;
-
-    m_gpuKernel->setNbFrames(nbFrames);
-    // m_gpuKernel->setTreeDepth(8);
-    m_gpuKernel->getSceneInfo().nbRayIterations.x = 2;
-    // m_gpuKernel->setOptimalNbOfBoxes(16384);
-
-    bool allSpheres = (rand() % 2 == 0);
-
-    for (int f(0); f < nbFrames; ++f)
-    {
-        m_gpuKernel->setFrame(f);
-        m_gpuKernel->resetFrame();
-
-        addCornellBox(m_cornellBoxType);
-
-        switch (f)
-        {
-        case 0:
-        {
-            std::string filename = std::string(DEFAULT_MEDIA_FOLDER) + "/obj/animations/";
-            filename += gModels[rand() % nbModels];
-            filename += ".obj";
-            LOG_INFO(1, "Loading " << filename);
-
-            // lights
-            m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, -10000.f, 10000.f, -10000.f, 100.f, 100.f, 100.f,
-                                      DEFAULT_LIGHT_MATERIAL);
-            m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
-
-            vec4f realSize =
-                objReader.loadModelFromFile(filename, *m_gpuKernel, center, true, scale, false, m, allSpheres);
-            // m_gpuKernel->compactBoxes(true);
-            break;
-        }
-        case (nbFrames - 1):
-        {
-            std::string filename = std::string(DEFAULT_MEDIA_FOLDER) + "/obj/animations/");
-            filename += gModels[rand() % nbModels];
-            filename += ".obj";
-            LOG_INFO(1, "Loading " << filename);
-
-            // lights
-            m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, 10000.f, 10000.f, -10000.f, 100.f, 100.f, 100.f,
-                                      DEFAULT_LIGHT_MATERIAL);
-            m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
-
-            vec4f realSize =
-                objReader.loadModelFromFile(filename, *m_gpuKernel, center, true, scale, false, m, allSpheres);
-            m_gpuKernel->compactBoxes(true);
-            break;
-        }
-        }
-    }
-    m_gpuKernel->morphPrimitives();
-#endif // 0
     m_currentFrame = 0;
     m_wait = 0;
     m_gpuKernel->setFrame(m_currentFrame);
@@ -167,21 +104,8 @@ void AnimationScene::doAnimate()
 {
     m_gpuKernel->setFrame(m_currentFrame);
     m_gpuKernel->compactBoxes(false);
-#if 0
-    if( m_wait>10 )
-    {
-        m_currentFrame += (m_forward) ? 1 : -1;
-        if( m_currentFrame>(nbFrames-2) || m_currentFrame<1)
-        {
-            m_forward = !m_forward;
-            m_wait = 0;
-        }
-    }
-    m_wait++;
-#else
     ++m_currentFrame;
     m_currentFrame = m_currentFrame % nbFrames;
-#endif
 }
 
 void AnimationScene::doAddLights()

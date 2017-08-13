@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -91,15 +91,14 @@ void TrefoilKnotScene::doInitialize()
     m_groundHeight = -2500.f;
 
     // Knot
-    int material = 30 + rand() % 20;
+    const int material = 30 + rand() % 20;
     int element = 0;
-    float R = 500.f;
-    float r = 50.f + rand() % 800;
-    float step = 5.f;
-    int geometry = rand() % 10;
-    vec4f a = {1.f + rand() % 4, 1.f + rand() % 4, 1.f + rand() % 4, 1.f + rand() % 4};
+    const float R = 500.f;
+    const float r = 50.f + rand() % 800;
+    const int geometry = rand() % 10;
+    const vec4f a = make_vec4f(1.f + rand() % 4, 1.f + rand() % 4, 1.f + rand() % 4, 1.f + rand() % 4);
+    const float s = 1.f;
 
-    float s = 1.f;
     vec4f U, V;
     // Moebius
     switch (geometry)
@@ -120,7 +119,7 @@ void TrefoilKnotScene::doInitialize()
         U.y = 2.f * static_cast<float>(M_PI) * s;
         U.z = 90.f;
         V.x = 0.f;
-        V.y = 1.f /*static_cast<float>(M_PI)*/;
+        V.y = 1.f;
         V.z = 1.f;
     }
     break;
@@ -216,44 +215,13 @@ void TrefoilKnotScene::doInitialize()
             }
             break;
             }
-#if 1
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
             m_gpuKernel->setPrimitive(m_nbPrimitives, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, r, 0.f, 0.f, material + M);
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
             m_gpuKernel->setPrimitive(m_nbPrimitives, p1.x, p1.y, p1.z, r, 0.f, 0.f, material + M);
-#else
-            m_nbPrimitives = m_gpuKernel->addPrimitive(ptTriangle);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, 10 + (element / V.z), p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x,
-                                      p2.y, p2.z, 0.f, 0.f, 0.f, material + M);
-            m_nbPrimitives = m_gpuKernel->addPrimitive(ptTriangle);
-            m_gpuKernel->setPrimitive(m_nbPrimitives, 10 + (element / V.z), p2.x, p2.y, p2.z, p0.x, p0.y, p0.z, p3.x,
-                                      p3.y, p3.z, 0.f, 0.f, 0.f, material + M);
-#endif // 0
-            element++;
+            ++element;
         }
     }
-
-#if 0
-    for( float i(0); i<720.f; i += step)
-    {
-        float t0 = i*static_cast<float>(M_PI)/360.f;
-        float t1 = (i+step)*static_cast<float>(M_PI)/360.f;
-        vec4f p0,p1;
-        switch(geometry)
-        {
-        case 0: moebius( R, t0, t1, p0, p1 ); break;
-        case 1: torus( R, t0, t1, p0, p1 ); break;
-        case 2: star( R, t0, t1, p0, p1 ); break;
-        case 3: spring( R, t0, t1, p0, p1 ); break;
-        case 4: trefoilKnot( R, t0, t1, p0, p1 ); break;
-        default: thing( R, t0, t1, a, p0, p1 ); break;
-        }
-
-        m_nbPrimitives = m_gpuKernel->addPrimitive(  ptCylinder );  m_gpuKernel->setPrimitive( m_nbPrimitives, 10+(i/10), p0.x,p0.y,p0.z,p1.x,p1.y,p1.z,r,0.f,0.f, material);
-        m_nbPrimitives = m_gpuKernel->addPrimitive(  ptSphere );  m_gpuKernel->setPrimitive( m_nbPrimitives, 10+(i/10), p1.x,p1.y,p1.z,r,0.f,0.f, material);
-        element++;
-    }
-#endif // 0
     m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
     m_gpuKernel->setPrimitive(m_nbPrimitives, -4000.f, -1000.f, 1000.f, 1500.f, 0.f, 0.f, 114);
     m_gpuKernel->setPrimitiveIsMovable(m_nbPrimitives, false);
@@ -265,8 +233,6 @@ void TrefoilKnotScene::doInitialize()
 
 void TrefoilKnotScene::doAnimate()
 {
-    // m_rotationAngles.y = sin(m_sceneInfo.timestamp*0.0023f)*0.1f;
-    // m_rotationAngles.z = cos(m_sceneInfo.timestamp*0.0031f)*0.1f;
     m_rotationAngles.y = 0.1f;
     m_gpuKernel->rotatePrimitives(m_rotationCenter, m_rotationAngles);
     m_gpuKernel->compactBoxes(false);

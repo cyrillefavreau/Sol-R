@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -36,6 +36,9 @@
 #include <sstream>
 #endif
 #include <fstream>
+
+#define __CL_ENABLE_EXCEPTIONS
+
 
 namespace solr
 {
@@ -192,15 +195,6 @@ OpenCLKernel::OpenCLKernel()
     , m_kernelFilename(DEFAULT_KERNEL_FILENAME)
     , m_hContext(0)
     , m_hQueue(0)
-    , m_dRandoms(0)
-    , m_dBitmap(0)
-    , m_dTextures(0)
-    , _dPrimitives(0)
-    , m_dPostProcessingBuffer(0)
-    , m_dPrimitivesXYIds(0)
-    , m_dLamps(0)
-    , m_dLightInformation(0)
-    , m_preferredWorkGroupSize(0)
     , m_hProgram(0)
     , m_kAlignment(0)
     , m_kStandardRenderer(0)
@@ -213,6 +207,14 @@ OpenCLKernel::OpenCLKernel()
     , m_kAmbientOcclusion(0)
     , m_kRadiosity(0)
     , m_kFilter(0)
+    , _dPrimitives(0)
+    , m_dLamps(0)
+    , m_dLightInformation(0)
+    , m_dTextures(0)
+    , m_dRandoms(0)
+    , m_dBitmap(0)
+    , m_dPostProcessingBuffer(0)
+    , m_dPrimitivesXYIds(0)
 {
     // TODO: Occupancy parameters
     m_occupancyParameters.x = 1;
@@ -387,10 +389,10 @@ void OpenCLKernel::initializeDevice()
     queryDevice();
 
     // initialize OpenCL device
-    LOG_INFO(3, "Initializing OpenCL context on platform: " << m_platform << ", device: " << m_device);
-    m_hDeviceId = m_devices[m_platform][m_device];
-    m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], &m_hDeviceId, NULL, NULL, &status);
+    LOG_INFO(1, "Initializing OpenCL context on platform: " << m_platform << ", device: " << m_hDeviceId);
+    m_hContext = clCreateContext(NULL, m_numberOfDevices[m_platform], m_devices[m_platform], NULL, NULL, &status);
     CHECKSTATUS(status);
+    m_hDeviceId = m_devices[m_platform][m_device];
     if (m_hContext)
         LOG_INFO(1, "OpenCL context successfully initialized on platform: " << m_platform << ", device: " << m_device);
     m_hQueue = clCreateCommandQueue(m_hContext, m_hDeviceId, 0, &status);
@@ -536,7 +538,6 @@ void OpenCLKernel::render_begin(const float timer)
 #endif
 
     GPUKernel::render_begin(timer);
-    int status(0);
     if (m_refresh)
     {
         // CPU -> GPU Data transfers
@@ -914,11 +915,10 @@ void OpenCLKernel::render_end()
             float step = 0.1f;
             float halfStep = 1.f;
             float scale = 2.f;
-            float distortion = 1.f;
-
+            
             for (int a(0); a < 2; ++a)
             {
-                cl_float2 center = {0.f, 0.f};
+                cl_float2 center = {{0.f, 0.f}};
                 center.x = (a == 0) ? -0.5f : 0.5f;
                 float b = (a == 0) ? 0.f : 0.5f;
 
@@ -930,10 +930,10 @@ void OpenCLKernel::render_end()
                         s.x = scale;
                         s.y = scale;
 
-                        cl_float2 p0 = {s.x * x - halfStep, s.y * y - halfStep};
-                        cl_float2 p1 = {s.x * (x + step) - halfStep, s.y * y - halfStep};
-                        cl_float2 p2 = {s.x * (x + step) - halfStep, s.y * (y + step) - halfStep};
-                        cl_float2 p3 = {s.x * x - halfStep, s.y * (y + step) - halfStep};
+                        cl_float2 p0 = {{s.x * x - halfStep, s.y * y - halfStep}};
+                        cl_float2 p1 = {{s.x * (x + step) - halfStep, s.y * y - halfStep}};
+                        cl_float2 p2 = {{s.x * (x + step) - halfStep, s.y * (y + step) - halfStep}};
+                        cl_float2 p3 = {{s.x * x - halfStep, s.y * (y + step) - halfStep}};
 
                         float d0 = sqrt(pow(p0.x, 2) + pow(p0.y, 2));
                         float d1 = sqrt(pow(p1.x, 2) + pow(p1.y, 2));
@@ -1101,7 +1101,9 @@ void OpenCLKernel::queryDevice()
             // m_devices
             for (cl_uint device = 0; device < m_numberOfDevices[platform]; ++device)
             {
-                LOG_INFO(1, "  Device " << device);
+                LOG_INFO(1, "  --------------------------------------");
+                LOG_INFO(1, "  Device " << device << " id=" << m_devices[platform][device]);
+                LOG_INFO(1, "  --------------------------------------");
                 std::string deviceDescription;
                 CHECKSTATUS(clGetDeviceInfo(m_devices[platform][device], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL));
                 LOG_INFO(1, "    Name............: " << buffer);

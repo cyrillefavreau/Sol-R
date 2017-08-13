@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -51,15 +51,14 @@ void GalleryScene::doInitialize()
     createRandomMaterials(true, false);
 
     // Gallery
-    int nbRand(9);
-    vec2f step = {2.f * PI / 6, PI / 2};
-
-    vec4f position = {0.f, 0.f, 0.f};
-    vec4f size = {18000.f, 18000.f, 18000.f};
-    vec4f frame = {0.05f, 0.05f, 1.f};
+    const int nbRand(9);
+    const vec2f step = make_vec2f(2.f * PI / 6, PI / 2);
+    const vec4f position = make_vec4f();
+    const vec4f size = make_vec4f(18000.f, 18000.f, 18000.f);
+    const vec4f frame = make_vec4f(0.05f, 0.05f, 1.f);
     m_groundHeight = -PI / 4 * size.y;
 
-    int i(0);
+    int i = 0;
     for (float y(-PI / 4.f); y < PI / 4.f; y += step.y)
     {
         for (float x(-PI); x < PI; x += step.x)
@@ -83,10 +82,10 @@ void GalleryScene::doInitialize()
             p3.y = y + step.y - frame.y; // sin(y+step.y);
             p3.z = sin(x + frame.x);
 
-            vec3f normal0 = {position.x - p0.x, position.y - p0.y, position.z - p0.z};
-            vec3f normal1 = {position.x - p1.x, position.y - p1.y, position.z - p1.z};
-            vec3f normal2 = {position.x - p2.x, position.y - p2.y, position.z - p2.z};
-            vec3f normal3 = {position.x - p3.x, position.y - p3.y, position.z - p3.z};
+            const vec3f normal0 = make_vec3f(position.x - p0.x, position.y - p0.y, position.z - p0.z);
+            const vec3f normal1 = make_vec3f(position.x - p1.x, position.y - p1.y, position.z - p1.z);
+            const vec3f normal2 = make_vec3f(position.x - p2.x, position.y - p2.y, position.z - p2.z);
+            const vec3f normal3 = make_vec3f(position.x - p3.x, position.y - p3.y, position.z - p3.z);
             m_nbPrimitives = m_gpuKernel->addPrimitive(ptTriangle);
             m_gpuKernel->setPrimitive(m_nbPrimitives, position.x + p0.x * size.x, position.y + p0.y * size.y,
                                       position.z + p0.z * size.z, position.x + p1.x * size.x,
@@ -96,9 +95,9 @@ void GalleryScene::doInitialize()
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, normal0, normal1, normal2);
 
             {
-                vec3f tc0 = {1.f, 1.f, 0.f};
-                vec3f tc1 = {0.f, 1.f, 0.f};
-                vec3f tc2 = {0.f, 0.f, 0.f};
+                const vec3f tc0 = make_vec3f(1.f, 1.f);
+                const vec3f tc1 = make_vec3f(0.f, 1.f);
+                const vec3f tc2 = make_vec3f(0.f, 0.f);
                 m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, tc0, tc1, tc2);
             }
 
@@ -110,9 +109,9 @@ void GalleryScene::doInitialize()
                                       position.z + p0.z * size.z, 0.f, 0.f, 0.f, m);
             m_gpuKernel->setPrimitiveNormals(m_nbPrimitives, normal2, normal3, normal0);
             {
-                vec3f tc0 = {0.f, 0.f, 0.f};
-                vec3f tc1 = {1.f, 0.f, 0.f};
-                vec3f tc2 = {1.f, 1.f, 0.f};
+                const vec3f tc0 = make_vec3f(0.f, 0.f);
+                const vec3f tc1 = make_vec3f(1.f, 0.f);
+                const vec3f tc2 = make_vec3f(1.f, 1.f);
                 m_gpuKernel->setPrimitiveTextureCoordinates(m_nbPrimitives, tc0, tc1, tc2);
             }
             ++i;

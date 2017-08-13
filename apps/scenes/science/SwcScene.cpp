@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -48,10 +48,10 @@ void SwcScene::doInitialize()
     if (fileNames.size() != 0)
     {
         m_currentModel = m_currentModel % fileNames.size();
-        vec4f scale = {10.f, 10.f, 10.f, 10.f};
+        const vec4f scale = make_vec4f(10.f, 10.f, 10.f, 10.f);
 
         // Scene
-        const vec4f position = {0.f, 0.f, 0.f};
+        const vec4f position = make_vec4f(0.f, 0.f, 0.f);
         for (int i(0); i < fileNames.size(); ++i)
         {
             solr::SWCReader swcReader;

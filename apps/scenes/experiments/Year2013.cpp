@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -117,7 +117,7 @@ void Year2013::doInitialize()
         }
     }
 
-    vec3f center = {-2000.f, -1000.f, -8000.f};
+    vec3f center = make_vec3f(-2000.f, -1000.f, -8000.f);
 
     // Ai
     center.x = 3000.f;

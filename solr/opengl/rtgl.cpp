@@ -38,15 +38,15 @@ namespace solr
 SceneInfo gSceneInfo;
 PostProcessingInfo glPostProcessingInfo;
 const int gTotalPathTracingIterations = 1;
-vec4f gRotationCenter = {0.f, 0.f, 0.f};
+vec4f gRotationCenter = make_vec4f();
 float gScale = 1.0f;
 // Current Material
 int gCurrentTexture(-1);
 bool gLighting(false);
 // Camera. THIS IS UGLY
-vec3f gEye = {gScale / 10.f, 0.f, -20.f * gScale};
-vec3f gDir = {gScale / 10.f, 0.f, -20.f * gScale + 5000.f};
-vec4f gAngles = {0.f, 0.f, 0.f, 0.f};
+vec3f gEye = make_vec3f(gScale / 10.f, 0.f, -20.f * gScale);
+vec3f gDir = make_vec3f(gScale / 10.f, 0.f, -20.f * gScale + 5000.f);
+vec4f gAngles = make_vec4f();
 
 // OpenCL
 void setOpenCLPlatform(const int platform)
@@ -125,12 +125,9 @@ void createRandomMaterials(bool update, bool lightsOnly)
         end = 130;
     }
     // Materials
-    long R = 0;
-    long G = 0;
-    long B = 0;
     for (int i(start); i < end; ++i)
     {
-        vec4f specular = {0.f, 0.f, 0.f, 0.f};
+        vec4f specular = make_vec4f();
         specular.x = 1.f;
         specular.y = 500.f;
         specular.z = 0.f;
@@ -140,7 +137,7 @@ void createRandomMaterials(bool update, bool lightsOnly)
         float refraction = 0.f;
         float transparency = 0.f;
         int textureId = TEXTURE_NONE;
-        vec4f innerIllumination = {0.f, 40000.f, gSceneInfo.viewDistance};
+        vec4f innerIllumination = make_vec4f(0.f, 40000.f, gSceneInfo.viewDistance);
         bool procedural = false;
         bool wireframe = false;
         int wireframeDepth = 0;
@@ -645,8 +642,7 @@ void glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 
 void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
-    vec4f angles = {angle * x * PI / 180.f, angle * y * PI / 180.f, angle * z * PI / 180.f};
-    SingletonKernel::kernel()->rotate(angles.x, angles.y, angles.z);
+    SingletonKernel::kernel()->rotate(angle * x * PI / 180.f, angle * y * PI / 180.f, angle * z * PI / 180.f);
 }
 
 void gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble centerX, GLdouble centerY, GLdouble centerZ,

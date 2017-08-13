@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -58,11 +58,6 @@ vec3f WaterScene::F(float x, float z, float stepX, float stepZ)
 
 vec3f WaterScene::P(float t, float stepX, float stepZ)
 {
-#ifdef WIN32
-    float timer = static_cast<float>(GetTickCount()) / 200.f;
-#else
-    float timer = m_gpuKernel->getSceneInfo().timestamp;
-#endif
     vec3f returnValue;
     float tx = t + stepX;
     float tz = t + stepZ;
@@ -97,27 +92,24 @@ void WaterScene::processCurve(bool update)
             {
                 for (float Z(0); Z <= step; Z += step)
                 {
-                    // vec4f
+                    // Vertices
                     vertices[index] = F(x + X, z + Z, X, Z);
 
                     // Normal
-                    vec3f P1p = F(x + X + step, z + Z, X / 2.f, Z / 2.f);
-                    vec3f P3p = F(x + X, z + Z + step, X / 2.f, Z / 2.f);
-                    vec3f v1 = {P1p.x - vertices[index].x, P1p.y - vertices[index].y, P1p.z - vertices[index].z};
-                    vec3f v3 = {P3p.x - vertices[index].x, P3p.y - vertices[index].y, P3p.z - vertices[index].z};
+                    const vec3f P1p = F(x + X + step, z + Z, X / 2.f, Z / 2.f);
+                    const vec3f P3p = F(x + X, z + Z + step, X / 2.f, Z / 2.f);
+                    vec3f v1 = make_vec3f(P1p.x - vertices[index].x, P1p.y - vertices[index].y, P1p.z - vertices[index].z);
+                    vec3f v3 = make_vec3f(P3p.x - vertices[index].x, P3p.y - vertices[index].y, P3p.z - vertices[index].z);
                     m_gpuKernel->normalizeVector(v1);
                     m_gpuKernel->normalizeVector(v3);
                     verticesNormals[index] = m_gpuKernel->crossProduct(v1, v3);
 
                     index++;
-                    // t+=(4.f*static_cast<float>(M_PI))/static_cast<float>(step*step);
                 }
             }
 
             if (update)
-            {
                 primitiveIndex++;
-            }
             else
             {
                 primitiveIndex = m_gpuKernel->addPrimitive(ptTriangle);
@@ -137,16 +129,14 @@ void WaterScene::processCurve(bool update)
                                              verticesNormals[3]);
 
             {
-                vec3f tc0 = {tx, ty, 0.f};
-                vec3f tc1 = {tx + tstep, ty, 0.f};
-                vec3f tc2 = {tx + tstep, ty + tstep, 0.f};
+                const vec3f tc0 = make_vec3f(tx, ty);
+                const vec3f tc1 = make_vec3f(tx + tstep, ty);
+                const vec3f tc2 = make_vec3f(tx + tstep, ty + tstep);
                 m_gpuKernel->setPrimitiveTextureCoordinates(primitiveIndex, tc0, tc1, tc2);
             }
 
             if (update)
-            {
                 primitiveIndex++;
-            }
             else
             {
                 primitiveIndex = m_gpuKernel->addPrimitive(ptTriangle);
@@ -164,9 +154,9 @@ void WaterScene::processCurve(bool update)
                                              verticesNormals[0]);
 
             {
-                vec3f tc0 = {tx + tstep, ty + tstep, 0.f};
-                vec3f tc1 = {tx, ty + tstep, 0.f};
-                vec3f tc2 = {tx, ty, 0.f};
+                const vec3f tc0 = make_vec3f(tx + tstep, ty + tstep);
+                const vec3f tc1 = make_vec3f(tx, ty + tstep);
+                const vec3f tc2 = make_vec3f(tx, ty);
                 m_gpuKernel->setPrimitiveTextureCoordinates(primitiveIndex, tc0, tc1, tc2);
             }
             ty += tstep;
@@ -191,14 +181,14 @@ void WaterScene::processParametricCurve(bool update)
         {
             for (float Z(0); Z <= step; Z += step)
             {
-                // vec4f
+                // Vertices
                 vertices[index] = P(t, X, Z);
 
                 // Normal
-                vec3f P1p = P(t, X / 2.f, Z / 2.f);
-                vec3f P3p = P(t, X / 2.f, Z / 2.f);
-                vec3f v1 = {P1p.x - vertices[index].x, P1p.y - vertices[index].y, P1p.z - vertices[index].z};
-                vec3f v3 = {P3p.x - vertices[index].x, P3p.y - vertices[index].y, P3p.z - vertices[index].z};
+                const vec3f P1p = P(t, X / 2.f, Z / 2.f);
+                const vec3f P3p = P(t, X / 2.f, Z / 2.f);
+                vec3f v1 = make_vec3f(P1p.x - vertices[index].x, P1p.y - vertices[index].y, P1p.z - vertices[index].z);
+                vec3f v3 = make_vec3f(P3p.x - vertices[index].x, P3p.y - vertices[index].y, P3p.z - vertices[index].z);
                 m_gpuKernel->normalizeVector(v1);
                 m_gpuKernel->normalizeVector(v3);
                 verticesNormals[index] = m_gpuKernel->crossProduct(v1, v3);
@@ -207,9 +197,7 @@ void WaterScene::processParametricCurve(bool update)
             }
 
             if (update)
-            {
                 primitiveIndex++;
-            }
             else
             {
                 primitiveIndex = m_gpuKernel->addPrimitive(ptTriangle);
@@ -228,20 +216,8 @@ void WaterScene::processParametricCurve(bool update)
             m_gpuKernel->setPrimitiveNormals(primitiveIndex, verticesNormals[0], verticesNormals[2],
                                              verticesNormals[3]);
 
-            /*
-         // Textures
-         {
-            vec4f tc0 = {      tx,       ty,0.f};
-            vec4f tc1 = {tx+tstep,       ty,0.f};
-            vec4f tc2 = {tx+tstep, ty+tstep,0.f};
-            m_gpuKernel->setPrimitiveTextureCoordinates( primitiveIndex, tc0, tc1, tc2 );
-         }
-         */
-
             if (update)
-            {
                 primitiveIndex++;
-            }
             else
             {
                 primitiveIndex = m_gpuKernel->addPrimitive(ptTriangle);
@@ -257,19 +233,7 @@ void WaterScene::processParametricCurve(bool update)
                 m_objectSize.z * vertices[0].z, 0.f, 0.f, 0.f, m_material);
             m_gpuKernel->setPrimitiveNormals(primitiveIndex, verticesNormals[3], verticesNormals[1],
                                              verticesNormals[0]);
-
-            /*
-         // Textures
-         {
-            vec4f tc0 = {tx+tstep, ty+tstep,0.f};
-            vec4f tc1 = {      tx, ty+tstep,0.f};
-            vec4f tc2 = {      tx,       ty,0.f};
-            m_gpuKernel->setPrimitiveTextureCoordinates( primitiveIndex, tc0, tc1, tc2 );
-         }
-         ty+=tstep;
-         */
         }
-        // tx+=tstep;
     }
 }
 
@@ -286,7 +250,6 @@ void WaterScene::doInitialize()
     m_material = 1023;
 
     processCurve(false);
-    // processParametricCurve(false);
 }
 
 void WaterScene::doAnimate()

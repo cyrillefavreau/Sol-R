@@ -38,5 +38,4 @@ private:
     std::vector<std::string> m_objFiles;
     std::string m_filename;
     vec4f m_objectScale;
-    vec4f m_actorPosition;
 };

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -56,11 +56,11 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
 {
     LOG_INFO(1, "IRT Filename.......: " << filename);
 
-    vec4f returnValue = {0.f, 0.f, 0.f, 0.f};
-    vec4f min = {kernel.getSceneInfo().viewDistance, kernel.getSceneInfo().viewDistance,
-                 kernel.getSceneInfo().viewDistance};
-    vec4f max = {-kernel.getSceneInfo().viewDistance, -kernel.getSceneInfo().viewDistance,
-                 -kernel.getSceneInfo().viewDistance};
+    vec4f returnValue = make_vec4f(0.f, 0.f, 0.f, 0.f);
+    vec4f min = make_vec4f(kernel.getSceneInfo().viewDistance, kernel.getSceneInfo().viewDistance,
+        kernel.getSceneInfo().viewDistance);
+    vec4f max = make_vec4f(-kernel.getSceneInfo().viewDistance, -kernel.getSceneInfo().viewDistance,
+        -kernel.getSceneInfo().viewDistance);
 
     std::ifstream myfile;
     myfile.open(filename.c_str(), std::ifstream::binary);
@@ -87,8 +87,6 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
         size_t nbElements(0);
         myfile.read((char *)&nbElements, sizeof(size_t));
         LOG_INFO(1, " - Primitives......: " << nbElements);
-
-        size_t position = myfile.tellg();
 
         for (size_t i(0); i < nbElements; ++i)
         {
@@ -203,7 +201,6 @@ vec4f FileMarshaller::loadFromFile(GPUKernel &kernel, const std::string &filenam
 
 void FileMarshaller::saveToFile(GPUKernel &kernel, const std::string &filename)
 {
-    int frame(0);
     LOG_INFO(1, "Saving 3D scene to " << filename);
     std::ofstream myfile;
     myfile.open(filename.c_str(), std::ifstream::binary);

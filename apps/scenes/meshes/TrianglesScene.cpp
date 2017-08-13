@@ -45,12 +45,11 @@ void TrianglesScene::doInitialize()
     const Strings fileNames = getFilesFromFolder(std::string(DEFAULT_MEDIA_FOLDER) + "/irt", extensions);
     if (fileNames.size() != 0)
     {
-        float objectScale = 1.f;
+        const vec4f center = make_vec4f();
+        const float objectScale = 1.f;
         m_currentModel = m_currentModel % fileNames.size();
-        vec4f size = {0.f, 0.f, 0.f};
-        vec4f center = {0.f, 0.f, 0.f};
         solr::FileMarshaller fm;
-        size = fm.loadFromFile(*m_gpuKernel, fileNames[m_currentModel], center, objectScale * 5000.f);
+        fm.loadFromFile(*m_gpuKernel, fileNames[m_currentModel], center, objectScale * 5000.f);
         m_groundHeight = -2500.f;
     }
 }

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -45,7 +45,7 @@ MapReader::~MapReader(void)
 
 vec3i readInt3(const std::string &value)
 {
-    vec3i returnValue = {0, 0, 0};
+    vec3i returnValue = make_vec3i(0, 0, 0);
     int item(0);
     std::string tmp;
     for (int i(0); i < value.length(); ++i)
@@ -81,20 +81,18 @@ vec4f MapReader::loadFromFile(const std::string &filename, GPUKernel &kernel)
     std::map<int, MapBlock> blocks;
     std::map<int, MapJewel> jewels;
 
-    vec4f minPos = {100000.f, 100000.f, 100000.f};
-    vec4f maxPos = {-100000.f, -100000.f, -100000.f};
+    vec4f minPos = make_vec4f(100000.f, 100000.f, 100000.f);
+    vec4f maxPos = make_vec4f(-100000.f, -100000.f, -100000.f);
 
     // Load Map
     LOG_INFO(3, "Loading " << filename.c_str());
 
-    int index_materialScheme(0);
     int index_zone(-1);
     int index_block(-1);
     int index_jewel(-1);
 
     int jewelMaterial = 40;
     int blockMaterial = 30;
-    int zoneMaterial = 0;
 
     std::ifstream file(filename.c_str());
     if (file.is_open())
@@ -160,7 +158,7 @@ vec4f MapReader::loadFromFile(const std::string &filename, GPUKernel &kernel)
         file.close();
     }
 
-    vec4f blockSize = {500.f, 500.f, 500.f};
+    vec4f blockSize = make_vec4f(500.f, 500.f, 500.f);
 
     // Jewels
     std::map<int, MapJewel>::const_iterator itj = jewels.begin();

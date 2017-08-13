@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -143,10 +143,10 @@ void SolR_SetCamera(double eye_x, double eye_y, double eye_z, double dir_x, doub
                     double angle_y, double angle_z)
 {
     LOG_INFO(3, "SolR_SetCamera");
-    const vec3f eye = {static_cast<float>(eye_x), static_cast<float>(eye_y), static_cast<float>(eye_z)};
-    const vec3f dir = {static_cast<float>(dir_x), static_cast<float>(dir_y), static_cast<float>(dir_z)};
-    const vec4f angles = {static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z),
-                          6400.f};
+    const vec3f eye = make_vec3f(static_cast<float>(eye_x), static_cast<float>(eye_y), static_cast<float>(eye_z));
+    const vec3f dir = make_vec3f(static_cast<float>(dir_x), static_cast<float>(dir_y), static_cast<float>(dir_z));
+    const vec4f angles = make_vec4f(static_cast<float>(angle_x), static_cast<float>(angle_y), static_cast<float>(angle_z),
+        6400.f);
     solr::SingletonKernel::kernel()->setCamera(eye, dir, angles);
 }
 
@@ -232,10 +232,10 @@ int SolR_GetPrimitiveCenter(int index, double &x, double &y, double &z)
 int SolR_RotatePrimitive(int index, double rx, double ry, double rz, double ax, double ay, double az)
 {
     LOG_INFO(3, "SolR_RotatePrimitive");
-    vec4f rotationCenter = {static_cast<float>(rx), static_cast<float>(ry), static_cast<float>(rz), 0.f};
-    vec4f angles = {static_cast<float>(ax), static_cast<float>(ay), static_cast<float>(az), 0.f};
-
-    // solr::SingletonKernel::kernel()->rotatePrimitive( index, boxId, rotationCenter, angles ); // TODO!!
+//    vec4f rotationCenter = {{static_cast<float>(rx), static_cast<float>(ry), static_cast<float>(rz), 0.f}};
+//    vec4f angles = {{static_cast<float>(ax), static_cast<float>(ay), static_cast<float>(az), 0.f}};
+//
+//    solr::SingletonKernel::kernel()->rotatePrimitive( index, boxId, rotationCenter, angles ); // TODO!!
     return 0;
 }
 
@@ -244,8 +244,8 @@ int SolR_RotatePrimitives(int fromBoxId, int toBoxId, double rx, double ry, doub
     LOG_INFO(3, "SolR_RotatePrimitives");
     try
     {
-        vec3f rotationCenter = {static_cast<float>(rx), static_cast<float>(ry), static_cast<float>(rz)};
-        vec4f angles = {static_cast<float>(ax), static_cast<float>(ay), static_cast<float>(az)};
+        vec3f rotationCenter = make_vec3f(static_cast<float>(rx), static_cast<float>(ry), static_cast<float>(rz));
+        vec4f angles = make_vec4f(static_cast<float>(ax), static_cast<float>(ay), static_cast<float>(az));
 
         solr::SingletonKernel::kernel()->rotatePrimitives(rotationCenter, angles);
         solr::SingletonKernel::kernel()->compactBoxes(false);
@@ -273,9 +273,9 @@ int SolR_SetPrimitiveNormals(int index, double n0_x, double n0_y, double n0_z, d
                              double n2_x, double n2_y, double n2_z)
 {
     LOG_INFO(3, "SolR_SetPrimitiveNormals");
-    vec3f n0 = {static_cast<float>(n0_x), static_cast<float>(n0_y), static_cast<float>(n0_z)};
-    vec3f n1 = {static_cast<float>(n1_x), static_cast<float>(n1_y), static_cast<float>(n1_z)};
-    vec3f n2 = {static_cast<float>(n2_x), static_cast<float>(n2_y), static_cast<float>(n2_z)};
+    vec3f n0 = make_vec3f(static_cast<float>(n0_x), static_cast<float>(n0_y), static_cast<float>(n0_z));
+    vec3f n1 = make_vec3f(static_cast<float>(n1_x), static_cast<float>(n1_y), static_cast<float>(n1_z));
+    vec3f n2 = make_vec3f(static_cast<float>(n2_x), static_cast<float>(n2_y), static_cast<float>(n2_z));
     solr::SingletonKernel::kernel()->setPrimitiveNormals(index, n0, n1, n2);
     return 0;
 }
@@ -284,9 +284,9 @@ int SolR_SetPrimitiveTextureCoordinates(int index, double t0_x, double t0_y, dou
                                         double t1_z, double t2_x, double t2_y, double t2_z)
 {
     LOG_INFO(3, "SolR_SetPrimitiveTextureCoordinates");
-    vec3f t0 = {static_cast<float>(t0_x), static_cast<float>(t0_y), static_cast<float>(t0_z)};
-    vec3f t1 = {static_cast<float>(t1_x), static_cast<float>(t1_y), static_cast<float>(t1_z)};
-    vec3f t2 = {static_cast<float>(t2_x), static_cast<float>(t2_y), static_cast<float>(t2_z)};
+    vec3f t0 = make_vec3f(static_cast<float>(t0_x), static_cast<float>(t0_y), static_cast<float>(t0_z));
+    vec3f t1 = make_vec3f(static_cast<float>(t1_x), static_cast<float>(t1_y), static_cast<float>(t1_z));
+    vec3f t2 = make_vec3f(static_cast<float>(t2_x), static_cast<float>(t2_y), static_cast<float>(t2_z));
     solr::SingletonKernel::kernel()->setPrimitiveTextureCoordinates(index, t0, t1, t2);
     return 0;
 }
@@ -483,10 +483,9 @@ int SolR_LoadMolecule(char *filename, int geometryType, double defaultAtomSize, 
     LOG_INFO(3, "SolR_LoadMolecule");
     // PDB
     solr::PDBReader prbReader;
-    float s(static_cast<float>(scale));
-    vec4f objectScale = {s, s, s};
-    vec4f minPos =
-        prbReader.loadAtomsFromFile(filename, *solr::SingletonKernel::kernel(),
+    const float s(static_cast<float>(scale));
+    const vec4f objectScale = make_vec4f(s, s, s);
+    prbReader.loadAtomsFromFile(filename, *solr::SingletonKernel::kernel(),
                                     static_cast<solr::GeometryType>(geometryType), static_cast<float>(defaultAtomSize),
                                     static_cast<float>(defaultStickSize), atomMaterialType, objectScale);
     return solr::SingletonKernel::kernel()->getNbActivePrimitives();
@@ -496,11 +495,11 @@ int SolR_LoadMolecule(char *filename, int geometryType, double defaultAtomSize, 
 int SolR_LoadOBJModel(char *filename, int materialId, int autoScale, double scale, int autoCenter, double &height)
 {
     LOG_INFO(3, "SolR_LoadOBJModel");
-    vec4f center = {0.f, 0.f, 0.f};
+    vec4f center = make_vec4f(0.f, 0.f, 0.f);
     // PDB
     solr::OBJReader objReader;
     float s(static_cast<float>(scale));
-    vec4f objectScale = {s, s, s};
+    vec4f objectScale = make_vec4f(s, s, s);
     solr::CPUBoundingBox aabb;
     solr::CPUBoundingBox inAABB;
     vec4f minPos =
@@ -524,7 +523,7 @@ int SolR_SaveToFile(char *filename)
 int SolR_LoadFromFile(char *filename, double scale)
 {
     LOG_INFO(3, "SolR_LoadFromFile");
-    vec4f center = {0.f, 0.f, 0.f};
+    vec4f center = make_vec4f(0.f, 0.f, 0.f);
     solr::FileMarshaller fm;
     fm.loadFromFile(*solr::SingletonKernel::kernel(), filename, center, static_cast<float>(scale));
     return solr::SingletonKernel::kernel()->getNbActivePrimitives();

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2014, Cyrille Favreau
+/* Copyright (c) 2011-2017, Cyrille Favreau
  * All rights reserved. Do not distribute without permission.
  * Responsible Author: Cyrille Favreau <cyrille_favreau@hotmail.com>
  *
@@ -39,11 +39,11 @@ DoggyStyleScene::~DoggyStyleScene(void)
 
 void DoggyStyleScene::doInitialize()
 {
-    vec3f center = {-3500.f, m_groundHeight + 2500.f, 0.f};
+    vec3f center = make_vec3f(-3500.f, m_groundHeight + 2500.f, 0.f);
     createDog(center, rand() % 20 + 30, 500.f, 1010);
     center.x = 3500.f;
     createDog(center, rand() % 20 + 30, 500.f, 1011);
-    vec4f angles = {0.f, static_cast<float>(M_PI), 0.f};
+    vec4f angles = make_vec4f(0.f, static_cast<float>(M_PI), 0.f);
     m_gpuKernel->rotatePrimitives(center, angles);
 }
 
@@ -54,15 +54,10 @@ void DoggyStyleScene::doAnimate()
 void DoggyStyleScene::doAddLights()
 {
     // Laser
-    for (int i(0); i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
     {
-        vec4f p1, p2;
-        p1.x = rand() % 10000 - 5000.f;
-        p1.y = 5000.f;
-        p1.z = rand() % 10000 - 5000.f;
-        p2.x = -(rand() % 10000 - 5000.f);
-        p2.y = -5000.f;
-        p2.z = -(rand() % 10000 - 5000.f);
+        const vec4f p1 = make_vec4f(rand() % 10000 - 5000.f, 5000.f, rand() % 10000 - 5000.f);
+        const vec4f p2 = make_vec4f(-(rand() % 10000 - 5000.f), -5000.f, -(rand() % 10000 - 5000.f));
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptCylinder);
         m_gpuKernel->setPrimitive(m_nbPrimitives, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, 100.f, 100.f, 100.f,
                                   DEFAULT_LIGHT_MATERIAL - i);

@@ -149,27 +149,13 @@ vec4f FractalsScene::MandelBox(vec3f V, const vec3f& Scale, float R, float S, fl
         iter++;
     }
 
-    vec4f color = {0.f, 0.f, 0.f, 0.f};
-    if (iter >= maxiter)
-    {
-        // Empty call
-    }
-    else
+    vec4f color = make_vec4f();
+    if (iter < maxiter)
     {
         int div = maxiter / 5;
         m_nbPrimitives = m_gpuKernel->addPrimitive(ptSphere);
         m_gpuKernel->setPrimitive(m_nbPrimitives, V.x, V.y, V.z, Scale.x, Scale.y, Scale.z, 1000 + div);
         m_gpuKernel->setPrimitiveBellongsToModel(m_nbPrimitives, true);
-        /*
-      switch(iter/div)
-      {
-      case 0: color = Color(1,1,1,1); break;
-      case 1: color = Color(0.75f,0.75f,0.75f,1); break;
-      case 2: color = Color(0.5f,0.5f,0.5f,1); break;
-      case 3: color = Color(0.25f,0.25f,0.25f,1); break;
-      case 4: color = Color(0.1f,0.1f,0.1f,1); break;
-      }
-      */
     }
     return color;
 }
@@ -247,35 +233,25 @@ void FractalsScene::doInitialize()
 {
     m_groundHeight = -5000.f;
 
-    vec4f center = {0.f, 0.f, 0.f, 20.f};
-    int size = 22;
-    int step = 1;
-    int nbIterations = 5;
-    float radius = 200.f;
+    const int size = 22;
+    const int step = 1;
+    const float radius = 200.f;
+    const int nbIterations = 5;
 
-    vec2f params = {static_cast<float>(rand() % 10000), static_cast<float>(rand() % 100) / 100.f};
     for (int x = 0; x <= size; x += step)
-    {
         for (int y = 0; y <= size; y += step)
-        {
             for (int z = 0; z <= size; z += step)
             {
-                vec3i v = {x, y, z};
+                vec3i v = make_vec3i(x, y, z);
                 if (!isSierpinskiCarpetPixelFilled(nbIterations, v))
-                {
                     m_nbPrimitives = m_gpuKernel->addCube((x - size / 2.f) * radius, (y - size / 2.f) * radius,
                                                           (z - size / 2.f) * radius, step * radius, 39);
-                }
             }
-        }
-    }
 }
 
 void FractalsScene::doAnimate()
 {
-    m_rotationAngles.x = 0.02f;
-    m_rotationAngles.y = 0.01f;
-    m_rotationAngles.z = 0.015f;
+    m_rotationAngles = make_vec4f(0.02f, 0.01f, 0.015f);
     m_gpuKernel->rotatePrimitives(m_rotationCenter, m_rotationAngles);
     m_gpuKernel->compactBoxes(false);
 }

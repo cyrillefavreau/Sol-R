@@ -76,7 +76,7 @@ bool gCopyright(true);
 int gSceneId(0);
 bool gAutoFocus(false);
 bool gAnimate(false);
-vec4f gBkColor = {0.f, 0.f, 0.f, 0.f};
+vec4f gBkColor = make_vec4f();
 bool gDraft(false);
 int gSphereMaterial = 0;
 int gGroundMaterial = 0;
@@ -175,10 +175,10 @@ int gLampId = 0;
 int gNbMaterials = 0;
 int gNbTextureTiles = 1;
 
-vec4f gRotationAngles = {0.f, 0.f, 0.f};
-vec4f gViewAngles = {0.f, 0.f, 0.f, 6400.f};
-vec3f gViewPos = {0.f, 0.f, -15000.f};
-vec3f gViewDir = {0.f, 0.f, 0.f};
+vec4f gRotationAngles = make_vec4f();
+vec4f gViewAngles = make_vec4f(0.f, 0.f, 0.f, 6400.f);
+vec3f gViewPos = make_vec3f(0.f, 0.f, -15000.f);
+vec3f gViewDir = make_vec3f();
 PostProcessingInfo gPostProcessingInfo = {ppe_none, 0.f, 10.f, 1000};
 
 float groundHeight = -3000.f;
@@ -304,9 +304,6 @@ void display()
         return;
     // clear graphics
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    vec4f textColor = {0.f, 0.f, 0.f};
-    SceneInfo &si = gScene->getSceneInfo();
-
     gFrame++;
     int time = glutGet(GLUT_ELAPSED_TIME);
     int processingTime = time - gTimebase;
@@ -392,7 +389,7 @@ void display()
             text << "\n"
                  << gKernel->getNbActivePrimitives() << " triangles, " << si.size.x << "x" << si.size.y << ", "
                  << si.maxPathTracingIterations << " samples/pixel";
-            RenderString(-0.95f, -0.8f, 0.f, GLUT_BITMAP_HELVETICA_10, text.str().c_str(), textColor);
+            RenderString(-0.95f, -0.8f, 0.f, GLUT_BITMAP_HELVETICA_10, text.str().c_str(), make_vec4f(1.f,1.f,1.f));
             gScene->renderText();
 #endif
 
@@ -430,7 +427,7 @@ void display()
             // Copyright
             const char *copyright = "http://cudaopencl.blogspot.com";
             float p = strlen(copyright) * 20.f / si.size.x;
-            RenderString(-p / 2.f, -0.9f, 0.f, GLUT_BITMAP_HELVETICA_18, copyright, textColor);
+            RenderString(-p / 2.f, -0.9f, 0.f, GLUT_BITMAP_HELVETICA_18, copyright, make_vec4f(1.f,1.f,1.f));
             gScene->renderText();
         }
 
@@ -514,7 +511,6 @@ void initMenus()
 
 void keyboard(unsigned char key, int x, int y)
 {
-    float step(100.f);
     solr::GPUKernel *kernel = gScene->getKernel();
     if (!kernel)
         return;
@@ -545,8 +541,7 @@ void keyboard(unsigned char key, int x, int y)
     }
     case 'b':
     {
-        vec4f color = {rand() % 255 / 255.f, rand() % 255 / 255.f, rand() % 255 / 255.f, 0.5f};
-        gScene->getSceneInfo().backgroundColor = color;
+        gScene->getSceneInfo().backgroundColor = make_vec4f(rand() % 255 / 255.f, rand() % 255 / 255.f, rand() % 255 / 255.f, 0.5f);
         break;
     }
     case 'D':
@@ -1079,7 +1074,7 @@ void motion(int x, int y)
         case ctObject:
         {
             // Rotate primitives
-            vec3f rotationCenter = {0.f, 0.f, 0.f};
+            vec3f rotationCenter = make_vec3f();
             float a = (mouse_old_x - x) / 100.f;
             if (fabs(a) <= 1.f)
                 gRotationAngles.y = asin(a);

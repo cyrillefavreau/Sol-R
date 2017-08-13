@@ -48,11 +48,11 @@ MoleculeScene::~MoleculeScene(void)
 void MoleculeScene::doInitialize()
 {
     // initialization
-    int geometryType(rand() % 5);
-    int atomMaterialType(0);
-    float defaultAtomSize(100.f);
-    float defaultStickSize(10.f);
-    bool loadModels(true);
+    const int geometryType = rand() % 5;
+    const int atomMaterialType = 0;
+    const float defaultAtomSize = 100.f;
+    const float defaultStickSize = 10.f;
+    const bool loadModels = true;
 
     Strings extensions;
     extensions.push_back(".pdb");
@@ -60,7 +60,7 @@ void MoleculeScene::doInitialize()
     if (fileNames.size() != 0)
     {
         m_currentModel = m_currentModel % fileNames.size();
-        vec4f scale = {200.f, 200.f, 200.f};
+        const vec4f scale = make_vec4f(200.f, 200.f, 200.f);
 
         // Scene
         m_name = fileNames[m_currentModel];
