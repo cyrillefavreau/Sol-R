@@ -278,11 +278,7 @@ void OpenCLKernel::recompileKernels()
         {
             LOG_INFO(1, "Recompiling kernel from " << m_kernelFilename);
             while (getline(inputFile, line))
-            {
-                line += 10;
-                line += 13;
                 kernelCode += line;
-            }
             inputFile.close();
         }
         else
@@ -307,9 +303,12 @@ void OpenCLKernel::recompileKernels()
 #ifdef DEBUG
         compilationOptions += " -DDEBUG -g";
 #endif
+#ifdef USE_KINECT
+        compilationOptions += " -DUSE_KINECT";
+#endif
         LOG_INFO(1, "Building Program with " << compilationOptions);
         CHECKSTATUS(
-            clBuildProgram(m_hProgram, m_numberOfDevices[m_platform], m_devices[m_platform], compilationOptions.c_str(), &buildNotify, NULL));
+            clBuildProgram(m_hProgram, 1, &m_devices[m_platform][m_device], compilationOptions.c_str(), &buildNotify, NULL));
         size_t logSize;
         CHECKSTATUS(clGetProgramBuildInfo(m_hProgram, m_hDeviceId, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize));
         char* log = new char[logSize];
@@ -565,13 +564,17 @@ void OpenCLKernel::render_begin(const float timer)
             m_primitivesTransfered = true;
         }
 
-        if (!m_materialsTransfered)
+        if (!m_randomsTransfered)
         {
-            realignTexturesAndMaterials();
-
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dRandoms, CL_TRUE, 0,
                                              m_sceneInfo.size.x * m_sceneInfo.size.y * sizeof(RandomBuffer), m_hRandoms,
                                              0, NULL, NULL));
+            m_randomsTransfered = true;
+        }
+
+        if (!m_materialsTransfered)
+        {
+            realignTexturesAndMaterials();
             CHECKSTATUS(clEnqueueWriteBuffer(m_hQueue, m_dMaterials, CL_TRUE, 0, nbMaterials * sizeof(Material),
                                              m_hMaterials, 0, NULL, NULL));
             m_materialsTransfered = true;
@@ -892,9 +895,7 @@ void OpenCLKernel::render_end()
     CHECKSTATUS(clFinish(m_hQueue));
 #ifdef WIN32
     if (m_sceneInfo.pathTracingIteration == m_sceneInfo.maxPathTracingIterations - 1)
-    {
         LOG_INFO(1, "Rendering completed in " << GetTickCount() - m_counter << " ms");
-    }
 #endif
 
     if (m_sceneInfo.frameBufferType == 0)
@@ -1055,7 +1056,7 @@ void OpenCLKernel::queryDevice()
     size_t len;
     std::stringstream s;
 
-    CHECKSTATUS(clGetPlatformIDs(MAX_DEVICES, m_platforms, &m_numberOfPlatforms));
+    CHECKSTATUS(clGetPlatformIDs(MAX_PLATFORMS, m_platforms, &m_numberOfPlatforms));
     LOG_INFO(1, "Number of platforms detected: " << m_numberOfPlatforms);
 
     for (cl_uint platform(0); platform < m_numberOfPlatforms; ++platform)

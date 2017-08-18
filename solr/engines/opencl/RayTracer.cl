@@ -329,9 +329,7 @@ static void vectorRefraction(float4* refracted, const float4 incident, const flo
         float c1 = -dot(incident, normal);
         float cs2 = 1.f - eta * eta * (1.f - c1 * c1);
         if (cs2 >= 0.f)
-        {
             (*refracted) = eta * incident + (eta * c1 - sqrt(cs2)) * normal;
-        }
     }
 }
 
@@ -390,26 +388,26 @@ static void makeColor(const SceneInfo* sceneInfo, const float4* color, CONST Bit
     int mdc_index = index * gColorDepth;
     switch ((*sceneInfo).frameBufferType)
     {
-    case fbBGR:
-    {
-        // Delphi
-        int y = index / (*sceneInfo).size.y;
-        int x = index % (*sceneInfo).size.x;
-        int i = (y + 1) * (*sceneInfo).size.y - x - 1;
-        i *= gColorDepth;
-        bitmap[i] = (BitmapBuffer)((*color).z * 255.f);     // Blue
-        bitmap[i + 1] = (BitmapBuffer)((*color).y * 255.f); // Green
-        bitmap[i + 2] = (BitmapBuffer)((*color).x * 255.f); // Red
-        break;
-    }
-    default:
-    {
-        // OpenGL
-        bitmap[mdc_index] = (BitmapBuffer)((*color).x * 255.f);     // Red
-        bitmap[mdc_index + 1] = (BitmapBuffer)((*color).y * 255.f); // Green
-        bitmap[mdc_index + 2] = (BitmapBuffer)((*color).z * 255.f); // Blue
-        break;
-    }
+        case fbBGR:
+        {
+            // Delphi
+            int y = index / (*sceneInfo).size.y;
+            int x = index % (*sceneInfo).size.x;
+            int i = (y + 1) * (*sceneInfo).size.y - x - 1;
+            i *= gColorDepth;
+            bitmap[i] = (BitmapBuffer)((*color).z * 255.f);     // Blue
+            bitmap[i + 1] = (BitmapBuffer)((*color).y * 255.f); // Green
+            bitmap[i + 2] = (BitmapBuffer)((*color).x * 255.f); // Red
+            break;
+        }
+        default:
+        {
+            // OpenGL
+            bitmap[mdc_index] = (BitmapBuffer)((*color).x * 255.f);     // Red
+            bitmap[mdc_index + 1] = (BitmapBuffer)((*color).y * 255.f); // Green
+            bitmap[mdc_index + 2] = (BitmapBuffer)((*color).z * 255.f); // Blue
+            break;
+        }
     }
 }
 
@@ -490,9 +488,7 @@ static void mandelbrotSet(CONST Primitive* primitive, CONST Material* materials,
         float Z_re2 = Z_re * Z_re;
         float Z_im2 = Z_im * Z_im;
         if (Z_re2 + Z_im2 > 4.f)
-        {
             isInside = false;
-        }
         Z_im = 2.f * Z_re * Z_im + c_im;
         Z_re = Z_re2 - Z_im2 + c_re;
     }
@@ -597,7 +593,6 @@ static float4 sphereUVMapping(CONST Primitive* primitive, CONST Material* materi
 {
     CONST Material* material = &materials[(*primitive).materialId];
     float4 result = (*material).color;
-
     float4 I = normalize((*intersection) - (*primitive).p0);
     float U = ((atan2(I.x, I.z) / PI) + 1.f) * .5f;
     float V = (asin(I.y) / PI) + .5f;
@@ -609,7 +604,9 @@ static float4 sphereUVMapping(CONST Primitive* primitive, CONST Material* materi
         u %= (*material).textureMapping.x;
     if ((*material).textureMapping.y != 0)
         v %= (*material).textureMapping.y;
-    if (u >= 0 && u < (*material).textureMapping.x && v >= 0 && v < (*material).textureMapping.y)
+    const bool condition =
+        u >= 0 && u < (*material).textureMapping.x && v >= 0 && v < (*material).textureMapping.y;
+    if (condition)
     {
         int A = (v * (*material).textureMapping.x + u) * (*material).textureMapping.w;
         int B = (*material).textureMapping.x * (*material).textureMapping.y * (*material).textureMapping.w;
@@ -671,7 +668,8 @@ static float4 cubeMapping(const SceneInfo* sceneInfo, CONST Primitive* primitive
         x = (x + KINECT_COLOR_WIDTH) % KINECT_COLOR_WIDTH;
         y = (y + KINECT_COLOR_HEIGHT) % KINECT_COLOR_HEIGHT;
 
-        if (x >= 0 && x < KINECT_COLOR_WIDTH && y >= 0 && y < KINECT_COLOR_HEIGHT)
+        const bool condition = x >= 0 && x < KINECT_COLOR_WIDTH && y >= 0 && y < KINECT_COLOR_HEIGHT;
+        if (condition)
         {
             int index = (y * KINECT_COLOR_WIDTH + x) * KINECT_COLOR_DEPTH;
             index = index % (material.textureMapping.x * material.textureMapping.y * material.textureMapping.w);
@@ -777,7 +775,8 @@ static float4 triangleUVMapping(const SceneInfo* sceneInfo, CONST Primitive* pri
 
     u = u % (*material).textureMapping.x;
     v = v % (*material).textureMapping.y;
-    if (u >= 0 && u < (*material).textureMapping.x && v >= 0 && v < (*material).textureMapping.y)
+    const bool condition = u >= 0 && u < (*material).textureMapping.x && v >= 0 && v < (*material).textureMapping.y;
+    if (condition)
     {
         switch ((*material).textureIds.x)
         {
@@ -901,10 +900,9 @@ static bool ellipsoidIntersection(const SceneInfo* sceneInfo, CONST Primitive* e
               ((O_C.z * O_C.z) / ((*ellipsoid).size.z * (*ellipsoid).size.z)) - 1.f;
 
     float d = ((b * b) - (4.f * a * c));
-    if (d < 0.f || a == 0.f || b == 0.f || c == 0.f)
-    {
+    const float condition = d < 0.f || a == 0.f || b == 0.f || c == 0.f;
+    if (condition)
         return false;
-    }
     d = sqrt(d);
 
     float t1 = (-b + d) / (2.f * a);
@@ -945,6 +943,7 @@ static float4 skyboxMapping(const SceneInfo* sceneInfo, CONST Material* material
 {
     CONST Material* material = &materials[(*sceneInfo).skyboxMaterialId];
     float4 result = (*material).color;
+
     // solve the equation sphere-ray to find the intersections
     float4 dir = normalize((*ray).direction - (*ray).origin);
 
@@ -986,7 +985,8 @@ static float4 skyboxMapping(const SceneInfo* sceneInfo, CONST Material* material
         u %= (*material).textureMapping.x;
     if ((*material).textureMapping.y != 0)
         v %= (*material).textureMapping.y;
-    if (u >= 0 && u < (*material).textureMapping.x && v >= 0 && v < (*material).textureMapping.y)
+    const bool condition = u >= 0 && u < (*material).textureMapping.x && v >= 0 && v < (*material).textureMapping.y;
+    if (condition)
     {
         int A = (v * (*material).textureMapping.x + u) * (*material).textureMapping.w;
         int B = (*material).textureMapping.x * (*material).textureMapping.y * (*material).textureMapping.w;
@@ -1002,7 +1002,6 @@ static float4 skyboxMapping(const SceneInfo* sceneInfo, CONST Material* material
         result.y = g / 256.f;
         result.z = b / 256.f;
     }
-
     return result;
 }
 
@@ -1150,131 +1149,136 @@ Checkboard (*intersection)
 ________________________________________________________________________________
 */
 static bool planeIntersection(const SceneInfo* sceneInfo, CONST Primitive* primitive, CONST Material* materials,
-                              CONST BitmapBuffer* textures, const Ray* ray, float4* intersection, float4* normal,
-                              float* shadowIntensity, bool reverse)
+                       CONST BitmapBuffer* textures, const Ray* ray, float4* intersection, float4* normal,
+                       float* shadowIntensity, bool reverse)
 {
     bool collision = false;
-
     float reverted = reverse ? -1.f : 1.f;
     switch ((*primitive).type)
     {
-    case ptMagicCarpet:
-    case ptCheckboard:
-    {
-        (*intersection).y = (*primitive).p0.y;
-        float y = (*ray).origin.y - (*primitive).p0.y;
-        if (reverted * (*ray).direction.y < 0.f && reverted * (*ray).origin.y > reverted * (*primitive).p0.y)
+        case ptMagicCarpet:
+        case ptCheckboard:
         {
-            (*normal).x = 0.f;
-            (*normal).y = 1.f;
-            (*normal).z = 0.f;
-            (*intersection).x = (*ray).origin.x + y * (*ray).direction.x / -(*ray).direction.y;
-            (*intersection).z = (*ray).origin.z + y * (*ray).direction.z / -(*ray).direction.y;
-            collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
-                        fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
-        }
-        break;
-    }
-    case ptXZPlane:
-    {
-        float y = (*ray).origin.y - (*primitive).p0.y;
-        if (reverted * (*ray).direction.y < 0.f && reverted * (*ray).origin.y > reverted * (*primitive).p0.y)
-        {
-            (*normal).x = 0.f;
-            (*normal).y = 1.f;
-            (*normal).z = 0.f;
-            (*intersection).x = (*ray).origin.x + y * (*ray).direction.x / -(*ray).direction.y;
             (*intersection).y = (*primitive).p0.y;
-            (*intersection).z = (*ray).origin.z + y * (*ray).direction.z / -(*ray).direction.y;
-            collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
-                        fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            float y = (*ray).origin.y - (*primitive).p0.y;
+            if (reverted * (*ray).direction.y < 0.f && reverted * (*ray).origin.y > reverted * (*primitive).p0.y)
+            {
+                (*normal).x = 0.f;
+                (*normal).y = 1.f;
+                (*normal).z = 0.f;
+                (*intersection).x = (*ray).origin.x + y * (*ray).direction.x / -(*ray).direction.y;
+                (*intersection).z = (*ray).origin.z + y * (*ray).direction.z / -(*ray).direction.y;
+                collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
+                            fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            }
+            break;
         }
-        if (!collision && reverted * (*ray).direction.y > 0.f &&
-            reverted * (*ray).origin.y < reverted * (*primitive).p0.y)
+        case ptXZPlane:
         {
-            (*normal).x = 0.f;
-            (*normal).y = -1.f;
-            (*normal).z = 0.f;
-            (*intersection).x = (*ray).origin.x + y * (*ray).direction.x / -(*ray).direction.y;
-            (*intersection).y = (*primitive).p0.y;
-            (*intersection).z = (*ray).origin.z + y * (*ray).direction.z / -(*ray).direction.y;
-            collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
-                        fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            float y = (*ray).origin.y - (*primitive).p0.y;
+            if (reverted * (*ray).direction.y < 0.f && reverted * (*ray).origin.y > reverted * (*primitive).p0.y)
+            {
+                (*normal).x = 0.f;
+                (*normal).y = 1.f;
+                (*normal).z = 0.f;
+                (*intersection).x = (*ray).origin.x + y * (*ray).direction.x / -(*ray).direction.y;
+                (*intersection).y = (*primitive).p0.y;
+                (*intersection).z = (*ray).origin.z + y * (*ray).direction.z / -(*ray).direction.y;
+                collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
+                            fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            }
+            const bool condition =
+                !collision && reverted * (*ray).direction.y > 0.f &&
+                reverted * (*ray).origin.y < reverted * (*primitive).p0.y;
+            if (condition)
+            {
+                (*normal).x = 0.f;
+                (*normal).y = -1.f;
+                (*normal).z = 0.f;
+                (*intersection).x = (*ray).origin.x + y * (*ray).direction.x / -(*ray).direction.y;
+                (*intersection).y = (*primitive).p0.y;
+                (*intersection).z = (*ray).origin.z + y * (*ray).direction.z / -(*ray).direction.y;
+                collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
+                            fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            }
+            break;
         }
-        break;
-    }
-    case ptYZPlane:
-    {
-        float x = (*ray).origin.x - (*primitive).p0.x;
-        if (reverted * (*ray).direction.x < 0.f && reverted * (*ray).origin.x > reverted * (*primitive).p0.x)
+        case ptYZPlane:
         {
-            (*normal).x = 1.f;
-            (*normal).y = 0.f;
-            (*normal).z = 0.f;
-            (*intersection).x = (*primitive).p0.x;
-            (*intersection).y = (*ray).origin.y + x * (*ray).direction.y / -(*ray).direction.x;
-            (*intersection).z = (*ray).origin.z + x * (*ray).direction.z / -(*ray).direction.x;
-            collision = fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y &&
-                        fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            float x = (*ray).origin.x - (*primitive).p0.x;
+            if (reverted * (*ray).direction.x < 0.f && reverted * (*ray).origin.x > reverted * (*primitive).p0.x)
+            {
+                (*normal).x = 1.f;
+                (*normal).y = 0.f;
+                (*normal).z = 0.f;
+                (*intersection).x = (*primitive).p0.x;
+                (*intersection).y = (*ray).origin.y + x * (*ray).direction.y / -(*ray).direction.x;
+                (*intersection).z = (*ray).origin.z + x * (*ray).direction.z / -(*ray).direction.x;
+                collision = fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y &&
+                            fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            }
+            const bool condition =
+                !collision && reverted * (*ray).direction.x > 0.f &&
+                reverted * (*ray).origin.x < reverted * (*primitive).p0.x;
+            if (condition)
+            {
+                (*normal).x = -1.f;
+                (*normal).y = 0.f;
+                (*normal).z = 0.f;
+                (*intersection).x = (*primitive).p0.x;
+                (*intersection).y = (*ray).origin.y + x * (*ray).direction.y / -(*ray).direction.x;
+                (*intersection).z = (*ray).origin.z + x * (*ray).direction.z / -(*ray).direction.x;
+                collision = fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y &&
+                            fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
+            }
+            break;
         }
-        if (!collision && reverted * (*ray).direction.x > 0.f &&
-            reverted * (*ray).origin.x < reverted * (*primitive).p0.x)
+        case ptXYPlane:
         {
-            (*normal).x = -1.f;
-            (*normal).y = 0.f;
-            (*normal).z = 0.f;
-            (*intersection).x = (*primitive).p0.x;
-            (*intersection).y = (*ray).origin.y + x * (*ray).direction.y / -(*ray).direction.x;
-            (*intersection).z = (*ray).origin.z + x * (*ray).direction.z / -(*ray).direction.x;
-            collision = fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y &&
-                        fabs((*intersection).z - (*primitive).p0.z) < (*primitive).size.z;
-        }
-        break;
-    }
-    case ptXYPlane:
-    {
-        float z = (*ray).origin.z - (*primitive).p0.z;
-        if (reverted * (*ray).direction.z < 0.f && reverted * (*ray).origin.z > reverted * (*primitive).p0.z)
-        {
-            (*normal).x = 0.f;
-            (*normal).y = 0.f;
-            (*normal).z = 1.f;
-            (*intersection).z = (*primitive).p0.z;
-            (*intersection).x = (*ray).origin.x + z * (*ray).direction.x / -(*ray).direction.z;
-            (*intersection).y = (*ray).origin.y + z * (*ray).direction.y / -(*ray).direction.z;
-            collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
-                        fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y;
-        }
-        if (!collision && reverted * (*ray).direction.z > 0.f &&
-            reverted * (*ray).origin.z < reverted * (*primitive).p0.z)
-        {
-            (*normal).x = 0.f;
-            (*normal).y = 0.f;
-            (*normal).z = -1.f;
-            (*intersection).z = (*primitive).p0.z;
-            (*intersection).x = (*ray).origin.x + z * (*ray).direction.x / -(*ray).direction.z;
-            (*intersection).y = (*ray).origin.y + z * (*ray).direction.y / -(*ray).direction.z;
-            collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
-                        fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y;
-        }
-        break;
-    }
-    case ptCamera:
-    {
-        if (reverted * (*ray).direction.z < 0.f && reverted * (*ray).origin.z > reverted * (*primitive).p0.z)
-        {
-            (*normal).x = 0.f;
-            (*normal).y = 0.f;
-            (*normal).z = 1.f;
-            (*intersection).z = (*primitive).p0.z;
             float z = (*ray).origin.z - (*primitive).p0.z;
-            (*intersection).x = (*ray).origin.x + z * (*ray).direction.x / -(*ray).direction.z;
-            (*intersection).y = (*ray).origin.y + z * (*ray).direction.y / -(*ray).direction.z;
-            collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
-                        fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y;
+            if (reverted * (*ray).direction.z < 0.f && reverted * (*ray).origin.z > reverted * (*primitive).p0.z)
+            {
+                (*normal).x = 0.f;
+                (*normal).y = 0.f;
+                (*normal).z = 1.f;
+                (*intersection).z = (*primitive).p0.z;
+                (*intersection).x = (*ray).origin.x + z * (*ray).direction.x / -(*ray).direction.z;
+                (*intersection).y = (*ray).origin.y + z * (*ray).direction.y / -(*ray).direction.z;
+                collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
+                            fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y;
+            }
+            const bool condition =
+                !collision && reverted * (*ray).direction.z > 0.f &&
+                reverted * (*ray).origin.z < reverted * (*primitive).p0.z;
+            if (condition)
+            {
+                (*normal).x = 0.f;
+                (*normal).y = 0.f;
+                (*normal).z = -1.f;
+                (*intersection).z = (*primitive).p0.z;
+                (*intersection).x = (*ray).origin.x + z * (*ray).direction.x / -(*ray).direction.z;
+                (*intersection).y = (*ray).origin.y + z * (*ray).direction.y / -(*ray).direction.z;
+                collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
+                            fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y;
+            }
+            break;
         }
-        break;
-    }
+        case ptCamera:
+        {
+            if (reverted * (*ray).direction.z < 0.f && reverted * (*ray).origin.z > reverted * (*primitive).p0.z)
+            {
+                (*normal).x = 0.f;
+                (*normal).y = 0.f;
+                (*normal).z = 1.f;
+                (*intersection).z = (*primitive).p0.z;
+                float z = (*ray).origin.z - (*primitive).p0.z;
+                (*intersection).x = (*ray).origin.x + z * (*ray).direction.x / -(*ray).direction.z;
+                (*intersection).y = (*ray).origin.y + z * (*ray).direction.y / -(*ray).direction.z;
+                collision = fabs((*intersection).x - (*primitive).p0.x) < (*primitive).size.x &&
+                            fabs((*intersection).y - (*primitive).p0.y) < (*primitive).size.y;
+            }
+            break;
+        }
     }
 
     if (collision)
@@ -1295,9 +1299,7 @@ static bool planeIntersection(const SceneInfo* sceneInfo, CONST Primitive* primi
         }
 
         if ((color.x + color.y + color.z) / 3.f >= (*sceneInfo).transparentColor)
-        {
             collision = false;
-        }
     }
     return collision;
 }
@@ -1395,9 +1397,7 @@ static bool triangleIntersection(const SceneInfo* sceneInfo, CONST Primitive* tr
     float r = dot(dir, (*normal));
 
     if (r > 0.f)
-    {
         (*normal) *= -1.f;
-    }
 
     // Shadow management
     (*shadowIntensity) = 1.f;
@@ -1424,10 +1424,8 @@ static float4 intersectionShader(const SceneInfo* sceneInfo, CONST Primitive* pr
         case ptCylinder:
         {
             if (materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-            {
                 colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular,
                                                       attributes, advancedAttributes);
-            }
             break;
         }
         case ptEnvironment:
@@ -1435,19 +1433,15 @@ static float4 intersectionShader(const SceneInfo* sceneInfo, CONST Primitive* pr
         case ptEllipsoid:
         {
             if (materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-            {
                 colorAtIntersection = sphereUVMapping(primitive, materials, textures, intersection, normal, specular,
                                                       attributes, advancedAttributes);
-            }
             break;
         }
         case ptCheckboard:
         {
             if (materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-            {
                 colorAtIntersection = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal,
                                                   specular, attributes, advancedAttributes);
-            }
             else
             {
                 int x = (*sceneInfo).viewDistance + (((*intersection).x - (*primitive).p0.x) / (*primitive).size.x);
@@ -1479,31 +1473,23 @@ static float4 intersectionShader(const SceneInfo* sceneInfo, CONST Primitive* pr
         case ptCamera:
         {
             if (materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-            {
                 colorAtIntersection = cubeMapping(sceneInfo, primitive, materials, textures, intersection, normal,
                                                   specular, attributes, advancedAttributes);
-            }
             break;
         }
         case ptTriangle:
         {
             if (materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-            {
                 colorAtIntersection = triangleUVMapping(sceneInfo, primitive, materials, textures, intersection, areas,
                                                         normal, specular, attributes, advancedAttributes);
-            }
             break;
         }
         }
     }
     else
-    {
         if (materials[(*primitive).materialId].textureIds.x != TEXTURE_NONE)
-        {
             colorAtIntersection = triangleUVMapping(sceneInfo, primitive, materials, textures, intersection, areas,
                                                     normal, specular, attributes, advancedAttributes);
-        }
-    }
     return colorAtIntersection;
 }
 
@@ -1663,8 +1649,10 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
     (*normal) += bumpNormal;
     (*normal) = normalize((*normal));
 
-    if ((*sceneInfo).graphicsLevel == glNoShading || (*material).innerIllumination.x != 0.f ||
-        (*material).attributes.z != 0)
+    const bool condition =
+        (*sceneInfo).graphicsLevel == glNoShading || (*material).innerIllumination.x != 0.f ||
+        (*material).attributes.z != 0;
+    if (condition)
     {
         // Wireframe returns constant color
         return intersectionColor;
@@ -1687,9 +1675,11 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
 
                 int t = (index + (*sceneInfo).timestamp) % (MAX_BITMAP_SIZE - 3);
                 CONST Material* m = &materials[lightInformation[cptLamp].materialId];
-                if ((*sceneInfo).pathTracingIteration >= NB_MAX_ITERATIONS &&
+                const bool condition =
+                    (*sceneInfo).pathTracingIteration >= NB_MAX_ITERATIONS &&
                     lightInformation[cptLamp].primitiveId >= 0 &&
-                    lightInformation[cptLamp].primitiveId < nbActivePrimitives)
+                    lightInformation[cptLamp].primitiveId < nbActivePrimitives;
+                if (condition)
                 {
                     float a = (*m).innerIllumination.y * 10.f * (*sceneInfo).pathTracingIteration /
                               (float)((*sceneInfo).maxPathTracingIterations);
@@ -1700,7 +1690,6 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
 
                 float4 lightRay = center - (*intersection);
                 float lightRayLength = length(lightRay);
-
                 if (lightRayLength < (*m).innerIllumination.z)
                 {
                     float4 shadowColor = {0.f, 0.f, 0.f, 0.f};
@@ -1711,16 +1700,15 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
                     lightRay = normalize(lightRay);
                     float lambert = dot((*normal), lightRay);
 
-                    if (lambert > 0.f && (*sceneInfo).graphicsLevel > glReflectionsAndRefractions &&
-                        iteration <
-                            4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
-                        (*material).innerIllumination.x == 0.f)
-                    {
+                    const bool condition =
+                        lambert > 0.f && (*sceneInfo).graphicsLevel > glReflectionsAndRefractions &&
+                        iteration < 4 && // No need to process shadows after 4 generations of rays... cannot be seen anyway.
+                        (*material).innerIllumination.x == 0.f;
+                    if (condition)
                         (*shadowIntensity) =
                             processShadows(sceneInfo, boundingBoxes, nbActiveBoxes, primitives, materials, textures,
                                            nbActivePrimitives, center, (*intersection),
                                            lightInformation[cptLamp].primitiveId, iteration, &shadowColor);
-                    }
 
                     if ((*sceneInfo).graphicsLevel > glNoShading)
                     {
@@ -1741,10 +1729,9 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
                             lambert *= lightInformation[cptLamp].color.w;
 
                         if ((*material).innerIllumination.w != 0.f)
-                        {
                             // Randomize lamp intensity depending on material noise, for more realistic rendering
                             lambert *= (1.f + randoms[t] * (*material).innerIllumination.w * 100.f);
-                        }
+
                         lambert *= (1.f - (*shadowIntensity));
                         lambert += (*sceneInfo).backgroundColor.w;
                         lambert *= (1.f - photonEnergy);
@@ -1752,14 +1739,18 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
                         // Lighted object, not in the shades
                         lampsColor += lambert * lightInformation[cptLamp].color - shadowColor;
 
-                        if ((*sceneInfo).graphicsLevel > glPhong && (*shadowIntensity) < (*sceneInfo).shadowIntensity)
+                        const bool condition =
+                            (*sceneInfo).graphicsLevel > glPhong &&
+                            (*shadowIntensity) < (*sceneInfo).shadowIntensity;
+
+                        if (condition)
                         {
                             // --------------------------------------------------------------------------------
                             // Blinn - Phong
                             // --------------------------------------------------------------------------------
                             float4 viewRay = normalize((*intersection) - origin);
                             float4 blinnDir = lightRay - viewRay;
-                            float temp = sqrt(dot(blinnDir, blinnDir));
+                            const float temp = sqrt(dot(blinnDir, blinnDir));
                             if (temp != 0.f)
                             {
                                 // Specular reflection
@@ -1794,9 +1785,7 @@ static float4 primitiveShader(const int index, const SceneInfo* sceneInfo, const
 
     // Ambient occlusion
     if ((*material).advancedTextureIds.z != TEXTURE_NONE)
-    {
         (*closestColor) *= advancedAttributes.x;
-    }
 
     // Saturate color
     saturateVector(closestColor);
@@ -1825,8 +1814,8 @@ inline bool intersectionWithPrimitives(const SceneInfo* sceneInfo, CONST Boundin
     r.direction = (*ray).direction - (*ray).origin;
     computeRayAttributes(&r);
 
-    float4 intersection = {0.f, 0.f, 0.f, 0.f};
-    float4 normal = {0.f, 0.f, 0.f, 0.f};
+    float4 intersection; // = {0.f, 0.f, 0.f, 0.f};
+    float4 normal; // = {0.f, 0.f, 0.f, 0.f};
     bool i = false;
     float shadowIntensity = 0.f;
 
@@ -1844,10 +1833,11 @@ inline bool intersectionWithPrimitives(const SceneInfo* sceneInfo, CONST Boundin
                 {
                     CONST Primitive* primitive = &primitives[(*box).startIndex + cptPrimitives];
                     CONST Material* material = &materials[(*primitive).materialId];
-                    if ((*material).attributes.x == 0 ||
+                    const bool condition =
+                        (*material).attributes.x == 0 ||
                         ((*material).attributes.x == 1 &&
-                         currentMaterialId != (*primitive).materialId)) // !!!! TEST SHALL BE REMOVED TO INCREASE
-                                                                        // TRANSPARENCY QUALITY !!!
+                         currentMaterialId != (*primitive).materialId);
+                    if (condition) // !!!! TEST SHALL BE REMOVED TO INCREASE TRANSPARENCY QUALITY !!!
                     {
                         float4 areas = {0.f, 0.f, 0.f, 0.f};
                         i = false;
@@ -1879,13 +1869,15 @@ inline bool intersectionWithPrimitives(const SceneInfo* sceneInfo, CONST Boundin
                             }
                         }
                         else
-                        {
                             i = triangleIntersection(sceneInfo, primitive, &r, &intersection, &normal, &areas,
                                                      &shadowIntensity, false);
-                        }
 
-                        float distance = length(intersection - r.origin);
-                        if (i && distance > (*sceneInfo).geometryEpsilon && distance < minDistance)
+                        const float distance = length(intersection - r.origin);
+                        const bool condition =
+                            i &&
+                            distance > (*sceneInfo).geometryEpsilon &&
+                            distance < minDistance;
+                        if (condition)
                         {
                             // Only keep intersection with the closest object
                             minDistance = distance;
@@ -1899,15 +1891,11 @@ inline bool intersectionWithPrimitives(const SceneInfo* sceneInfo, CONST Boundin
                 }
             }
             else
-            {
                 (*colorBox) += materials[(*box).startIndex % NB_MAX_MATERIALS].color / 50.f;
-            }
             ++cptBoxes;
         }
         else
-        {
             cptBoxes += (*box).indexForNextBox.x;
-        }
     }
     return intersections;
 }
@@ -2054,14 +2042,6 @@ inline float4 intersectionsWithPrimitives(const int index, const SceneInfo* scen
     {
         if (t < T)
         {
-            /*
-            {
-                color.x += colors[C].x*a;
-                color.y += colors[C].y*a;
-                color.z += colors[C].z*a;
-            }
-            else
-            */
             if (C % 2 == 0)
             {
                 color.x -= a;
@@ -2085,25 +2065,6 @@ inline float4 intersectionsWithPrimitives(const int index, const SceneInfo* scen
         }
     }
 
-    /*
-       for( int i=0; i<MAXDEPTH-1; ++i)
-       {
-          if( i%2==0 )
-          {
-             D=200.f*(colors[i+1].w-colors[i].w);
-             totalD += D;
-             //if( totalD > 1000000.f ) break;
-             if( D>0.f )
-             {
-                 float a=0.001f*(*sceneInfo).viewDistance-D/(*sceneInfo).viewDistance;
-                 color.x += colors[i].x*a;
-                 color.y += colors[i].y*a;
-                 color.z += colors[i].z*a;
-             }
-          }
-       }
-    */
-    // color.w = 0.f;
     color = normalize(color);
     color.w = colors[0].w;
     return color;
@@ -2149,7 +2110,6 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
                                CONST PrimitiveXYIdBuffer* primitiveXYId)
 {
     float4 intersectionColor = {0.f, 0.f, 0.f, 0.f};
-
     float4 closestIntersection = {0.f, 0.f, 0.f, 0.f};
     float4 firstIntersection = {0.f, 0.f, 0.f, 0.f};
     float4 normal = {0.f, 0.f, 0.f, 0.f};
@@ -2352,9 +2312,7 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
         {
             // Background
             if ((*sceneInfo).skyboxMaterialId != MATERIAL_NONE)
-            {
                 colors[iteration] = skyboxMapping(sceneInfo, materials, textures, &rayOrigin);
-            }
             else
             {
                 if ((*sceneInfo).extendedGeometry == 2)
@@ -2366,9 +2324,7 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
                     colors[iteration] = (1.f - angle) * (*sceneInfo).backgroundColor;
                 }
                 else
-                {
                     colors[iteration] = (*sceneInfo).backgroundColor;
-                }
             }
             colorContributions[iteration] = 1.f;
         }
@@ -2398,8 +2354,10 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
     }
 
     bool test = true;
-    if (((*sceneInfo).advancedIllumination == aiBasic || (*sceneInfo).advancedIllumination == aiFull) &&
-        (*sceneInfo).pathTracingIteration >= NB_MAX_ITERATIONS)
+    const bool condition =
+        ((*sceneInfo).advancedIllumination == aiBasic || (*sceneInfo).advancedIllumination == aiFull) &&
+        (*sceneInfo).pathTracingIteration >= NB_MAX_ITERATIONS;
+    if (condition)
     {
         if ((*sceneInfo).advancedIllumination == aiFull)
         {
@@ -2416,35 +2374,6 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
                     pathTracingColor.z = -1.f;
                     pathTracingRatio = 1.f;
                 }
-                /*
-                else
-                {
-                    if(primitives[closestPrimitive].materialId!=MATERIAL_NONE)
-                    {
-                       CONST Material* material = &materials[primitives[closestPrimitive].materialId];
-                       if( (*material).innerIllumination.x!=0.f )
-                       {
-                          colors[0]=(*material).color*(*material).innerIllumination.x*pathTracingRatio;
-                          test=false;
-                       }
-                    }
-                    if(test)
-                    {
-                       float4 attributes;
-                       pathTracingColor = primitiveShader(
-                          index,
-                          sceneInfo, postProcessingInfo,
-                          boundingBoxes, nbActiveBoxes,
-                          primitives, nbActivePrimitives,
-                          lightInformation, lightInformationSize, nbActiveLamps,
-                          materials, textures, randoms,
-                          pathTracingRay.origin, &normal, closestPrimitive,
-                          &closestIntersection, areas, &closestColor,
-                          iteration, &refractionFromColor, &shadowIntensity, &rBlinn, &attributes );
-                       pathTracingRatio*=STANDARD_LUNINANCE_STRENGTH;
-                    }
-                }
-                */
             }
             else
             {
@@ -2466,24 +2395,18 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
             }
         }
         if (test)
-        {
             colors[0] += pathTracingColor * pathTracingRatio;
-        }
     }
 
     if (test)
     {
         for (int i = iteration - 2; i >= 0; --i)
-        {
             colors[i] = colors[i] * (1.f - colorContributions[i]) + colors[i + 1] * colorContributions[i];
-        }
         intersectionColor = colors[0];
         intersectionColor += recursiveBlinn;
     }
     else
-    {
         intersectionColor = colors[0];
-    }
 
     float len = length(firstIntersection - (*ray).origin);
     (*depthOfField) = len;
@@ -2491,9 +2414,7 @@ inline float4 launchRayTracing(const int index, CONST BoundingBox* boundingBoxes
     {
         CONST Primitive* primitive = &primitives[closestPrimitive];
         if (materials[(*primitive).materialId].attributes.z == 1) // Wireframe
-        {
             len = (*sceneInfo).viewDistance;
-        }
     }
 
     // --------------------------------------------------
@@ -2545,10 +2466,12 @@ __kernel void k_standardRenderer(const int2 occupancyParameters, int device_spli
 
     // Beware out of bounds error!
     // And only process pixels that need extra rendering
-    if (index >= sceneInfo.size.x * sceneInfo.size.y / occupancyParameters.x ||
+    const bool condition =
+        index >= sceneInfo.size.x * sceneInfo.size.y / occupancyParameters.x ||
         (sceneInfo.pathTracingIteration > primitiveXYIds[index].y && // Still need to process iterations
-         primitiveXYIds[index].w == 0 && // Shadows? if so, compute soft shadows by randomizing light positions
-         sceneInfo.pathTracingIteration > 0 && sceneInfo.pathTracingIteration <= NB_MAX_ITERATIONS))
+         primitiveXYIds[index].w == 0 &&                             // Shadows? if so, compute soft shadows by randomizing light positions
+         sceneInfo.pathTracingIteration > 0 && sceneInfo.pathTracingIteration <= NB_MAX_ITERATIONS);
+    if (condition)
         return;
 
     Ray ray;
@@ -2557,9 +2480,7 @@ __kernel void k_standardRenderer(const int2 occupancyParameters, int device_spli
 
     float4 rotationCenter = {0.f, 0.f, 0.f, 0.f};
     if (sceneInfo.cameraType == ctVR)
-    {
         rotationCenter = origin;
-    }
 
     bool antialiasingActivated = (sceneInfo.cameraType == ctAntialiazed);
 
@@ -2625,14 +2546,10 @@ __kernel void k_standardRenderer(const int2 occupancyParameters, int device_spli
     }
 
     if (antialiasingActivated)
-    {
         color /= 5.f;
-    }
 
     if (sceneInfo.pathTracingIteration == 0)
-    {
         postProcessingBuffer[index].colorInfo.w = dof;
-    }
 
     if (sceneInfo.pathTracingIteration <= NB_MAX_ITERATIONS)
     {
@@ -2673,10 +2590,13 @@ __kernel void k_volumeRenderer(const int2 occupancyParameters, int device_split,
 
     // Beware out of bounds error!
     // And only process pixels that need extra rendering
-    if (index >= sceneInfo.size.x * sceneInfo.size.y / occupancyParameters.x ||
+    const bool condition =
+        index >= sceneInfo.size.x * sceneInfo.size.y / occupancyParameters.x ||
         (sceneInfo.pathTracingIteration > primitiveXYIds[index].y && // Still need to process iterations
          primitiveXYIds[index].w == 0 && // Shadows? if so, compute soft shadows by randomizing light positions
-         sceneInfo.pathTracingIteration > 0 && sceneInfo.pathTracingIteration <= NB_MAX_ITERATIONS))
+         sceneInfo.pathTracingIteration > 0 && sceneInfo.pathTracingIteration <= NB_MAX_ITERATIONS);
+
+    if (condition)
         return;
 
     Ray ray;
@@ -2685,9 +2605,7 @@ __kernel void k_volumeRenderer(const int2 occupancyParameters, int device_split,
 
     float4 rotationCenter = {0.f, 0.f, 0.f, 0.f};
     if (sceneInfo.cameraType == ctVR)
-    {
         rotationCenter = origin;
-    }
 
     bool antialiasingActivated = (sceneInfo.cameraType == ctAntialiazed);
 
@@ -2754,14 +2672,10 @@ __kernel void k_volumeRenderer(const int2 occupancyParameters, int device_split,
     }
 
     if (antialiasingActivated)
-    {
         color /= 5.f;
-    }
 
     if (sceneInfo.pathTracingIteration == 0)
-    {
         postProcessingBuffer[index].colorInfo.w = dof;
-    }
 
     if (sceneInfo.pathTracingIteration <= NB_MAX_ITERATIONS)
     {
@@ -2806,9 +2720,7 @@ __kernel void k_anaglyphRenderer(const int2 occupancyParameters, int device_spli
 
     float4 rotationCenter = {0.f, 0.f, 0.f, 0.f};
     if (sceneInfo.cameraType == ctVR)
-    {
         rotationCenter = origin;
-    }
 
     if (sceneInfo.pathTracingIteration == 0)
     {
@@ -2912,9 +2824,7 @@ __kernel void k_3DVisionRenderer(const int2 occupancyParameters, int device_spli
 
     float4 rotationCenter = {0.f, 0.f, 0.f, 0.f};
     if (sceneInfo.cameraType == ctVR)
-    {
         rotationCenter = origin;
-    }
 
     if (sceneInfo.pathTracingIteration == 0)
     {
@@ -3026,9 +2936,7 @@ __kernel void k_default(const int2 occupancyParameters, const SceneInfo sceneInf
 
     float4 localColor = postProcessingBuffer[index].colorInfo;
     if (sceneInfo.pathTracingIteration > NB_MAX_ITERATIONS)
-    {
         localColor /= (float)(sceneInfo.pathTracingIteration - NB_MAX_ITERATIONS + 1);
-    }
     makeColor(&sceneInfo, &localColor, bitmap, index);
 }
 
@@ -3038,7 +2946,7 @@ ________________________________________________________________________________
 Post Processing Effect: Depth of field
 ________________________________________________________________________________
 */
-__kernel void k_depthOfField(const int2 occupancyParameters, SceneInfo sceneInfo, PostProcessingInfo postProcessingInfo,
+__kernel void k_depthOfField(const int2 occupancyParameters, const SceneInfo sceneInfo, const PostProcessingInfo postProcessingInfo,
                              CONST PostProcessingBuffer* postProcessingBuffer, CONST RandomBuffer* randoms,
                              CONST BitmapBuffer* bitmap)
 {
@@ -3064,22 +2972,16 @@ __kernel void k_depthOfField(const int2 occupancyParameters, SceneInfo sceneInfo
         {
             int localIndex = yy * sceneInfo.size.x + xx;
             if (localIndex >= 0 && localIndex < wh)
-            {
                 localColor += postProcessingBuffer[localIndex].colorInfo;
-            }
         }
         else
-        {
             localColor += postProcessingBuffer[index].colorInfo;
-        }
     }
     localColor /= postProcessingInfo.param3;
 
     if (sceneInfo.pathTracingIteration > NB_MAX_ITERATIONS)
         localColor /= (float)(sceneInfo.pathTracingIteration - NB_MAX_ITERATIONS + 1);
-
     localColor.w = 1.f;
-
     makeColor(&sceneInfo, &localColor, bitmap, index);
 }
 
@@ -3122,14 +3024,10 @@ __kernel void k_ambientOcclusion(const int2 occupancyParameters, SceneInfo scene
             {
                 int localIndex = yy * sceneInfo.size.x + xx;
                 if (postProcessingBuffer[localIndex].colorInfo.w < depth)
-                {
                     occ += 1.f - (postProcessingBuffer[localIndex].colorInfo.w - depth) / sceneInfo.viewDistance;
-                }
             }
             else
-            {
                 occ += 1.f;
-            }
         }
     }
     occ /= 5.f * c;
@@ -3137,9 +3035,8 @@ __kernel void k_ambientOcclusion(const int2 occupancyParameters, SceneInfo scene
     occ = (occ > 1.f) ? 1.f : occ;
     occ = (occ < 0.f) ? 0.f : occ;
     if (sceneInfo.pathTracingIteration > NB_MAX_ITERATIONS)
-    {
         localColor /= (float)(sceneInfo.pathTracingIteration - NB_MAX_ITERATIONS + 1);
-    }
+
     localColor.x -= occ;
     localColor.y -= occ;
     localColor.z -= occ;
@@ -3169,51 +3066,10 @@ __kernel void k_radiosity(const int2 occupancyParameters, SceneInfo sceneInfo, P
         return;
 
     float4 localColor = {0.f, 0.f, 0.f, 0.f};
-#if 1
     float a = (1.f / NB_MAX_ITERATIONS) * primitiveXYIds[index].y;
-    /*
-    float r=0.f,g=0.f,b=0.f;
-    switch(primitiveXYIds[index].y)
-    {
-    case 1 : r=1.f;g=1.f;b=1.f; break; // white
-    case 2 : r=1.f;g=0.f;b=0.f; break; // red
-    case 3 : r=0.f;g=1.f;b=0.f; break; // green
-    case 4 : r=0.f;g=0.f;b=1.f; break; // blue
-    case 5 : r=1.f;g=1.f;b=0.f; break; // yellow
-    case 6 : r=0.f;g=1.f;b=1.f; break; // purple
-    case 7 : r=1.f;g=0.f;b=1.f; break; // ??
-    case 8 : r=0.5f;g=0.5f;b=0.5f; break;
-    case 9 : r=0.5f;g=0.f;b=0.f; break;
-    case 10: r=0.f;g=0.5f;b=0.f; break;
-    case 11: r=0.f;g=0.f;b=0.5f; break;
-    }
-    */
     localColor.x = a;
     localColor.y = a;
     localColor.z = a;
-#else
-    int wh = sceneInfo.size.x * sceneInfo.size.y;
-
-    float div = (sceneInfo.pathTracingIteration > NB_MAX_ITERATIONS)
-                    ? (float)(sceneInfo.pathTracingIteration - NB_MAX_ITERATIONS + 1)
-                    : 1.f;
-
-    for (int i = 0; i < postProcessingInfo.param3; ++i)
-    {
-        int ix = (i + sceneInfo.timestamp + sceneInfo.pathTracingIteration) % wh;
-        int iy = (i + sceneInfo.timestamp + sceneInfo.size.x) % wh;
-        int xx = x + randoms[ix] * postProcessingInfo.param2;
-        int yy = y + randoms[iy] * postProcessingInfo.param2;
-        localColor += postProcessingBuffer[index].colorInfo;
-        if (xx >= 0 && xx < sceneInfo.size.x && yy >= 0 && yy < sceneInfo.size.y)
-        {
-            int localIndex = yy * sceneInfo.size.x + xx;
-            localColor += div * primitiveXYIds[localIndex].z / 255.f;
-        }
-    }
-    localColor /= postProcessingInfo.param3;
-    localColor /= div;
-#endif // 1
     localColor.w = 1.f;
     makeColor(&sceneInfo, &localColor, bitmap, index);
 }
@@ -3234,49 +3090,59 @@ __kernel void k_filter(const int2 occupancyParameters, SceneInfo sceneInfo, Post
     if (index >= sceneInfo.size.x * sceneInfo.size.y / occupancyParameters.x)
         return;
 
-// Filters
-#define NB_FILTERS 6
-    const int2 filterSize[NB_FILTERS] = {{3, 3}, {5, 5}, {3, 3}, {3, 3}, {5, 5}, {5, 5}};
+    // Filters
+    #define NB_FILTERS 6
+    const int2 filterSize[NB_FILTERS]; // = {{3, 3}, {5, 5}, {3, 3}, {3, 3}, {5, 5}, {5, 5}};
 
-    const float2 filterFactors[NB_FILTERS] = {{1.f, 128.f}, {1.f, 0.f},  {1.f, 0.f},
-                                              {1.f, 0.f},   {0.2f, 0.f}, {0.125f, 0.f}}; // Factor and Bias
+    const float2 filterFactors[NB_FILTERS];
+    // = {{1.f, 128.f}, {1.f, 0.f},  {1.f, 0.f},
+    // {1.f, 0.f},   {0.2f, 0.f}, {0.125f, 0.f}}; // Factor and Bias
 
-    const float filterInfo[NB_FILTERS][5][5] = {{// Emboss
-                                                 {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f},
-                                                 {-1.0f, 0.0f, 1.0f, 0.0f, 0.0f},
-                                                 {0.0f, 1.0f, 1.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
-                                                {// Find edges
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {-1.0f, -1.0f, 2.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
-                                                {// Sharpen
-                                                 {-1.0f, -1.0f, -1.0f, 0.0f, 0.0f},
-                                                 {-1.0f, 9.0f, -1.0f, 0.0f, 0.0f},
-                                                 {-1.0f, -1.0f, -1.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
-                                                {// Blur
-                                                 {0.0f, 0.2f, 0.0f, 0.0f, 0.0f},
-                                                 {0.2f, 0.2f, 0.2f, 0.0f, 0.0f},
-                                                 {0.0f, 0.2f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
-                                                {// Motion Blur
-                                                 {1.0f, 0.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 1.0f, 0.0f},
-                                                 {0.0f, 0.0f, 0.0f, 0.0f, 1.0f}},
-                                                {// Subtle Sharpen
-                                                 {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f},
-                                                 {-1.0f, 2.0f, 2.0f, 2.0f, -1.0f},
-                                                 {-1.0f, 2.0f, 8.0f, 2.0f, -1.0f},
-                                                 {-1.0f, 2.0f, 2.0f, 2.0f, -1.0f},
-                                                 {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f}}};
+    const float filterInfo[NB_FILTERS][5][5] =
+    {
+        {// Emboss
+            {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f},
+            {-1.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
+        },
+        {// Find edges
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {-1.0f, -1.0f, 2.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
+        },
+        {// Sharpen
+            {-1.0f, -1.0f, -1.0f, 0.0f, 0.0f},
+            {-1.0f, 9.0f, -1.0f, 0.0f, 0.0f},
+            {-1.0f, -1.0f, -1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
+        },
+        {// Blur
+            {0.0f, 0.2f, 0.0f, 0.0f, 0.0f},
+            {0.2f, 0.2f, 0.2f, 0.0f, 0.0f},
+            {0.0f, 0.2f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 0.0f}
+        },
+        {// Motion Blur
+            {1.0f, 0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 1.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f, 1.0f}
+        },
+        {// Subtle Sharpen
+            {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f},
+            {-1.0f, 2.0f, 2.0f, 2.0f, -1.0f},
+            {-1.0f, 2.0f, 8.0f, 2.0f, -1.0f},
+            {-1.0f, 2.0f, 2.0f, 2.0f, -1.0f},
+            {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f}
+        }
+    };
 
     float4 localColor = {0.f, 0.f, 0.f, 0.f};
     float4 color = {0.f, 0.f, 0.f, 0.f};
@@ -3295,9 +3161,7 @@ __kernel void k_filter(const int2 occupancyParameters, SceneInfo sceneInfo, Post
 
                 float4 c = postProcessingBuffer[localIndex].colorInfo;
                 if (sceneInfo.pathTracingIteration > NB_MAX_ITERATIONS)
-                {
                     c /= (float)(sceneInfo.pathTracingIteration - NB_MAX_ITERATIONS + 1);
-                }
 
                 localColor.x += c.x * filterInfo[postProcessingInfo.param3][filterX][filterY];
                 localColor.y += c.y * filterInfo[postProcessingInfo.param3][filterX][filterY];
@@ -3313,12 +3177,11 @@ __kernel void k_filter(const int2 occupancyParameters, SceneInfo sceneInfo, Post
     }
 
     saturateVector(&color);
-
     localColor.w = 1.f;
-
     makeColor(&sceneInfo, &color, bitmap, index);
 }
 
+#ifdef DEBUG
 /*
 ________________________________________________________________________________
 
@@ -3327,7 +3190,6 @@ ________________________________________________________________________________
 */
 __kernel void k_alignment()
 {
-#ifdef DEBUG
     printf("OCL  [1] --== OCL Data structures ==--\n");
     printf("OCL  [1] Ray               :  %i\n", sizeof(Ray));
     printf("OCL  [1] SceneInfo         :  %i\n", sizeof(SceneInfo));
@@ -3338,5 +3200,5 @@ __kernel void k_alignment()
     printf("OCL  [1] Material          :  %i\n", sizeof(Material));
     printf("OCL  [1] LightInformation  :  %i\n", sizeof(LightInformation));
     printf("OCL  [1] -----------------------------\n");
-#endif
 }
+#endif
