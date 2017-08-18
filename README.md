@@ -21,7 +21,7 @@ usage: solrViewer
 ### Prerequeries
 
 #### Mandatory
-- CMake 3.x
+- CMake 3.5
 - Glew 2.x
 - Glut 3.7
 - Cuda 8.0 or OpenCL 1.2
@@ -36,7 +36,21 @@ usage: solrViewer
 ```
 mkdir Build
 cd Build
-cmake .. 
+cmake .. -DCMAKE_PREFIX_PATH=<installation-folder>
+make install
+```
+Note that the installation process with deploy extra files that are needed by the Sol-R viewer. Typically, textures, environment maps and OpenCL kernels. Therefore, it is required to run the solrViewer application from the installation folder.
+
+### Run
+```
+<installation-folder>/bin/solrViewer
+```
+
+### Selecting CUDA or OpenCL
+
+By default, the OpenCL engine is selected but this can be changed by modifying the SOLR_ENGINE option, using either ccmake or the following cmake option:
+```
+cmake .. -DSOLR_ENGINE:STRING=CUDA
 ```
 
 Optional dependencies can be activated using the following cmake options:
@@ -54,6 +68,7 @@ cmake .. -DSOLR_KINECT_ENABLED=ON -DSOLR_OCULUS_ENABLED=ON -DSOLR_SIXENSE_ENABLE
 ![Sol-R_007](doc/images/Sol-R_007.png)
 ![Sol-R_008](doc/images/Sol-R_008.png)
 ![Sol-R_009](doc/images/Sol-R_009.png)
+![Sol-R_009](doc/images/Sol-R_010.png)
 
 ### Supported platforms
 
