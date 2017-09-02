@@ -1,0 +1,13 @@
+Build
+generated
+.settings
+*~
+*#
+*.autosave
+*.files
+*.config
+*.includes
+*.creator*
+*.user
+.DS_Store
+.vs*

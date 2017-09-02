@@ -1,0 +1,963 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug Cuda Kinect|Win32">
+      <Configuration>Debug Cuda Kinect</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug Cuda Kinect|x64">
+      <Configuration>Debug Cuda Kinect</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug Cuda|Win32">
+      <Configuration>Debug Cuda</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug Cuda|x64">
+      <Configuration>Debug Cuda</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug OpenCL|Win32">
+      <Configuration>Debug OpenCL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug OpenCL|x64">
+      <Configuration>Debug OpenCL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Cuda Kinect|Win32">
+      <Configuration>Release Cuda Kinect</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Cuda Kinect|x64">
+      <Configuration>Release Cuda Kinect</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Cuda|Win32">
+      <Configuration>Release Cuda</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Cuda|x64">
+      <Configuration>Release Cuda</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release OpenCL|Win32">
+      <Configuration>Release OpenCL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release OpenCL|x64">
+      <Configuration>Release OpenCL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E7E7DE87-23F0-4BF1-806F-E0A0068229FE}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>CudaRaytracerTester</RootNamespace>
+    <ProjectName>Raytracer</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release Kinect|Win32'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|x64'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'" Label="Configuration">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release Kinect|x64'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|Win32'" Label="Configuration">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <UseOfMfc>Dynamic</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SoL_R_Cuda_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SoL_R_Cuda_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SoL_R_Cuda_Kinect_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda_Kinect_d</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\inc;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SoL_R_Cuda</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\inc;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\inc;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\inc;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v5.5\common\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.5\lib\x64;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SoL_R_OpenCL</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_OpenCL</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>SoL_R_Cuda_Kinect</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">
+    <IncludePath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\inc;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\inc;C:\local\nVidia\win32\NVIDIA GPU Computing Toolkit\CUDA\v4.0\include\;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\shared\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\OpenCL\common\lib\Win32;C:\local\nVidia\win32\NVIDIA GPU Computing SDK 4.0\C\common\lib\win32;$(LibraryPath)</LibraryPath>
+    <LinkIncremental>false</LinkIncremental>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)_Cuda_Kinect</TargetName>
+    <OutDir>$(KITTING)\bin\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|Win32'">
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|x64'">
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetName>$(ProjectName)_Cuda_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|x64'">
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|Win32'">
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>SoL_R</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>$(ProjectName)_Cuda</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_CUDA;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>User32.lib;RayTracingEngine_Cuda_d.lib;cudart.lib;glew64.lib;Shell32.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RayTracingEngine_Cuda_d.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_OPENCL;_USE_WIIMOTE;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RayTracingEngine_OpenCL_d.lib;glew64.lib;Shell32.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_USE_WIIMOTE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RayTracingEngine_Cuda_d.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_USE_WIIMOTE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RayTracingEngine_Cuda_d.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_USE_WIIMOTE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>RayTracingEngine_Cuda_d.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_CUDA;USE_KINECT;USE_OCULUS;USE_WIIMOTE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>User32.lib;RayTracingEngine_Cuda_Kinect_d.lib;Kinect10.lib;cudart.lib;glew64.lib;Shell32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Cuda Kinect|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_CUDA;USE_KINECT;USE_OCULUS;USE_WIIMOTE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Winmm.lib;Shell32.lib;Ole32.lib;User32.lib;libovr64d.lib;CgWiimoteLib.lib;hid.lib;setupapi.lib;RayTracingEngine_Cuda_Kinect_d.lib;Kinect10.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <GPUDebugInfo>true</GPUDebugInfo>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_CUDA;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>User32.lib;RayTracingEngine_Cuda.lib;cudart.lib;glew64.lib;Shell32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>Winmm.lib;Shell32.lib;Ole32.lib;User32.lib;libovr.lib;RayTracingEngine_Cuda.lib;cudart.lib;glew32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_WIIMOTE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>RayTracingEngine_Cuda.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_WIIMOTE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>RayTracingEngine_Cuda.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_OPENCL;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>User32.lib;RayTracingEngine_OpenCL.lib;glew64.lib;Shell32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_OPENCL;_USE_WIIMOTE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>RayTracingEngine_OpenCL.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>
+      </IgnoreAllDefaultLibraries>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_KINECT;USE_CUDA;WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>User32.lib;RayTracingEngine_Cuda_Kinect.lib;Kinect10.lib;cudart.lib;glew64.lib;Shell32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Cuda Kinect|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>USE_KINECT;USE_WIIMOTE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../RaytracingEngine/trunk;%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>Winmm.lib;Shell32.lib;Ole32.lib;User32.lib;libovr64.lib;CgWiimoteLib.lib;hid.lib;setupapi.lib;RayTracingEngine_Cuda_Kinect.lib;Kinect10.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(PROJECT_OUTDIR);$(OutDir)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile />
+    <CudaCompile>
+      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <FastMath>true</FastMath>
+    </CudaCompile>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew32.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|Win32'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew32.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew32.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|x64'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Kinect|Win32'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalDependencies>RayTracingEngine_d.lib;;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|x64'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Kinect|Win32'">
+    <Link>
+      <AdditionalDependencies>cudart.lib;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <AdditionalDependencies>RayTracingEngine.lib;glew64.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Link>
+      <AdditionalDependencies>CgWiimoteLib.lib;hid.lib;setupapi.lib;RayTracingEngine.lib;cudart.lib;glew64.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="AnimationScene.cpp" />
+    <ClCompile Include="CausticScene.cpp" />
+    <ClCompile Include="ColumnScene.cpp" />
+    <ClCompile Include="CornellBoxScene.cpp" />
+    <ClCompile Include="CubesScene.cpp" />
+    <ClCompile Include="CudaRayTracer.cpp" />
+    <ClCompile Include="CylinderScene.cpp" />
+    <ClCompile Include="DoggyStyleScene.cpp" />
+    <ClCompile Include="FractalScene.cpp" />
+    <ClCompile Include="FractalsScene.cpp" />
+    <ClCompile Include="GalleryScene.cpp" />
+    <ClCompile Include="GraphScene.cpp" />
+    <ClCompile Include="KinectFaceTrackingScene.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="MetaballsScene.cpp" />
+    <ClCompile Include="MoleculeScene.cpp" />
+    <ClCompile Include="ObjScene.cpp" />
+    <ClCompile Include="PerpetualMotionScene.cpp" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="SpheresScene.cpp" />
+    <ClCompile Include="SpindizzyScene.cpp" />
+    <ClCompile Include="SwcScene.cpp" />
+    <ClCompile Include="TransparentScene.cpp" />
+    <ClCompile Include="TrefoilKnotScene.cpp" />
+    <ClCompile Include="TrianglesScene.cpp" />
+    <ClCompile Include="WaterScene.cpp" />
+    <ClCompile Include="XmasScene.cpp" />
+    <ClCompile Include="Year2013.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AnimationScene.h" />
+    <ClInclude Include="CausticScene.h" />
+    <ClInclude Include="ColumnScene.h" />
+    <ClInclude Include="CornellBoxScene.h" />
+    <ClInclude Include="CubesScene.h" />
+    <ClInclude Include="CylinderScene.h" />
+    <ClInclude Include="DoggyStyleScene.h" />
+    <ClInclude Include="FractalScene.h" />
+    <ClInclude Include="FractalsScene.h" />
+    <ClInclude Include="GalleryScene.h" />
+    <ClInclude Include="GraphScene.h" />
+    <ClInclude Include="KinectFaceTrackingScene.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Cuda|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug OpenCL|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Cuda|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release OpenCL|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="MetaballsScene.h" />
+    <ClInclude Include="MoleculeScene.h" />
+    <ClInclude Include="ObjScene.h" />
+    <ClInclude Include="PerpetualMotionScene.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="SpheresScene.h" />
+    <ClInclude Include="SpindizzyScene.h" />
+    <ClInclude Include="SwcScene.h" />
+    <ClInclude Include="TransparentScene.h" />
+    <ClInclude Include="TrefoilKnotScene.h" />
+    <ClInclude Include="TrianglesScene.h" />
+    <ClInclude Include="WaterScene.h" />
+    <ClInclude Include="XmasScene.h" />
+    <ClInclude Include="Year2013.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Raytracer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SoL_R.ico" />
+    <None Include="images\SoL_R_Cuda.ico" />
+    <None Include="images\SoL_R_Export.ico" />
+    <None Include="images\SoL_R_OpenCL.ico" />
+    <None Include="Sketchup\Ruby\sksolr.rb" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>
